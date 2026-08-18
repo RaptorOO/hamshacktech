@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HamShackTech — Amateur Radio Meets Home Automation</title>
+<meta name="description" content="HamShackTech helps amateur radio operators integrate modern technology — home automation, remote control, digital modes — into their ham shacks." />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+<div class="wrap">
+<a class="logo" href="#top">HamShack<span>Tech</span></a>
+<nav>
+<a href="#about">About</a>
+<a href="#topics">What's Coming</a>
+<a href="#contact">Contact</a>
+</nav>
+</div>
+</header>
+
+<section id="top" class="hero">
+<div class="wrap">
+<p class="eyebrow">73 &mdash; Site under construction</p>
+<h1>Amateur Radio, Meet Home Automation.</h1>
+<p class="lead">
+HamShackTech is a home for practical write-ups on bringing modern
+technology into the ham shack &mdash; from Home Assistant integrations
+that monitor your station, to remote operation, digital modes, and
+the odd bit of RF theory along the way.
+</p>
+<a class="button" href="#contact">Get notified when it launches</a>
+</div>
+</section>
+
+<section id="about" class="section">
+<div class="wrap">
+<h2>About This Site</h2>
+<p>
+I'm a licensed amateur radio operator with a growing interest in
+pairing traditional ham radio with modern home automation tools like
+Home Assistant. This site will document projects, lessons learned,
+and practical guides &mdash; written for operators who are comfortable
+with a soldering iron but new to things like YAML configs, automations,
+and network integrations (and vice versa).
+</p>
+</div>
+</section>
+
+<section id="topics" class="section alt">
+<div class="wrap">
+<h2>What's Coming</h2>
+<div class="cards">
+<div class="card">
+<h3>Shack Automation</h3>
+<p>Using Home Assistant to monitor rig status, antenna switches, SWR alerts, and power sequencing.</p>
+</div>
+<div class="card">
+<h3>Remote Operation</h3>
+<p>Setting up safe, reliable remote access to your station from anywhere.</p>
+</div>
+<div class="card">
+<h3>Digital Modes &amp; APRS</h3>
+<p>Integrating FT8, APRS tracking, and other digital modes with home dashboards.</p>
+</div>
+<div class="card">
+<h3>RF Science, Explained</h3>
+<p>Plain-language explanations of the "why" behind the gear &mdash; propagation, antennas, and signal theory.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="contact" class="section">
+<div class="wrap">
+<h2>Stay in the Loop</h2>
+<p>
+The site is just getting started. Reach out with questions, ideas,
+or your own shack automation projects.
+</p>
+<a class="button" href="mailto:youraddress@hamshacktech.com">youraddress@hamshacktech.com</a>
+</div>
+</section>
+
+<footer class="site-footer">
+<div class="wrap">
+<p>&copy; <span id="year"></span> HamShackTech. Built with 73s.</p>
+</div>
+</footer>
+
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
