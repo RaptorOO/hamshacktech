@@ -1,0 +1,11 @@
+<header class="site-header">
+<div class="wrap">
+<a class="logo" href="{{ "/" | relURL }}"><img src="/img/logo.png" alt="HamShackTech — Amateur Radio in a Tech World" /></a>
+<nav>
+{{ range .Site.Menus.main }}
+{{ $active := or (eq $.RelPermalink .URL) (hasPrefix $.RelPermalink .URL) }}
+<a href="{{ .URL | relURL }}"{{ if $active }} class="active"{{ end }}>{{ .Name }}</a>
+{{ end }}
+</nav>
+</div>
+</header>
