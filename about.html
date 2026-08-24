@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>About — HamShackTech</title>
+<meta name="description" content="About HamShackTech — a home for practical write-ups on bringing modern technology into the ham shack." />
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" href="img/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16.png" />
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
+</head>
+<body>
+
+<header class="site-header">
+<div class="wrap">
+<a class="logo" href="index.html"><img src="img/logo.png" alt="HamShackTech — Amateur Radio in a Tech World" /></a>
+<nav>
+<a href="index.html#tutorials">Tutorials</a>
+<a href="index.html#reviews">Reviews</a>
+<a href="about.html">About</a>
+<a href="contact.html">Contact</a>
+</nav>
+</div>
+</header>
+
+<section class="section page-hero">
+<div class="wrap">
+<h1>About This Site</h1>
+</div>
+</section>
+
+<section class="section">
+<div class="wrap">
+<p>
+I'm a licensed amateur radio operator with a growing interest in
+pairing traditional ham radio with modern technology — operating
+a station remotely over a network, modifying radios for capabilities
+the manufacturer didn't ship, automating a shack full of gear and
+software with a Stream Deck, and experimenting with AI tools to
+operate smarter. This site (and an accompanying YouTube channel) will
+document projects, lessons learned, and practical guides —
+written for operators who are comfortable with a soldering iron but
+new to things like scripting and automation (and vice versa).
+</p>
+</div>
+</section>
+
+<footer class="site-footer">
+<div class="wrap">
+<p>&copy; <span id="year"></span> HamShackTech. Built with 73s.</p>
+</div>
+</footer>
+
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
