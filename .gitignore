@@ -1,0 +1,5 @@
+# Hugo build output — Cloudflare Pages generates this on every deploy,
+# it doesn't belong in source control.
+/public/
+/resources/_gen/
+.hugo_build.lock
