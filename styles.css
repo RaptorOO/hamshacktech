@@ -50,8 +50,8 @@ z-index: 10;
 display: flex;
 align-items: center;
 justify-content: space-between;
-padding-top: 16px;
-padding-bottom: 16px;
+padding-top: 10px;
+padding-bottom: 10px;
 }
 .logo {
 display: flex;
@@ -60,8 +60,10 @@ text-decoration: none;
 }
 .logo img {
 /* Source file is a wide lockup (icon + wordmark); constrain by
-   height and let width follow so it stays sharp at any screen size. */
-height: 40px;
+   height and let width follow so it stays sharp at any screen size.
+   Sized large and bold on purpose — this is the main brand mark
+   in the header and needs to read clearly at a glance. */
+height: 88px;
 width: auto;
 display: block;
 }
