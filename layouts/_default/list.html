@@ -1,0 +1,29 @@
+{{ define "main" }}
+<section class="section page-hero">
+<div class="wrap">
+<h1>{{ .Title }}</h1>
+{{ with .Description }}<p>{{ . }}</p>{{ end }}
+</div>
+</section>
+
+<section class="section">
+<div class="wrap">
+{{ $pages := .Pages }}
+{{ if eq (len $pages) 0 }}
+<p class="coming-soon-tag">Coming soon</p>
+<p>Nothing published here yet — check back soon.</p>
+{{ else }}
+<div class="cards post-grid">
+{{ range $pages.ByDate.Reverse }}
+<a class="card post-card" href="{{ .RelPermalink }}">
+{{ with .Params.categories }}<span class="coming-soon-tag">{{ index . 0 }}</span>{{ end }}
+<h3>{{ .Title }}</h3>
+<p>{{ .Summary }}</p>
+<p class="post-meta">{{ .Date.Format "January 2, 2006" }}</p>
+</a>
+{{ end }}
+</div>
+{{ end }}
+</div>
+</section>
+{{ end }}
