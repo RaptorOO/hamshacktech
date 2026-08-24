@@ -1,0 +1,46 @@
+{{ define "main" }}
+<section class="section page-hero">
+<div class="wrap">
+<h1>{{ .Title }}</h1>
+<p>Questions, ideas, or your own ham shack tech projects — drop a note below.</p>
+</div>
+</section>
+
+<section class="section">
+<div class="wrap">
+<!--
+  No backend, so this form posts to FormSubmit.co (free, no signup):
+  submissions get emailed to contact@hamshacktech.com. The FIRST
+  submission triggers a one-time confirmation email that needs a click
+  before the form goes live. After that it's just normal email.
+-->
+<form class="contact-form" action="https://formsubmit.co/contact@hamshacktech.com" method="POST">
+<input type="hidden" name="_subject" value="New message from HamShackTech contact form" />
+<input type="hidden" name="_template" value="table" />
+<input type="hidden" name="_next" value="https://hamshacktech.com/contact/?sent=1" />
+<input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" />
+
+<label for="name">Name</label>
+<input type="text" id="name" name="name" required />
+
+<label for="email">Email</label>
+<input type="email" id="email" name="email" required />
+
+<label for="message">Message</label>
+<textarea id="message" name="message" rows="6" required></textarea>
+
+<button type="submit" class="button">Send Message</button>
+</form>
+
+<p class="form-note" id="sent-note">
+Thanks — your message is on its way. I'll get back to you soon.
+</p>
+</div>
+</section>
+
+<script>
+if (new URLSearchParams(window.location.search).get('sent') === '1') {
+document.getElementById('sent-note').classList.add('visible');
+}
+</script>
+{{ end }}

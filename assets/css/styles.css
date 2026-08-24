@@ -231,3 +231,74 @@ margin: 0;
 font-size: 0.85rem;
 color: var(--ink-soft);
 }
+
+/* ---------- Hugo migration additions ---------- */
+
+/* Active nav link */
+.site-header nav a.active {
+color: var(--accent);
+font-weight: 600;
+}
+
+/* Post meta line (date, rating) under a post title */
+.post-meta {
+font-size: 0.85rem;
+color: var(--ink-soft);
+margin-top: -8px;
+}
+
+/* Post body: give headings/lists/code normal spacing since content
+   now comes from Markdown rather than hand-tuned HTML. */
+.post-body h2 { margin-top: 1.5em; }
+.post-body h3 { margin-top: 1.2em; }
+.post-body ul, .post-body ol { color: var(--ink-soft); padding-left: 1.4em; }
+.post-body code {
+background: var(--paper-alt);
+border: 1px solid var(--border);
+border-radius: 4px;
+padding: 1px 5px;
+font-size: 0.9em;
+}
+.post-body pre {
+background: var(--paper-alt);
+border: 1px solid var(--border);
+border-radius: 8px;
+padding: 14px 16px;
+overflow-x: auto;
+}
+.post-body pre code { background: none; border: none; padding: 0; }
+.post-body img { max-width: 100%; border-radius: 8px; }
+
+/* Tag pills shown under a post's content */
+.post-tags { margin-top: 24px; }
+.tag-pill {
+display: inline-block;
+font-size: 0.8rem;
+color: var(--accent-dark);
+background: var(--paper-alt);
+border: 1px solid var(--border);
+border-radius: 999px;
+padding: 3px 10px;
+margin: 0 6px 6px 0;
+text-decoration: none;
+}
+.tag-pill:hover { background: var(--border); }
+
+/* Cards that are also links (section listing pages, homepage Explore) */
+.post-grid { margin-top: 24px; }
+a.card {
+text-decoration: none;
+color: inherit;
+display: block;
+transition: border-color 0.15s ease, transform 0.1s ease;
+}
+a.card:hover { border-color: var(--accent); }
+
+/* Homepage "Latest" single-post spotlight card */
+.featured-post p:last-child a,
+.featured-post > a:last-child {
+color: var(--accent);
+font-weight: 600;
+text-decoration: none;
+}
+.featured-post > a:last-child:hover { color: var(--accent-dark); }

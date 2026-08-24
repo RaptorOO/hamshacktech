@@ -1,0 +1,21 @@
+{{ define "main" }}
+<section class="section page-hero">
+<div class="wrap">
+{{ with .Params.categories }}<p class="coming-soon-tag">{{ index . 0 }}</p>{{ end }}
+<h1>{{ .Title }}</h1>
+{{ if not .Date.IsZero }}<p class="post-meta">{{ .Date.Format "January 2, 2006" }}{{ with .Params.rating }} &middot; Rating: {{ . }}/5{{ end }}</p>{{ end }}
+</div>
+</section>
+
+<section class="section">
+<div class="wrap post-body">
+{{ .Content }}
+
+{{ with .Params.tags }}
+<p class="post-tags">
+{{ range . }}<a class="tag-pill" href="{{ "/tags/" | relLangURL }}{{ . | urlize }}/">{{ . }}</a>{{ end }}
+</p>
+{{ end }}
+</div>
+</section>
+{{ end }}

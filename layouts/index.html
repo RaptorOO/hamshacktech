@@ -1,0 +1,62 @@
+{{ define "main" }}
+<section class="hero">
+<div class="wrap">
+<p class="eyebrow">{{ .Site.Params.tagline }}</p>
+<h1>Level Up Your Ham Shack With Tech.</h1>
+<p class="lead">
+HamShackTech is a home for practical write-ups (and, soon, video) on
+bringing modern technology into the ham shack — operating your
+rig through a networked or remote browser session, modding radios to
+unlock extra functionality, automating shack gear and software with a
+Stream Deck, and putting AI tools to work improving how you operate.
+</p>
+<a class="button" href="/contact/">Get notified when it launches</a>
+</div>
+</section>
+
+{{/*
+  Latest post across Guides, Reviews, and Blog combined — this replaces
+  the old manual "update index.html by hand on every publish" approach
+  noted in the project history. Hugo rebuilds this automatically from
+  whatever was published most recently, no manual edit required.
+*/}}
+{{ $latest := (union (union (where .Site.RegularPages "Section" "guides") (where .Site.RegularPages "Section" "reviews")) (where .Site.RegularPages "Section" "blog")).ByDate.Reverse }}
+
+<section class="section alt">
+<div class="wrap">
+<h2>Latest</h2>
+{{ with $latest }}
+{{ $post := index . 0 }}
+<div class="card featured-post">
+{{ with $post.Params.categories }}<span class="coming-soon-tag">{{ index . 0 }}</span>{{ end }}
+<h3><a href="{{ $post.RelPermalink }}">{{ $post.Title }}</a></h3>
+<p>{{ $post.Summary }}</p>
+<a href="{{ $post.RelPermalink }}">Read more →</a>
+</div>
+{{ else }}
+<p class="coming-soon-tag">Coming soon</p>
+<p>First guides, reviews, and posts are on the way — check back soon.</p>
+{{ end }}
+</div>
+</section>
+
+<section class="section">
+<div class="wrap">
+<h2>Explore</h2>
+<div class="cards">
+<a class="card" href="/guides/">
+<h3>Guides</h3>
+<p>Practical tutorials on remote operation, radio mods, shack automation, CW, logging, and AI in the shack.</p>
+</a>
+<a class="card" href="/reviews/">
+<h3>Reviews</h3>
+<p>Hands-on reviews of gear and software for a tech-enabled shack.</p>
+</a>
+<a class="card" href="/blog/">
+<h3>Blog</h3>
+<p>Project logs, opinions, and everything else that doesn't fit a tutorial or a review.</p>
+</a>
+</div>
+</div>
+</section>
+{{ end }}
