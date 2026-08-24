@@ -54,12 +54,17 @@ padding-top: 16px;
 padding-bottom: 16px;
 }
 .logo {
-font-weight: 700;
-font-size: 1.15rem;
-color: var(--ink);
+display: flex;
+align-items: center;
 text-decoration: none;
 }
-.logo span { color: var(--accent); }
+.logo img {
+/* Source file is a wide lockup (icon + wordmark); constrain by
+   height and let width follow so it stays sharp at any screen size. */
+height: 40px;
+width: auto;
+display: block;
+}
 .site-header nav a {
 margin-left: 24px;
 color: var(--ink-soft);
@@ -112,6 +117,19 @@ transition: background 0.15s ease;
 .section h2 {
 font-size: 1.6rem;
 margin-bottom: 24px;
+}
+
+/* Small label used on not-yet-populated sections (Automation,
+   CW/Morse, Reviews) so it's clear they're placeholders, not
+   missing content. */
+.coming-soon-tag {
+display: inline-block;
+text-transform: uppercase;
+letter-spacing: 0.06em;
+font-size: 0.75rem;
+font-weight: 600;
+color: var(--accent);
+margin: -12px 0 16px;
 }
 
 /* Card grid used in the "What's Coming" section.
