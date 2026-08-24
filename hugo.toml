@@ -44,3 +44,34 @@ tagline = "73 — Site under construction"
 
 [markup.goldmark.renderer]
 unsafe = true
+
+# Explicit module mounts: once you declare any custom mount, Hugo
+# requires ALL of them spelled out (defaults no longer apply
+# automatically). This keeps every normal Hugo directory working AND
+# additionally mounts the existing top-level img/ folder (unchanged
+# from before the Hugo migration) as static assets under /img/.
+[module]
+[[module.mounts]]
+source = "content"
+target = "content"
+[[module.mounts]]
+source = "layouts"
+target = "layouts"
+[[module.mounts]]
+source = "assets"
+target = "assets"
+[[module.mounts]]
+source = "data"
+target = "data"
+[[module.mounts]]
+source = "i18n"
+target = "i18n"
+[[module.mounts]]
+source = "archetypes"
+target = "archetypes"
+[[module.mounts]]
+source = "static"
+target = "static"
+[[module.mounts]]
+source = "img"
+target = "static/img"
