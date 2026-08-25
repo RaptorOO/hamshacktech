@@ -3,7 +3,10 @@
 <a class="logo" href="{{ "/" | relURL }}"><img src="/img/logo.png" alt="HamShackTech — Amateur Radio in a Tech World" /></a>
 <nav>
 {{ range .Site.Menus.main }}
-{{ $active := or (eq $.RelPermalink .URL) (hasPrefix $.RelPermalink .URL) }}
+{{/* "/" is a prefix of every URL, so the Home link needs an exact-match
+     check rather than hasPrefix — otherwise it would show as active on
+     every page, not just the homepage. */}}
+{{ $active := or (eq $.RelPermalink .URL) (and (ne .URL "/") (hasPrefix $.RelPermalink .URL)) }}
 <a href="{{ .URL | relURL }}"{{ if $active }} class="active"{{ end }}>{{ .Name }}</a>
 {{ end }}
 </nav>
