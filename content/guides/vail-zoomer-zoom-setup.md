@@ -4,6 +4,7 @@ date: 2026-08-24
 categories: ["CW & Operating Skills"]
 tags: ["Vail Zoomer", "Vail Adapter", "VB-Cable", "Zoom", "CW"]
 draft: false
+summary: "Merge CW sidetone from a Vail Adapter directly into your Zoom, Teams, Discord, or Meet audio — no microphone needed to carry your keying."
 ---
 
 ## What is it?
