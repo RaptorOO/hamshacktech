@@ -1,0 +1,61 @@
+/* Contact form styling — Blowfish doesn't ship form styles out of the
+   box, and the form itself is plain HTML embedded directly in
+   content/contact.md (allowed because markup.toml sets
+   goldmark.renderer.unsafe = true). Blowfish auto-loads this file
+   when present at assets/css/custom.css, so no template changes are
+   needed to wire it in. */
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 32rem;
+  margin-top: 1.5rem;
+}
+
+.contact-form label {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.contact-form input[type="text"],
+.contact-form input[type="email"],
+.contact-form textarea {
+  background-color: #f5f5f5;
+  color: #171717;
+  border: 1px solid #d4d4d4;
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.contact-form textarea {
+  resize: vertical;
+}
+
+.contact-form button.button {
+  align-self: flex-start;
+  background-color: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.contact-form button.button:hover {
+  background-color: #1d4ed8;
+}
+
+.form-note {
+  display: none;
+  margin-top: 1rem;
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.form-note.visible {
+  display: block;
+}
