@@ -2,7 +2,7 @@
 title: "Setting Up Vail Zoomer for CW on Zoom"
 date: 2026-08-24
 categories: ["CW & Operating Skills"]
-tags: ["Vail Zoomer", "Vail Adapter", "VB-Cable", "Zoom"]
+tags: ["Vail Zoomer", "Vail Adapter", "VB-Cable", "Zoom", "CW"]
 draft: false
 ---
 
@@ -20,13 +20,13 @@ required to carry your keying.
 Your CW sidetone will sound dramatically better in a CW class than it
 does for students relying on their radio or an oscillator to generate
 their sidetones and a PC microphone to pick up the audio. Mic-based
-setups pick up ambient room noise and often send a weak signal — Vail
-Zoomer bypasses your microphone entirely and injects the tone straight
-into the Zoom audio channel.
+setups pick up ambient room noise and the volume is often too low for
+people on a Zoom call to hear — Vail Zoomer bypasses your microphone
+entirely and injects the tone straight into the Zoom audio channel.
 
 The built-in decoder window shows what you're actually sending in real
-time (with a slight lag), so you'll know immediately whether you sent
-an H or an S — in class or practicing with a buddy.
+time (with just a slight lag), so you'll know whether you sent too many
+dits and sent an "H" instead of an "S."
 
 Keying speed, tone, and other settings are all adjustable on the fly
 from a clean, simple interface.
@@ -34,7 +34,7 @@ from a clean, simple interface.
 ## Pros
 
 - Dramatically cleaner sidetone than mic-based setups — no ambient
-  room noise, no weak signal
+  room noise, much better volume and clarity
 - Real-time decode window so you know exactly what you sent
 - Adjust speed and tone on the fly, mid-session
 - Free and open source
@@ -56,9 +56,11 @@ from a clean, simple interface.
 
 ## Links
 
-- [Vail Adapter](https://vailadapter.com/)
-- [Vail Zoomer](https://vailadapter.com/zoomer)
-- [Vail Zoomer on GitHub](https://github.com/Vail-CW/vail-zoomer)
+<ul>
+<li><a href="https://vailadapter.com/" target="_blank" rel="noopener noreferrer">Vail Adapter</a></li>
+<li><a href="https://vailadapter.com/zoomer" target="_blank" rel="noopener noreferrer">Vail Zoomer</a></li>
+<li><a href="https://github.com/Vail-CW/vail-zoomer" target="_blank" rel="noopener noreferrer">Vail Zoomer on GitHub</a></li>
+</ul>
 
 ## Installation
 
@@ -176,5 +178,5 @@ treating your CW tone as noise to be filtered out.
 ![Zoom's audio device menu with CABLE Output selected](/img/guides/vail-zoomer/15-zoom-audio-settings.png)
 
 That's it — hop into your next CW class or practice session and your
-sidetone will come through clean, direct, and free of the room noise
-and weak signal that plague mic-based setups.
+sidetone will come through clean, direct, and free of room noise,
+echoes and volume issues that plague mic-based setups.

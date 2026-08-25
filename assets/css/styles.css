@@ -118,6 +118,14 @@ padding-bottom: 8px;
 font-size: clamp(1.8rem, 3.5vw, 2.4rem);
 }
 
+/* The default .section top padding (64px) is meant for a standalone
+   section, not a continuation of the page-hero block right above it —
+   without this override there's an awkwardly large gap between the
+   title/date and the first line of body text on articles/pages. */
+.page-hero + .section {
+padding-top: 16px;
+}
+
 /* ---------- Buttons ---------- */
 .button {
 display: inline-block;
