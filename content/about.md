@@ -1,5 +1,7 @@
 ---
 title: "About This Site"
+showDate: false
+showPagination: false
 ---
 
 I'm a licensed amateur radio operator with a growing interest in

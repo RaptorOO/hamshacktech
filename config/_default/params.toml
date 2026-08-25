@@ -1,0 +1,58 @@
+# A deliberately minimal starting point — no demo Firebase keys, analytics
+# IDs, or "buy me a coffee" widgets that Blowfish's own example site ships
+# with. We'll tune colors and layout together once real content is in.
+
+colorScheme = "blowfish"
+defaultAppearance = "dark"
+autoSwitchAppearance = true
+
+enableSearch = true
+enableCodeCopy = true
+
+# Sections that count as the site's main content for search/related-posts.
+mainSections = ["guides", "reviews", "blog"]
+
+disableImageOptimization = false
+
+highlightCurrentMenuArea = true
+smartTOC = true
+
+[header]
+  layout = "fixed" # other options: basic, fixed-fill, fixed-gradient, fixed-fill-blur, floating
+
+[footer]
+  showMenu = true
+  showCopyright = true
+  showThemeAttribution = false
+  showAppearanceSwitcher = true
+  showScrollToTop = true
+
+[homepage]
+  layout = "page" # simplest layout to start; can switch to "hero", "card", etc. later
+  showRecent = true
+  showRecentItems = 9
+  showMoreLink = true
+
+[article]
+  showDate = true
+  showAuthor = false
+  showHero = true
+  heroStyle = "background"
+  showBreadcrumbs = true
+  showReadingTime = true
+  showTableOfContents = true
+  showTaxonomies = true
+  sharingLinks = []
+
+[list]
+  showHero = false
+  showBreadcrumbs = false
+  showSummary = true
+  showCards = true
+
+[taxonomy]
+  showTermCount = true
+  cardView = false
+
+[term]
+  cardView = true
