@@ -110,8 +110,13 @@ font-size: 1.05rem;
 
 /* Smaller hero variant used at the top of secondary pages
    (About, Contact) — same section rhythm, less vertical padding
-   since there's no CTA button underneath. */
-.page-hero {
+   since there's no CTA button underneath.
+   Qualified as "section.page-hero" (not just ".page-hero") so this
+   beats the plain ".section { padding: 64px 0; }" rule below on
+   specificity rather than losing to it on source order — a class-only
+   selector here was silently overridden by ".section", which is why
+   this padding-bottom never actually took effect. */
+section.page-hero {
 padding-bottom: 8px;
 }
 .page-hero h1 {
