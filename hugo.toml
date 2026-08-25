@@ -11,8 +11,14 @@ title = "HamShackTech"
 # IMPORTANT: front matter must use the plural list form, e.g.
 # categories: ["Radio Mods"]  — a bare string here will NOT register.
 
-# Top nav, in the order it should render. "Guides" and "Reviews" and "Blog"
-# point at their section's listing page; About/Contact are single pages.
+# Top nav, in the order it should render. "Home" links back to the
+# homepage; "Guides" and "Reviews" and "Blog" point at their section's
+# listing page; About/Contact are single pages.
+[[menu.main]]
+name = "Home"
+url = "/"
+weight = 5
+
 [[menu.main]]
 name = "Guides"
 url = "/guides/"
@@ -40,7 +46,6 @@ weight = 50
 
 [params]
 description = "HamShackTech shows amateur radio operators how to bring modern technology into the shack — remote and networked operation, radio mods, shack automation, CW and operating skills, logging and contesting, and AI in the shack."
-tagline = "73 — Site under construction"
 
 [markup.goldmark.renderer]
 unsafe = true
