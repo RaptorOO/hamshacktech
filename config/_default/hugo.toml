@@ -81,10 +81,3 @@ target = "static"
 [[module.mounts]]
 source = "img"
 target = "static/img"
-# img/ is ALSO mounted into assets/ (in addition to static/ above) so that
-# Hugo's resources.Get can find it — that's how the theme's logo partial
-# reads the `logo` param in languages.en.toml. Files stay physically in one
-# place (img/); this just gives Hugo two ways to serve them.
-[[module.mounts]]
-source = "img"
-target = "assets/img"
