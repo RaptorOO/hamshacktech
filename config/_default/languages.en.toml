@@ -9,3 +9,4 @@ title = "HamShackTech"
   rtl = false
   dateFormat = "2 January 2006"
   description = "HamShackTech shows amateur radio operators how to bring modern technology into the shack — remote and networked operation, radio mods, shack automation, CW and operating skills, logging and contesting, and AI in the shack."
+  logo = "img/logo.png"
