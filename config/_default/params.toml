@@ -28,7 +28,7 @@ smartTOC = true
   showScrollToTop = true
 
 [homepage]
-  layout = "page" # simplest layout to start; can switch to "hero", "card", etc. later
+  layout = "landing" # options: page, profile, hero, card, background, landing, custom
   showRecent = true
   showRecentItems = 9
   showMoreLink = true
