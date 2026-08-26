@@ -16,6 +16,11 @@
   weight = 30
 
 [[main]]
+  name = "CW Tools"
+  pageRef = "cw-tools"
+  weight = 35
+
+[[main]]
   name = "About"
   pageRef = "about"
   weight = 40
