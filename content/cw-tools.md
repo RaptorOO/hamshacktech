@@ -5,7 +5,7 @@ showDate: false
 showPagination: false
 ---
 
-Practical, no-install tools for CW practice and operating — built to run right in your browser, on desktop or phone. More will land here over time; first up is a trainer for Instant Character Recognition.
+Practical, no-install tools for CW practice and operating — built to run right in your browser, on desktop or phone. More will land here over time.
 
 <div class="tool-card">
   <div class="tool-card-header">
@@ -24,4 +24,23 @@ Practical, no-install tools for CW practice and operating — built to run right
   </ol>
 
   <a class="tool-card-button" href="https://cw.hamshacktech.com" target="_blank" rel="noopener">Launch CW ICR Trainer →</a>
+</div>
+
+<div class="tool-card">
+  <div class="tool-card-header">
+    <h3>CW Code Groups Trainer</h3>
+    <span class="tool-card-badge">Free · Browser App</span>
+  </div>
+
+  <p>Drills head copy — listening to a group of characters at speed and writing down what you heard afterward, rather than transcribing letter by letter as it comes in. Set your character speed (WPM), Farnsworth spacing, tone, and volume, and choose group sizes from 2 to 5 characters drawn from letters, numbers, a mix of the two, or a custom set. A configurable Max Time to Answer keeps the pressure on; miss the window and a buzzer reveals the answer. Session stats break accuracy down by group size, and a one-tap drill plays your five weakest characters five times each for focused listening practice.</p>
+
+  <h4>How to use it</h4>
+  <ol>
+    <li>Open the trainer and tap <strong>Start Session</strong> — your keyboard stays live for the whole session, no need to click into the box.</li>
+    <li>Pick a <strong>Practice Group</strong>, <strong>Characters per Group</strong>, WPM, Farnsworth speed, Tone, Volume, and Max Time to Answer under Console Settings.</li>
+    <li>Listen to the group, then type what you heard into the blanks — it grades automatically as soon as the last blank fills.</li>
+    <li>Check <strong>Your Worst Characters</strong> any time and tap <strong>Drill These Characters</strong> to just listen to your weak points on repeat.</li>
+  </ol>
+
+  <a class="tool-card-button" href="/cw-tools/code-groups-trainer/">Launch CW Code Groups Trainer →</a>
 </div>
