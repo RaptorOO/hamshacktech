@@ -2,7 +2,7 @@
 title: "You Give Love a Bad Name: A POTACAT Review"
 date: 2026-08-26
 categories: ["Logging & Contesting", "Remote & Networked Operation", "CW & Operating Skills"]
-tags: ["POTACAT", "ECHOCAT", "POTA", "SOTA", "CAT Control", "CW", "Casey Stanton", "K3SBP"]
+tags: ["POTACAT", "ECHOCAT", "POTA", "SOTA", "CAT Control", "CW"]
 draft: false
 rating: 4.8
 summary: "POTACAT started as a weekend project to one-click tune a rig at POTA spots. It's become one of the most actively developed tools in the hobby -- and the name might be the only thing holding it back."
@@ -24,7 +24,7 @@ The table view is where I live most of the time, but the map view is worth a loo
 
 Here's the part I find genuinely refreshing, though: he doesn't just ship fast, he ships what his users actually asked for, and he tells you so. Scroll through the release notes and you'll see bugs credited to the operators who found them -- a PTT button that mysteriously vanished, chased down from a report by one specific caller; a Windows audio bug traced back to another. He's running an active Discord where people post feature ideas constantly, and unlike a lot of developers, he actually responds. As a Buy Me a Coffee supporter myself, I can say I've passed along a handful of comments over there and never once been ignored.
 
-I'll give a tip of the hat here to Stu, G5STU, over at Station Master Pro too -- a completely different developer, a completely different (paid) product, but the same rare trait: he's in his own Discord, he answers people directly, and his users say so in reviews. It's worth naming both of them, because it's apparently possible to run a small ham radio software project this way. It's just not common. After years of waiting on Ham Radio Deluxe to move at anything faster than a crawl, watching a developer this locked in on customer satisfaction and turnaround time is a genuinely nice change of pace.
+I'll give a tip of the hat here to Stu, G5STU, over at [Station Master Pro](https://getstationmaster.com/) too -- a completely different developer, a completely different (paid) product, but the same rare trait: he's in his own Discord, he answers people directly, and his users say so in reviews. It's worth naming both of them, because it's apparently possible to run a small ham radio software project this way. It's just not common. After years of waiting on Ham Radio Deluxe to move at anything faster than a crawl, watching a developer this locked in on customer satisfaction and turnaround time is a genuinely nice change of pace.
 
 The core app costs nothing, and I want to be clear about that -- there's no bait-and-switch here. But if you use the Buy Me a Coffee link on Casey's site and become a supporter, you pick up a handful of extras: cloud-related conveniences, embeddable widgets for your QRZ page, a Discord supporter role, a supporter-only feature request channel, and -- because ham radio never misses a chance for a pun -- a two-paw emoji 🐾 next to your callsign in the app while you're activating. None of it is required to use the software well, but if a developer is shipping at this pace for free, throwing him a few dollars a month feels like the least I can do.
 
