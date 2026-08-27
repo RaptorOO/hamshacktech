@@ -2,7 +2,7 @@
 # IDs, or "buy me a coffee" widgets that Blowfish's own example site ships
 # with. We'll tune colors and layout together once real content is in.
 
-colorScheme = "blowfish"
+colorScheme = "avocado"
 defaultAppearance = "dark"
 autoSwitchAppearance = true
 
