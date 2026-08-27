@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CW Code Groups Trainer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* ======================================================================
+     TOKENS
+     Panel-meter / VFO-display aesthetic: near-black chassis, amber dial
+     glow as the primary accent, teal as a secondary "receive" accent.
+     Light theme reads as a printed equipment manual: paper ground, ink
+     text, the same two accents darkened for contrast.
+     ====================================================================== */
+  :root {
+    --bg: #eef1f2;
+    --panel: #ffffff;
+    --panel-2: #f4f6f7;
+    --recess: #e6eaec;
+    --border: #d3dbdf;
+    --border-strong: #b7c2c8;
+    --text: #16211f;
+    --text-dim: #55666c;
+    --text-faint: #85959b;
+    --accent: #b5720a;      /* amber dial glow, darkened for light bg */
+    --accent-soft: #e9d3ac;
+    --accent-ink: #4a3103;
+    --accent2: #128f88;     /* teal, darkened for light bg */
+    --good: #16a34a;
+    --good-soft: #d9f2e3;
+    --bad: #d1354a;
+    --bad-soft: #fbdde1;
+    --warn: #b5720a;
+    --shadow: 0 1px 2px rgba(20, 30, 30, 0.06), 0 8px 24px rgba(20, 30, 30, 0.06);
+    --font-display: "Oswald", "Arial Narrow", sans-serif;
+    --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0a0e11;
+      --panel: #12181c;
+      --panel-2: #171f24;
+      --recess: #0d1215;
+      --border: #263136;
+      --border-strong: #354349;
+      --text: #e9eff0;
+      --text-dim: #93a3a8;
+      --text-faint: #5c6d72;
+      --accent: #f2a924;
+      --accent-soft: #3a2c0e;
+      --accent-ink: #ffe5ae;
+      --accent2: #3fd0c6;
+      --good: #4ade80;
+      --good-soft: #123423;
+      --bad: #f66a7d;
+      --bad-soft: #3a1620;
+      --warn: #f2a924;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0a0e11;
+    --panel: #12181c;
+    --panel-2: #171f24;
+    --recess: #0d1215;
+    --border: #263136;
+    --border-strong: #354349;
+    --text: #e9eff0;
+    --text-dim: #93a3a8;
+    --text-faint: #5c6d72;
+    --accent: #f2a924;
+    --accent-soft: #3a2c0e;
+    --accent-ink: #ffe5ae;
+    --accent2: #3fd0c6;
+    --good: #4ade80;
+    --good-soft: #123423;
+    --bad: #f66a7d;
+    --bad-soft: #3a1620;
+    --warn: #f2a924;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
+  }
+
+  * { box-sizing: border-box; }
+  html { color-scheme: light dark; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+  }
+
+  a { color: var(--accent2); }
+
+  /* ---------------------------------------------------------------------
+     Masthead
+     --------------------------------------------------------------------- */
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+  .masthead-title {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .masthead h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.4rem);
+    letter-spacing: 0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .masthead .badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 3px 10px;
+  }
+  .masthead p {
+    margin: 4px 0 0;
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    max-width: 60ch;
+  }
+
+  /* ---------------------------------------------------------------------
+     Practice module — the "front panel" of the app
+     --------------------------------------------------------------------- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+  }
+
+  .practice {
+    position: relative; /* anchors .hidden-input's containing block so its
+                            "auto" position never falls back to the page's
+                            root and drags a focus-scroll with it */
+    padding: 26px clamp(16px, 4vw, 40px) 30px;
+    margin-bottom: 22px;
+    text-align: center;
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    min-height: 26px;
+  }
+  .status-pill {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    color: var(--text-dim);
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  }
+  .status-pill[data-mode="sending"] { color: var(--accent-ink); background: var(--accent-soft); border-color: var(--accent); }
+  .status-pill[data-mode="copy"]    { color: var(--accent2); border-color: var(--accent2); }
+  .status-pill[data-mode="correct"]{ color: var(--good); background: var(--good-soft); border-color: var(--good); }
+  .status-pill[data-mode="miss"], .status-pill[data-mode="timeout"] { color: var(--bad); background: var(--bad-soft); border-color: var(--bad); }
+  /* Shown right next to the main status pill whenever a drill is active,
+     so it's obvious from the practice box itself (not just the Drill
+     panel down below) that this round is pulling from the weak-character
+     set rather than the normal practice group. */
+  .status-pill.drill-flag { color: var(--accent2); border-color: var(--accent2); }
+
+  .blanks {
+    display: flex;
+    justify-content: center;
+    gap: clamp(6px, 1.6vw, 14px);
+    flex-wrap: wrap;
+    margin: 10px 0 22px;
+  }
+  .blank {
+    width: clamp(40px, 9vw, 58px);
+    height: clamp(52px, 11vw, 72px);
+    border-radius: 8px;
+    background: var(--recess);
+    border: 1px solid var(--border);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: clamp(1.3rem, 4vw, 1.9rem);
+    color: var(--text);
+    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+  }
+  .blank.filled, .blank.active { border-color: var(--accent2); }
+  .blank.correct { background: var(--good-soft); border-color: var(--good); color: var(--good); }
+  .blank.incorrect { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+  .blank.pop { transform: translateY(-2px); }
+  /* Blinking text-caret shown in whichever blank is next to be filled, so
+     it's visually obvious the (invisible) input already has focus and
+     typing can start with no click needed. */
+  .blank-caret {
+    width: 2px;
+    height: 54%;
+    background: var(--accent2);
+    animation: blank-caret-blink 1s step-end infinite;
+  }
+  @keyframes blank-caret-blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .blank { transition: none; }
+    .blank-caret { animation: none; }
+  }
+
+  /* S-meter style countdown */
+  .meter {
+    position: relative;
+    max-width: 420px;
+    margin: 0 auto 6px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--recess);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .meter-fill {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transform-origin: left center;
+    transition: transform 0.08s linear, background-color 0.2s ease;
+  }
+  .meter-fill.low { background: linear-gradient(90deg, var(--warn), var(--bad)); }
+  .meter-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-faint);
+    margin-bottom: 20px;
+    min-height: 1em;
+  }
+
+  .session-btn {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 13px 34px;
+    border-radius: 999px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #1a1200;
+    cursor: pointer;
+    transition: filter 0.12s ease, transform 0.08s ease;
+  }
+  .session-btn:hover { filter: brightness(1.08); }
+  .session-btn:active { transform: scale(0.98); }
+  .session-btn.running {
+    background: transparent;
+    color: var(--bad);
+    border-color: var(--bad);
+  }
+  .session-btn:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
+    outline: 2px solid var(--accent2);
+    outline-offset: 2px;
+  }
+
+  .quickstats {
+    display: flex;
+    justify-content: center;
+    gap: clamp(14px, 4vw, 34px);
+    flex-wrap: wrap;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--border);
+  }
+  .quickstat { text-align: center; min-width: 64px; }
+  .quickstat .v {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 1.3rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .quickstat .l {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-faint);
+  }
+
+  /* input.hidden-input[type="text"] (rather than plain .hidden-input) so this
+     beats the generic `input[type="text"] { width: 100% }` rule below on
+     specificity instead of losing a same-specificity tie by source order —
+     without this the "hidden" input was actually rendering full-width
+     (invisible but full-size), which is what let a focus() call drag the
+     whole page sideways to "reveal" it. */
+  input.hidden-input[type="text"] {
+    position: absolute;
+    top: 0;      /* pinned inside .practice (see above) instead of an "auto" */
+    left: 0;     /* static position, which is what was causing the page to */
+    opacity: 0;  /* jolt sideways the instant this input received focus() */
+    height: 1px;
+    width: 1px;
+    padding: 0;  /* the generic input padding would otherwise force this box
+                    back open to ~22px even with width:1px set above */
+    border: 0;
+    pointer-events: none;
+  }
+  .tap-hint {
+    font-size: 0.78rem;
+    color: var(--text-faint);
+    margin-top: 4px;
+  }
+
+  /* ---------------------------------------------------------------------
+     Lower grid: settings / stats / drill
+     --------------------------------------------------------------------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 920px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .card { padding: 20px 22px 24px; }
+  .card h2 {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin: 0 0 4px;
+  }
+  .card .sub {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin: 0 0 16px;
+  }
+
+  .field { margin-bottom: 15px; }
+  .field label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .field label .val {
+    font-family: var(--font-mono);
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  select, input[type="text"], input[type="number"] {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+  }
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent2);
+  }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+  .check-row input { accent-color: var(--accent2); }
+
+  fieldset { border: none; padding: 0; margin: 0; }
+  fieldset:disabled { opacity: 0.5; }
+  .lock-note {
+    font-size: 0.76rem;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 6px 9px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .lock-note.show { display: block; }
+
+  .btn-secondary {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 0.88rem;
+    padding: 9px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+  .btn-secondary:disabled { cursor: not-allowed; opacity: 0.5; }
+  .btn-secondary.danger:hover { border-color: var(--bad); color: var(--bad); }
+
+  /* Stats card */
+  .stat-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .tile {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .tile .v {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 1.15rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .tile .l {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+  }
+
+  table.size-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  table.size-table caption {
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+    margin-bottom: 6px;
+  }
+  table.size-table th, table.size-table td {
+    text-align: left;
+    padding: 5px 6px;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  table.size-table th { color: var(--text-dim); font-weight: 500; }
+  .empty-note { color: var(--text-faint); font-size: 0.85rem; }
+
+  /* Drill card */
+  .drill-list { list-style: none; margin: 0 0 16px; padding: 0; }
+  .drill-row {
+    display: grid;
+    grid-template-columns: 26px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+  }
+  .drill-char {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 1.05rem;
+    text-align: center;
+  }
+  .drill-bar-track {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--recess);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .drill-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--bad), var(--warn));
+  }
+  .drill-pct {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    min-width: 3.2em;
+    text-align: right;
+  }
+  .drilling-badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+    border-radius: 6px;
+    padding: 5px 8px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .drilling-badge.show { display: block; }
+
+  footer.note {
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 0.8rem;
+    margin-top: 26px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="masthead-title">
+      <h1>CW Code Groups Trainer</h1>
+      <span class="badge">Free · Browser App</span>
+    </div>
+  </div>
+  <p style="margin: -12px 0 22px; color: var(--text-dim); max-width: 62ch;">
+    Listen to a group of characters, then type what you heard before the clock runs out.
+    Random groups break the habit of counting dits and dahs by copy-writing — you're
+    forced to hold the whole group in your head and write it after the fact, the same way
+    you'll copy a callsign or a QSO on the air.
+  </p>
+
+  <!-- ===================================================================
+       PRACTICE MODULE
+       =================================================================== -->
+  <section class="panel practice" aria-label="Practice module">
+    <div class="status-row">
+      <span class="status-pill" id="statusPill" data-mode="idle">Idle</span>
+      <span class="status-pill drill-flag" id="drillFlag" style="display:none;"></span>
+    </div>
+
+    <div class="blanks" id="blanksRow" aria-live="polite"></div>
+
+    <div class="meter" aria-hidden="true">
+      <div class="meter-fill" id="meterFill" style="transform: scaleX(0);"></div>
+    </div>
+    <div class="meter-label" id="meterLabel">&nbsp;</div>
+
+    <button class="session-btn" id="sessionBtn" type="button">Start Session</button>
+    <div class="tap-hint" id="tapHint">Tap the practice box, then start — your keyboard stays live for the whole session.</div>
+
+    <input class="hidden-input" id="hiddenInput" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text" aria-label="Type the characters you heard" />
+
+    <div class="quickstats">
+      <div class="quickstat"><div class="v" id="qsStreak">0</div><div class="l">Streak</div></div>
+      <div class="quickstat"><div class="v" id="qsBest">0</div><div class="l">Best</div></div>
+      <div class="quickstat"><div class="v" id="qsGroupAcc">—</div><div class="l">Group %</div></div>
+      <div class="quickstat"><div class="v" id="qsCharAcc">—</div><div class="l">Char %</div></div>
+      <div class="quickstat"><div class="v" id="qsAvg">—</div><div class="l">Avg ms</div></div>
+      <div class="quickstat"><div class="v" id="qsTimeouts">0</div><div class="l">Timeouts</div></div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       SETTINGS / STATS / DRILL
+       =================================================================== -->
+  <div class="grid">
+
+    <section class="panel card" aria-label="Console settings">
+      <h2>Console Settings</h2>
+      <p class="sub">Locked while a session is running — stop first to change.</p>
+      <div class="lock-note" id="lockNote">Session running — stop to edit settings.</div>
+
+      <fieldset id="settingsFieldset">
+        <div class="field">
+          <label for="groupSelect">Practice Group</label>
+          <select id="groupSelect">
+            <option value="letters">Letters (A–Z)</option>
+            <option value="numbers">Numbers (0–9)</option>
+            <option value="mixed">Mixed (A–Z, 0–9)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+
+        <div class="field" id="customField" style="display:none;">
+          <label for="customInput">Custom Characters</label>
+          <input type="text" id="customInput" placeholder="e.g. KMRSAT" />
+        </div>
+
+        <div class="field">
+          <label for="groupSizeSelect">Characters per Group</label>
+          <select id="groupSizeSelect">
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="wpmRange">Character Speed (WPM)<span class="val" id="wpmVal">20</span></label>
+          <input type="range" id="wpmRange" min="5" max="40" step="1" value="20" />
+        </div>
+
+        <div class="field">
+          <label for="fwpmRange">Farnsworth Speed (WPM)<span class="val" id="fwpmVal">15</span></label>
+          <input type="range" id="fwpmRange" min="5" max="40" step="1" value="15" />
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="toneRange">Tone<span class="val" id="toneVal">600 Hz</span></label>
+            <input type="range" id="toneRange" min="300" max="1000" step="10" value="600" />
+          </div>
+          <div class="field">
+            <label for="volRange">Volume<span class="val" id="volVal">70%</span></label>
+            <input type="range" id="volRange" min="0" max="100" step="5" value="70" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="maxTimeRange">Max Time to Answer<span class="val" id="maxTimeVal">6.0 s</span></label>
+          <input type="range" id="maxTimeRange" min="1" max="20" step="0.5" value="6" />
+          <div class="check-row">
+            <input type="checkbox" id="unlimitedCheck" />
+            <label for="unlimitedCheck" style="margin:0; color: var(--text-dim);">Unlimited time (no buzzer)</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <button class="btn-secondary danger" id="resetStatsBtn" type="button">Reset Session Stats</button>
+    </section>
+
+    <section class="panel card" aria-label="Session statistics">
+      <h2>Statistics</h2>
+      <p class="sub">This session, since last reset.</p>
+
+      <div class="stat-tiles">
+        <div class="tile"><div class="v" id="stGroupsPlayed">0</div><div class="l">Groups Played</div></div>
+        <div class="tile"><div class="v" id="stGroupAcc">—</div><div class="l">Full-Group Accuracy</div></div>
+        <div class="tile"><div class="v" id="stCharAcc">—</div><div class="l">Character Accuracy</div></div>
+        <div class="tile"><div class="v" id="stCharsPlayed">0</div><div class="l">Characters Practiced</div></div>
+        <div class="tile"><div class="v" id="stAvgTime">—</div><div class="l">Avg Answer Time</div></div>
+        <div class="tile"><div class="v" id="stTimeouts">0</div><div class="l">Timeouts</div></div>
+      </div>
+
+      <table class="size-table" id="sizeTable">
+        <caption>Accuracy by Group Size</caption>
+        <thead>
+          <tr><th>Size</th><th>Groups</th><th>Group %</th><th>Char %</th></tr>
+        </thead>
+        <tbody id="sizeTableBody">
+          <tr><td colspan="4" class="empty-note">No groups played yet.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel card" aria-label="Drill panel">
+      <h2>Your Worst Characters</h2>
+      <p class="sub">The 5 characters missed most often this session.</p>
+      <div class="drilling-badge" id="drillingBadge">Drilling weak characters</div>
+
+      <ul class="drill-list" id="drillList">
+        <li class="empty-note">Play a session to find your weak characters.</li>
+      </ul>
+
+      <button class="btn-secondary" id="drillBtn" type="button" disabled>Drill These Characters</button>
+    </section>
+
+  </div>
+
+  <footer class="note">HamShackTech CW Tools — practice often, don't quit.</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* =====================================================================
+     MORSE REFERENCE TABLE
+     International Morse, letters + digits only (matches the four
+     practice-group choices: Letters, Numbers, Mixed, Custom).
+     ===================================================================== */
+  var MORSE = {
+    A: ".-",    B: "-...",  C: "-.-.",  D: "-..",   E: ".",
+    F: "..-.",  G: "--.",   H: "....",  I: "..",    J: ".---",
+    K: "-.-",   L: ".-..",  M: "--",    N: "-.",    O: "---",
+    P: ".--.",  Q: "--.-",  R: ".-.",   S: "...",   T: "-",
+    U: "..-",   V: "...-",  W: ".--",   X: "-..-",  Y: "-.--",
+    Z: "--..",
+    "0": "-----", "1": ".----", "2": "..---", "3": "...--", "4": "....-",
+    "5": ".....", "6": "-....", "7": "--...", "8": "---..", "9": "----."
+  };
+  var ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  var DIGITS = "0123456789".split("");
+
+  var REVEAL_PAUSE_MS = 1300;      // how long the answer stays revealed before the next group
+  var TIMEOUT_EXTRA_PAUSE_MS = 400; // a bit more breathing room after a buzzer
+  var INTER_GROUP_PAUSE_MS = 700;   // quiet gap before the next group starts sending
+  var STORAGE_KEY = "hct-settings-v1";
+  var DRILL_REPS = 5;     // each weak character is sent this many times before the drill moves on to the next one
+  var DRILL_GAP_MS = 700; // quiet gap between drill repetitions
+
+  /* =====================================================================
+     STATE
+     ===================================================================== */
+  var state = {
+    settings: {
+      group: "letters",
+      custom: "",
+      groupSize: 3,
+      wpm: 20,
+      fwpm: 15,
+      toneHz: 600,
+      volume: 70,
+      maxTimeSec: 6,
+      unlimited: false
+    },
+    running: false,
+    drilling: false,
+    drillQueue: null,  // the (up to 5) weakest characters, fixed for this drill
+    drillPos: 0,       // index into drillQueue currently being sent
+    drillReps: 0,      // how many of DRILL_REPS have played for drillQueue[drillPos] so far
+    roundToken: 0,             // bumped every new round; stale async callbacks compare against it and bail
+
+    audioCtx: null,
+    scheduledOscillators: [],  // oscillators for the in-flight round's audio, so it can be cut short (e.g. Drill button)
+
+    currentChars: [],   // the group actually sent this round
+    typed: [],          // what the user has typed so far this round
+    lastResults: null,  // per-character correctness from the last round
+    acceptingInput: false,
+    timerActive: false,
+    roundStartTs: 0,   // when the current group started (used for avg answer time if it's finished before timerStartTs is set)
+    timerStartTs: null, // when the Max Time to Answer countdown began (null until the group finishes sending)
+    answerResolver: null,
+
+    stats: freshStats()
+  };
+
+  function freshStats() {
+    return {
+      overall: {
+        groupsPlayed: 0, groupsCorrect: 0,
+        charsPlayed: 0, charsCorrect: 0,
+        timeouts: 0,
+        totalResponseMs: 0, responseCount: 0,
+        currentStreak: 0, bestStreak: 0
+      },
+      perSize: {},   // { 3: { groupsPlayed, groupsCorrect, charsPlayed, charsCorrect } }
+      perChar: {}    // { A: { played, correct } }
+    };
+  }
+
+  /* =====================================================================
+     DOM refs
+     ===================================================================== */
+  var $ = function (id) { return document.getElementById(id); };
+  var els = {
+    statusPill: $("statusPill"),
+    drillFlag: $("drillFlag"),
+    blanksRow: $("blanksRow"),
+    meterFill: $("meterFill"),
+    meterLabel: $("meterLabel"),
+    sessionBtn: $("sessionBtn"),
+    tapHint: $("tapHint"),
+    hiddenInput: $("hiddenInput"),
+
+    qsStreak: $("qsStreak"), qsBest: $("qsBest"), qsGroupAcc: $("qsGroupAcc"),
+    qsCharAcc: $("qsCharAcc"), qsAvg: $("qsAvg"), qsTimeouts: $("qsTimeouts"),
+
+    groupSelect: $("groupSelect"), customField: $("customField"), customInput: $("customInput"),
+    groupSizeSelect: $("groupSizeSelect"),
+    wpmRange: $("wpmRange"), wpmVal: $("wpmVal"),
+    fwpmRange: $("fwpmRange"), fwpmVal: $("fwpmVal"),
+    toneRange: $("toneRange"), toneVal: $("toneVal"),
+    volRange: $("volRange"), volVal: $("volVal"),
+    maxTimeRange: $("maxTimeRange"), maxTimeVal: $("maxTimeVal"),
+    unlimitedCheck: $("unlimitedCheck"),
+    settingsFieldset: $("settingsFieldset"),
+    lockNote: $("lockNote"),
+    resetStatsBtn: $("resetStatsBtn"),
+
+    stGroupsPlayed: $("stGroupsPlayed"), stGroupAcc: $("stGroupAcc"), stCharAcc: $("stCharAcc"),
+    stCharsPlayed: $("stCharsPlayed"), stAvgTime: $("stAvgTime"), stTimeouts: $("stTimeouts"),
+    sizeTableBody: $("sizeTableBody"),
+
+    drillList: $("drillList"), drillBtn: $("drillBtn"), drillingBadge: $("drillingBadge")
+  };
+
+  /* =====================================================================
+     SETTINGS: load / save / apply to UI
+     ===================================================================== */
+  function loadSettings() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var saved = JSON.parse(raw);
+        for (var k in saved) if (state.settings.hasOwnProperty(k)) state.settings[k] = saved[k];
+      }
+    } catch (e) { /* localStorage unavailable — fall back to defaults silently */ }
+  }
+  function saveSettings() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.settings)); } catch (e) { /* ignore */ }
+  }
+
+  function applySettingsToUI() {
+    var s = state.settings;
+    els.groupSelect.value = s.group;
+    els.customInput.value = s.custom;
+    els.customField.style.display = s.group === "custom" ? "" : "none";
+    els.groupSizeSelect.value = String(s.groupSize);
+    els.wpmRange.value = s.wpm; els.wpmVal.textContent = s.wpm;
+    els.fwpmRange.max = s.wpm; // Farnsworth can never exceed character speed
+    els.fwpmRange.value = Math.min(s.fwpm, s.wpm); els.fwpmVal.textContent = els.fwpmRange.value;
+    els.toneRange.value = s.toneHz; els.toneVal.textContent = s.toneHz + " Hz";
+    els.volRange.value = s.volume; els.volVal.textContent = s.volume + "%";
+    els.maxTimeRange.value = s.maxTimeSec; els.maxTimeVal.textContent = s.maxTimeSec.toFixed(1) + " s";
+    els.unlimitedCheck.checked = s.unlimited;
+    els.maxTimeRange.disabled = s.unlimited;
+  }
+
+  /* =====================================================================
+     MORSE TIMING (WPM + Farnsworth)
+     Standard reference word "PARIS" = 50 dit-units, which is why
+     ta = 1200 / WPM gives milliseconds per dit at a given speed.
+     Farnsworth keeps individual dits/dahs (and the space *inside* a
+     character) at the faster character speed (ta), but stretches the
+     space *between* characters/words to a slower unit (ts) so the
+     overall effective speed matches the Farnsworth WPM. This lets a
+     novice hear each letter at a "real" speed while getting extra
+     thinking time between letters.
+     ===================================================================== */
+  function computeTiming(wpm, fwpm) {
+    var ta = 1200 / wpm; // ms per dit at character speed
+    // Of the 50 units in "PARIS", 31 are dits/dahs/intra-character gaps
+    // (sent at ta) and 19 are inter-character + word spacing. Solve for
+    // the spacing unit ts that makes the whole word take 60000/fwpm ms.
+    var ts = ((60000 / fwpm) - (31 * ta)) / 19;
+    if (ts < ta) ts = ta; // never let spacing run faster than the characters themselves
+    return { ta: ta, ts: ts };
+  }
+
+  /* =====================================================================
+     AUDIO
+     ===================================================================== */
+  function ensureAudioCtx() {
+    if (!state.audioCtx) {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      state.audioCtx = new Ctx();
+    }
+    if (state.audioCtx.state === "suspended") state.audioCtx.resume();
+    return state.audioCtx;
+  }
+
+  // Schedule one tone burst with a short linear envelope so keying
+  // doesn't produce audible clicks (the same reason real keyers shape
+  // their rise/fall time).
+  function scheduleTone(ctx, when, durSec, freqHz, volumePercent) {
+    var osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.value = freqHz;
+    var gain = ctx.createGain();
+    var peak = (volumePercent / 100) * 0.35; // headroom so full volume isn't harsh
+    var edge = Math.min(0.005, durSec / 4);
+    gain.gain.setValueAtTime(0, when);
+    gain.gain.linearRampToValueAtTime(peak, when + edge);
+    gain.gain.setValueAtTime(peak, Math.max(when + edge, when + durSec - edge));
+    gain.gain.linearRampToValueAtTime(0, when + durSec);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(when);
+    osc.stop(when + durSec + 0.02);
+    state.scheduledOscillators.push(osc); // tracked so stopAllAudio() can cut this round short
+  }
+
+  // Immediately silences any tones still scheduled for the in-flight
+  // round. Used when a round is abandoned rather than played out — e.g.
+  // Drill These Characters cutting short whatever was already sending —
+  // so the old group's audio doesn't keep playing under the new one.
+  function stopAllAudio() {
+    state.scheduledOscillators.forEach(function (osc) {
+      try { osc.stop(); } catch (e) { /* already stopped */ }
+    });
+    state.scheduledOscillators = [];
+  }
+
+  // Plays a full character group and resolves once the audio (plus a
+  // small safety buffer) has actually finished playing.
+  function playMorseSequence(chars, settings) {
+    var ctx = ensureAudioCtx();
+    var t = computeTiming(settings.wpm, settings.fwpm);
+    var leadIn = 0.08;
+    var cursor = leadIn; // seconds, relative to "now"
+    var now = ctx.currentTime;
+    state.scheduledOscillators = []; // this round's tones only; the previous round's have already finished playing
+
+    chars.forEach(function (ch, idx) {
+      var code = MORSE[ch] || "";
+      for (var i = 0; i < code.length; i++) {
+        var durSec = (code[i] === "-" ? 3 * t.ta : t.ta) / 1000;
+        scheduleTone(ctx, now + cursor, durSec, settings.toneHz, settings.volume);
+        cursor += durSec;
+        if (i < code.length - 1) cursor += t.ta / 1000; // 1-unit gap inside a character
+      }
+      if (idx < chars.length - 1) cursor += (3 * t.ts) / 1000; // Farnsworth-stretched inter-character gap
+    });
+
+    var totalMs = cursor * 1000 + 120; // small safety buffer for the final envelope tail
+    return new Promise(function (resolve) { setTimeout(resolve, totalMs); });
+  }
+
+  // A short double-buzz, deliberately harsh and low-pitched so it never
+  // gets confused with the sidetone itself.
+  function playBuzzer() {
+    var ctx = ensureAudioCtx();
+    var now = ctx.currentTime + 0.02;
+    [0, 0.14].forEach(function (offset) {
+      var osc = ctx.createOscillator();
+      osc.type = "square";
+      osc.frequency.value = 180;
+      var gain = ctx.createGain();
+      var peak = (state.settings.volume / 100) * 0.28;
+      gain.gain.setValueAtTime(0, now + offset);
+      gain.gain.linearRampToValueAtTime(peak, now + offset + 0.01);
+      gain.gain.linearRampToValueAtTime(0, now + offset + 0.11);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now + offset);
+      osc.stop(now + offset + 0.12);
+    });
+  }
+
+  /* =====================================================================
+     CHARSET / RANDOM GROUP
+     ===================================================================== */
+  // Practice-group charset for a normal (non-drill) round. Drilling is a
+  // separate, non-interactive playback loop (see drillLoop() below) that
+  // never goes through runLoop(), so it has no charset/grading concept of
+  // its own to account for here.
+  function getCharset() {
+    var s = state.settings;
+    if (s.group === "letters") return ALPHA;
+    if (s.group === "numbers") return DIGITS;
+    if (s.group === "mixed") return ALPHA.concat(DIGITS);
+    // custom: unique, valid, uppercased characters from the free-text field
+    var seen = {};
+    var out = [];
+    (s.custom || "").toUpperCase().split("").forEach(function (c) {
+      if (MORSE[c] && !seen[c]) { seen[c] = true; out.push(c); }
+    });
+    return out;
+  }
+
+  function randomGroup(n, charset) {
+    var out = [];
+    for (var i = 0; i < n; i++) out.push(charset[Math.floor(Math.random() * charset.length)]);
+    return out;
+  }
+
+  /* =====================================================================
+     RENDERING
+     ===================================================================== */
+  function setStatus(mode, label) {
+    els.statusPill.setAttribute("data-mode", mode);
+    els.statusPill.textContent = label;
+  }
+
+  function makeCaret() {
+    var caret = document.createElement("span");
+    caret.className = "blank-caret";
+    return caret;
+  }
+
+  // Creates empty blank cells with no caret. Callers that are about to
+  // accept typing immediately follow this with renderBlanksTyping(), which
+  // paints the caret based on live state instead of a flag passed in here.
+  function renderBlanksIdle(n) {
+    els.blanksRow.innerHTML = "";
+    for (var i = 0; i < n; i++) {
+      var d = document.createElement("div");
+      d.className = "blank";
+      els.blanksRow.appendChild(d);
+    }
+  }
+
+  function renderBlanksTyping() {
+    var cells = els.blanksRow.children;
+    var nextIndex = state.typed.length; // the blank the caret belongs in next
+    for (var i = 0; i < cells.length; i++) {
+      var cell = cells[i];
+      cell.innerHTML = "";
+      if (i < nextIndex) {
+        cell.className = "blank filled";
+        cell.textContent = state.typed[i];
+      } else if (i === nextIndex && state.acceptingInput) {
+        cell.className = "blank active";
+        cell.appendChild(makeCaret());
+      } else {
+        cell.className = "blank";
+      }
+    }
+  }
+
+  function renderBlanksReveal(results) {
+    var cells = els.blanksRow.children;
+    for (var i = 0; i < cells.length; i++) {
+      var r = results[i];
+      var cell = cells[i];
+      cell.textContent = r.actual;
+      cell.className = "blank " + (r.correct ? "correct" : "incorrect");
+    }
+  }
+
+  function updateMeter(fraction, labelText, low) {
+    els.meterFill.style.transform = "scaleX(" + Math.max(0, Math.min(1, fraction)) + ")";
+    els.meterFill.classList.toggle("low", !!low);
+    els.meterLabel.textContent = labelText || " ";
+  }
+
+  function fmtPct(correct, total) {
+    if (!total) return "—";
+    return Math.round((correct / total) * 100) + "%";
+  }
+
+  function renderQuickStats() {
+    var o = state.stats.overall;
+    els.qsStreak.textContent = o.currentStreak;
+    els.qsBest.textContent = o.bestStreak;
+    els.qsGroupAcc.textContent = fmtPct(o.groupsCorrect, o.groupsPlayed);
+    els.qsCharAcc.textContent = fmtPct(o.charsCorrect, o.charsPlayed);
+    els.qsAvg.textContent = o.responseCount ? Math.round(o.totalResponseMs / o.responseCount) : "—";
+    els.qsTimeouts.textContent = o.timeouts;
+  }
+
+  function renderStatsPanel() {
+    var o = state.stats.overall;
+    els.stGroupsPlayed.textContent = o.groupsPlayed;
+    els.stGroupAcc.textContent = fmtPct(o.groupsCorrect, o.groupsPlayed);
+    els.stCharAcc.textContent = fmtPct(o.charsCorrect, o.charsPlayed);
+    els.stCharsPlayed.textContent = o.charsPlayed;
+    els.stAvgTime.textContent = o.responseCount ? Math.round(o.totalResponseMs / o.responseCount) + " ms" : "—";
+    els.stTimeouts.textContent = o.timeouts;
+
+    var sizes = Object.keys(state.stats.perSize).map(Number).sort();
+    if (!sizes.length) {
+      els.sizeTableBody.innerHTML = '<tr><td colspan="4" class="empty-note">No groups played yet.</td></tr>';
+    } else {
+      els.sizeTableBody.innerHTML = sizes.map(function (n) {
+        var s = state.stats.perSize[n];
+        return "<tr><td>" + n + "</td><td>" + s.groupsPlayed + "</td><td>" +
+          fmtPct(s.groupsCorrect, s.groupsPlayed) + "</td><td>" +
+          fmtPct(s.charsCorrect, s.charsPlayed) + "</td></tr>";
+      }).join("");
+    }
+  }
+
+  function computeWorst(n) {
+    var entries = [];
+    for (var ch in state.stats.perChar) {
+      var s = state.stats.perChar[ch];
+      if (s.played > 0) entries.push([ch, s]);
+    }
+    entries.sort(function (a, b) {
+      var missesA = a[1].played - a[1].correct, missesB = b[1].played - b[1].correct;
+      if (missesB !== missesA) return missesB - missesA;
+      var accA = a[1].correct / a[1].played, accB = b[1].correct / b[1].played;
+      return accA - accB;
+    });
+    return entries.slice(0, n);
+  }
+
+  function renderDrillPanel() {
+    var worst = computeWorst(5);
+    var anyMisses = worst.some(function (e) { return e[1].played - e[1].correct > 0; });
+
+    if (!worst.length) {
+      els.drillList.innerHTML = '<li class="empty-note">Play a session to find your weak characters.</li>';
+    } else {
+      els.drillList.innerHTML = worst.map(function (e) {
+        var ch = e[0], s = e[1];
+        var acc = Math.round((s.correct / s.played) * 100);
+        return '<li class="drill-row">' +
+          '<span class="drill-char">' + ch + "</span>" +
+          '<span class="drill-bar-track"><span class="drill-bar-fill" style="width:' + acc + '%;"></span></span>' +
+          '<span class="drill-pct">' + acc + "% (" + s.correct + "/" + s.played + ")</span>" +
+          "</li>";
+      }).join("");
+    }
+
+    els.drillBtn.disabled = !anyMisses;
+    els.drillBtn.textContent = state.drilling ? "Stop Drill" : "Drill These Characters";
+  }
+
+  function renderAll() {
+    renderQuickStats();
+    renderStatsPanel();
+    renderDrillPanel();
+  }
+
+  /* =====================================================================
+     GAME LOOP
+     ===================================================================== */
+  function getCharStat(ch) {
+    if (!state.stats.perChar[ch]) state.stats.perChar[ch] = { played: 0, correct: 0 };
+    return state.stats.perChar[ch];
+  }
+  function getSizeStat(n) {
+    if (!state.stats.perSize[n]) state.stats.perSize[n] = { groupsPlayed: 0, groupsCorrect: 0, charsPlayed: 0, charsCorrect: 0 };
+    return state.stats.perSize[n];
+  }
+
+  // Starts the Max-Time-to-Answer countdown. Only called once the group has
+  // actually finished playing (or immediately, in Unlimited mode's display
+  // update) — never while audio is still sending, since the clock is meant
+  // to measure "time to answer after hearing it," not typing speed.
+  function startTimer(maxTimeSec) {
+    state.timerActive = true;
+    state.timerStartTs = performance.now();
+    requestAnimationFrame(function tick() {
+      if (!state.timerActive) return;
+      var elapsedMs = performance.now() - state.timerStartTs;
+      var totalMs = maxTimeSec * 1000;
+      var remainingMs = Math.max(0, totalMs - elapsedMs);
+      var frac = remainingMs / totalMs;
+      updateMeter(frac, (remainingMs / 1000).toFixed(1) + " s", frac < 0.3);
+      if (remainingMs <= 0) { finishAnswer(true); return; }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function finishAnswer(timedOut) {
+    if (!state.acceptingInput) return; // guard against double-resolve
+    state.acceptingInput = false;
+    state.timerActive = false;
+    var resolve = state.answerResolver;
+    state.answerResolver = null;
+    if (resolve) resolve(timedOut);
+  }
+
+  function evaluateGroup(timedOut) {
+    var results = [];
+    var allCorrect = !timedOut;
+    var n = state.settings.groupSize;
+    for (var i = 0; i < n; i++) {
+      var actual = state.currentChars[i];
+      var typedCh = state.typed[i] || null;
+      var correct = typedCh === actual;
+      if (!correct) allCorrect = false;
+      results.push({ actual: actual, typedCh: typedCh, correct: correct });
+
+      var cs = getCharStat(actual);
+      cs.played++;
+      if (correct) cs.correct++;
+    }
+    state.lastResults = results;
+
+    var o = state.stats.overall;
+    o.groupsPlayed++;
+    if (allCorrect) o.groupsCorrect++;
+    if (timedOut) o.timeouts++;
+    // "Answer time" is measured from when the group finished sending
+    // (timerStartTs) where possible — that's the fair reaction-time
+    // window the Max Time to Answer setting governs. If the group was
+    // fully typed before the audio even finished (a fast typist answering
+    // ahead of playback), timerStartTs was never set, so fall back to
+    // measuring from the moment the round began.
+    var referenceTs = state.timerStartTs != null ? state.timerStartTs : state.roundStartTs;
+    var responseMs = Math.max(0, performance.now() - referenceTs);
+    o.totalResponseMs += responseMs;
+    o.responseCount++;
+    if (allCorrect) { o.currentStreak++; o.bestStreak = Math.max(o.bestStreak, o.currentStreak); }
+    else o.currentStreak = 0;
+
+    var sz = getSizeStat(n);
+    sz.groupsPlayed++;
+    if (allCorrect) sz.groupsCorrect++;
+    results.forEach(function (r) {
+      sz.charsPlayed++; if (r.correct) sz.charsCorrect++;
+      o.charsPlayed++; if (r.correct) o.charsCorrect++;
+    });
+
+    return { allCorrect: allCorrect, results: results };
+  }
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  function runLoop() {
+    if (!state.running) return;
+    var charset = getCharset();
+
+    if (!charset.length) {
+      setStatus("idle", "Add custom characters to continue");
+      stopSession();
+      return;
+    }
+
+    // Bumped on every round so stale async callbacks from an abandoned
+    // round (e.g. one cut short by stopSession()) can recognize they've
+    // been superseded and quietly do nothing instead of scoring/revealing
+    // a round nobody is playing anymore.
+    var myToken = ++state.roundToken;
+
+    state.currentChars = randomGroup(state.settings.groupSize, charset);
+    renderBlanksIdle(state.settings.groupSize);
+    updateMeter(1, " ", false);
+    setStatus("sending", "Sending\u2026");
+    updateDrillFlag();
+
+    // Input is accepted from the moment the group starts \u2014 matching the
+    // caret that appears in the first blank right away \u2014 rather than only
+    // once the audio finishes. Typing during playback used to be silently
+    // dropped, which is why a few keystrokes right after Start Session
+    // looked like they were being ignored; now they are buffered into the
+    // blanks like any other keystroke, and simply are not scored until
+    // there is something to score against.
+    state.acceptingInput = true;
+    state.typed = [];
+    state.roundStartTs = performance.now();
+    state.timerStartTs = null; // set later by startTimer(), once sending finishes
+    els.hiddenInput.value = "";
+    renderBlanksTyping();
+
+    var roundDone = new Promise(function (resolve) { state.answerResolver = resolve; });
+
+    var audioDone = playMorseSequence(state.currentChars, state.settings).then(function () {
+      if (state.roundToken !== myToken) return; // this round was abandoned mid-flight
+      // If the group was already fully typed (or the session stopped)
+      // before the audio finished, do not reopen the answer clock.
+      if (!state.running || !state.acceptingInput) return;
+      setStatus("copy", "Copy now");
+      if (state.settings.unlimited) updateMeter(1, "Unlimited time", false);
+      else startTimer(state.settings.maxTimeSec);
+    });
+
+    roundDone.then(function (timedOut) {
+      if (state.roundToken !== myToken) return null; // abandoned \u2014 e.g. Drill started a fresh round instead
+      if (!state.running) return null;
+      var outcome = evaluateGroup(timedOut);
+      if (timedOut) playBuzzer();
+      setStatus(timedOut ? "timeout" : (outcome.allCorrect ? "correct" : "miss"),
+        timedOut ? "\u23f1 Time's up" : (outcome.allCorrect ? "\u2713 Correct" : "\u2717 Missed"));
+      renderBlanksReveal(outcome.results);
+      updateMeter(0, " ", false);
+      renderAll();
+      saveSettings();
+      // Wait for this group's audio to actually finish playing (in case
+      // the answer completed early) before the next round is allowed to
+      // schedule any tones of its own \u2014 otherwise two groups' audio
+      // could overlap.
+      return audioDone.then(function () {
+        if (state.roundToken !== myToken) return;
+        return sleep(REVEAL_PAUSE_MS + (timedOut ? TIMEOUT_EXTRA_PAUSE_MS : 0));
+      });
+    }).then(function () {
+      if (state.roundToken !== myToken) return;
+      if (!state.running) return;
+      return sleep(INTER_GROUP_PAUSE_MS);
+    }).then(function () {
+      if (state.roundToken !== myToken) return;
+      runLoop();
+    });
+  }
+
+  function lockSettings(locked) {
+    els.settingsFieldset.disabled = locked;
+    els.lockNote.classList.toggle("show", locked);
+  }
+
+  function startSession() {
+    if (state.drilling) endDrill(); // a normal practice session and a drill are mutually exclusive
+    ensureAudioCtx();
+    state.running = true;
+    els.sessionBtn.textContent = "Stop Session";
+    els.sessionBtn.classList.add("running");
+    els.tapHint.style.display = "none";
+    lockSettings(true);
+    els.hiddenInput.focus({ preventScroll: true }); // don't let the browser scroll to "reveal" the offscreen input
+    runLoop();
+  }
+
+  function stopSession() {
+    state.running = false;
+    if (state.acceptingInput) finishAnswer(false); // unblock a pending answer without scoring it
+    state.timerActive = false;
+    stopAllAudio();
+    els.sessionBtn.textContent = "Start Session";
+    els.sessionBtn.classList.remove("running");
+    els.tapHint.style.display = "";
+    lockSettings(false);
+    setStatus("idle", "Idle");
+    updateMeter(0, " ", false);
+    renderBlanksIdle(state.settings.groupSize);
+  }
+
+  // Shows which single character is sending right now (e.g. "Drilling J")
+  // rather than the whole weak-character list — the list is still shown,
+  // for reference, in the Drill panel's badge further down the page.
+  function updateDrillFlag() {
+    if (state.drilling && state.drillQueue && state.drillQueue.length) {
+      els.drillFlag.textContent = "Drilling " + state.drillQueue[state.drillPos];
+      els.drillFlag.style.display = "";
+    } else {
+      els.drillFlag.style.display = "none";
+    }
+  }
+
+  // Counts one more repetition of the character currently being drilled;
+  // after DRILL_REPS (5) reps, moves on to the next weak character and
+  // wraps back to the first once the queue is exhausted.
+  function advanceDrill() {
+    state.drillReps++;
+    if (state.drillReps >= DRILL_REPS) {
+      state.drillReps = 0;
+      state.drillPos = (state.drillPos + 1) % state.drillQueue.length;
+    }
+  }
+
+  // The drill is pure listening practice, matching the ICR Trainer: it
+  // just plays each of your weakest characters DRILL_REPS times in a row
+  // and moves on, on a loop, until Stop Drill is pressed. It intentionally
+  // does NOT ask you to type an answer \u2014 there's no hidden-input focus
+  // to manage (which is what was causing the practice box to steal focus
+  // and jump the page), and nothing here touches session/character stats,
+  // so drilling can never make your accuracy numbers look better than
+  // your actual practice sessions earned.
+  function drillLoop() {
+    if (!state.drilling) return;
+    var ch = state.drillQueue[state.drillPos];
+    updateDrillFlag();
+    playMorseSequence([ch], state.settings).then(function () {
+      if (!state.drilling) return;
+      advanceDrill();
+      return sleep(DRILL_GAP_MS);
+    }).then(function () {
+      if (!state.drilling) return;
+      drillLoop();
+    });
+  }
+
+  function startDrill() {
+    var worst = computeWorst(5).map(function (e) { return e[0]; });
+    if (!worst.length) return;
+    if (state.running) stopSession(); // a drill and a practice session are mutually exclusive
+    ensureAudioCtx(); // safe here \u2014 this call is itself inside a click handler (a user gesture)
+    state.drillQueue = worst;
+    state.drillPos = 0;
+    state.drillReps = 0;
+    state.drilling = true;
+    els.drillingBadge.classList.add("show");
+    els.drillingBadge.textContent = "Drilling: " + worst.join(" ");
+    renderDrillPanel();
+    renderBlanksIdle(1); // no answer is expected during a drill, so just show it's not the group-practice display
+    drillLoop();
+  }
+
+  function endDrill() {
+    state.drilling = false;
+    stopAllAudio(); // cut off whatever character is mid-play
+    state.drillQueue = null;
+    state.drillPos = 0;
+    state.drillReps = 0;
+    els.drillingBadge.classList.remove("show");
+    updateDrillFlag();
+    renderDrillPanel();
+    renderBlanksIdle(state.settings.groupSize);
+  }
+
+  function toggleDrill() {
+    if (state.drilling) {
+      endDrill();
+    } else {
+      startDrill();
+    }
+  }
+
+
+  /* =====================================================================
+     EVENT WIRING
+     ===================================================================== */
+
+  // Clicking a button normally moves keyboard focus to that button, which
+  // blurs the hidden input and requires focusing it again afterward —
+  // that extra focus() call is what was causing the whole page to jump
+  // back to the practice module when, say, Drill These Characters was
+  // clicked from further down the page. Blocking the default focus step
+  // on mousedown (a standard trick, e.g. used by toolbar buttons in rich
+  // text editors) lets these buttons' click handlers still run normally
+  // while leaving the hidden input focused throughout — so nothing ever
+  // needs to re-focus or scroll.
+  function preserveInputFocus(el) {
+    el.addEventListener("mousedown", function (e) { e.preventDefault(); });
+  }
+  preserveInputFocus(els.sessionBtn);
+  preserveInputFocus(els.drillBtn);
+  preserveInputFocus(els.resetStatsBtn);
+
+  els.sessionBtn.addEventListener("click", function () {
+    if (state.running) stopSession(); else startSession();
+  });
+
+  els.blanksRow.addEventListener("click", function () { els.hiddenInput.focus({ preventScroll: true }); });
+  els.hiddenInput.addEventListener("blur", function () {
+    // Still needed as a fallback for focus loss the buttons above don't
+    // cover (switching tabs/apps and back, etc.) — rare now, but harmless.
+    if (state.running) setTimeout(function () { els.hiddenInput.focus({ preventScroll: true }); }, 50);
+  });
+
+  els.hiddenInput.addEventListener("input", function () {
+    if (!state.acceptingInput) { els.hiddenInput.value = ""; return; }
+    var v = els.hiddenInput.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    v = v.slice(0, state.settings.groupSize);
+    els.hiddenInput.value = v;
+    state.typed = v.split("");
+    renderBlanksTyping();
+    if (state.typed.length === state.settings.groupSize) finishAnswer(false);
+  });
+
+  els.hiddenInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && state.acceptingInput) finishAnswer(false);
+  });
+
+  els.groupSelect.addEventListener("change", function () {
+    state.settings.group = els.groupSelect.value;
+    els.customField.style.display = state.settings.group === "custom" ? "" : "none";
+    saveSettings();
+  });
+  els.customInput.addEventListener("input", function () {
+    state.settings.custom = els.customInput.value;
+    saveSettings();
+  });
+  els.groupSizeSelect.addEventListener("change", function () {
+    state.settings.groupSize = parseInt(els.groupSizeSelect.value, 10);
+    renderBlanksIdle(state.settings.groupSize);
+    saveSettings();
+  });
+  els.wpmRange.addEventListener("input", function () {
+    state.settings.wpm = parseInt(els.wpmRange.value, 10);
+    els.wpmVal.textContent = state.settings.wpm;
+    // Farnsworth speed can never exceed character speed
+    els.fwpmRange.max = state.settings.wpm;
+    if (state.settings.fwpm > state.settings.wpm) {
+      state.settings.fwpm = state.settings.wpm;
+      els.fwpmRange.value = state.settings.fwpm;
+      els.fwpmVal.textContent = state.settings.fwpm;
+    }
+    saveSettings();
+  });
+  els.fwpmRange.addEventListener("input", function () {
+    state.settings.fwpm = parseInt(els.fwpmRange.value, 10);
+    els.fwpmVal.textContent = state.settings.fwpm;
+    saveSettings();
+  });
+  els.toneRange.addEventListener("input", function () {
+    state.settings.toneHz = parseInt(els.toneRange.value, 10);
+    els.toneVal.textContent = state.settings.toneHz + " Hz";
+    saveSettings();
+  });
+  els.volRange.addEventListener("input", function () {
+    state.settings.volume = parseInt(els.volRange.value, 10);
+    els.volVal.textContent = state.settings.volume + "%";
+    saveSettings();
+  });
+  els.maxTimeRange.addEventListener("input", function () {
+    state.settings.maxTimeSec = parseFloat(els.maxTimeRange.value);
+    els.maxTimeVal.textContent = state.settings.maxTimeSec.toFixed(1) + " s";
+    saveSettings();
+  });
+  els.unlimitedCheck.addEventListener("change", function () {
+    state.settings.unlimited = els.unlimitedCheck.checked;
+    els.maxTimeRange.disabled = state.settings.unlimited;
+    saveSettings();
+  });
+
+  els.resetStatsBtn.addEventListener("click", function () {
+    state.stats = freshStats();
+    renderAll();
+  });
+
+  els.drillBtn.addEventListener("click", toggleDrill);
+
+  /* =====================================================================
+     INIT
+     ===================================================================== */
+  loadSettings();
+  applySettingsToUI();
+  renderBlanksIdle(state.settings.groupSize);
+  renderAll();
+})();
+</script>
+
+</body>
+</html>
