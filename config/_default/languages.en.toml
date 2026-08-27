@@ -9,3 +9,9 @@ title = "HamShackTech"
   rtl = false
   dateFormat = "2 January 2006"
   description = "HamShackTech shows amateur radio operators how to bring modern technology into the shack — remote and networked operation, radio mods, shack automation, CW and operating skills, logging and contesting, and AI in the shack."
+  logo = "hamshacktech_logo.png"
+
+[author]
+  name = "HamShackTech"                       # shows as the big centered heading (falls back to site title if left out)
+  image = "profile.png"                       # resolved relative to assets/, same as the header logo — must live there too
+  headline = "Amateur radio in a tech world"  # subtitle line under the name
