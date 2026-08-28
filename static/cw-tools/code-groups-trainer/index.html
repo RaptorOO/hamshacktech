@@ -116,6 +116,35 @@
   a { color: var(--accent2); }
 
   /* ---------------------------------------------------------------------
+     Home link — fixed to the viewport's top-left corner (not just the top
+     of .wrap) so it stays reachable no matter how far the page scrolls.
+     Small, quiet, chassis-styled square button matching the ICR Trainer's
+     equivalent element, since this app has no other nav chrome of its own.
+     --------------------------------------------------------------------- */
+  .home-link {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    z-index: 20;
+  }
+  .home-link:hover, .home-link:focus-visible {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .home-link svg { width: 18px; height: 18px; display: block; }
+
+  /* ---------------------------------------------------------------------
      Masthead
      --------------------------------------------------------------------- */
   .masthead {
@@ -413,7 +442,11 @@
   }
   input[type="range"] {
     width: 100%;
-    accent-color: var(--accent2);
+    /* Was --accent2 (emerald) — per Tim's review, the round slider handles
+       now match the same lime green used everywhere else (the Start
+       Session button, the ICR Trainer's heading/button/sliders), so there's
+       one consistent accent green rather than two. */
+    accent-color: var(--accent);
   }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .check-row {
@@ -556,9 +589,19 @@
     font-size: 0.8rem;
     margin-top: 26px;
   }
+  .version-tag {
+    margin-top: 4px;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
 </style>
 </head>
 <body>
+<a class="home-link" href="/" aria-label="Back to HamShackTech" title="Back to HamShackTech">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+</a>
 <div class="wrap">
 
   <div class="masthead">
@@ -714,7 +757,7 @@
 
   </div>
 
-  <footer class="note">HamShackTech CW Tools — practice often, don't quit.</footer>
+  <footer class="note">HamShackTech CW Tools — practice often, don't quit.<div class="version-tag">Version 1</div></footer>
 </div>
 
 <script>
