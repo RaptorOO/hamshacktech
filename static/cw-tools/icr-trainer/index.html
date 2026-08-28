@@ -13,14 +13,17 @@
      designed — but the palette now pulls from the site's "avocado" Blowfish
      colorScheme instead of the original amber/brass mix, so this reads as
      the same brand as the rest of hamshacktech.com and as the Code Groups
-     Trainer app. Variable NAMES are left as-is (--amber, --brass, etc.) to
-     keep this diff readable against the original — only the values moved
-     to avocado's lime/emerald/stone numbers. The values below are the
-     exact same hex constants the Code Groups Trainer's dark theme uses
-     (static/cw-tools/code-groups-trainer/index.html), so both trainer
-     apps now share one literal palette rather than two similar-looking
-     ones. "Correct"/"wrong" feedback colors are left untouched so a right
-     or missed answer doesn't blend into the new green-heavy accents. */
+     Trainer app. Variable NAMES are mostly left as-is (--amber, etc.) to
+     keep this diff readable against the original — the values moved to
+     avocado's lime/stone numbers, and are the exact same hex constants the
+     Code Groups Trainer's dark theme uses (static/cw-tools/code-groups-
+     trainer/index.html), so both trainer apps share one literal palette
+     rather than two similar-looking ones. The former emerald "--brass"
+     family has been removed entirely — the Start Session button and slider
+     thumbs now use --amber (the same lime as the "ICR" heading) instead,
+     per Tim's review feedback, so there's a single accent green across the
+     whole app rather than two. "Correct"/"wrong" feedback colors are left
+     untouched so a right or missed answer doesn't blend into the accent. */
   :root{
     --bg-chassis: #100e0c;        /* avocado neutral, was a blue-black chassis tone */
     --bg-chassis-2: #292524;      /* avocado neutral-800 */
@@ -38,9 +41,6 @@
     --text: #fafaf9;              /* avocado neutral-50 */
     --text-muted: #a8a29e;        /* avocado neutral-400 */
     --text-dim: #78716c;          /* avocado neutral-500 */
-    --brass: #34d399;             /* avocado emerald-400 (was brass #C89B5C) */
-    --brass-light: #6ee7b7;       /* avocado emerald-300 */
-    --brass-dark: #047857;        /* avocado emerald-700 */
 
     --font-display: 'Oswald', sans-serif;
     --font-body: 'Inter', sans-serif;
@@ -257,9 +257,13 @@
   button.btn:hover{ border-color: var(--amber); }
   button.btn:active{ transform: translateY(1px); }
   button.btn.primary{
-    background: linear-gradient(180deg, var(--brass-light), var(--brass));
+    /* Same lime as the "ICR" heading text (var(--amber)) and the Code
+       Groups Trainer's own Start Session button, per Tim's request —
+       was an emerald "brass" gradient, now a flat lime fill with a
+       slightly darker same-hue border for definition. */
+    background: var(--amber);
     color: #14200a; /* shared button-ink value w/ Code Groups Trainer */
-    border-color: var(--brass-dark);
+    border-color: var(--amber-dim);
   }
   button.btn.primary:hover{ filter: brightness(1.06); }
   button.btn.ghost{
@@ -314,20 +318,23 @@
     border-radius: 2px;
     outline: none;
   }
+  /* Slider thumbs match the same lime accent as the button above and the
+     "ICR" heading — a radial highlight from --amber down to --amber-dim
+     keeps a bit of roundness/depth without leaving the lime hue. */
   input[type=range]::-webkit-slider-thumb{
     -webkit-appearance: none;
     width: 18px; height: 18px;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, var(--brass-light), var(--brass-dark));
-    border: 1px solid var(--brass-dark);
+    background: radial-gradient(circle at 35% 30%, var(--amber), var(--amber-dim));
+    border: 1px solid var(--amber-dim);
     cursor: pointer;
     margin-top: -7px;
   }
   input[type=range]::-moz-range-thumb{
     width: 18px; height: 18px;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, var(--brass-light), var(--brass-dark));
-    border: 1px solid var(--brass-dark);
+    background: radial-gradient(circle at 35% 30%, var(--amber), var(--amber-dim));
+    border: 1px solid var(--amber-dim);
     cursor: pointer;
   }
 
