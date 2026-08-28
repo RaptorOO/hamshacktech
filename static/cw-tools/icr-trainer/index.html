@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>HamShackTech — ICR Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* ===================== DESIGN TOKENS ===================== */
+  /* Panel-meter chassis aesthetic, kept single-theme (dark) as originally
+     designed — but the palette now pulls from the site's "avocado" Blowfish
+     colorScheme instead of the original amber/brass mix, so this reads as
+     the same brand as the rest of hamshacktech.com and as the Code Groups
+     Trainer app. Variable NAMES are mostly left as-is (--amber, etc.) to
+     keep this diff readable against the original — the values moved to
+     avocado's lime/stone numbers, and are the exact same hex constants the
+     Code Groups Trainer's dark theme uses (static/cw-tools/code-groups-
+     trainer/index.html), so both trainer apps share one literal palette
+     rather than two similar-looking ones. The former emerald "--brass"
+     family has been removed entirely — the Start Session button and slider
+     thumbs now use --amber (the same lime as the "ICR" heading) instead,
+     per Tim's review feedback, so there's a single accent green across the
+     whole app rather than two. "Correct"/"wrong" feedback colors are left
+     untouched so a right or missed answer doesn't blend into the accent. */
+  :root{
+    --bg-chassis: #100e0c;        /* avocado neutral, was a blue-black chassis tone */
+    --bg-chassis-2: #292524;      /* avocado neutral-800 */
+    --panel: #1c1917;             /* avocado neutral-900 */
+    --panel-raised: #292524;      /* avocado neutral-800 */
+    --border: #44403c;            /* avocado neutral-700 */
+    --border-light: #57534e;      /* avocado neutral-600 */
+    --amber: #a3e635;             /* avocado lime-400 (was amber #FFB100) */
+    --amber-soft: rgba(163,230,53,0.35);
+    --amber-dim: #3f6212;         /* avocado lime-800 */
+    --green: #6FCF6F;
+    --green-soft: rgba(111,207,111,0.18);
+    --red: #E2574C;
+    --red-soft: rgba(226,87,76,0.18);
+    --text: #fafaf9;              /* avocado neutral-50 */
+    --text-muted: #a8a29e;        /* avocado neutral-400 */
+    --text-dim: #78716c;          /* avocado neutral-500 */
+
+    --font-display: 'Oswald', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at 50% -10%, #292524 0%, var(--bg-chassis) 55%),
+      var(--bg-chassis);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+  }
+
+  .wrap{ max-width: 640px; margin: 0 auto; }
+
+  /* ===================== NAMEPLATE HEADER ===================== */
+  .nameplate{
+    text-align:center;
+    margin-bottom: 22px;
+  }
+  .nameplate .eyebrow{
+    margin: 0 0 6px;
+    font-size: 11.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+  }
+  .nameplate h1{
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: clamp(22px, 6vw, 30px);
+    margin: 0;
+    color: var(--text);
+  }
+  .nameplate h1 span{ color: var(--amber); }
+  /* Site mascot — same alien-with-headphones mark used in the main
+     hamshacktech.com header and the Code Groups Trainer's masthead,
+     served from /apple-touch-icon.png (a pre-existing square, transparent
+     crop of that artwork) so no new image asset is needed here. */
+  .nameplate .mascot{
+    width: 44px;
+    height: 44px;
+    margin-bottom: 8px;
+  }
+
+  /* ===================== PANEL / CARD BASE ===================== */
+  .panel{
+    background: linear-gradient(180deg, var(--panel-raised), var(--panel));
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 20px rgba(0,0,0,0.25);
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .panel-label{
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0 0 12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .panel-label::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background: var(--border);
+  }
+
+  /* ===================== STATUS LED STRIP ===================== */
+  .meter-strip{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  @media (min-width: 480px){
+    .meter-strip{ grid-template-columns: repeat(6, 1fr); }
+  }
+  .meter{
+    background: #140f0d;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 6px;
+    text-align:center;
+  }
+  .meter .val{
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--amber);
+    line-height:1.1;
+  }
+  .meter .lbl{
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+
+  /* ===================== THE KEY (signature control) ===================== */
+  .key-stage{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 10px 0 6px;
+  }
+  .key-status{
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text-dim);
+    text-align: center;
+    min-height: 26px;
+    padding: 0 8px;
+    transition: color 0.15s ease, text-shadow 0.15s ease;
+  }
+  /* Armed = character has finished playing, waiting on the user to hit space */
+  .key-status.armed{
+    color: var(--amber);
+    text-shadow: 0 0 16px var(--amber-soft);
+  }
+
+  .reaction-readout{
+    font-family: var(--font-mono);
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--text-dim);
+    margin-top: 10px;
+    min-height: 38px;
+    letter-spacing: 0.02em;
+  }
+  .reaction-readout.lit{ color: var(--amber); }
+
+  /* ===================== ANSWER ENTRY ===================== */
+  .answer-row{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap: 10px;
+    margin-top: 6px;
+    min-height: 62px;
+  }
+  .answer-input{
+    width: 64px;
+    height: 64px;
+    text-align:center;
+    font-family: var(--font-mono);
+    font-size: 30px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: #140f0d;
+    border: 2px solid var(--amber);
+    border-radius: 8px;
+    color: var(--text);
+    caret-color: var(--amber);
+    transition: border-color 0.15s ease, opacity 0.15s ease;
+  }
+  .answer-input:focus{ outline: none; box-shadow: 0 0 0 3px var(--amber-soft); }
+  /* Shown while a character is playing / before Copy is pressed — the field
+     stays mounted and focused the whole session (see JS notes) so the iOS
+     keyboard doesn't repeatedly open/close between trials, but it's dimmed
+     to signal "not your turn yet" until the key is pressed. */
+  .answer-input.waiting{
+    border-color: var(--border-light);
+    opacity: 0.45;
+  }
+
+  .feedback{
+    text-align:center;
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    min-height: 30px;
+    margin-top: 10px;
+  }
+  .feedback.correct{ color: var(--green); }
+  .feedback.wrong{ color: var(--red); }
+
+  .start-row{ text-align:center; margin-top: 4px; }
+
+  /* ===================== BUTTONS (general) ===================== */
+  button.btn{
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 7px;
+    border: 1px solid var(--border-light);
+    background: var(--panel-raised);
+    color: var(--text);
+    cursor: pointer;
+  }
+  button.btn:hover{ border-color: var(--amber); }
+  button.btn:active{ transform: translateY(1px); }
+  button.btn.primary{
+    /* Same lime as the "ICR" heading text (var(--amber)) and the Code
+       Groups Trainer's own Start Session button, per Tim's request —
+       was an emerald "brass" gradient, now a flat lime fill with a
+       slightly darker same-hue border for definition. */
+    background: var(--amber);
+    color: #14200a; /* shared button-ink value w/ Code Groups Trainer */
+    border-color: var(--amber-dim);
+  }
+  button.btn.primary:hover{ filter: brightness(1.06); }
+  button.btn.ghost{
+    background: transparent;
+    color: var(--text-muted);
+    border-color: var(--border);
+  }
+  button.btn.danger{
+    background: transparent;
+    color: var(--red);
+    border-color: var(--red);
+  }
+  button.btn.danger:hover{ background: var(--red-soft); }
+  button.btn:disabled{ opacity: 0.4; cursor: default; }
+
+  /* ===================== CONTROLS (settings console) ===================== */
+  .control-row{
+    display:flex;
+    flex-direction:column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .control-row:last-child{ margin-bottom: 0; }
+  .control-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+  .control-head b{ color: var(--amber); font-size: 12px; }
+
+  select, input[type=text]{
+    width:100%;
+    background: #140f0d;
+    border: 1px solid var(--border-light);
+    color: var(--text);
+    padding: 9px 10px;
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-size: 14px;
+  }
+
+  input[type=range]{
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--border-light);
+    border-radius: 2px;
+    outline: none;
+  }
+  /* Slider thumbs match the same lime accent as the button above and the
+     "ICR" heading — a radial highlight from --amber down to --amber-dim
+     keeps a bit of roundness/depth without leaving the lime hue. */
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--amber), var(--amber-dim));
+    border: 1px solid var(--amber-dim);
+    cursor: pointer;
+    margin-top: -7px;
+  }
+  input[type=range]::-moz-range-thumb{
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--amber), var(--amber-dim));
+    border: 1px solid var(--amber-dim);
+    cursor: pointer;
+  }
+
+  .toggle-row{
+    display:flex; align-items:center; gap:8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .toggle-row input{ accent-color: var(--amber); width:14px; height:14px; }
+
+  details.console summary{
+    cursor:pointer;
+    list-style: none;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  details.console summary::-webkit-details-marker{ display:none; }
+  details.console summary::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background: var(--border);
+  }
+  details.console summary .chev{
+    font-family: var(--font-mono);
+    color: var(--text-dim);
+  }
+  details.console[open] summary .chev::before{ content:"▾ "; }
+  details.console:not([open]) summary .chev::before{ content:"▸ "; }
+  details.console .console-body{ padding-top: 14px; }
+
+  /* ===================== WEAKEST CHARACTERS ===================== */
+  .weak-list{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .weak-chip{
+    font-family: var(--font-mono);
+    background: #140f0d;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: var(--text);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .weak-chip .bar{
+    width: 26px; height: 4px;
+    background: var(--border-light);
+    border-radius: 2px;
+    overflow:hidden;
+  }
+  .weak-chip .bar i{
+    display:block; height:100%;
+    background: var(--red);
+  }
+  .empty-note{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .drill-status{
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--amber);
+    text-align:center;
+    margin-top: 10px;
+    min-height: 18px;
+  }
+
+  footer{
+    text-align:center;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-dim);
+    margin-top: 20px;
+    letter-spacing: 0.04em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="nameplate">
+    <img class="mascot" src="/apple-touch-icon.png" alt="HamShackTech alien mascot" width="44" height="44">
+    <p class="eyebrow">HamShackTech</p>
+    <h1><span>ICR</span> Trainer</h1>
+  </div>
+
+  <!-- PRACTICE STAGE -->
+  <div class="panel">
+    <p class="panel-label">Practice</p>
+
+    <div class="key-stage">
+      <div class="key-status" id="keyStatus">Tap Start Session to begin</div>
+
+      <div class="reaction-readout" id="reactionReadout">— ms</div>
+
+      <div class="answer-row" id="answerRow" style="display:none;">
+        <input type="text" maxlength="1" class="answer-input waiting" id="answerInput" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+
+      <div class="start-row" id="startRow">
+        <button class="btn primary" id="startBtn">Start Session</button>
+      </div>
+      <div class="start-row" id="stopRow" style="display:none;">
+        <button class="btn danger" id="stopSessionBtn">Stop Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS METER STRIP -->
+  <div class="meter-strip">
+    <div class="meter"><div class="val" id="mStreak">0</div><div class="lbl">Streak</div></div>
+    <div class="meter"><div class="val" id="mBest">0</div><div class="lbl">Best</div></div>
+    <div class="meter"><div class="val" id="mPct">—</div><div class="lbl">% Correct</div></div>
+    <div class="meter"><div class="val" id="mCount">0</div><div class="lbl">Chars</div></div>
+    <div class="meter"><div class="val" id="mAvg">—</div><div class="lbl">Avg MS</div></div>
+    <div class="meter"><div class="val" id="mTimeouts">0</div><div class="lbl">Timeouts</div></div>
+  </div>
+
+  <!-- WEAKEST CHARACTERS -->
+  <div class="panel">
+    <p class="panel-label">Your Worst Characters</p>
+    <div class="weak-list" id="weakList" style="justify-content:center;"><span class="empty-note">Practice a few characters to populate this list.</span></div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+      <button class="btn ghost" id="drillBtn" disabled>Drill These Characters</button>
+      <button class="btn danger" id="stopDrillBtn" style="display:none;">Stop Drill</button>
+    </div>
+    <div class="drill-status" id="drillStatus"></div>
+  </div>
+
+  <!-- SETTINGS CONSOLE -->
+  <div class="panel">
+    <details class="console" open>
+      <summary><span class="chev"></span>Console Settings</summary>
+      <div class="console-body">
+
+        <div class="control-row">
+          <div class="control-head"><span>Practice Group</span></div>
+          <select id="groupSelect">
+            <option value="letters">Letters (A–Z)</option>
+            <option value="numbers">Numbers (0–9)</option>
+            <option value="punctuation">Punctuation</option>
+            <option value="all">All</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+
+        <div class="control-row" id="customRow" style="display:none;">
+          <div class="control-head"><span>Custom Characters</span></div>
+          <input type="text" id="customInput" placeholder="e.g. A E I S T N 5 .">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head"><span>WPM (Speed)</span><b id="wpmVal">31</b></div>
+          <input type="range" id="wpmSlider" min="5" max="40" value="20" step="1">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head"><span>Tone</span><b id="toneVal">630 Hz</b></div>
+          <input type="range" id="toneSlider" min="400" max="1000" value="600" step="10">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head"><span>Volume</span><b id="volVal">100%</b></div>
+          <input type="range" id="volSlider" min="100" max="500" value="320" step="10">
+        </div>
+
+        <div class="control-row">
+          <div class="control-head"><span>Max Time to Answer</span><b id="ttaVal">1000 ms</b></div>
+          <input type="range" id="ttaSlider" min="300" max="4000" value="1500" step="50">
+          <label class="toggle-row">
+            <input type="checkbox" id="ttaOffToggle">
+            <span>No limit (disable timeout)</span>
+          </label>
+        </div>
+
+        <div class="control-row">
+          <button class="btn ghost" id="resetSessionBtn">Reset Session Stats</button>
+        </div>
+
+      </div>
+    </details>
+  </div>
+
+  <footer>73 · Practice Often, Don't Quit</footer>
+</div>
+
+<audio id="iosAudioUnlock" loop playsinline style="display:none;" src="data:audio/wav;base64,UklGRuQSAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YcASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="></audio>
+<script>
+/* =====================================================================
+   CW ICR TRAINER — application script
+   Sections: DATA, STATE, AUDIO ENGINE, ADAPTIVE WEIGHTING,
+             PRACTICE LOOP, DRILL MODE, UI WIRING, INIT
+   ===================================================================== */
+
+/* ----------------------------- DATA ---------------------------------- */
+
+// International Morse reference table — the single source of truth for
+// both audio generation and answer-checking.
+const MORSE = {
+  A:'.-', B:'-...', C:'-.-.', D:'-..', E:'.', F:'..-.', G:'--.', H:'....',
+  I:'..', J:'.---', K:'-.-', L:'.-..', M:'--', N:'-.', O:'---', P:'.--.',
+  Q:'--.-', R:'.-.', S:'...', T:'-', U:'..-', V:'...-', W:'.--', X:'-..-',
+  Y:'-.--', Z:'--..',
+  '0':'-----','1':'.----','2':'..---','3':'...--','4':'....-',
+  '5':'.....','6':'-....','7':'--...','8':'---..','9':'----.',
+  '.':'.-.-.-', ',':'--..--', '?':'..--..', '/':'-..-.', '=':'-...-',
+  "'":'.----.', '-':'-....-', '(':'-.--.', ')':'-.--.-'
+};
+const LETTERS = Object.keys(MORSE).filter(c => /[A-Z]/.test(c));
+const NUMBERS = Object.keys(MORSE).filter(c => /[0-9]/.test(c));
+const PUNCT   = Object.keys(MORSE).filter(c => !/[A-Z0-9]/.test(c));
+
+/* ----------------------------- STATE ---------------------------------- */
+
+const STORAGE_KEY = 'cwIcrTrainer';
+
+// Settings persist across sessions; charStats/session reset per practice group.
+let settings = {
+  group: 'letters',
+  customChars: '',
+  wpm: 20,
+  toneHz: 600,
+  volume: 3.2,      // "drive" amount fed into a WaveShaper saturation curve
+                     // (see makeDriveCurve) — higher values push the tone
+                     // toward a louder-sounding, more saturated waveform
+  ttaMs: 1500,
+  ttaEnabled: true
+};
+
+// Per-character adaptive weighting data. Keyed by character.
+// ewmaMiss: exponentially-weighted miss rate (0 = always correct, 1 = always missed)
+// ewmaRT:   exponentially-weighted reaction time in ms
+let charStats = {};
+
+// Session-scoped statistics (reset on "Reset Session Stats", persist meanwhile).
+let session = {
+  streak: 0,
+  bestStreak: 0,
+  correct: 0,
+  total: 0,
+  reactionTimes: [],   // excludes timeouts, per spec
+  timeouts: 0
+};
+
+let activeSet = [];      // characters currently in play, derived from settings.group
+let lastChar = null;     // for immediate-repeat guard
+let currentChar = null;
+let playbackEndTime = null;
+let ttaTimer = null;
+let sessionRunning = false;
+let drillActive = false;
+let drillTimer = null;                    // handle for the drill's chained setTimeout, so Stop Drill can cancel it
+let sessionWasRunningBeforeDrill = false;  // lets drill mode pause (not cancel) an in-progress session
+
+/* --------------------------- PERSISTENCE ------------------------------ */
+
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings, charStats, session }));
+  }catch(e){ /* storage unavailable — practice still works, just not persisted */ }
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    if(data.settings) settings = Object.assign(settings, data.settings);
+    if(data.charStats) charStats = data.charStats;
+    if(data.session) session = Object.assign(session, data.session);
+  }catch(e){ /* ignore corrupt storage */ }
+}
+
+/* ---------------------------- AUDIO ENGINE ----------------------------- */
+
+let audioCtx = null;
+let oscillator = null;
+let gainNode = null;
+let shaperNode = null;
+let silentUnlockAudio = null; // see initAudio() note on iOS audio-session routing
+
+// Builds a soft-saturation curve for the WaveShaper: output = tanh(k * x).
+// tanh is naturally bounded within (-1, 1) for any k, so this can never
+// produce a sample that clips — but larger k pushes more of the waveform
+// toward a near-square shape, which raises RMS energy (i.e. sounds louder)
+// even though the peak amplitude barely changes. This is what the Volume
+// control actually drives now.
+function makeDriveCurve(k, n){
+  n = n || 1024;
+  const curve = new Float32Array(n);
+  for(let i = 0; i < n; i++){
+    const x = (i / (n - 1)) * 2 - 1; // map i across -1..1
+    curve[i] = Math.tanh(k * x);
+  }
+  return curve;
+}
+
+function updateDriveCurve(){
+  if(shaperNode) shaperNode.curve = makeDriveCurve(settings.volume);
+}
+
+// Must be called from a user-gesture handler (browser autoplay policy).
+function initAudio(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  oscillator = audioCtx.createOscillator();
+  gainNode = audioCtx.createGain();
+
+  // NOTE on a bug in an earlier version: that version tried to make the
+  // Volume slider louder by pushing the *gain* target above 1.0 and
+  // relying on a DynamicsCompressorNode to keep it from clipping. But
+  // once gain crossed the compressor's threshold (which nearly every
+  // slider position did), a 20:1 ratio squashed all of them down to
+  // almost the same output level — so the slider barely did anything.
+  // This version keeps gain fixed at a safe peak of 1.0 always, and
+  // instead routes through a WaveShaper driven by the Volume setting
+  // (see makeDriveCurve above) — every slider position produces a
+  // genuinely different, audible amount of drive.
+  shaperNode = audioCtx.createWaveShaper();
+  shaperNode.oversample = '4x'; // reduces aliasing artifacts from the nonlinearity
+  updateDriveCurve();
+
+  oscillator.type = 'sine';
+  oscillator.frequency.value = settings.toneHz;
+  gainNode.gain.value = 0; // silent until an element is scheduled
+  oscillator.connect(gainNode).connect(shaperNode).connect(audioCtx.destination);
+  oscillator.start();
+
+  // iOS Safari quirk: Web Audio output defaults to the "ambient" audio
+  // session category, which plays back noticeably quieter than normal
+  // media audio (and respects the physical silent switch) unless a native
+  // <audio>/<video> element is also actively playing on the page. A
+  // silent, looping <audio> element started on this same user gesture
+  // nudges the session into the normal "playback" category, unlocking
+  // full media volume for the Web Audio tone as well. Harmless no-op on
+  // browsers that don't have this quirk.
+  if(!silentUnlockAudio){
+    silentUnlockAudio = document.getElementById('iosAudioUnlock');
+  }
+  if(silentUnlockAudio){
+    silentUnlockAudio.play().catch(() => { /* ignore — best-effort unlock */ });
+  }
+}
+
+// Immediately silences the oscillator — used by Stop Session / Stop Drill
+// so a tone that's mid-playback doesn't keep sounding after the user stops.
+function stopAudioImmediate(){
+  if(!audioCtx || !gainNode) return;
+  const now = audioCtx.currentTime;
+  gainNode.gain.cancelScheduledValues(now);
+  gainNode.gain.setValueAtTime(0, now);
+}
+
+// Schedules one dit/dah's gain envelope on the shared oscillator.
+// A short attack/release ramp (5ms) avoids the clicking you'd get from
+// switching gain on/off instantly at element boundaries.
+function scheduleElement(startTime, lenSeconds, peak){
+  peak = (peak === undefined) ? 1 : peak;
+  const g = gainNode.gain;
+  const attack = 0.005;
+  g.setValueAtTime(0, startTime);
+  g.linearRampToValueAtTime(peak, startTime + attack);
+  const holdEnd = startTime + lenSeconds - attack;
+  if(holdEnd > startTime + attack){
+    g.setValueAtTime(peak, holdEnd);
+  }
+  g.linearRampToValueAtTime(0, startTime + lenSeconds);
+}
+
+// Plays a character's Morse pattern and returns the total playback
+// duration in milliseconds (caller uses this to know when the character
+// has finished sounding, i.e. playbackEndTime for reaction timing).
+function playCharacterAudio(char){
+  oscillator.frequency.setValueAtTime(settings.toneHz, audioCtx.currentTime);
+  const pattern = MORSE[char];
+  const ditMs = 1200 / settings.wpm;   // standard PARIS timing formula
+  const dahMs = ditMs * 3;
+  const lookahead = 0.05; // small buffer so scheduling isn't right at "now"
+  let t = audioCtx.currentTime + lookahead;
+  let totalMs = 0;
+
+  pattern.split('').forEach((sym, i) => {
+    const lenMs = sym === '.' ? ditMs : dahMs;
+    scheduleElement(t, lenMs / 1000);
+    t += lenMs / 1000;
+    totalMs += lenMs;
+    if(i < pattern.length - 1){
+      t += ditMs / 1000;       // intra-character gap (1 dit)
+      totalMs += ditMs;
+    }
+  });
+
+  return totalMs + lookahead * 1000;
+}
+
+// Distinct two-tone beep for a TTA timeout — deliberately different from
+// the practice tone (alternating frequencies) so it never reads as "just
+// another character" to decode.
+function playTimeoutBeep(){
+  const now = audioCtx.currentTime + 0.02;
+  const beepLen = 0.11;
+  const gap = 0.05;
+  [ [now, 900], [now + beepLen + gap, 450] ].forEach(([start, freq]) => {
+    oscillator.frequency.setValueAtTime(freq, start);
+    scheduleElement(start, beepLen);
+  });
+}
+
+/* ------------------------- ADAPTIVE WEIGHTING -------------------------- */
+
+function ensureCharStat(char){
+  if(!charStats[char]){
+    // Cold-start defaults: moderately high weight so untested characters
+    // get sampled early and the weighting has data to work with.
+    charStats[char] = { ewmaMiss: 0.5, ewmaRT: 1000, attempts: 0 };
+  }
+  return charStats[char];
+}
+
+function recordResult(char, correct, reactionTimeMs){
+  const s = ensureCharStat(char);
+  const missVal = correct ? 0 : 1;
+  s.ewmaMiss = s.ewmaMiss * 0.8 + missVal * 0.2;
+  s.ewmaRT = s.ewmaRT * 0.8 + reactionTimeMs * 0.2;
+  s.attempts += 1;
+}
+
+function weightFor(char){
+  const s = ensureCharStat(char);
+  // Miss rate dominates, reaction time contributes a smaller amount —
+  // characters you get wrong or time out on rise fastest in weight.
+  return 1 + (s.ewmaMiss * 3) + (s.ewmaRT / 1000);
+}
+
+// Weighted random draw (roulette-wheel selection) over the active set,
+// with a guard against repeating the immediately preceding character.
+function pickNextCharacter(){
+  let candidates = activeSet;
+  if(activeSet.length > 1 && lastChar){
+    candidates = activeSet.filter(c => c !== lastChar);
+  }
+  const weights = candidates.map(weightFor);
+  const total = weights.reduce((a,b) => a+b, 0);
+  let r = Math.random() * total;
+  for(let i=0; i<candidates.length; i++){
+    r -= weights[i];
+    if(r <= 0) return candidates[i];
+  }
+  return candidates[candidates.length - 1];
+}
+
+function weakestCharacters(n){
+  return Object.keys(charStats)
+    .filter(c => activeSet.includes(c))
+    .sort((a,b) => weightFor(b) - weightFor(a))
+    .slice(0, n);
+}
+
+/* ----------------------------- CHAR SETS -------------------------------- */
+
+function computeActiveSet(){
+  switch(settings.group){
+    case 'letters': return LETTERS.slice();
+    case 'numbers': return NUMBERS.slice();
+    case 'punctuation': return PUNCT.slice();
+    case 'all': return [...LETTERS, ...NUMBERS, ...PUNCT];
+    case 'custom': {
+      const chars = settings.customChars.toUpperCase().split('')
+        .filter(c => MORSE[c]);
+      return [...new Set(chars)];
+    }
+    default: return LETTERS.slice();
+  }
+}
+
+function applyGroupChange(){
+  activeSet = computeActiveSet();
+  // Reset weighting for the new set — no stale scores from a different group.
+  charStats = {};
+  lastChar = null;
+  saveState();
+  renderWeakList();
+}
+
+/* --------------------------- PRACTICE LOOP ------------------------------ */
+
+const els = {}; // filled in during INIT
+
+// True only from the moment Copy/space is pressed until that trial's guess
+// is graded. Gates the (now permanently focused/visible) answer input so
+// typing during playback or before space is pressed doesn't get scored.
+let answerPhaseActive = false;
+
+// True only during the window between a character finishing playback and
+// the user pressing space — i.e. whether a spacebar press right now should
+// count as "recognized". There's no button anymore, so this flag (rather
+// than a disabled-button check) is what gates handleRecognizePress().
+let awaitingRecognition = false;
+
+function setKeyState(mode){
+  // mode: 'idle' | 'playing' | 'armed' | 'answering'
+  els.keyStatus.classList.toggle('armed', mode === 'armed');
+  if(mode === 'playing'){
+    els.keyStatus.textContent = 'Listening…';
+  }else if(mode === 'armed'){
+    els.keyStatus.textContent = 'Press space bar if you know the answer';
+  }else if(mode === 'answering'){
+    els.keyStatus.textContent = 'Type the character you heard';
+  }else{
+    els.keyStatus.textContent = '';
+  }
+}
+
+function startTrial(){
+  if(!sessionRunning || drillActive) return;
+  currentChar = pickNextCharacter();
+  answerPhaseActive = false;
+  awaitingRecognition = false;
+  els.answerInput.value = '';
+  els.answerInput.classList.add('waiting');
+  els.feedback.textContent = '';
+  els.reactionReadout.textContent = '— ms';
+  els.reactionReadout.classList.remove('lit');
+  setKeyState('playing');
+
+  const totalMs = playCharacterAudio(currentChar);
+
+  setTimeout(() => {
+    if(!sessionRunning || drillActive) return; // session may have been stopped mid-flight
+    playbackEndTime = performance.now();
+    awaitingRecognition = true;
+    setKeyState('armed');
+    armTTATimer();
+  }, totalMs);
+}
+
+// Shows the answer field and gives it focus once, at session start — kept
+// focused for the whole session from here on so the iOS keyboard opens a
+// single time (and its space key stays usable) instead of animating in and
+// out every trial. This is also the only thing that brings the on-screen
+// keyboard up, since there's no button to tap anymore.
+function openAnswerFieldForSession(){
+  els.answerRow.style.display = 'flex';
+  els.answerInput.classList.add('waiting');
+  els.answerInput.focus();
+  setTimeout(() => {
+    els.answerRow.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, 300);
+}
+
+function stopSession(){
+  sessionRunning = false;
+  answerPhaseActive = false;
+  awaitingRecognition = false;
+  clearTimeout(ttaTimer);
+  stopAudioImmediate();
+  if(document.activeElement === els.answerInput) els.answerInput.blur();
+  setKeyState('idle');
+  els.keyStatus.textContent = 'Tap Start Session to begin';
+  els.answerRow.style.display = 'none';
+  els.feedback.textContent = '';
+  els.reactionReadout.textContent = '— ms';
+  els.reactionReadout.classList.remove('lit');
+  els.startRow.style.display = 'block';
+  els.stopRow.style.display = 'none';
+}
+
+// Starts the Max-Time-to-Answer countdown. Uses a plain cancellable
+// setTimeout — this only needs to be cancellable, not sample-accurate,
+// unlike the Web-Audio-clock-scheduled tone playback above.
+function armTTATimer(){
+  clearTimeout(ttaTimer);
+  if(!settings.ttaEnabled) return;
+  ttaTimer = setTimeout(handleTimeout, settings.ttaMs);
+}
+
+function handleRecognizePress(){
+  if(!awaitingRecognition) return;
+  awaitingRecognition = false;
+  clearTimeout(ttaTimer);
+  const reactionTime = Math.round(performance.now() - playbackEndTime);
+  els.reactionReadout.textContent = reactionTime + ' ms';
+  els.reactionReadout.classList.add('lit');
+  setKeyState('answering');
+
+  answerPhaseActive = true;
+  els.answerInput.value = '';
+  els.answerInput.classList.remove('waiting');
+  els.answerInput.dataset.reactionTime = reactionTime;
+  // Input already has focus (kept from session start) — no re-focus needed,
+  // which is what avoids re-triggering the iOS keyboard animation here.
+}
+
+function handleTimeout(){
+  awaitingRecognition = false;
+  playTimeoutBeep();
+  setKeyState('idle');
+  els.reactionReadout.textContent = 'TIMEOUT';
+  els.reactionReadout.classList.add('lit');
+
+  // Timeout = miss, scored against the character; skip answer entry
+  // since there's nothing to grade, but still reveal the character.
+  recordResult(currentChar, false, settings.ttaMs);
+  session.total += 1;
+  session.timeouts += 1;
+  session.streak = 0;
+  showFeedback(false, currentChar, true);
+  finishTrial(false);
+}
+
+function submitAnswer(){
+  if(!answerPhaseActive) return; // ignore stray typing before space is pressed
+  const guess = els.answerInput.value.trim().toUpperCase();
+  if(!guess) return;
+  answerPhaseActive = false;
+  const reactionTime = Number(els.answerInput.dataset.reactionTime || 0);
+  const correct = guess === currentChar;
+
+  recordResult(currentChar, correct, reactionTime);
+  session.total += 1;
+  session.reactionTimes.push(reactionTime);
+  if(correct){
+    session.streak += 1;
+    session.bestStreak = Math.max(session.bestStreak, session.streak);
+    session.correct += 1;
+  }else{
+    session.streak = 0;
+  }
+
+  setKeyState('idle');
+  showFeedback(correct, currentChar, false);
+  els.answerInput.classList.add('waiting'); // stays focused/visible — just dims until next armed phase
+  finishTrial(correct);
+}
+
+function showFeedback(correct, char, wasTimeout){
+  els.feedback.classList.remove('correct','wrong');
+  if(correct){
+    els.feedback.textContent = '✓ Correct';
+    els.feedback.classList.add('correct');
+  }else if(wasTimeout){
+    els.feedback.textContent = 'Timed Out — Answer: ' + char;
+    els.feedback.classList.add('wrong');
+  }else{
+    els.feedback.textContent = 'Answer: ' + char;
+    els.feedback.classList.add('wrong');
+  }
+}
+
+// isCorrect controls how long the feedback stays up before the next
+// character plays — misses and timeouts get noticeably more time, since a
+// short fixed pause meant the revealed answer flashed by too fast to read.
+function finishTrial(isCorrect){
+  lastChar = currentChar;
+  updateStatsDisplay();
+  renderWeakList();
+  saveState();
+  const delay = isCorrect ? 700 : 2600;
+  setTimeout(() => { if(sessionRunning && !drillActive) startTrial(); }, delay);
+}
+
+/* ------------------------------ DRILL MODE ------------------------------ */
+
+let drillQueue = [];
+let drillIdx = 0;
+
+function startDrill(){
+  const weak = weakestCharacters(5);
+  if(weak.length === 0) return;
+
+  drillActive = true;
+  // Remember whether a practice session was running so drill mode *pauses*
+  // it rather than cancelling it outright — resumed in endDrill() below.
+  sessionWasRunningBeforeDrill = sessionRunning;
+  sessionRunning = false;
+  clearTimeout(ttaTimer);
+  stopAudioImmediate();
+
+  els.drillBtn.disabled = true;
+  els.stopDrillBtn.style.display = 'inline-block';
+  els.startRow.style.display = 'none';
+  els.stopRow.style.display = 'none';
+  els.answerRow.style.display = 'none';
+  els.feedback.textContent = '';
+  awaitingRecognition = false;
+  answerPhaseActive = false;
+  setKeyState('idle');
+
+  drillQueue = [];
+  weak.forEach(ch => { for(let i=0;i<5;i++) drillQueue.push({ch, rep:i+1}); });
+  drillIdx = 0;
+  playNextDrillStep();
+}
+
+function playNextDrillStep(){
+  if(!drillActive || drillIdx >= drillQueue.length){
+    endDrill();
+    return;
+  }
+  const {ch, rep} = drillQueue[drillIdx];
+  els.drillStatus.textContent = 'Drilling: ' + ch + ' (rep ' + rep + ' of 5)';
+  const totalMs = playCharacterAudio(ch);
+  drillIdx++;
+  drillTimer = setTimeout(playNextDrillStep, totalMs + 1000); // 1 second gap between reps, per spec
+}
+
+// Called by the "Stop Drill" button — cancels the remaining queue and any
+// currently-sounding tone immediately, then hands control back via endDrill().
+function stopDrill(){
+  drillActive = false;
+  clearTimeout(drillTimer);
+  stopAudioImmediate();
+  endDrill();
+}
+
+function endDrill(){
+  drillActive = false;
+  clearTimeout(drillTimer);
+  els.drillBtn.disabled = false;
+  els.stopDrillBtn.style.display = 'none';
+  els.drillStatus.textContent = '';
+
+  sessionRunning = sessionWasRunningBeforeDrill;
+  if(sessionRunning){
+    els.startRow.style.display = 'none';
+    els.stopRow.style.display = 'block';
+    openAnswerFieldForSession(); // drill hid/blurred the field — bring it back before resuming
+    startTrial();
+  }else{
+    els.startRow.style.display = 'block';
+    els.stopRow.style.display = 'none';
+  }
+}
+
+/* -------------------------------- UI ------------------------------------ */
+
+function updateStatsDisplay(){
+  els.mStreak.textContent = session.streak;
+  els.mBest.textContent = session.bestStreak;
+  els.mPct.textContent = session.total ? Math.round(100 * session.correct / session.total) + '%' : '—';
+  els.mCount.textContent = session.total;
+  const rts = session.reactionTimes;
+  els.mAvg.textContent = rts.length ? Math.round(rts.reduce((a,b)=>a+b,0)/rts.length) : '—';
+  els.mTimeouts.textContent = session.timeouts;
+}
+
+function renderWeakList(){
+  const weak = weakestCharacters(5);
+  if(weak.length === 0){
+    els.weakList.innerHTML = '<span class="empty-note">Practice a few characters to populate this list.</span>';
+    els.drillBtn.disabled = true;
+    return;
+  }
+  const maxW = Math.max(...weak.map(weightFor));
+  els.weakList.innerHTML = weak.map(ch => {
+    const pct = Math.round((weightFor(ch) / maxW) * 100);
+    return '<span class="weak-chip">' + ch +
+      '<span class="bar"><i style="width:' + pct + '%"></i></span></span>';
+  }).join('');
+  els.drillBtn.disabled = drillActive;
+}
+
+function refreshSettingsUI(){
+  els.groupSelect.value = settings.group;
+  els.customRow.style.display = settings.group === 'custom' ? 'block' : 'none';
+  els.customInput.value = settings.customChars;
+  els.wpmSlider.value = settings.wpm;
+  els.wpmVal.textContent = settings.wpm;
+  els.toneSlider.value = settings.toneHz;
+  els.toneVal.textContent = settings.toneHz + ' Hz';
+  const volPct = Math.round(settings.volume * 100);
+  els.volSlider.value = volPct;
+  els.volVal.textContent = volPct + '%';
+  els.ttaSlider.value = settings.ttaMs;
+  els.ttaVal.textContent = settings.ttaEnabled ? settings.ttaMs + ' ms' : 'Off';
+  els.ttaSlider.disabled = !settings.ttaEnabled;
+  els.ttaOffToggle.checked = !settings.ttaEnabled;
+}
+
+/* ------------------------------- WIRING ---------------------------------- */
+
+function wireEvents(){
+  els.startBtn.addEventListener('click', () => {
+    initAudio();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    sessionRunning = true;
+    els.startRow.style.display = 'none';
+    els.stopRow.style.display = 'block';
+    openAnswerFieldForSession();
+    startTrial();
+  });
+
+  els.stopSessionBtn.addEventListener('click', stopSession);
+
+  // The answer field stays focused for the whole session now (see
+  // openAnswerFieldForSession), so we can no longer gate spacebar on
+  // "input isn't focused" — it never would be otherwise. Space is never a
+  // valid practice character (punctuation set excludes it), so always
+  // treating it as the recognize action is safe and correct on both
+  // touch devices (no physical spacebar involved) and external keyboards.
+  document.addEventListener('keydown', (e) => {
+    if(e.code === 'Space'){
+      e.preventDefault();
+      handleRecognizePress();
+    }
+  });
+
+  els.answerInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') submitAnswer();
+  });
+  // Single-character practice sets: auto-submit as soon as a character is typed.
+  els.answerInput.addEventListener('input', () => {
+    if(els.answerInput.value.length >= 1) submitAnswer();
+  });
+
+  els.groupSelect.addEventListener('change', () => {
+    settings.group = els.groupSelect.value;
+    els.customRow.style.display = settings.group === 'custom' ? 'block' : 'none';
+    applyGroupChange();
+  });
+  els.customInput.addEventListener('change', () => {
+    settings.customChars = els.customInput.value;
+    applyGroupChange();
+    saveState();
+  });
+
+  els.wpmSlider.addEventListener('input', () => {
+    settings.wpm = Number(els.wpmSlider.value);
+    els.wpmVal.textContent = settings.wpm;
+    saveState();
+  });
+  els.toneSlider.addEventListener('input', () => {
+    settings.toneHz = Number(els.toneSlider.value);
+    els.toneVal.textContent = settings.toneHz + ' Hz';
+    saveState();
+  });
+  els.volSlider.addEventListener('input', () => {
+    settings.volume = Number(els.volSlider.value) / 100;
+    els.volVal.textContent = els.volSlider.value + '%';
+    updateDriveCurve(); // rebuild the WaveShaper curve so the change is audible right away
+    saveState();
+  });
+  els.ttaSlider.addEventListener('input', () => {
+    settings.ttaMs = Number(els.ttaSlider.value);
+    els.ttaVal.textContent = settings.ttaMs + ' ms';
+    saveState();
+  });
+  els.ttaOffToggle.addEventListener('change', () => {
+    settings.ttaEnabled = !els.ttaOffToggle.checked;
+    els.ttaSlider.disabled = !settings.ttaEnabled;
+    els.ttaVal.textContent = settings.ttaEnabled ? settings.ttaMs + ' ms' : 'Off';
+    saveState();
+  });
+
+  els.resetSessionBtn.addEventListener('click', () => {
+    session = { streak:0, bestStreak: session.bestStreak, correct:0, total:0, reactionTimes:[], timeouts:0 };
+    updateStatsDisplay();
+    saveState();
+  });
+
+  els.drillBtn.addEventListener('click', startDrill);
+  els.stopDrillBtn.addEventListener('click', stopDrill);
+}
+
+/* -------------------------------- INIT ------------------------------------ */
+
+function init(){
+  // Grab all DOM refs once.
+  ['mStreak','mBest','mPct','mCount','mAvg','mTimeouts',
+   'keyStatus','reactionReadout','answerRow','answerInput',
+   'feedback','startRow','startBtn','stopRow','stopSessionBtn',
+   'weakList','drillBtn','stopDrillBtn','drillStatus',
+   'groupSelect','customRow','customInput','wpmSlider','wpmVal',
+   'toneSlider','toneVal','volSlider','volVal',
+   'ttaSlider','ttaVal','ttaOffToggle','resetSessionBtn'
+  ].forEach(id => els[id] = document.getElementById(id));
+
+  loadState();
+  activeSet = computeActiveSet();
+  refreshSettingsUI();
+  updateStatsDisplay();
+  renderWeakList();
+  wireEvents();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+
+</body></html>
