@@ -23,7 +23,7 @@ Practical, no-install tools for CW practice and operating — built to run right
     <li>Check <strong>Your Worst Characters</strong> any time and tap <strong>Drill These Characters</strong> for focused repetition on your weak points.</li>
   </ol>
 
-  <a class="tool-card-button" href="https://cw.hamshacktech.com" target="_blank" rel="noopener">Launch CW ICR Trainer →</a>
+  <a class="tool-card-button" href="/cw-tools/icr-trainer/">Launch CW ICR Trainer →</a>
 </div>
 
 <div class="tool-card">
