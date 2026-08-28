@@ -11,30 +11,36 @@
 <style>
   /* ======================================================================
      TOKENS
-     Panel-meter / VFO-display aesthetic: near-black chassis, amber dial
-     glow as the primary accent, teal as a secondary "receive" accent.
-     Light theme reads as a printed equipment manual: paper ground, ink
-     text, the same two accents darkened for contrast.
+     Panel-meter / VFO-display aesthetic: near-black chassis, with the
+     site-wide "avocado" palette (Blowfish colorScheme = "avocado", see
+     params.toml) standing in for the dial glow — lime as the primary
+     accent, emerald as a secondary "receive" accent. Values are pulled
+     straight from Blowfish's avocado scheme CSS (--color-primary-*,
+     --color-secondary-*) so this app reads as the same brand as the rest
+     of hamshacktech.com. Light theme reads as a printed equipment manual:
+     paper ground, ink text, the same two accents darkened for contrast.
+     "Good"/"bad" stay their own distinct green/red so a correct or missed
+     answer doesn't blend into the lime/emerald brand accents.
      ====================================================================== */
   :root {
-    --bg: #eef1f2;
+    --bg: #fafaf9;           /* stone-50 */
     --panel: #ffffff;
-    --panel-2: #f4f6f7;
-    --recess: #e6eaec;
-    --border: #d3dbdf;
-    --border-strong: #b7c2c8;
-    --text: #16211f;
-    --text-dim: #55666c;
-    --text-faint: #85959b;
-    --accent: #b5720a;      /* amber dial glow, darkened for light bg */
-    --accent-soft: #e9d3ac;
-    --accent-ink: #4a3103;
-    --accent2: #128f88;     /* teal, darkened for light bg */
+    --panel-2: #f5f5f4;      /* stone-100 */
+    --recess: #e7e5e4;       /* stone-200 */
+    --border: #d6d3d1;       /* stone-300 */
+    --border-strong: #a8a29e;/* stone-400 */
+    --text: #1c1917;         /* stone-900 */
+    --text-dim: #57534e;     /* stone-600 */
+    --text-faint: #78716c;   /* stone-500 */
+    --accent: #65a30d;      /* avocado lime-600, darkened for light bg */
+    --accent-soft: #ecfccb; /* avocado lime-100 */
+    --accent-ink: #365314;  /* avocado lime-900 */
+    --accent2: #047857;     /* avocado emerald-700, darkened for light bg */
     --good: #16a34a;
     --good-soft: #d9f2e3;
     --bad: #d1354a;
     --bad-soft: #fbdde1;
-    --warn: #b5720a;
+    --warn: #65a30d;
     --shadow: 0 1px 2px rgba(20, 30, 30, 0.06), 0 8px 24px rgba(20, 30, 30, 0.06);
     --font-display: "Oswald", "Arial Narrow", sans-serif;
     --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -45,47 +51,47 @@
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0a0e11;
-      --panel: #12181c;
-      --panel-2: #171f24;
-      --recess: #0d1215;
-      --border: #263136;
-      --border-strong: #354349;
-      --text: #e9eff0;
-      --text-dim: #93a3a8;
-      --text-faint: #5c6d72;
-      --accent: #f2a924;
-      --accent-soft: #3a2c0e;
-      --accent-ink: #ffe5ae;
-      --accent2: #3fd0c6;
+      --bg: #100e0c;
+      --panel: #1c1917;       /* avocado neutral-900 */
+      --panel-2: #292524;     /* avocado neutral-800 */
+      --recess: #140f0d;
+      --border: #44403c;      /* avocado neutral-700 */
+      --border-strong: #57534e;/* avocado neutral-600 */
+      --text: #fafaf9;        /* avocado neutral-50 */
+      --text-dim: #a8a29e;    /* avocado neutral-400 */
+      --text-faint: #78716c;  /* avocado neutral-500 */
+      --accent: #a3e635;      /* avocado lime-400 */
+      --accent-soft: #365314; /* avocado lime-900 */
+      --accent-ink: #ecfccb;  /* avocado lime-100 */
+      --accent2: #34d399;     /* avocado emerald-400 */
       --good: #4ade80;
       --good-soft: #123423;
       --bad: #f66a7d;
       --bad-soft: #3a1620;
-      --warn: #f2a924;
+      --warn: #a3e635;
       --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
     }
   }
 
   :root[data-theme="dark"] {
-    --bg: #0a0e11;
-    --panel: #12181c;
-    --panel-2: #171f24;
-    --recess: #0d1215;
-    --border: #263136;
-    --border-strong: #354349;
-    --text: #e9eff0;
-    --text-dim: #93a3a8;
-    --text-faint: #5c6d72;
-    --accent: #f2a924;
-    --accent-soft: #3a2c0e;
-    --accent-ink: #ffe5ae;
-    --accent2: #3fd0c6;
+    --bg: #100e0c;
+    --panel: #1c1917;
+    --panel-2: #292524;
+    --recess: #140f0d;
+    --border: #44403c;
+    --border-strong: #57534e;
+    --text: #fafaf9;
+    --text-dim: #a8a29e;
+    --text-faint: #78716c;
+    --accent: #a3e635;
+    --accent-soft: #365314;
+    --accent-ink: #ecfccb;
+    --accent2: #34d399;
     --good: #4ade80;
     --good-soft: #123423;
     --bad: #f66a7d;
     --bad-soft: #3a1620;
-    --warn: #f2a924;
+    --warn: #a3e635;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
   }
 
@@ -125,6 +131,18 @@
     align-items: baseline;
     gap: 12px;
     flex-wrap: wrap;
+  }
+  /* Site mascot — the alien-with-headphones mark used in the main
+     hamshacktech.com header (see assets/hamshacktech_logo.png there).
+     Served from /apple-touch-icon.png, a pre-existing square, transparent
+     crop of the same artwork, so no new image asset is needed here.
+     Sits on its own baseline via align-self so it lines up with the
+     text rather than the flex row's shared baseline. */
+  .masthead .mascot {
+    width: 40px;
+    height: 40px;
+    align-self: center;
+    flex-shrink: 0;
   }
   .masthead h1 {
     font-family: var(--font-display);
@@ -279,7 +297,7 @@
     border-radius: 999px;
     border: 1px solid var(--accent);
     background: var(--accent);
-    color: #1a1200;
+    color: #14200a; /* near-black w/ a green cast — high contrast on lime in both themes */
     cursor: pointer;
     transition: filter 0.12s ease, transform 0.08s ease;
   }
@@ -545,6 +563,7 @@
 
   <div class="masthead">
     <div class="masthead-title">
+      <img class="mascot" src="/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
       <h1>CW Code Groups Trainer</h1>
       <span class="badge">Free · Browser App</span>
     </div>
