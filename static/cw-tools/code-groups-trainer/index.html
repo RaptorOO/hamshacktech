@@ -17,31 +17,36 @@
      accent, emerald as a secondary "receive" accent. Values are pulled
      straight from Blowfish's avocado scheme CSS (--color-primary-*,
      --color-secondary-*) so this app reads as the same brand as the rest
-     of hamshacktech.com. Light theme reads as a printed equipment manual:
-     paper ground, ink text, the same two accents darkened for contrast.
-     "Good"/"bad" stay their own distinct green/red so a correct or missed
-     answer doesn't blend into the lime/emerald brand accents.
+     of hamshacktech.com. "Good"/"bad" stay their own distinct green/red
+     so a correct or missed answer doesn't blend into the lime/emerald
+     brand accents.
+
+     Always dark: per Tim's request, this app no longer follows the
+     device/browser's light-mode preference (it previously did via
+     prefers-color-scheme, unlike its sibling ICR Trainer, which has
+     always been dark-only) — there's just one palette now, matching
+     ICR Trainer's behavior.
      ====================================================================== */
   :root {
-    --bg: #fafaf9;           /* stone-50 */
-    --panel: #ffffff;
-    --panel-2: #f5f5f4;      /* stone-100 */
-    --recess: #e7e5e4;       /* stone-200 */
-    --border: #d6d3d1;       /* stone-300 */
-    --border-strong: #a8a29e;/* stone-400 */
-    --text: #1c1917;         /* stone-900 */
-    --text-dim: #57534e;     /* stone-600 */
-    --text-faint: #78716c;   /* stone-500 */
-    --accent: #65a30d;      /* avocado lime-600, darkened for light bg */
-    --accent-soft: #ecfccb; /* avocado lime-100 */
-    --accent-ink: #365314;  /* avocado lime-900 */
-    --accent2: #047857;     /* avocado emerald-700, darkened for light bg */
-    --good: #16a34a;
-    --good-soft: #d9f2e3;
-    --bad: #d1354a;
-    --bad-soft: #fbdde1;
-    --warn: #65a30d;
-    --shadow: 0 1px 2px rgba(20, 30, 30, 0.06), 0 8px 24px rgba(20, 30, 30, 0.06);
+    --bg: #100e0c;
+    --panel: #1c1917;       /* avocado neutral-900 */
+    --panel-2: #292524;     /* avocado neutral-800 */
+    --recess: #140f0d;
+    --border: #44403c;      /* avocado neutral-700 */
+    --border-strong: #57534e;/* avocado neutral-600 */
+    --text: #fafaf9;        /* avocado neutral-50 */
+    --text-dim: #a8a29e;    /* avocado neutral-400 */
+    --text-faint: #78716c;  /* avocado neutral-500 */
+    --accent: #a3e635;      /* avocado lime-400 */
+    --accent-soft: #365314; /* avocado lime-900 */
+    --accent-ink: #ecfccb;  /* avocado lime-100 */
+    --accent2: #34d399;     /* avocado emerald-400 */
+    --good: #4ade80;
+    --good-soft: #123423;
+    --bad: #f66a7d;
+    --bad-soft: #3a1620;
+    --warn: #a3e635;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
     --font-display: "Oswald", "Arial Narrow", sans-serif;
     --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
@@ -49,54 +54,8 @@
     --radius-lg: 16px;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #100e0c;
-      --panel: #1c1917;       /* avocado neutral-900 */
-      --panel-2: #292524;     /* avocado neutral-800 */
-      --recess: #140f0d;
-      --border: #44403c;      /* avocado neutral-700 */
-      --border-strong: #57534e;/* avocado neutral-600 */
-      --text: #fafaf9;        /* avocado neutral-50 */
-      --text-dim: #a8a29e;    /* avocado neutral-400 */
-      --text-faint: #78716c;  /* avocado neutral-500 */
-      --accent: #a3e635;      /* avocado lime-400 */
-      --accent-soft: #365314; /* avocado lime-900 */
-      --accent-ink: #ecfccb;  /* avocado lime-100 */
-      --accent2: #34d399;     /* avocado emerald-400 */
-      --good: #4ade80;
-      --good-soft: #123423;
-      --bad: #f66a7d;
-      --bad-soft: #3a1620;
-      --warn: #a3e635;
-      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
-    }
-  }
-
-  :root[data-theme="dark"] {
-    --bg: #100e0c;
-    --panel: #1c1917;
-    --panel-2: #292524;
-    --recess: #140f0d;
-    --border: #44403c;
-    --border-strong: #57534e;
-    --text: #fafaf9;
-    --text-dim: #a8a29e;
-    --text-faint: #78716c;
-    --accent: #a3e635;
-    --accent-soft: #365314;
-    --accent-ink: #ecfccb;
-    --accent2: #34d399;
-    --good: #4ade80;
-    --good-soft: #123423;
-    --bad: #f66a7d;
-    --bad-soft: #3a1620;
-    --warn: #a3e635;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
-  }
-
   * { box-sizing: border-box; }
-  html { color-scheme: light dark; }
+  html { color-scheme: dark; } /* forces native form controls/scrollbars to render dark too */
 
   body {
     margin: 0;
@@ -116,18 +75,20 @@
   a { color: var(--accent2); }
 
   /* ---------------------------------------------------------------------
-     Home link — fixed to the viewport's top-left corner (not just the top
-     of .wrap) so it stays reachable no matter how far the page scrolls.
-     Small, quiet, chassis-styled square button matching the ICR Trainer's
-     equivalent element, since this app has no other nav chrome of its own.
+     Home link — sits in normal document flow at the top of .wrap, so it
+     shares the page's own left margin/padding instead of floating at a
+     fixed viewport offset. Previously position:fixed to the top-left
+     corner, but on narrow (iPhone-width) screens that overlapped the
+     mascot icon in the masthead just below it — moving it into flow,
+     aligned with the content's left edge, fixes that for good at any
+     width. Small, quiet, chassis-styled square button matching the ICR
+     Trainer's equivalent element, since this app has no other nav chrome
+     of its own.
      --------------------------------------------------------------------- */
   .home-link {
-    position: fixed;
-    top: 14px;
-    left: 14px;
     width: 34px;
     height: 34px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     background: var(--panel-2);
@@ -136,7 +97,7 @@
     color: var(--text-dim);
     text-decoration: none;
     transition: color 0.15s ease, border-color 0.15s ease;
-    z-index: 20;
+    margin-bottom: 14px;
   }
   .home-link:hover, .home-link:focus-visible {
     color: var(--accent);
@@ -181,23 +142,58 @@
     margin: 0;
     text-wrap: balance;
   }
-  .masthead .badge {
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--accent-ink);
-    background: var(--accent-soft);
-    border: 1px solid var(--accent);
+
+  /* Info button + popup — replaces what used to be a permanent intro
+     paragraph under the masthead. Keeps the explanation one tap away
+     instead of costing every visitor (phones especially) scroll space
+     on every visit. Built on the native <dialog> element rather than a
+     hand-rolled modal: showModal()/close() give us focus-trapping,
+     Escape-to-close, and a backdrop for free, with broad support
+     including iOS Safari. */
+  .info-btn {
+    width: 26px;
+    height: 26px;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border-strong);
     border-radius: 999px;
-    padding: 3px 10px;
+    color: var(--text-dim);
+    padding: 0;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
   }
-  .masthead p {
-    margin: 4px 0 0;
+  .info-btn:hover, .info-btn:focus-visible { color: var(--accent2); border-color: var(--accent2); }
+  .info-btn svg { width: 16px; height: 16px; display: block; }
+
+  .info-dialog {
+    width: calc(100vw - 40px);
+    max-width: 480px;
+    margin: auto; /* combined with the <dialog>'s own centering, keeps it centered in the viewport */
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 22px 24px 20px;
+  }
+  .info-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+  .info-dialog h2 {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin: 0 0 12px;
+  }
+  .info-dialog p {
     color: var(--text-dim);
     font-size: 0.95rem;
-    max-width: 60ch;
+    line-height: 1.55;
+    margin: 0 0 18px;
   }
+  .info-dialog .btn-secondary { width: auto; padding: 8px 22px; }
 
   /* ---------------------------------------------------------------------
      Practice module — the "front panel" of the app
@@ -340,29 +336,6 @@
   .session-btn:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
     outline: 2px solid var(--accent2);
     outline-offset: 2px;
-  }
-
-  .quickstats {
-    display: flex;
-    justify-content: center;
-    gap: clamp(14px, 4vw, 34px);
-    flex-wrap: wrap;
-    margin-top: 22px;
-    padding-top: 18px;
-    border-top: 1px dashed var(--border);
-  }
-  .quickstat { text-align: center; min-width: 64px; }
-  .quickstat .v {
-    font-family: var(--font-mono);
-    font-weight: 600;
-    font-size: 1.3rem;
-    font-variant-numeric: tabular-nums;
-  }
-  .quickstat .l {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-faint);
   }
 
   /* input.hidden-input[type="text"] (rather than plain .hidden-input) so this
@@ -599,24 +572,35 @@
 </style>
 </head>
 <body>
-<a class="home-link" href="/" aria-label="Back to HamShackTech" title="Back to HamShackTech">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-</a>
 <div class="wrap">
+
+  <a class="home-link" href="/" aria-label="Back to HamShackTech" title="Back to HamShackTech">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+  </a>
 
   <div class="masthead">
     <div class="masthead-title">
       <img class="mascot" src="/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
       <h1>CW Code Groups Trainer</h1>
-      <span class="badge">Free · Browser App</span>
+      <!-- Info button opens the #infoDialog <dialog> below instead of a
+           permanent intro paragraph in the page flow — keeps the masthead
+           short on a phone screen while the explanation stays one tap away. -->
+      <button type="button" class="info-btn" id="infoBtn" aria-haspopup="dialog" aria-controls="infoDialog" aria-label="About this trainer" title="About this trainer">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
+      </button>
     </div>
   </div>
-  <p style="margin: -12px 0 22px; color: var(--text-dim); max-width: 62ch;">
-    Listen to a group of characters, then type what you heard before the clock runs out.
-    Random groups break the habit of counting dits and dahs by copy-writing — you're
-    forced to hold the whole group in your head and write it after the fact, the same way
-    you'll copy a callsign or a QSO on the air.
-  </p>
+
+  <dialog class="info-dialog" id="infoDialog" aria-labelledby="infoDialogTitle">
+    <h2 id="infoDialogTitle">About This Trainer</h2>
+    <p>
+      Listen to a group of characters, then type what you heard before the clock runs out.
+      Random groups break the habit of counting dits and dahs by copy-writing — you're
+      forced to hold the whole group in your head and write it after the fact, the same way
+      you'll copy a callsign or a QSO on the air.
+    </p>
+    <button type="button" class="btn-secondary" id="infoCloseBtn">Close</button>
+  </dialog>
 
   <!-- ===================================================================
        PRACTICE MODULE
@@ -638,15 +622,6 @@
     <div class="tap-hint" id="tapHint">Tap the practice box, then start — your keyboard stays live for the whole session.</div>
 
     <input class="hidden-input" id="hiddenInput" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text" aria-label="Type the characters you heard" />
-
-    <div class="quickstats">
-      <div class="quickstat"><div class="v" id="qsStreak">0</div><div class="l">Streak</div></div>
-      <div class="quickstat"><div class="v" id="qsBest">0</div><div class="l">Best</div></div>
-      <div class="quickstat"><div class="v" id="qsGroupAcc">—</div><div class="l">Group %</div></div>
-      <div class="quickstat"><div class="v" id="qsCharAcc">—</div><div class="l">Char %</div></div>
-      <div class="quickstat"><div class="v" id="qsAvg">—</div><div class="l">Avg ms</div></div>
-      <div class="quickstat"><div class="v" id="qsTimeouts">0</div><div class="l">Timeouts</div></div>
-    </div>
   </section>
 
   <!-- ===================================================================
@@ -854,8 +829,7 @@
     tapHint: $("tapHint"),
     hiddenInput: $("hiddenInput"),
 
-    qsStreak: $("qsStreak"), qsBest: $("qsBest"), qsGroupAcc: $("qsGroupAcc"),
-    qsCharAcc: $("qsCharAcc"), qsAvg: $("qsAvg"), qsTimeouts: $("qsTimeouts"),
+    infoBtn: $("infoBtn"), infoDialog: $("infoDialog"), infoCloseBtn: $("infoCloseBtn"),
 
     groupSelect: $("groupSelect"), customField: $("customField"), customInput: $("customInput"),
     groupSizeSelect: $("groupSizeSelect"),
@@ -1109,16 +1083,6 @@
     return Math.round((correct / total) * 100) + "%";
   }
 
-  function renderQuickStats() {
-    var o = state.stats.overall;
-    els.qsStreak.textContent = o.currentStreak;
-    els.qsBest.textContent = o.bestStreak;
-    els.qsGroupAcc.textContent = fmtPct(o.groupsCorrect, o.groupsPlayed);
-    els.qsCharAcc.textContent = fmtPct(o.charsCorrect, o.charsPlayed);
-    els.qsAvg.textContent = o.responseCount ? Math.round(o.totalResponseMs / o.responseCount) : "—";
-    els.qsTimeouts.textContent = o.timeouts;
-  }
-
   function renderStatsPanel() {
     var o = state.stats.overall;
     els.stGroupsPlayed.textContent = o.groupsPlayed;
@@ -1179,7 +1143,6 @@
   }
 
   function renderAll() {
-    renderQuickStats();
     renderStatsPanel();
     renderDrillPanel();
   }
@@ -1480,6 +1443,18 @@
   preserveInputFocus(els.sessionBtn);
   preserveInputFocus(els.drillBtn);
   preserveInputFocus(els.resetStatsBtn);
+
+  // Info popup — showModal()/close() on the native <dialog> handle
+  // focus-trapping and Escape-to-close for free. A click on the dialog's
+  // own backdrop (i.e. a click landing on the <dialog> element itself
+  // rather than anything inside it, since the dialog's content box
+  // doesn't fill the whole element) also closes it, matching how most
+  // modal popups behave.
+  els.infoBtn.addEventListener("click", function () { els.infoDialog.showModal(); });
+  els.infoCloseBtn.addEventListener("click", function () { els.infoDialog.close(); });
+  els.infoDialog.addEventListener("click", function (e) {
+    if (e.target === els.infoDialog) els.infoDialog.close();
+  });
 
   els.sessionBtn.addEventListener("click", function () {
     if (state.running) stopSession(); else startSession();
