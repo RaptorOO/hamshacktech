@@ -5,6 +5,15 @@ categories: ["CW & Operating Skills"]
 tags: ["Vail Zoomer", "Vail Adapter", "VB-Cable", "Zoom", "CW"]
 draft: false
 summary: "Merge CW sidetone from a Vail Adapter directly into your Zoom, Teams, Discord, or Meet audio — no microphone needed to carry your keying."
+featureimage: "img/guides/vail-zoomer/01-vail-adapter.png"
+# Feature image is used for the homepage/list-page thumbnails only. The
+# site's default article hero style ("background") stretches this same
+# image to a full-width 800px banner behind the title -- fine for a wide,
+# purpose-shot photo, but our current images are product photos/screenshots
+# that look cluttered blown up that large, so hero is turned off per-page
+# rather than changing the site-wide default (which stays available for a
+# future post with an actual hero-shaped image).
+showHero: false
 ---
 
 ## What is it?
