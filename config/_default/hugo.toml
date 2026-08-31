@@ -81,3 +81,17 @@ target = "static"
 [[module.mounts]]
 source = "img"
 target = "static/img"
+# Second mount of the SAME img/ folder, this time into the assets/ pipeline
+# (Hugo Pipes) rather than served-as-is under static/. This is what lets a
+# content file's `featureimage:` front matter (e.g. featureimage:
+# "img/guides/vail-zoomer/01-vail-adapter.png") resolve via Hugo's
+# resources.Get / resources.Resize -- required for Blowfish's list/card
+# thumbnails and article hero images. Files still work at /img/... via the
+# static mount above; this just makes them ALSO available through the
+# assets pipeline, without moving or duplicating anything on disk. (PR #12
+# tried this same technique for the header logo and reverted it only
+# because that whole logo attempt was scrapped, not because the mount
+# itself caused any problem.)
+[[module.mounts]]
+source = "img"
+target = "assets/img"
