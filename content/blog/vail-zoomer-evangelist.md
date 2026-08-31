@@ -5,6 +5,8 @@ categories: ["CW & Operating Skills"]
 tags: ["CW Academy", "Vail Adapter", "Vail Zoomer", "Morse Code"]
 draft: false
 summary: "How a CW novice with two years under his belt turned into the guy who won't stop talking about clean sidetone on Zoom — and the guide that came out of it."
+featureimage: "img/guides/vail-zoomer/01-vail-adapter.png"
+showHero: false # see note in guides/vail-zoomer-zoom-setup.md
 ---
 
 HamShackTech is mostly about bringing modern technology into the ham

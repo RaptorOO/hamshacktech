@@ -5,6 +5,8 @@ categories: ["CW & Operating Skills"]
 tags: ["VBand", "Vail Adapter", "CW", "Morse Code", "CW Academy"]
 draft: false
 summary: "Set up a free key or paddle in your browser and meet your CW classmates online — plus how to build yourself a private, no-password practice room."
+featureimage: "img/guides/vband-cw-practice-setup/01-vband-adapter.jpg"
+showHero: false # see note in vail-zoomer-zoom-setup.md
 ---
 
 ## What is it, and why use it?

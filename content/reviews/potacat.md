@@ -6,6 +6,8 @@ tags: ["POTACAT", "ECHOCAT", "POTA", "SOTA", "CAT Control", "CW"]
 draft: false
 rating: 4.8
 summary: "POTACAT started as a weekend project to one-click tune a rig at POTA spots. It's become one of the most actively developed tools in the hobby -- and the name might be the only thing holding it back."
+featureimage: "img/reviews/potacat/01-table-view.png"
+showHero: false # see note in guides/vail-zoomer-zoom-setup.md
 ---
 
 I want to start with a confession: I almost didn't write this review, because I couldn't figure out how to get past the name.

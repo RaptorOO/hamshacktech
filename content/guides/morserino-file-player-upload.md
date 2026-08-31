@@ -5,6 +5,8 @@ categories: ["CW & Operating Skills"]
 tags: ["Morserino-32", "CW", "Morse Code", "File Player"]
 draft: false
 summary: "How to load your own text into the Morserino-32's File Player, using the M32 Configuration Tool over USB."
+featureimage: "img/guides/morserino-file-player-upload/01-config-tool-connect.png"
+showHero: false # see note in vail-zoomer-zoom-setup.md
 ---
 
 One of the most useful features of the Morserino-32 — and one a lot of owners never discover — is the ability to upload your own custom practice files. Instead of settling for generic canned drills, you can build a file around exactly what you need to work on: a list of the characters still tripping you up, a canned QSO to rehearse before you get on the air, a list of the words you hear most often on the air, or anything else worth copying.

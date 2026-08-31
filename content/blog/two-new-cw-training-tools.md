@@ -5,6 +5,8 @@ categories: ["CW & Operating Skills"]
 tags: ["CW Tools", "ICR Trainer", "Code Groups Trainer", "Morse Code"]
 draft: false
 summary: "Two new browser-based CW trainers just landed on the site — plus the one feature in both of them I built because I couldn't find it anywhere else."
+featureimage: "img/blog/two-new-cw-training-tools/01-code-groups-trainer.png"
+showHero: false # see note in guides/vail-zoomer-zoom-setup.md
 ---
 
 I just published two new training tools over on the [CW Tools](/cw-tools/) page: the [CW ICR Trainer](https://cw.hamshacktech.com) and the [CW Code Groups Trainer](/cw-tools/code-groups-trainer/). Both are free, live right in your browser, and need zero install.
