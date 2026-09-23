@@ -362,6 +362,17 @@
     margin-top: 4px;
   }
 
+  /* Word-gap spacer between the two halves of the one multi-word QSO
+     element ("HW CPY?") — a narrow, borderless flex item rather than a
+     full-size .blank box, so the answer row visibly reads as two short
+     words instead of one long run of letters. Height is left to the
+     row's default flex stretch so it lines up with the real .blank
+     cells on either side of it. */
+  .blank-gap {
+    width: clamp(10px, 2vw, 18px);
+    flex-shrink: 0;
+  }
+
   /* ---------------------------------------------------------------------
      Lower grid: settings / stats / drill
      --------------------------------------------------------------------- */
@@ -641,6 +652,8 @@
             <option value="letters">Letters (A–Z)</option>
             <option value="numbers">Numbers (0–9)</option>
             <option value="mixed">Mixed (A–Z, 0–9)</option>
+            <option value="qso">QSO Elements</option>
+            <option value="words">Common Words</option>
             <option value="custom">Custom</option>
           </select>
         </div>
@@ -650,8 +663,14 @@
           <input type="text" id="customInput" placeholder="e.g. KMRSAT" />
         </div>
 
-        <div class="field">
-          <label for="groupSizeSelect">Characters per Group</label>
+        <!-- Doubles as "Characters per Group" (Letters/Numbers/Mixed/Custom)
+             and "Word Length" (Common Words) — the label text is swapped by
+             JS to match, per Tim's request to reuse this same control for
+             picking word length. Hidden entirely for QSO Elements, since
+             those elements (CQ, RST, HW CPY?, etc.) have their own natural
+             length rather than a chosen one. -->
+        <div class="field" id="groupSizeField">
+          <label for="groupSizeSelect" id="groupSizeLabel">Characters per Group</label>
           <select id="groupSizeSelect">
             <option value="2">2</option>
             <option value="3" selected>3</option>
@@ -741,8 +760,13 @@
 
   /* =====================================================================
      MORSE REFERENCE TABLE
-     International Morse, letters + digits only (matches the four
-     practice-group choices: Letters, Numbers, Mixed, Custom).
+     International Morse, letters + digits, plus three punctuation marks
+     needed once QSO Elements and Common Words joined the practice-group
+     list: "?" and "/" appear in QSO abbreviations (the bare "?" element,
+     "/P" for portable operation), and "'" appears in "THAT'S" in the
+     Common Words list. Each is sent as an ordinary Morse character with
+     normal inter-character spacing, the same as any letter — no special
+     timing needed for these.
      ===================================================================== */
   var MORSE = {
     A: ".-",    B: "-...",  C: "-.-.",  D: "-..",   E: ".",
@@ -752,10 +776,57 @@
     U: "..-",   V: "...-",  W: ".--",   X: "-..-",  Y: "-.--",
     Z: "--..",
     "0": "-----", "1": ".----", "2": "..---", "3": "...--", "4": "....-",
-    "5": ".....", "6": "-....", "7": "--...", "8": "---..", "9": "----."
+    "5": ".....", "6": "-....", "7": "--...", "8": "---..", "9": "----.",
+    "?": "..--..", "/": "-..-.", "'": ".----."
   };
   var ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
   var DIGITS = "0123456789".split("");
+
+  /* QSO Elements — common Q-signals, prosigns, and QSO-flow abbreviations,
+     from Tim's own practice list (deduplicated). Each round sends exactly
+     one of these, chosen at random — unlike Letters/Numbers/Mixed/Custom,
+     which build a round out of several random single characters, these
+     already come at their own natural length. "HW CPY?" ("how copy?") is
+     the one multi-word entry — its embedded space is sent as a proper
+     inter-word gap (see playMorseSequence) and shown as a narrower spacer
+     in the answer blanks (see renderBlanksForRound) rather than a normal
+     letter box. */
+  var QSO_ELEMENTS = [
+    "UR", "RST", "NAME", "QTH", "QRS", "QRM", "QRN", "QRP", "QSB", "QSY",
+    "QRZ", "?", "HW CPY?", "POTA", "RIG", "ANT", "FB", "CUL", "DE", "FER",
+    "CALL", "WX", "QSO", "73", "BK", "BT", "GM", "GE", "GA", "OP",
+    "THX", "SOTA", "/P", "ES", "HW", "TU", "TNX", "RR", "QRL", "AGN",
+    "PSE", "SRI", "SIG"
+  ];
+
+  /* Common Words — general high-frequency English words plus ham-radio
+     vocabulary (rig names, antenna types, QSO abbreviations), from Tim's
+     own Morserino practice list (deduplicated). Filtered by word length
+     at practice time via wordsOfLength() — the Characters per Group
+     control doubles as a word-length picker for this group (see
+     updateGroupSizeFieldUI). */
+  var COMMON_WORDS = [
+    "/AR", "/BK", "/KN", "/SK", "73", "ABOUT", "AGN", "ALL", "AM", "AND",
+    "ANT", "ARE", "AS", "AT", "BAND", "BE", "BEAM", "BEEN", "BK", "BT",
+    "BTU", "BUT", "BY", "CALL", "CAN", "CLDY", "COLD", "COME", "COOL", "COULD",
+    "CPY", "CQ", "CU", "CUL", "CUT", "CW", "DAY", "DE", "DID", "DIPOLE",
+    "DO", "DOWN", "DX", "EFHW", "ELECRAFT", "ES", "FB", "FER", "FIND", "FLEX",
+    "FOR", "FREQ", "FROM", "GA", "GE", "GET", "GL", "GM", "GND", "GO",
+    "GOT", "GUD", "HAD", "HAS", "HAVE", "HE", "HER", "HEX", "HI", "HIM",
+    "HIS", "HOT", "HOW", "HPE", "HR", "HW", "HW?", "I", "ICOM", "IF",
+    "IN", "IS", "IT", "JOE", "JOHN", "JUST", "KENWOOD", "KNOW", "KNWD", "LET",
+    "LID", "LIKE", "LONG", "LOOK", "MADE", "MAKE", "MAY", "MEAN", "MORE", "MST",
+    "MY", "NAME", "NET", "NO", "NOT", "NOW", "NR", "NUMBER", "OF", "OH",
+    "OM", "ON", "ONE", "OP", "OR", "OTHER", "OUT", "P2P", "PM", "POTA",
+    "PSE", "PWR", "QCX", "QMX", "QRM", "QRP", "QRS", "QSB", "QSO", "QTH",
+    "RAIN", "REALLY", "RIG", "RIGHT", "RPT", "RR", "RST", "SEE", "SHE", "SK",
+    "SO", "SOME", "SST", "STN", "TEMP", "TEN", "TEST", "THAN", "THAT", "THAT'S",
+    "THE", "THEM", "THEN", "THERE", "THESE", "THEY", "THINK", "THIS", "TIME", "TNX",
+    "TO", "TOO", "TU", "TWO", "U", "UP", "USE", "VERTICAL", "VY", "W",
+    "WARM", "WAS", "WATTS", "WE", "WEEK", "WELL", "WERE", "WHAT", "WHEN", "WHERE",
+    "WHICH", "WHO", "WILL", "WITH", "WORD", "WOULD", "WRITE", "WX", "XYL", "YAESU",
+    "YAGI", "YES", "YL", "YOU", "YOUR", "ZIP"
+  ];
 
   var REVEAL_PAUSE_MS = 1300;      // how long the answer stays revealed before the next group
   var TIMEOUT_EXTRA_PAUSE_MS = 400; // a bit more breathing room after a buzzer
@@ -832,7 +903,7 @@
     infoBtn: $("infoBtn"), infoDialog: $("infoDialog"), infoCloseBtn: $("infoCloseBtn"),
 
     groupSelect: $("groupSelect"), customField: $("customField"), customInput: $("customInput"),
-    groupSizeSelect: $("groupSizeSelect"),
+    groupSizeField: $("groupSizeField"), groupSizeLabel: $("groupSizeLabel"), groupSizeSelect: $("groupSizeSelect"),
     wpmRange: $("wpmRange"), wpmVal: $("wpmVal"),
     fwpmRange: $("fwpmRange"), fwpmVal: $("fwpmVal"),
     toneRange: $("toneRange"), toneVal: $("toneVal"),
@@ -866,11 +937,27 @@
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.settings)); } catch (e) { /* ignore */ }
   }
 
+  // The Characters per Group control is reused for two different jobs
+  // depending on the selected Practice Group: it picks how many random
+  // single characters make up a round (Letters/Numbers/Mixed/Custom), or
+  // it picks the word length to filter Common Words down to. For QSO
+  // Elements it means nothing at all (each element already has its own
+  // length), so the whole field is hidden rather than shown-but-inert.
+  function updateGroupSizeFieldUI(group) {
+    if (group === "qso") {
+      els.groupSizeField.style.display = "none";
+    } else {
+      els.groupSizeField.style.display = "";
+      els.groupSizeLabel.textContent = group === "words" ? "Word Length" : "Characters per Group";
+    }
+  }
+
   function applySettingsToUI() {
     var s = state.settings;
     els.groupSelect.value = s.group;
     els.customInput.value = s.custom;
     els.customField.style.display = s.group === "custom" ? "" : "none";
+    updateGroupSizeFieldUI(s.group);
     els.groupSizeSelect.value = String(s.groupSize);
     els.wpmRange.value = s.wpm; els.wpmVal.textContent = s.wpm;
     els.fwpmRange.max = s.wpm; // Farnsworth can never exceed character speed
@@ -947,7 +1034,13 @@
   }
 
   // Plays a full character group and resolves once the audio (plus a
-  // small safety buffer) has actually finished playing.
+  // small safety buffer) has actually finished playing. `chars` is
+  // usually all real Morse characters, but for the one multi-word QSO
+  // element ("HW CPY?") it also contains a literal " " standing in for
+  // the gap between the two words — handled below by widening that one
+  // gap to a proper inter-word pause (7 units) instead of the normal
+  // inter-character pause (3 units), same convention as spacing between
+  // words when sending real text.
   function playMorseSequence(chars, settings) {
     var ctx = ensureAudioCtx();
     var t = computeTiming(settings.wpm, settings.fwpm);
@@ -956,7 +1049,17 @@
     var now = ctx.currentTime;
     state.scheduledOscillators = []; // this round's tones only; the previous round's have already finished playing
 
-    chars.forEach(function (ch, idx) {
+    for (var idx = 0; idx < chars.length; idx++) {
+      var ch = chars[idx];
+      var isLast = idx === chars.length - 1;
+
+      if (ch === " ") {
+        // No tone for the gap itself — just widen the pause before the
+        // next word starts sending.
+        if (!isLast) cursor += (7 * t.ts) / 1000;
+        continue;
+      }
+
       var code = MORSE[ch] || "";
       for (var i = 0; i < code.length; i++) {
         var durSec = (code[i] === "-" ? 3 * t.ta : t.ta) / 1000;
@@ -964,8 +1067,11 @@
         cursor += durSec;
         if (i < code.length - 1) cursor += t.ta / 1000; // 1-unit gap inside a character
       }
-      if (idx < chars.length - 1) cursor += (3 * t.ts) / 1000; // Farnsworth-stretched inter-character gap
-    });
+      // Normal inter-character gap — skipped when the next slot is a word
+      // gap, since that space already supplies (a wider version of) it.
+      var nextIsSpace = !isLast && chars[idx + 1] === " ";
+      if (!isLast && !nextIsSpace) cursor += (3 * t.ts) / 1000; // Farnsworth-stretched inter-character gap
+    }
 
     var totalMs = cursor * 1000 + 120; // small safety buffer for the final envelope tail
     return new Promise(function (resolve) { setTimeout(resolve, totalMs); });
@@ -1018,6 +1124,43 @@
     return out;
   }
 
+  function wordsOfLength(n) {
+    return COMMON_WORDS.filter(function (w) { return w.length === n; });
+  }
+
+  // Builds the array of "cells" (one entry per character, including the
+  // one literal " " in "HW CPY?") for the next round to send/type, or
+  // null if the current settings have nothing to draw from. Letters/
+  // Numbers/Mixed/Custom keep the original behavior — groupSize random
+  // single characters strung together. QSO Elements and Common Words
+  // instead pick one whole element/word at a time: QSO Elements ignores
+  // groupSize entirely (each element already has its own natural
+  // length), while Common Words uses it as a word-length filter.
+  function buildRound() {
+    var s = state.settings;
+    if (s.group === "qso") {
+      if (!QSO_ELEMENTS.length) return null;
+      return QSO_ELEMENTS[Math.floor(Math.random() * QSO_ELEMENTS.length)].split("");
+    }
+    if (s.group === "words") {
+      var pool = wordsOfLength(s.groupSize);
+      if (!pool.length) return null;
+      return pool[Math.floor(Math.random() * pool.length)].split("");
+    }
+    var charset = getCharset();
+    if (!charset.length) return null;
+    return randomGroup(s.groupSize, charset);
+  }
+
+  // Shown in the status pill when buildRound() comes back empty, e.g. an
+  // empty Custom field or a word length with no matches in the list.
+  function emptyRoundMessage() {
+    var s = state.settings;
+    if (s.group === "custom") return "Add custom characters to continue";
+    if (s.group === "words") return "No " + s.groupSize + "-letter words in the list";
+    return "Nothing to practice — check settings";
+  }
+
   /* =====================================================================
      RENDERING
      ===================================================================== */
@@ -1032,9 +1175,12 @@
     return caret;
   }
 
-  // Creates empty blank cells with no caret. Callers that are about to
-  // accept typing immediately follow this with renderBlanksTyping(), which
-  // paints the caret based on live state instead of a flag passed in here.
+  // Creates empty blank cells with no caret. Used for the pre-session/
+  // stopped display, before this round's actual characters (and thus
+  // whether any of them are a word-gap) are known. Callers that are about
+  // to accept typing immediately follow this with renderBlanksTyping(),
+  // which paints the caret based on live state instead of a flag passed
+  // in here.
   function renderBlanksIdle(n) {
     els.blanksRow.innerHTML = "";
     for (var i = 0; i < n; i++) {
@@ -1044,12 +1190,30 @@
     }
   }
 
+  // Same idea, but for the start of an actual round, where state.currentChars
+  // is already known — a literal " " (only ever appears in "HW CPY?") gets
+  // a narrow .blank-gap spacer instead of a full-size .blank box, so the
+  // row visibly reads as two words rather than one run-together string.
+  function renderBlanksForRound(chars) {
+    els.blanksRow.innerHTML = "";
+    chars.forEach(function (ch) {
+      var d = document.createElement("div");
+      d.className = ch === " " ? "blank-gap" : "blank";
+      els.blanksRow.appendChild(d);
+    });
+  }
+
   function renderBlanksTyping() {
     var cells = els.blanksRow.children;
     var nextIndex = state.typed.length; // the blank the caret belongs in next
     for (var i = 0; i < cells.length; i++) {
       var cell = cells[i];
+      var isGap = state.currentChars[i] === " ";
       cell.innerHTML = "";
+      if (isGap) {
+        cell.className = "blank-gap";
+        continue;
+      }
       if (i < nextIndex) {
         cell.className = "blank filled";
         cell.textContent = state.typed[i];
@@ -1067,6 +1231,11 @@
     for (var i = 0; i < cells.length; i++) {
       var r = results[i];
       var cell = cells[i];
+      if (r.actual === " ") {
+        cell.textContent = "";
+        cell.className = "blank-gap";
+        continue;
+      }
       cell.textContent = r.actual;
       cell.className = "blank " + (r.correct ? "correct" : "incorrect");
     }
@@ -1190,7 +1359,11 @@
   function evaluateGroup(timedOut) {
     var results = [];
     var allCorrect = !timedOut;
-    var n = state.settings.groupSize;
+    // The actual round length, not settings.groupSize — QSO Elements and
+    // Common Words each pick one whole element/word per round, which can
+    // be shorter or longer than whatever groupSize happens to be set to
+    // (and for QSO Elements, groupSize isn't even shown/used).
+    var n = state.currentChars.length;
     for (var i = 0; i < n; i++) {
       var actual = state.currentChars[i];
       var typedCh = state.typed[i] || null;
@@ -1198,6 +1371,11 @@
       if (!correct) allCorrect = false;
       results.push({ actual: actual, typedCh: typedCh, correct: correct });
 
+      // The word-gap " " in "HW CPY?" isn't a Morse character to learn,
+      // so it's excluded from per-character stats and the weak-character
+      // drill list — but it still has to be typed correctly (above) for
+      // the whole element to count as a correct round.
+      if (actual === " ") continue;
       var cs = getCharStat(actual);
       cs.played++;
       if (correct) cs.correct++;
@@ -1225,6 +1403,7 @@
     sz.groupsPlayed++;
     if (allCorrect) sz.groupsCorrect++;
     results.forEach(function (r) {
+      if (r.actual === " ") return; // word gap — excluded from char-level accuracy, same as above
       sz.charsPlayed++; if (r.correct) sz.charsCorrect++;
       o.charsPlayed++; if (r.correct) o.charsCorrect++;
     });
@@ -1236,11 +1415,10 @@
 
   function runLoop() {
     if (!state.running) return;
-    var charset = getCharset();
+    var chars = buildRound();
 
-    if (!charset.length) {
-      setStatus("idle", "Add custom characters to continue");
-      stopSession();
+    if (!chars) {
+      stopSession(emptyRoundMessage());
       return;
     }
 
@@ -1250,8 +1428,8 @@
     // a round nobody is playing anymore.
     var myToken = ++state.roundToken;
 
-    state.currentChars = randomGroup(state.settings.groupSize, charset);
-    renderBlanksIdle(state.settings.groupSize);
+    state.currentChars = chars;
+    renderBlanksForRound(chars);
     updateMeter(1, " ", false);
     setStatus("sending", "Sending\u2026");
     updateDrillFlag();
@@ -1328,7 +1506,12 @@
     runLoop();
   }
 
-  function stopSession() {
+  // idleMessage lets a caller (e.g. runLoop(), when there's nothing left
+  // to practice) leave a specific reason in the status pill instead of
+  // the generic "Idle" — previously that message was set right before
+  // calling stopSession(), which immediately clobbered it back to "Idle"
+  // before anyone could read it.
+  function stopSession(idleMessage) {
     state.running = false;
     if (state.acceptingInput) finishAnswer(false); // unblock a pending answer without scoring it
     state.timerActive = false;
@@ -1337,7 +1520,7 @@
     els.sessionBtn.classList.remove("running");
     els.tapHint.style.display = "";
     lockSettings(false);
-    setStatus("idle", "Idle");
+    setStatus("idle", idleMessage || "Idle");
     updateMeter(0, " ", false);
     renderBlanksIdle(state.settings.groupSize);
   }
@@ -1469,12 +1652,15 @@
 
   els.hiddenInput.addEventListener("input", function () {
     if (!state.acceptingInput) { els.hiddenInput.value = ""; return; }
-    var v = els.hiddenInput.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    v = v.slice(0, state.settings.groupSize);
+    // A-Z0-9 as before, plus the punctuation QSO Elements/Common Words can
+    // contain: "?" (the bare "?" element, "HW CPY?"), "/" ("/P", "/AR" etc.),
+    // "'" ("THAT'S"), and a literal space for the one two-word element.
+    var v = els.hiddenInput.value.toUpperCase().replace(/[^A-Z0-9?/' ]/g, "");
+    v = v.slice(0, state.currentChars.length);
     els.hiddenInput.value = v;
     state.typed = v.split("");
     renderBlanksTyping();
-    if (state.typed.length === state.settings.groupSize) finishAnswer(false);
+    if (state.typed.length === state.currentChars.length) finishAnswer(false);
   });
 
   els.hiddenInput.addEventListener("keydown", function (e) {
@@ -1484,6 +1670,7 @@
   els.groupSelect.addEventListener("change", function () {
     state.settings.group = els.groupSelect.value;
     els.customField.style.display = state.settings.group === "custom" ? "" : "none";
+    updateGroupSizeFieldUI(state.settings.group);
     saveSettings();
   });
   els.customInput.addEventListener("input", function () {
