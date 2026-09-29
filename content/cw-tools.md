@@ -5,7 +5,7 @@ showDate: false
 showPagination: false
 ---
 
-Practical, no-install tools for CW practice and operating — built to run right in your browser, on desktop or phone. More will land here over time.
+Practical, no-install tools for CW practice and operating — built to run right in your browser. The two trainers work on desktop or phone; Morse Code Jeopardy is a desktop game for group practice over Zoom. More will land here over time.
 
 <div class="tool-card">
   <div class="tool-card-header">
@@ -43,4 +43,23 @@ Practical, no-install tools for CW practice and operating — built to run right
   </ol>
 
   <a class="tool-card-button" href="/cw-tools/code-groups-trainer/">Launch CW Code Groups Trainer →</a>
+</div>
+
+<div class="tool-card">
+  <div class="tool-card-header">
+    <h3>Morse Code Jeopardy</h3>
+    <span class="tool-card-badge">Free · Group Game</span>
+  </div>
+
+  <p>A Jeopardy-style board game built for CW study groups practicing together over Zoom. Six categories — Numbers, Callsigns, Names, QTHs, Q-Signals, and Ham Talk — each with five tiles that step up in speed from 6 to 20 WPM. Pick a tile and the hidden answer plays in Morse; if the group can't copy it, replay it up to two more times at slower speeds for partial credit. Each column hides a Daily Double, where a player sends a fitting answer live on their own key for the group to copy. It's deliberately non-competitive: nobody is scored individually — the whole group builds one shared score together, so slower copiers are never penalized.</p>
+
+  <h4>How to use it</h4>
+  <ol>
+    <li>Open the game in a desktop browser window — it's designed to be screen-shared by one host, not played on a phone.</li>
+    <li>In Zoom, <strong>Share Screen</strong>, pick just that browser window, and turn on <strong>Share Sound</strong> — without it, players won't hear the code.</li>
+    <li>Adjust character speed, tone, volume, and the five WPM tiers in the Host Instructions panel if you like, then click <strong>Let's Play</strong>.</li>
+    <li>Players take turns calling a category and dollar amount. Click the tile, wait for the 3-second countdown, and listen. Use <strong>Play Slower</strong>, <strong>Got it</strong>, or <strong>Reveal</strong> as the group works it out.</li>
+  </ol>
+
+  <a class="tool-card-button" href="/cw-tools/morse-code-jeopardy/">Launch Morse Code Jeopardy →</a>
 </div>
