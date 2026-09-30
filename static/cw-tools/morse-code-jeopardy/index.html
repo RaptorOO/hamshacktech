@@ -151,7 +151,24 @@
     border: 1px solid rgba(198,240,53,0.22);
     box-shadow: 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(198,240,53,0.08);
     border-radius: 12px; padding: 0 10px;
+    position: relative; /* anchors the home icon to the bar's left edge */
   }
+  /* Home icon: same house glyph and 34px square as the two CW trainers.
+     Pinned to the left end of the host bar so the New Game / Stop Audio
+     buttons stay centered. */
+  .home-link {
+    position: absolute; left: 7px; top: 50%; transform: translateY(-50%);
+    width: 34px; height: 34px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, #1c3a18, #102410);
+    border: 1px solid rgba(198,240,53,0.28);
+    border-radius: 8px;
+    color: #c6d6b0;
+    text-decoration: none;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .home-link:hover, .home-link:focus-visible { color: var(--lime); border-color: var(--lime); }
+  .home-link svg { width: 18px; height: 18px; display: block; }
   button.btn {
     font-family: "Oswald", sans-serif; letter-spacing: 0.06em; text-transform: uppercase;
     border: 0; cursor: pointer; border-radius: 8px; padding: 7px 12px; font-size: 15px;
@@ -319,6 +336,11 @@
     font-family: "Oswald", sans-serif; letter-spacing: 0.22em; color: var(--lime);
     text-decoration: none; font-size: 15px; text-shadow: 0 0 12px var(--lime-glow);
   }
+  .brand-foot .copyright {
+    margin-left: 14px;
+    font-family: "Oswald", sans-serif; letter-spacing: 0.08em;
+    font-size: 12px; color: var(--muted);
+  }
   .modal-back {
     position: fixed; inset: 0; z-index: 20; background: rgba(4,10,4,0.82);
     display: none; align-items: center; justify-content: center; padding: 16px;
@@ -414,10 +436,12 @@
     </div>
   </header>
   <div class="hostbar">
+    <a class="home-link" href="/" aria-label="Back to HamShackTech" title="Back to HamShackTech">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
     <button class="btn" id="newGame">New Game</button>
     <button class="btn ghost" id="stopAudio">Stop Audio</button>
     <button class="btn ghost host-only" id="editContent">Content</button>
-    <button class="btn ghost" id="hostLock">Host</button>
   </div>
   <div class="stage-frame">
     <div class="waves"></div>
@@ -429,6 +453,7 @@
   </div>
   <footer class="brand-foot">
     <a href="https://hamshacktech.com" target="_blank" rel="noopener">hamshacktech.com</a>
+    <span class="copyright">Copyright &copy; 2026 Ham Shack Tech LLC</span>
   </footer>
 </div>
 
@@ -508,7 +533,6 @@
 </div>
 
 <script>
-const HOST_PIN = "73";
 // Reuse the site's existing square alien-mascot icon (same artwork, already served at the site root)
 const LOGO_SRC = "/apple-touch-icon.png";
 const PLAY_DELAY_SEC = 3;
@@ -890,7 +914,6 @@ function updateBank() { $("bankValue").textContent = money(state.bank); }
 function setHostMode(on) {
   state.host = !!on;
   document.body.classList.toggle("host-mode", state.host);
-  $("hostLock").textContent = state.host ? "Host on" : "Host";
   if (state.host) sessionStorage.setItem("mcj-host", "1");
   else sessionStorage.removeItem("mcj-host");
 }
@@ -1295,12 +1318,6 @@ $("resetContent").addEventListener("click", () => {
 });
 $("contentModal").addEventListener("click", (e) => {
   if (e.target.id === "contentModal") $("contentModal").classList.remove("show");
-});
-$("hostLock").addEventListener("click", () => {
-  if (state.host) { setHostMode(false); loadPools(); return; }
-  const pin = window.prompt("Host pin");
-  if (pin === HOST_PIN) { setHostMode(true); loadPools(); }
-  else if (pin !== null) alert("Nope.");
 });
 </script>
 </body>

@@ -7,6 +7,8 @@ showPagination: false
 
 Practical, no-install tools for CW practice and operating — built to run right in your browser. The two trainers work on desktop or phone; Morse Code Jeopardy is a desktop game for group practice over Zoom. More will land here over time.
 
+<div class="tool-cards">
+
 <div class="tool-card">
   <div class="tool-card-header">
     <h3>CW ICR Trainer</h3>
@@ -62,4 +64,6 @@ Practical, no-install tools for CW practice and operating — built to run right
   </ol>
 
   <a class="tool-card-button" href="/cw-tools/morse-code-jeopardy/">Launch Morse Code Jeopardy →</a>
+</div>
+
 </div>

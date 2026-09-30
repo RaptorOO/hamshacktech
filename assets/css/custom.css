@@ -134,3 +134,11 @@
 .tool-card-button:hover {
   background-color: rgb(var(--color-primary-600));
 }
+
+/* CW Tools page: widen the content column so the tool cards are wider and
+   shorter. Blowfish caps article text at max-w-prose (~65ch, about 580px);
+   :has() scopes this override to only the page that contains .tool-cards,
+   so every other article keeps its normal reading width. */
+.article-content:has(.tool-cards) {
+  max-width: 64rem;
+}
