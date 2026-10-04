@@ -333,6 +333,30 @@
     color: var(--bad);
     border-color: var(--bad);
   }
+  /* "Next" — only shown while the trainer is holding on a missed group's
+     results (see enterReview). Outlined in the emerald "receive" accent so
+     it reads as secondary to the main Start/Stop button beside it. */
+  .next-btn {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 13px 26px;
+    margin-left: 10px;
+    border-radius: 999px;
+    border: 1px solid var(--accent2);
+    background: transparent;
+    color: var(--accent2);
+    cursor: pointer;
+  }
+  .next-btn:hover { background: rgba(52, 211, 153, 0.12); }
+  .next-btn[hidden] { display: none; }
+  /* Phones: trim the pill padding so Stop Session and Next fit on one line. */
+  @media (max-width: 600px) {
+    .session-btn { padding: 12px 22px; }
+    .next-btn { padding: 12px 18px; }
+  }
+
   .session-btn:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
     outline: 2px solid var(--accent2);
     outline-offset: 2px;
@@ -691,7 +715,8 @@
       you'll copy a callsign or a QSO on the air.
     </p>
     <p>
-      <strong>Replay</strong> plays the current group again (the answer clock restarts after it).
+      After a missed group, the trainer waits with the answer showing: press <strong>Replay</strong>
+      to hear what you missed as many times as you like, then <strong>Next</strong>, Enter, or Space to continue.
       <strong>Head Copy Mode</strong> blocks typing until the whole group has finished playing.
       The <strong>Call Signs</strong> group invents brand-new US and international calls every
       round, so there's no list to memorize.
@@ -722,11 +747,12 @@
 
       <div class="blanks" id="blanksRow" aria-live="polite"></div>
 
-      <!-- Replay: plays the current group again. Only enabled once the
-           group has finished sending and an answer is still being waited
-           on; the answer clock restarts after the replay finishes. -->
+      <!-- Replay: plays the group again, but only AFTER a missed or
+           timed-out group's results are showing — never while you're
+           still answering, so every answer has to come from one listen.
+           The trainer holds on those results until Next / Enter / Space. -->
       <button type="button" class="side-btn side-right" id="replayBtn" disabled
-              title="Play this group again">
+              title="After a miss, hear the group again">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
         <span>Replay</span>
       </button>
@@ -738,6 +764,7 @@
     <div class="meter-label" id="meterLabel">&nbsp;</div>
 
     <button class="session-btn" id="sessionBtn" type="button">Start Session</button>
+    <button class="next-btn" id="nextBtn" type="button" hidden>Next &#9656;</button>
     <div class="tap-hint" id="tapHint">Tap the practice box, then start — your keyboard stays live for the whole session.</div>
 
     <input class="hidden-input" id="hiddenInput" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text" aria-label="Type the characters you heard" />
@@ -1052,6 +1079,7 @@
 
   var REVEAL_PAUSE_MS = 1300;     // how long the answer stays revealed before the next group
   var TIMEOUT_EXTRA_PAUSE_MS = 400; // a bit more breathing room after a buzzer
+  var REVIEW_KEY_GUARD_MS = 400;   // after a miss, ignore Enter/Space this long so a keystroke already in flight doesn't skip the review
   var INTER_GROUP_PAUSE_MS = 700;   // quiet gap before the next group starts sending
   var STORAGE_KEY = "hct-settings-v1";
   var DRILL_REPS = 5;     // each weak character is sent this many times before the drill moves on to the next one
@@ -1084,6 +1112,9 @@
     playing: false,            // true while this round's group is sounding (first send or a Replay)
     currentAudio: null,        // promise for the most recent playback of this round (first send or Replay)
     callsUsed: {},             // call signs already sent this session, so none repeats
+    reviewing: false,          // true while holding on a missed group's results, waiting for Next
+    reviewStartTs: 0,          // when the current review began (for REVIEW_KEY_GUARD_MS)
+    reviewResolver: null,      // resolves the review pause so the session loop moves on
 
     audioCtx: null,
     scheduledOscillators: [],  // oscillators for the in-flight round's audio, so it can be cut short (e.g. Drill button)
@@ -1128,7 +1159,7 @@
     tapHint: $("tapHint"),
     hiddenInput: $("hiddenInput"),
     headCopyBtn: $("headCopyBtn"), headCopyState: $("headCopyState"),
-    replayBtn: $("replayBtn"),
+    replayBtn: $("replayBtn"), nextBtn: $("nextBtn"),
 
     infoBtn: $("infoBtn"), infoDialog: $("infoDialog"), infoCloseBtn: $("infoCloseBtn"),
 
@@ -1442,7 +1473,7 @@
   }
 
   // True while Head Copy Mode is holding back typing — i.e. the mode is
-  // on and code is sounding right now (first send or a Replay).
+  // on and the group's first send is still sounding.
   function inputLocked() {
     return state.settings.headCopy && state.playing;
   }
@@ -1453,11 +1484,11 @@
     els.headCopyState.textContent = on ? "On" : "Off";
   }
 
-  // Replay is only useful while an answer is still being waited on and
-  // nothing is already playing — not mid-send, not during the reveal
-  // pause between groups, and not during a drill.
+  // Replay is only available while reviewing a missed group's results
+  // (and not while that replay is itself still playing). It stays off
+  // during sending and answering so each answer comes from a single listen.
   function updateReplayBtn() {
-    els.replayBtn.disabled = !(state.running && state.acceptingInput && !state.playing && !state.drilling);
+    els.replayBtn.disabled = !(state.running && state.reviewing && !state.playing);
   }
 
   function renderBlanksTyping() {
@@ -1742,7 +1773,11 @@
       // first send) so a Replay still in progress is waited on too.
       return state.currentAudio.then(function () {
         if (state.roundToken !== myToken) return;
-        return sleep(REVEAL_PAUSE_MS + (timedOut ? TIMEOUT_EXTRA_PAUSE_MS : 0));
+        // Correct: brief look at the result, then straight on.
+        if (outcome.allCorrect) return sleep(REVEAL_PAUSE_MS);
+        // Missed or timed out: hold here with Replay lit until the user
+        // presses Next / Enter / Space (see enterReview / leaveReview).
+        return enterReview();
       });
     }).then(function () {
       if (state.roundToken !== myToken) return;
@@ -1754,13 +1789,12 @@
     });
   }
 
-  // Shared by the first send and any Replay: once the group has finished
-  // sounding, open typing (if Head Copy Mode was holding it back) and
-  // start — or restart — the Max Time to Answer clock.
+  // Runs when the group's first send finishes: opens typing (if Head
+  // Copy Mode was holding it back) and starts the Max Time to Answer clock.
   function onPlaybackFinished() {
     state.playing = false;
     // If the group was already fully typed (or the session stopped)
-    // before the audio finished, do not reopen the answer clock.
+    // before the audio finished, do not open the answer clock.
     if (!state.running || !state.acceptingInput) { updateReplayBtn(); return; }
     setStatus("copy", "Copy now");
     renderBlanksTyping(); // swaps the dashed "wait" box for the live caret in Head Copy Mode
@@ -1769,23 +1803,46 @@
     else startTimer(state.settings.maxTimeSec);
   }
 
-  // Replay: sends the current group again. The answer clock is paused
-  // while it plays and restarts from full afterward, so a replay never
-  // eats into answer time. Anything already typed is kept.
+  // ---- Review pause (after a missed or timed-out group) --------------
+  // The answer stays revealed, Replay lights up, and a Next button
+  // appears. Returns a promise the session loop waits on; leaveReview()
+  // resolves it.
+  var REVIEW_HINT = "Replay to hear it again \u00b7 Enter / Space / Next to continue";
+  function enterReview() {
+    state.reviewing = true;
+    state.reviewStartTs = performance.now();
+    els.nextBtn.hidden = false;
+    updateMeter(0, REVIEW_HINT, false);
+    updateReplayBtn();
+    return new Promise(function (resolve) { state.reviewResolver = resolve; });
+  }
+
+  function leaveReview() {
+    if (!state.reviewing) return;
+    state.reviewing = false;
+    els.nextBtn.hidden = true;
+    if (state.playing) { stopAllAudio(); state.playing = false; } // Next pressed mid-replay: cut it off
+    updateMeter(0, " ", false);
+    updateReplayBtn();
+    var resolve = state.reviewResolver;
+    state.reviewResolver = null;
+    if (resolve) resolve();
+  }
+
+  // Replay: plays the missed group again while its answer is showing,
+  // so you can hear the characters you got wrong. Unlimited replays.
   function replayGroup() {
-    if (!state.running || !state.acceptingInput || state.playing || state.drilling) return;
+    if (!state.running || !state.reviewing || state.playing) return;
     var myToken = state.roundToken;
     ensureAudioCtx();
-    state.timerActive = false;   // pause the countdown
-    state.timerStartTs = null;   // answer time will be measured from the end of the replay
     state.playing = true;
-    setStatus("sending", "Replaying\u2026");
-    updateMeter(1, " ", false);
-    renderBlanksTyping();
+    updateMeter(0, "Replaying\u2026", false);
     updateReplayBtn();
     state.currentAudio = playMorseSequence(state.currentChars, state.settings).then(function () {
-      if (state.roundToken !== myToken) return;
-      onPlaybackFinished();
+      if (state.roundToken !== myToken || !state.reviewing) return; // Next/Stop already moved on
+      state.playing = false;
+      updateMeter(0, REVIEW_HINT, false);
+      updateReplayBtn();
     });
   }
 
@@ -1817,6 +1874,9 @@
     if (state.acceptingInput) finishAnswer(false); // unblock a pending answer without scoring it
     state.timerActive = false;
     state.playing = false;
+    state.reviewing = false;      // abandon any review pause; the bumped roundToken
+    state.reviewResolver = null;  // makes the waiting loop chain a no-op
+    els.nextBtn.hidden = true;
     stopAllAudio();
     updateReplayBtn();
     els.sessionBtn.textContent = "Start Session";
@@ -1931,6 +1991,8 @@
   preserveInputFocus(els.resetStatsBtn);
   preserveInputFocus(els.headCopyBtn);
   preserveInputFocus(els.replayBtn);
+  preserveInputFocus(els.nextBtn);
+  els.nextBtn.addEventListener("click", leaveReview);
 
   // Head Copy Mode toggle — allowed any time, even mid-session. The new
   // setting takes effect immediately: turning it on while code is still
@@ -1939,7 +2001,7 @@
     state.settings.headCopy = !state.settings.headCopy;
     renderHeadCopyBtn();
     saveSettings();
-    if (state.running) {
+    if (state.running && !state.reviewing) { // during a review the revealed answer must stay put
       if (state.playing) setStatus("sending", state.settings.headCopy ? "Listen \u2014 head copy" : "Sending\u2026");
       renderBlanksTyping();
     }
@@ -1970,7 +2032,21 @@
     if (state.running) setTimeout(function () { els.hiddenInput.focus({ preventScroll: true }); }, 50);
   });
 
+  // True once a review has been up long enough that Enter/Space count as
+  // "Next" rather than a stray keystroke left over from answering.
+  function reviewKeyReady() {
+    return state.reviewing && performance.now() - state.reviewStartTs >= REVIEW_KEY_GUARD_MS;
+  }
+
   els.hiddenInput.addEventListener("input", function () {
+    // Phone keyboards often don't report Space as a keydown, so a space
+    // arriving as input during a review is treated as "Next" here too.
+    if (state.reviewing) {
+      var hadSpace = els.hiddenInput.value.indexOf(" ") !== -1;
+      els.hiddenInput.value = "";
+      if (hadSpace && reviewKeyReady()) leaveReview();
+      return;
+    }
     if (!state.acceptingInput) { els.hiddenInput.value = ""; return; }
     // Head Copy Mode while code is playing: throw the new keystroke away
     // but keep whatever was already typed (e.g. before pressing Replay).
@@ -1987,6 +2063,11 @@
   });
 
   els.hiddenInput.addEventListener("keydown", function (e) {
+    if (state.reviewing && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault(); // keep the space out of the input; the review handles it here
+      if (reviewKeyReady()) leaveReview();
+      return;
+    }
     if (e.key === "Enter" && state.acceptingInput && !inputLocked()) finishAnswer(false);
   });
 
