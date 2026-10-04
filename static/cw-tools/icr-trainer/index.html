@@ -464,6 +464,45 @@
     opacity: 0.55;
   }
 
+  /* ===================== "OOPS!" POPUP ===================== */
+  /* Shown when someone types a character instead of pressing the space bar
+     first (see showOops() in the JS). Full-screen dim backdrop with a
+     centered card; hidden via the [hidden] attribute until needed. */
+  .oops-overlay{
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0,0,0,0.65);
+  }
+  .oops-overlay[hidden]{ display: none; }
+  .oops-card{
+    width: 100%;
+    max-width: 380px;
+    background: var(--panel);
+    border: 2px solid var(--amber);
+    border-radius: 12px;
+    padding: 22px 22px 18px;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  }
+  .oops-card h2{
+    margin: 0 0 10px;
+    font-family: var(--font-display);
+    font-size: 28px;
+    letter-spacing: 0.04em;
+    color: var(--amber);
+  }
+  .oops-card p{
+    margin: 0 0 18px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
   @media (prefers-reduced-motion: reduce){
     *{ transition: none !important; }
   }
@@ -580,7 +619,17 @@
     </details>
   </div>
 
-  <footer>73 · Practice Often, Don't Quit<div class="version-tag">Version 1</div></footer>
+  <footer>73 · Practice Often, Don't Quit<div class="version-tag">Version 2</div></footer>
+</div>
+
+<!-- "OOPS!" POPUP — explains the space-bar-first flow when someone types a
+     character too early. Hidden until showOops() reveals it. -->
+<div class="oops-overlay" id="oopsOverlay" hidden>
+  <div class="oops-card" role="alertdialog" aria-modal="true" aria-labelledby="oopsTitle" aria-describedby="oopsMsg">
+    <h2 id="oopsTitle">Oops!</h2>
+    <p id="oopsMsg">When a character plays, press the space bar the instant you recognize it, then type the character you heard. Do not press the character on your keyboard until after you have pressed the space bar.</p>
+    <button class="btn primary" id="oopsCloseBtn">Got It</button>
+  </div>
 </div>
 
 <audio id="iosAudioUnlock" loop playsinline style="display:none;" src="data:audio/wav;base64,UklGRuQSAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YcASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="></audio>
@@ -896,8 +945,27 @@ let answerPhaseActive = false;
 // than a disabled-button check) is what gates handleRecognizePress().
 let awaitingRecognition = false;
 
+// Current practice phase, mirrored from setKeyState() so the "Oops!" check
+// can tell whether a typed character came too early (during 'playing' or
+// 'armed', i.e. before the space bar was pressed).
+let keyMode = 'idle';
+
+// True while the "Oops!" popup is on screen; pauses the practice loop.
+let oopsOpen = false;
+
+// Increments every time a trial starts or is cancelled. Delayed callbacks
+// (the "playback finished" timer in startTrial) remember the id they were
+// created under and do nothing if it has changed — that's how a trial
+// interrupted by the Oops popup is cleanly abandoned.
+let trialId = 0;
+
+// Handle for finishTrial()'s "start the next character" delay, so it can be
+// cancelled if the popup opens during the feedback pause.
+let nextTrialTimer = null;
+
 function setKeyState(mode){
   // mode: 'idle' | 'playing' | 'armed' | 'answering'
+  keyMode = mode;
   els.keyStatus.classList.toggle('armed', mode === 'armed');
   if(mode === 'playing'){
     els.keyStatus.textContent = 'Listening…';
@@ -911,7 +979,8 @@ function setKeyState(mode){
 }
 
 function startTrial(){
-  if(!sessionRunning || drillActive) return;
+  if(!sessionRunning || drillActive || oopsOpen) return;
+  const myTrial = ++trialId; // tag this trial so a cancelled one can't arm later
   currentChar = pickNextCharacter();
   answerPhaseActive = false;
   awaitingRecognition = false;
@@ -926,6 +995,7 @@ function startTrial(){
 
   setTimeout(() => {
     if(!sessionRunning || drillActive) return; // session may have been stopped mid-flight
+    if(myTrial !== trialId) return;            // trial was cancelled (e.g. by the Oops popup)
     playbackEndTime = performance.now();
     awaitingRecognition = true;
     setKeyState('armed');
@@ -952,6 +1022,8 @@ function stopSession(){
   answerPhaseActive = false;
   awaitingRecognition = false;
   clearTimeout(ttaTimer);
+  clearTimeout(nextTrialTimer);
+  trialId++; // abandon any in-flight trial callback
   stopAudioImmediate();
   if(document.activeElement === els.answerInput) els.answerInput.blur();
   setKeyState('idle');
@@ -1055,7 +1127,51 @@ function finishTrial(isCorrect){
   renderWeakList();
   saveState();
   const delay = isCorrect ? 700 : 2600;
-  setTimeout(() => { if(sessionRunning && !drillActive) startTrial(); }, delay);
+  clearTimeout(nextTrialTimer);
+  nextTrialTimer = setTimeout(() => { if(sessionRunning && !drillActive) startTrial(); }, delay);
+}
+
+/* ----------------------------- OOPS POPUP ------------------------------- */
+
+// True when a typed character arrived too early — while the character is
+// still playing or after it finished but before the space bar was pressed.
+// Typing during the answer phase or the feedback pause is left alone.
+function isPrematureTyping(){
+  return sessionRunning && !drillActive && !oopsOpen &&
+         !answerPhaseActive && (keyMode === 'playing' || keyMode === 'armed');
+}
+
+// Abandons the current character (not scored — it was a misunderstanding,
+// not a miss) and shows the explanation popup.
+function showOops(){
+  oopsOpen = true;
+  trialId++;                  // invalidates the pending "playback finished" callback
+  awaitingRecognition = false;
+  answerPhaseActive = false;
+  clearTimeout(ttaTimer);
+  clearTimeout(nextTrialTimer);
+  stopAudioImmediate();
+  els.answerInput.value = '';
+  els.answerInput.classList.add('waiting');
+  els.reactionReadout.textContent = '— ms';
+  els.reactionReadout.classList.remove('lit');
+  setKeyState('idle');
+  els.oopsOverlay.hidden = false;
+  els.oopsCloseBtn.focus();
+}
+
+// Hides the popup and, after a short breather, plays a fresh character.
+function closeOops(){
+  if(!oopsOpen) return;
+  oopsOpen = false;
+  els.oopsOverlay.hidden = true;
+  if(sessionRunning && !drillActive){
+    // Put focus back in the answer field (moving it to the button can close
+    // the on-screen keyboard on phones/tablets — this brings it back).
+    els.answerInput.focus();
+    clearTimeout(nextTrialTimer);
+    nextTrialTimer = setTimeout(startTrial, 800);
+  }
 }
 
 /* ------------------------------ DRILL MODE ------------------------------ */
@@ -1198,9 +1314,28 @@ function wireEvents(){
   // treating it as the recognize action is safe and correct on both
   // touch devices (no physical spacebar involved) and external keyboards.
   document.addEventListener('keydown', (e) => {
+    // While the Oops popup is up: Enter or Esc dismisses it; Space is
+    // swallowed so it can't scroll the page or count as a recognize press.
+    if(oopsOpen){
+      if(e.key === 'Enter' || e.key === 'Escape'){
+        e.preventDefault();
+        closeOops();
+      }else if(e.code === 'Space'){
+        e.preventDefault();
+      }
+      return;
+    }
     if(e.code === 'Space'){
       e.preventDefault();
       handleRecognizePress();
+      return;
+    }
+    // A printable character (single-character e.key, no Ctrl/Cmd/Alt combo)
+    // typed before the space bar → explain the flow instead of letting it
+    // land in the answer box.
+    if(e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && isPrematureTyping()){
+      e.preventDefault();
+      showOops();
     }
   });
 
@@ -1209,7 +1344,20 @@ function wireEvents(){
   });
   // Single-character practice sets: auto-submit as soon as a character is typed.
   els.answerInput.addEventListener('input', () => {
+    // Backup check for on-screen keyboards (notably Android), which often
+    // report keydown as "Unidentified" so the check above can't see the
+    // character — catch it here once it actually lands in the field.
+    if(els.answerInput.value.length >= 1 && isPrematureTyping()){
+      showOops();
+      return;
+    }
     if(els.answerInput.value.length >= 1) submitAnswer();
+  });
+
+  els.oopsCloseBtn.addEventListener('click', closeOops);
+  // Tapping the dimmed backdrop (outside the card) also dismisses it.
+  els.oopsOverlay.addEventListener('click', (e) => {
+    if(e.target === els.oopsOverlay) closeOops();
   });
 
   els.groupSelect.addEventListener('change', () => {
@@ -1271,7 +1419,8 @@ function init(){
    'weakList','drillBtn','stopDrillBtn','drillStatus',
    'groupSelect','customRow','customInput','wpmSlider','wpmVal',
    'toneSlider','toneVal','volSlider','volVal',
-   'ttaSlider','ttaVal','ttaOffToggle','resetSessionBtn'
+   'ttaSlider','ttaVal','ttaOffToggle','resetSessionBtn',
+   'oopsOverlay','oopsCloseBtn'
   ].forEach(id => els[id] = document.getElementById(id));
 
   loadState();
