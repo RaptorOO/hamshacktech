@@ -196,6 +196,104 @@
   .info-dialog .btn-secondary { width: auto; padding: 8px 22px; }
 
   /* ---------------------------------------------------------------------
+     Session clock row — [Elapsed stopwatch] [Practice Timer button]
+     Sits at the very top of the practice panel. Both read like small
+     VFO-style digital readouts (mono, tabular digits) so the numbers
+     don't jitter sideways as they tick.
+     --------------------------------------------------------------------- */
+  .clock-row {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .clock-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px;
+    border-radius: 8px;
+    background: var(--recess);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .clock-chip svg { width: 16px; height: 16px; display: block; flex-shrink: 0; }
+  .clock-chip .clock-val {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+  .clock-chip.live { border-color: var(--accent2); }   /* stopwatch running */
+  .clock-chip.live .clock-val { color: var(--accent2); }
+  /* The Timer chip is also a button (opens the Set Timer popup). */
+  button.clock-chip { cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease; }
+  button.clock-chip:hover:not(:disabled) { color: var(--accent2); border-color: var(--accent2); }
+  button.clock-chip:disabled { cursor: default; }        /* locked while a session runs, but still readable */
+  .clock-chip.armed { border-color: var(--accent); }     /* a timer is set */
+  .clock-chip.armed .clock-val { color: var(--accent); }
+  .clock-chip.low .clock-val { color: var(--bad); }      /* final minute */
+  /* Brief flash when the timer runs out and the bell rings. */
+  .clock-chip.expired { animation: clock-flash 0.5s ease-in-out 6; border-color: var(--bad); }
+  .clock-chip.expired .clock-val { color: var(--bad); }
+  @keyframes clock-flash { 50% { background: var(--bad-soft); } }
+  @media (prefers-reduced-motion: reduce) { .clock-chip.expired { animation: none; background: var(--bad-soft); } }
+  /* Phones: tighten the chips so both stay on one line, even past an hour. */
+  @media (max-width: 600px) {
+    .clock-row { gap: 6px; }
+    .clock-chip { padding: 5px 9px; gap: 6px; font-size: 0.68rem; letter-spacing: 0.03em; }
+    .clock-chip .clock-val { font-size: 0.95rem; }
+    .clock-chip svg { width: 14px; height: 14px; }
+  }
+
+  /* Set Timer popup — reuses the .info-dialog shell above. */
+  .timer-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 14px;
+  }
+  .timer-presets button {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--panel-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .timer-presets button:hover { border-color: var(--accent2); color: var(--accent2); }
+  .timer-entry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 18px;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+  }
+  .timer-entry input[type="number"] {
+    width: 90px;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    padding: 7px 10px;
+    background: var(--recess);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+  }
+  .timer-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .timer-actions .btn-secondary { margin-top: 0; }
+  .timer-actions .btn-primary { border-color: var(--accent); color: var(--accent); }
+
+  /* ---------------------------------------------------------------------
      Practice module — the "front panel" of the app
      --------------------------------------------------------------------- */
   .panel {
@@ -721,13 +819,59 @@
       The <strong>Call Signs</strong> group invents brand-new US and international calls every
       round, so there's no list to memorize.
     </p>
+    <p>
+      The <strong>Elapsed</strong> stopwatch counts up from Start Session. Tap <strong>Timer</strong>
+      to choose how long to practice; when it runs out, a bell rings and the session stops.
+    </p>
     <button type="button" class="btn-secondary" id="infoCloseBtn">Close</button>
+  </dialog>
+
+  <!-- Set Timer popup. The countdown doesn't start here — it starts when
+       Start Session is pressed, and the choice is remembered for next time. -->
+  <dialog class="info-dialog" id="timerDialog" aria-labelledby="timerDialogTitle">
+    <h2 id="timerDialogTitle">Practice Timer</h2>
+    <p>Pick how long to practice. The countdown starts with <strong>Start Session</strong>;
+       when it reaches zero a bell rings and the session stops.</p>
+    <div class="timer-presets" id="timerPresets">
+      <button type="button" data-min="5">5 min</button>
+      <button type="button" data-min="10">10 min</button>
+      <button type="button" data-min="15">15 min</button>
+      <button type="button" data-min="20">20 min</button>
+      <button type="button" data-min="30">30 min</button>
+    </div>
+    <label class="timer-entry">
+      Or enter
+      <input type="number" id="timerInput" min="1" max="180" step="1" inputmode="numeric" />
+      minutes
+    </label>
+    <div class="timer-actions">
+      <button type="button" class="btn-secondary btn-primary" id="timerSetBtn">Set Timer</button>
+      <button type="button" class="btn-secondary" id="timerOffBtn">Timer Off</button>
+      <button type="button" class="btn-secondary" id="timerCancelBtn">Cancel</button>
+    </div>
   </dialog>
 
   <!-- ===================================================================
        PRACTICE MODULE
        =================================================================== -->
   <section class="panel practice" aria-label="Practice module">
+    <!-- Session clocks: a stopwatch that counts up from Start Session, and
+         an optional practice timer that counts down and rings a bell
+         (then stops the session) when it reaches zero. -->
+    <div class="clock-row">
+      <div class="clock-chip" id="elapsedChip" title="Time since Start Session">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>
+        <span>Elapsed</span>
+        <span class="clock-val" id="elapsedVal" role="timer" aria-live="off">0:00</span>
+      </div>
+      <button type="button" class="clock-chip" id="timerBtn" aria-haspopup="dialog" aria-controls="timerDialog"
+              title="Set a practice timer — a bell rings and the session stops when it runs out">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span>Timer</span>
+        <span class="clock-val" id="timerVal" role="timer" aria-live="off">Off</span>
+      </button>
+    </div>
+
     <div class="status-row">
       <span class="status-pill" id="statusPill" data-mode="idle">Idle</span>
       <span class="status-pill drill-flag" id="drillFlag" style="display:none;"></span>
@@ -900,7 +1044,7 @@
 
   </div>
 
-  <footer class="note">HamShackTech CW Tools — practice often, don't quit.<div class="version-tag">Version 2</div></footer>
+  <footer class="note">HamShackTech CW Tools — practice often, don't quit.<div class="version-tag">Version 3</div></footer>
 </div>
 
 <script>
@@ -1100,7 +1244,8 @@
       maxTimeSec: 6,
       unlimited: false,
       callMix: "mixed",  // Call Signs group only: "mixed" | "us" | "intl"
-      headCopy: false    // Head Copy Mode: no typing allowed while code is playing
+      headCopy: false,   // Head Copy Mode: no typing allowed while code is playing
+      timerMin: 0        // Practice Timer length in minutes; 0 = off
     },
     running: false,
     drilling: false,
@@ -1115,6 +1260,10 @@
     reviewing: false,          // true while holding on a missed group's results, waiting for Next
     reviewStartTs: 0,          // when the current review began (for REVIEW_KEY_GUARD_MS)
     reviewResolver: null,      // resolves the review pause so the session loop moves on
+
+    sessionStartTs: 0,         // Date.now() at Start Session (drives the Elapsed stopwatch)
+    timerEndTs: 0,             // Date.now() when the Practice Timer runs out; 0 = no countdown running
+    clockInterval: null,       // setInterval handle for the clock display while a session runs
 
     audioCtx: null,
     scheduledOscillators: [],  // oscillators for the in-flight round's audio, so it can be cut short (e.g. Drill button)
@@ -1160,6 +1309,10 @@
     hiddenInput: $("hiddenInput"),
     headCopyBtn: $("headCopyBtn"), headCopyState: $("headCopyState"),
     replayBtn: $("replayBtn"), nextBtn: $("nextBtn"),
+    elapsedChip: $("elapsedChip"), elapsedVal: $("elapsedVal"),
+    timerBtn: $("timerBtn"), timerVal: $("timerVal"),
+    timerDialog: $("timerDialog"), timerPresets: $("timerPresets"), timerInput: $("timerInput"),
+    timerSetBtn: $("timerSetBtn"), timerOffBtn: $("timerOffBtn"), timerCancelBtn: $("timerCancelBtn"),
 
     infoBtn: $("infoBtn"), infoDialog: $("infoDialog"), infoCloseBtn: $("infoCloseBtn"),
 
@@ -1235,6 +1388,7 @@
     els.maxTimeRange.disabled = s.unlimited;
     els.callMixSelect.value = s.callMix;
     renderHeadCopyBtn();
+    renderTimerIdle();
   }
 
   /* =====================================================================
@@ -1363,6 +1517,131 @@
       osc.start(now + offset);
       osc.stop(now + offset + 0.12);
     });
+  }
+
+  // The Practice Timer's bell. A real bell doesn't ring at one pitch:
+  // struck metal vibrates in several modes at once, and their
+  // frequencies are NOT whole-number multiples of each other (that's
+  // what separates a bell's "clang" from a musical note's harmonics).
+  // Church-bell tuning names the main ones hum (½×), prime (1×), tierce
+  // (≈1.2×, a minor third), quint (1.5×) and nominal (2×), plus some
+  // higher, faster-dying partials. Each partial below is a sine wave
+  // with an instant attack and an exponential decay — higher partials
+  // fade faster, which is why a bell's tone "mellows" as it rings out.
+  // Three strikes, about a second apart. Not added to
+  // scheduledOscillators, so stopping the session never cuts it off.
+  var BELL_PARTIALS = [
+    // [frequency ratio, relative level, decay time constant (s)]
+    [0.5, 0.35, 1.6], [1.0, 0.60, 1.2], [1.19, 0.40, 0.9],
+    [1.5, 0.25, 0.7], [2.0, 0.45, 0.6], [2.74, 0.20, 0.35],
+    [3.76, 0.12, 0.25], [5.4, 0.06, 0.15]
+  ];
+  function playBell() {
+    var ctx = ensureAudioCtx();
+    var base = 523.25;  // C5 — a bright, easy-to-hear pitch; the shimmer of the partials keeps it from sounding like the sidetone
+    // Volume follows the Volume slider, but with a floor so the bell is
+    // still audible if the sidetone was turned way down.
+    var level = Math.max(state.settings.volume, 40) / 100 * 0.16;
+    [0, 1.1, 2.2].forEach(function (strikeAt) {
+      var t0 = ctx.currentTime + 0.05 + strikeAt;
+      BELL_PARTIALS.forEach(function (p) {
+        var osc = ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.value = base * p[0];
+        var gain = ctx.createGain();
+        gain.gain.setValueAtTime(0, t0);
+        gain.gain.linearRampToValueAtTime(level * p[1], t0 + 0.004);  // near-instant "strike"
+        // Exponential ring-down: with a time constant of p[2]/3 the
+        // partial has faded ~95% after p[2] seconds.
+        gain.gain.setTargetAtTime(0, t0 + 0.004, p[2] / 3);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + p[2] * 2 + 0.1);
+      });
+    });
+  }
+
+  /* =====================================================================
+     SESSION CLOCKS — Elapsed stopwatch + Practice Timer
+     Both are computed from wall-clock timestamps (Date.now()) rather than
+     by counting ticks, so they stay accurate even when a background tab
+     throttles setInterval to once a second or slower.
+     ===================================================================== */
+  // m:ss under an hour, h:mm:ss after that.
+  function fmtClock(ms) {
+    var total = Math.max(0, Math.floor(ms / 1000));
+    var h = Math.floor(total / 3600), m = Math.floor(total / 60) % 60, sec = total % 60;
+    var ss = (sec < 10 ? "0" : "") + sec;
+    if (h) return h + ":" + (m < 10 ? "0" : "") + m + ":" + ss;
+    return m + ":" + ss;
+  }
+
+  // Timer chip when no session is running: shows the chosen length (or Off).
+  function renderTimerIdle() {
+    var min = state.settings.timerMin;
+    els.timerVal.textContent = min ? fmtClock(min * 60000) : "Off";
+    els.timerBtn.classList.toggle("armed", !!min);
+    els.timerBtn.classList.remove("low");
+  }
+
+  // Called a few times a second while a session runs.
+  function tickClocks() {
+    var now = Date.now();
+    els.elapsedVal.textContent = fmtClock(now - state.sessionStartTs);
+    if (!state.timerEndTs) return;
+    var left = state.timerEndTs - now;
+    // Ceil for the countdown so it shows 0:01 (not 0:00) during the last second.
+    els.timerVal.textContent = fmtClock(Math.ceil(left / 1000) * 1000);
+    els.timerBtn.classList.toggle("low", left <= 60000);
+    if (left <= 0) timerExpired();
+  }
+
+  function startClocks() {
+    state.sessionStartTs = Date.now();
+    state.timerEndTs = state.settings.timerMin ? state.sessionStartTs + state.settings.timerMin * 60000 : 0;
+    els.elapsedChip.classList.add("live");
+    els.timerBtn.classList.remove("expired");
+    els.timerBtn.disabled = true; // timer length is locked while a session runs, like the settings
+    clearInterval(state.clockInterval);
+    state.clockInterval = setInterval(tickClocks, 250);
+    tickClocks();
+  }
+
+  // Stopwatch freezes on the final elapsed time; Timer chip goes back to
+  // showing its set length unless it just expired (then it holds 0:00).
+  function stopClocks(expired) {
+    clearInterval(state.clockInterval);
+    state.clockInterval = null;
+    if (state.sessionStartTs) els.elapsedVal.textContent = fmtClock(Date.now() - state.sessionStartTs);
+    state.timerEndTs = 0;
+    els.elapsedChip.classList.remove("live");
+    els.timerBtn.disabled = false;
+    if (expired) {
+      els.timerVal.textContent = "0:00";
+      els.timerBtn.classList.add("expired");
+    } else {
+      renderTimerIdle();
+    }
+  }
+
+  function timerExpired() {
+    var practiced = state.settings.timerMin;
+    stopSession("\u23f0 " + practiced + " min done", true);
+    playBell(); // rung after stopSession() so nothing in the shutdown path can interfere with it
+  }
+
+  // ---- Set Timer popup ------------------------------------------------
+  function openTimerDialog() {
+    if (state.running) return;
+    els.timerBtn.classList.remove("expired");
+    els.timerInput.value = state.settings.timerMin || "";
+    els.timerDialog.showModal();
+  }
+  function setTimerMinutes(min) {
+    state.settings.timerMin = min;
+    saveSettings();
+    renderTimerIdle();
+    els.timerDialog.close();
   }
 
   /* =====================================================================
@@ -1860,6 +2139,7 @@
     els.sessionBtn.classList.add("running");
     els.tapHint.style.display = "none";
     lockSettings(true);
+    startClocks();
     els.hiddenInput.focus({ preventScroll: true }); // don't let the browser scroll to "reveal" the offscreen input
     runLoop();
   }
@@ -1869,8 +2149,11 @@
   // the generic "Idle" — previously that message was set right before
   // calling stopSession(), which immediately clobbered it back to "Idle"
   // before anyone could read it.
-  function stopSession(idleMessage) {
+  // timerRanOut is true only when called from timerExpired(), so the
+  // Timer chip can show that it expired.
+  function stopSession(idleMessage, timerRanOut) {
     state.running = false;
+    stopClocks(!!timerRanOut);
     if (state.acceptingInput) finishAnswer(false); // unblock a pending answer without scoring it
     state.timerActive = false;
     state.playing = false;
@@ -2008,6 +2291,28 @@
   });
 
   els.replayBtn.addEventListener("click", replayGroup);
+
+  // Practice Timer popup. Presets set the timer immediately; the number
+  // box accepts any whole number of minutes from 1 to 180.
+  els.timerBtn.addEventListener("click", openTimerDialog);
+  els.timerPresets.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-min]");
+    if (b) setTimerMinutes(parseInt(b.getAttribute("data-min"), 10));
+  });
+  function applyTypedTimer() {
+    var min = Math.round(parseFloat(els.timerInput.value));
+    if (!(min >= 1 && min <= 180)) { els.timerInput.focus(); els.timerInput.select(); return; } // also rejects NaN
+    setTimerMinutes(min);
+  }
+  els.timerSetBtn.addEventListener("click", applyTypedTimer);
+  els.timerInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); applyTypedTimer(); }
+  });
+  els.timerOffBtn.addEventListener("click", function () { setTimerMinutes(0); });
+  els.timerCancelBtn.addEventListener("click", function () { els.timerDialog.close(); });
+  els.timerDialog.addEventListener("click", function (e) {
+    if (e.target === els.timerDialog) els.timerDialog.close(); // backdrop click closes, like the info popup
+  });
 
   // Info popup — showModal()/close() on the native <dialog> handle
   // focus-trapping and Escape-to-close for free. A click on the dialog's
