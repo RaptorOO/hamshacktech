@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>HamShackTech CW Trainer</title>
+<meta name="description" content="ICR and Code Groups Morse code trainers in one installable app that works offline.">
+<meta name="theme-color" content="#1c1917">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  /* ===================== APP SHELL =====================
+     The shell is deliberately thin: a title bar with two tabs, and below it
+     one full-height frame per trainer. Each trainer runs in its own <iframe>
+     so its CSS and JavaScript can't collide with the other's -- they're the
+     same files as the web versions, just copied into this folder.
+     Colors are the site's avocado palette, same hex values as the trainers. */
+  :root {
+    --chassis: #100e0c;      /* matches the trainers' page background */
+    --bar: #1c1917;          /* stone-900 */
+    --well: #292524;         /* stone-800 */
+    --border: #44403c;       /* stone-700 */
+    --text: #fafaf9;         /* stone-50 */
+    --muted: #a8a29e;        /* stone-400 */
+    --lime: #a3e635;         /* lime-400, the trainers' accent */
+    --lime-ink: #1a2e05;     /* lime-950, text on a lime background */
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex;
+    flex-direction: column;
+    background: var(--chassis);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- title bar ---------- */
+  .bar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    /* env(...) keeps the bar clear of a phone's notch / status bar */
+    padding: calc(8px + env(safe-area-inset-top)) 14px 8px;
+    background: var(--bar);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .brand img { width: 30px; height: 30px; flex: none; }
+  .brand h1 {
+    margin: 0;
+    font: 600 1.15rem/1 'Oswald', sans-serif;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .brand h1 .site { color: var(--muted); font-weight: 500; }
+
+  /* Segmented control: the two trainers as tabs. */
+  .tabs {
+    display: flex;
+    padding: 3px;
+    gap: 3px;
+    background: var(--well);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+  }
+  .tab {
+    appearance: none;
+    border: 0;
+    border-radius: 6px;
+    padding: 7px 14px;
+    background: transparent;
+    color: var(--muted);
+    font: 500 0.95rem/1 'Oswald', sans-serif;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+  }
+  .tab:hover { color: var(--text); }
+  .tab[aria-selected="true"] { background: var(--lime); color: var(--lime-ink); }
+  .tab:focus-visible, .install:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+
+  .spacer { flex: 1; }
+
+  /* "Ready offline" note: only appears once the app is fully saved locally. */
+  .offline {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  .offline.ready { display: flex; }
+  .offline::before {
+    content: "";
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--lime);
+  }
+
+  /* Install button: only shown in a browser that offers installation and
+     only while the app isn't already installed. */
+  .install {
+    display: none;
+    border: 1px solid var(--lime);
+    border-radius: 7px;
+    padding: 6px 12px;
+    background: transparent;
+    color: var(--lime);
+    font: 500 0.85rem/1 'Inter', sans-serif;
+    cursor: pointer;
+  }
+  .install.show { display: block; }
+  .install:hover { background: var(--lime); color: var(--lime-ink); }
+
+  /* ---------- trainer frames ---------- */
+  main { flex: 1; position: relative; min-height: 0; }
+  main iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: var(--chassis);
+  }
+  main iframe[hidden] { display: none; }
+
+  /* ---------- narrow screens (phones) ---------- */
+  @media (max-width: 620px) {
+    .bar { gap: 10px; padding-left: 10px; padding-right: 10px; }
+    .brand h1 .site { display: none; }   /* "CW Trainer" is enough on a phone */
+    .offline { display: none !important; }
+    .tab { padding: 7px 11px; }
+  }
+  @media (max-width: 380px) {
+    .brand h1 { display: none; }         /* mascot + tabs only */
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand">
+    <img src="icons/apple-touch-icon.png" alt="" width="30" height="30">
+    <h1><span class="site">HamShackTech</span> CW Trainer</h1>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Trainers">
+    <button class="tab" role="tab" id="tab-icr" data-tab="icr"
+            aria-controls="frame-icr" aria-selected="true">ICR</button>
+    <button class="tab" role="tab" id="tab-code-groups" data-tab="code-groups"
+            aria-controls="frame-code-groups" aria-selected="false">Code Groups</button>
+  </nav>
+  <div class="spacer"></div>
+  <span class="offline" id="offlineNote" title="Everything is saved on this device, so the app opens without internet.">Ready offline</span>
+  <button class="install" id="installBtn" type="button">Install app</button>
+</header>
+
+<main>
+  <!-- The ICR frame loads right away; Code Groups loads the first time its
+       tab is opened (data-src), so only one trainer starts up at launch. -->
+  <iframe id="frame-icr" role="tabpanel" aria-labelledby="tab-icr"
+          title="ICR Trainer" src="icr/"></iframe>
+  <iframe id="frame-code-groups" role="tabpanel" aria-labelledby="tab-code-groups"
+          title="Code Groups Trainer" data-src="code-groups/" hidden></iframe>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var TAB_KEY = 'hct-cw-trainer-app-tab';   // remembers the last tab used
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  var current = null;
+
+  // ------------------------------------------------------------------
+  // Stop anything a trainer is playing. Called on the trainer being left,
+  // so a hidden tab never keeps sending Morse in the background. It just
+  // clicks the trainer's own Stop buttons -- the frames are on the same
+  // site, so the shell can reach into them -- which means the trainers
+  // themselves need no changes.
+  // ------------------------------------------------------------------
+  function stopTrainer(slug) {
+    var frame = document.getElementById('frame-' + slug);
+    var doc;
+    try { doc = frame.contentDocument; } catch (e) { return; }
+    if (!doc) return;
+
+    // Click a button only if it's currently showing on screen.
+    function clickIfVisible(id) {
+      var btn = doc.getElementById(id);
+      if (btn && btn.offsetParent !== null && !btn.disabled) btn.click();
+    }
+    // Click a button only if its label says it will stop something.
+    function clickIfStop(id) {
+      var btn = doc.getElementById(id);
+      if (btn && /stop/i.test(btn.textContent)) btn.click();
+    }
+
+    if (slug === 'icr') {
+      clickIfVisible('stopDrillBtn');    // a drill first (it may resume the session)...
+      clickIfVisible('stopSessionBtn');  // ...then the session itself
+    } else {
+      clickIfStop('drillBtn');           // Code Groups relabels these buttons
+      clickIfStop('sessionBtn');         // to "Stop ..." while running
+    }
+  }
+
+  function showTab(slug, remember) {
+    if (slug === current) return;
+    if (current) stopTrainer(current);
+    current = slug;
+
+    tabs.forEach(function (t) {
+      var on = t.dataset.tab === slug;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;          // arrow keys move between tabs
+      var frame = document.getElementById(t.getAttribute('aria-controls'));
+      if (on && frame.dataset.src) {     // first visit: load it now
+        frame.src = frame.dataset.src;
+        delete frame.dataset.src;
+      }
+      frame.hidden = !on;
+    });
+
+    if (remember) { try { localStorage.setItem(TAB_KEY, slug); } catch (e) {} }
+
+    // Hand keyboard focus to the trainer so typing goes straight to it.
+    var active = document.getElementById('frame-' + slug);
+    setTimeout(function () { try { active.contentWindow.focus(); } catch (e) {} }, 0);
+  }
+
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { showTab(t.dataset.tab, true); });
+    // Left/right arrow keys switch tabs (standard tab-list keyboard behavior).
+    t.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      next.focus();
+      showTab(next.dataset.tab, true);
+    });
+  });
+
+  // Start on the tab used last time (ICR the very first time).
+  var saved = null;
+  try { saved = localStorage.getItem(TAB_KEY); } catch (e) {}
+  showTab(saved === 'code-groups' ? 'code-groups' : 'icr', false);
+
+  // ------------------------------------------------------------------
+  // Offline support: register the service worker (sw.js), then show
+  // "Ready offline" once every file has been saved on this device.
+  // ------------------------------------------------------------------
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      // updateViaCache 'none': always check the server for a new sw.js
+      .register('sw.js', { scope: './', updateViaCache: 'none' })
+      .catch(function (err) { console.warn('Offline support unavailable:', err); });
+
+    navigator.serviceWorker.ready.then(function () {
+      document.getElementById('offlineNote').classList.add('ready');
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // Install button. Chrome and Edge fire "beforeinstallprompt" when the
+  // app can be installed; we hold on to it and show our own button, which
+  // is easier to find than the small icon in the address bar.
+  // (Safari doesn't support this -- there it's Share > Add to Home Screen.)
+  // ------------------------------------------------------------------
+  var installBtn = document.getElementById('installBtn');
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.classList.add('show');
+  });
+  installBtn.addEventListener('click', function () {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.finally(function () {
+      deferredPrompt = null;
+      installBtn.classList.remove('show');
+    });
+  });
+  window.addEventListener('appinstalled', function () {
+    installBtn.classList.remove('show');
+  });
+})();
+</script>
+</body>
+</html>
