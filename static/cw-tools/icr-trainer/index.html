@@ -503,8 +503,115 @@
     color: var(--text);
   }
 
+  /* ===================== SESSION CLOCKS ===================== */
+  /* [Elapsed stopwatch] [Practice Timer button] at the top of the Practice
+     panel — same feature as the Code Groups Trainer's clock row, restyled
+     with this app's own tokens. Mono, tabular digits so the readouts don't
+     jitter sideways as they tick. */
+  .clock-row{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap: 8px;
+    margin: 0 0 14px;
+  }
+  .clock-chip{
+    display:inline-flex;
+    align-items:center;
+    gap: 7px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    background: #140f0d;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .clock-chip svg{ width: 15px; height: 15px; display:block; flex-shrink:0; }
+  .clock-chip .clock-val{
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+  .clock-chip.live{ border-color: var(--amber-dim); }            /* stopwatch running */
+  .clock-chip.live .clock-val{ color: var(--amber); }
+  /* The Timer chip is also a button (opens the Practice Timer popup). */
+  button.clock-chip{ cursor:pointer; transition: color 0.15s ease, border-color 0.15s ease; }
+  button.clock-chip:hover:not(:disabled){ color: var(--amber); border-color: var(--amber); }
+  button.clock-chip:disabled{ cursor: default; }                  /* locked while a session runs, but still readable */
+  .clock-chip.armed{ border-color: var(--amber-dim); }            /* a timer is set */
+  .clock-chip.armed .clock-val{ color: var(--amber); }
+  .clock-chip.low .clock-val{ color: var(--red); }                /* final minute */
+  /* Brief flash when the timer runs out and the bell rings. */
+  .clock-chip.expired{ animation: clock-flash 0.5s ease-in-out 6; border-color: var(--red); }
+  .clock-chip.expired .clock-val{ color: var(--red); }
+  @keyframes clock-flash{ 50%{ background: var(--red-soft); } }
+
+  /* Practice Timer popup — a native <dialog> (free focus-trapping and
+     Escape-to-close) styled to match the Oops! card above. */
+  .timer-dialog{
+    width: calc(100vw - 32px);
+    max-width: 380px;
+    margin: auto;
+    background: var(--panel);
+    color: var(--text);
+    border: 2px solid var(--amber);
+    border-radius: 12px;
+    padding: 22px 22px 18px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  }
+  .timer-dialog::backdrop{ background: rgba(0,0,0,0.65); }
+  .timer-dialog h2{
+    margin: 0 0 10px;
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--amber);
+  }
+  .timer-dialog p{
+    margin: 0 0 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+  .timer-presets{ display:flex; flex-wrap:wrap; gap: 8px; margin: 0 0 14px; }
+  .timer-presets button{
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--panel-raised);
+    border: 1px solid var(--border-light);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .timer-presets button:hover{ border-color: var(--amber); color: var(--amber); }
+  .timer-entry{
+    display:flex; align-items:center; gap: 10px;
+    margin: 0 0 18px;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .timer-entry input[type=number]{
+    width: 90px;
+    background: #140f0d;
+    border: 1px solid var(--border-light);
+    color: var(--text);
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+  }
+  .timer-actions{ display:flex; flex-wrap:wrap; gap: 10px; }
+
   @media (prefers-reduced-motion: reduce){
     *{ transition: none !important; }
+    .clock-chip.expired{ animation: none; background: var(--red-soft); }
   }
 </style>
 </head>
@@ -523,6 +630,23 @@
   <!-- PRACTICE STAGE -->
   <div class="panel">
     <p class="panel-label">Practice</p>
+
+    <!-- Session clocks: a stopwatch that counts up from Start Session, and
+         an optional practice timer that counts down and rings a bell
+         (then stops the session) when it reaches zero. -->
+    <div class="clock-row">
+      <div class="clock-chip" id="elapsedChip" title="Time since Start Session">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>
+        <span>Elapsed</span>
+        <span class="clock-val" id="elapsedVal" role="timer" aria-live="off">0:00</span>
+      </div>
+      <button type="button" class="clock-chip" id="timerBtn" aria-haspopup="dialog" aria-controls="timerDialog"
+              title="Set a practice timer — a bell rings and the session stops when it runs out">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span>Timer</span>
+        <span class="clock-val" id="timerVal" role="timer" aria-live="off">Off</span>
+      </button>
+    </div>
 
     <div class="key-stage">
       <div class="key-status" id="keyStatus">Tap Start Session to begin</div>
@@ -619,7 +743,7 @@
     </details>
   </div>
 
-  <footer>73 · Practice Often, Don't Quit<div class="version-tag">Version 2</div></footer>
+  <footer>73 · Practice Often, Don't Quit<div class="version-tag">Version 3</div></footer>
 </div>
 
 <!-- "OOPS!" POPUP — explains the space-bar-first flow when someone types a
@@ -631,6 +755,31 @@
     <button class="btn primary" id="oopsCloseBtn">Got It</button>
   </div>
 </div>
+
+<!-- PRACTICE TIMER POPUP. The countdown doesn't start here — it starts when
+     Start Session is pressed, and the choice is remembered for next time. -->
+<dialog class="timer-dialog" id="timerDialog" aria-labelledby="timerDialogTitle">
+  <h2 id="timerDialogTitle">Practice Timer</h2>
+  <p>Pick how long to practice. The countdown starts with <strong>Start Session</strong>;
+     when it reaches zero a bell rings and the session stops.</p>
+  <div class="timer-presets" id="timerPresets">
+    <button type="button" data-min="1">1 min</button>
+    <button type="button" data-min="2">2 min</button>
+    <button type="button" data-min="3">3 min</button>
+    <button type="button" data-min="5">5 min</button>
+    <button type="button" data-min="10">10 min</button>
+  </div>
+  <label class="timer-entry">
+    Or enter
+    <input type="number" id="timerInput" min="1" max="180" step="1" inputmode="numeric">
+    minutes
+  </label>
+  <div class="timer-actions">
+    <button type="button" class="btn primary" id="timerSetBtn">Set Timer</button>
+    <button type="button" class="btn ghost" id="timerOffBtn">Timer Off</button>
+    <button type="button" class="btn ghost" id="timerCancelBtn">Cancel</button>
+  </div>
+</dialog>
 
 <audio id="iosAudioUnlock" loop playsinline style="display:none;" src="data:audio/wav;base64,UklGRuQSAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YcASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="></audio>
 <script>
@@ -672,7 +821,8 @@ let settings = {
                      // (see makeDriveCurve) — higher values push the tone
                      // toward a louder-sounding, more saturated waveform
   ttaMs: 1500,
-  ttaEnabled: true
+  ttaEnabled: true,
+  timerMin: 0        // Practice Timer length in minutes; 0 = off
 };
 
 // Per-character adaptive weighting data. Keyed by character.
@@ -854,6 +1004,142 @@ function playTimeoutBeep(){
   });
 }
 
+// The Practice Timer's bell. A real bell doesn't ring at one pitch: struck
+// metal vibrates in several modes at once, and their frequencies are NOT
+// whole-number multiples of each other (that's what separates a bell's
+// "clang" from a musical note's harmonics). Church-bell tuning names the
+// main ones hum (½×), prime (1×), tierce (≈1.2×, a minor third), quint
+// (1.5×) and nominal (2×), plus higher, faster-dying partials. Each
+// partial is its own sine oscillator with an instant attack and an
+// exponential decay — higher partials fade faster, which is why a bell
+// "mellows" as it rings out. Three strikes, about a second apart.
+// These oscillators go straight to the output, NOT through the practice
+// tone's shared oscillator/WaveShaper chain, so the bell keeps its own
+// shape and stopAudioImmediate() never cuts it off.
+const BELL_PARTIALS = [
+  // [frequency ratio, relative level, decay time (s)]
+  [0.5, 0.35, 1.6], [1.0, 0.60, 1.2], [1.19, 0.40, 0.9],
+  [1.5, 0.25, 0.7], [2.0, 0.45, 0.6], [2.74, 0.20, 0.35],
+  [3.76, 0.12, 0.25], [5.4, 0.06, 0.15]
+];
+function playBell(){
+  if(!audioCtx) return; // created on Start Session, so it always exists by the time a timer can expire
+  const base = 523.25;  // C5 — bright and easy to hear, and its shimmer sounds nothing like the sidetone
+  const level = 0.25;   // fixed level; the Volume slider drives the sidetone's WaveShaper, which the bell bypasses
+  [0, 1.1, 2.2].forEach(strikeAt => {
+    const t0 = audioCtx.currentTime + 0.05 + strikeAt;
+    BELL_PARTIALS.forEach(([ratio, rel, decay]) => {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = base * ratio;
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(level * rel, t0 + 0.004);  // near-instant "strike"
+      // Exponential ring-down: with a time constant of decay/3 the
+      // partial has faded ~95% after `decay` seconds.
+      g.gain.setTargetAtTime(0, t0 + 0.004, decay / 3);
+      osc.connect(g).connect(audioCtx.destination);
+      osc.start(t0);
+      osc.stop(t0 + decay * 2 + 0.1);
+    });
+  });
+}
+
+/* -------------------------- SESSION CLOCKS ----------------------------- */
+// Elapsed stopwatch + Practice Timer. Both are computed from wall-clock
+// timestamps (Date.now()) rather than by counting ticks, so they stay
+// accurate even when a background tab throttles setInterval. They run on
+// wall-clock time for the whole session — including while a drill has the
+// session paused, or the Oops! popup is up.
+
+let sessionStartTs = 0;     // Date.now() at Start Session
+let timerEndTs = 0;         // Date.now() when the Practice Timer runs out; 0 = no countdown
+let clockInterval = null;   // setInterval handle while the clocks are running
+
+// m:ss under an hour, h:mm:ss after that.
+function fmtClock(ms){
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600), m = Math.floor(total / 60) % 60, sec = total % 60;
+  const ss = (sec < 10 ? '0' : '') + sec;
+  return h ? h + ':' + (m < 10 ? '0' : '') + m + ':' + ss : m + ':' + ss;
+}
+
+// Timer chip when no session is running: shows the chosen length (or Off).
+function renderTimerIdle(){
+  const min = settings.timerMin;
+  els.timerVal.textContent = min ? fmtClock(min * 60000) : 'Off';
+  els.timerBtn.classList.toggle('armed', !!min);
+  els.timerBtn.classList.remove('low');
+}
+
+function tickClocks(){
+  const now = Date.now();
+  els.elapsedVal.textContent = fmtClock(now - sessionStartTs);
+  if(!timerEndTs) return;
+  const left = timerEndTs - now;
+  // Ceil for the countdown so it shows 0:01 (not 0:00) during the last second.
+  els.timerVal.textContent = fmtClock(Math.ceil(left / 1000) * 1000);
+  els.timerBtn.classList.toggle('low', left <= 60000);
+  if(left <= 0) timerExpired();
+}
+
+function startClocks(){
+  sessionStartTs = Date.now();
+  timerEndTs = settings.timerMin ? sessionStartTs + settings.timerMin * 60000 : 0;
+  els.elapsedChip.classList.add('live');
+  els.timerBtn.classList.remove('expired');
+  els.timerBtn.disabled = true; // timer length is locked while a session runs
+  clearInterval(clockInterval);
+  clockInterval = setInterval(tickClocks, 250);
+  tickClocks();
+}
+
+// Stopwatch freezes on the final elapsed time; the Timer chip goes back to
+// showing its set length unless it just expired (then it holds 0:00).
+function stopClocks(expired){
+  if(!clockInterval) return; // clocks weren't running (e.g. Stop pressed twice)
+  clearInterval(clockInterval);
+  clockInterval = null;
+  els.elapsedVal.textContent = fmtClock(Date.now() - sessionStartTs);
+  timerEndTs = 0;
+  els.elapsedChip.classList.remove('live');
+  els.timerBtn.disabled = false;
+  if(expired){
+    els.timerVal.textContent = '0:00';
+    els.timerBtn.classList.add('expired');
+  }else{
+    renderTimerIdle();
+  }
+}
+
+function timerExpired(){
+  stopClocks(true);
+  if(drillActive){
+    // Time's up mid-drill: end the drill too, and make sure endDrill()
+    // doesn't resume the practice session it had paused.
+    sessionWasRunningBeforeDrill = false;
+    stopDrill();
+  }
+  stopSession();
+  if(oopsOpen) closeOops(); // after stopSession, so closing it can't queue another character
+  els.keyStatus.textContent = '\u23f0 ' + settings.timerMin + ' min done';
+  playBell();
+}
+
+// ---- Practice Timer popup ----
+function openTimerDialog(){
+  if(clockInterval) return; // locked while a session runs
+  els.timerBtn.classList.remove('expired');
+  els.timerInput.value = settings.timerMin || '';
+  els.timerDialog.showModal();
+}
+function setTimerMinutes(min){
+  settings.timerMin = min;
+  saveState();
+  renderTimerIdle();
+  els.timerDialog.close();
+}
+
 /* ------------------------- ADAPTIVE WEIGHTING -------------------------- */
 
 function ensureCharStat(char){
@@ -1019,6 +1305,7 @@ function openAnswerFieldForSession(){
 
 function stopSession(){
   sessionRunning = false;
+  stopClocks(false); // no-op if timerExpired() already stopped them
   answerPhaseActive = false;
   awaitingRecognition = false;
   clearTimeout(ttaTimer);
@@ -1301,6 +1588,7 @@ function wireEvents(){
     sessionRunning = true;
     els.startRow.style.display = 'none';
     els.stopRow.style.display = 'block';
+    startClocks();
     openAnswerFieldForSession();
     startTrial();
   });
@@ -1314,6 +1602,9 @@ function wireEvents(){
   // treating it as the recognize action is safe and correct on both
   // touch devices (no physical spacebar involved) and external keyboards.
   document.addEventListener('keydown', (e) => {
+    // The Practice Timer popup handles its own keys (typing minutes,
+    // Enter, Escape) — don't let the space-bar/Oops logic below touch them.
+    if(els.timerDialog.open) return;
     // While the Oops popup is up: Enter or Esc dismisses it; Space is
     // swallowed so it can't scroll the page or count as a recognize press.
     if(oopsOpen){
@@ -1407,6 +1698,28 @@ function wireEvents(){
 
   els.drillBtn.addEventListener('click', startDrill);
   els.stopDrillBtn.addEventListener('click', stopDrill);
+
+  // Practice Timer popup. Presets set the timer immediately; the number
+  // box accepts any whole number of minutes from 1 to 180.
+  els.timerBtn.addEventListener('click', openTimerDialog);
+  els.timerPresets.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-min]');
+    if(b) setTimerMinutes(Number(b.dataset.min));
+  });
+  const applyTypedTimer = () => {
+    const min = Math.round(parseFloat(els.timerInput.value));
+    if(!(min >= 1 && min <= 180)){ els.timerInput.focus(); els.timerInput.select(); return; } // also rejects NaN
+    setTimerMinutes(min);
+  };
+  els.timerSetBtn.addEventListener('click', applyTypedTimer);
+  els.timerInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ e.preventDefault(); applyTypedTimer(); }
+  });
+  els.timerOffBtn.addEventListener('click', () => setTimerMinutes(0));
+  els.timerCancelBtn.addEventListener('click', () => els.timerDialog.close());
+  els.timerDialog.addEventListener('click', (e) => {
+    if(e.target === els.timerDialog) els.timerDialog.close(); // backdrop click closes
+  });
 }
 
 /* -------------------------------- INIT ------------------------------------ */
@@ -1420,12 +1733,15 @@ function init(){
    'groupSelect','customRow','customInput','wpmSlider','wpmVal',
    'toneSlider','toneVal','volSlider','volVal',
    'ttaSlider','ttaVal','ttaOffToggle','resetSessionBtn',
-   'oopsOverlay','oopsCloseBtn'
+   'oopsOverlay','oopsCloseBtn',
+   'elapsedChip','elapsedVal','timerBtn','timerVal',
+   'timerDialog','timerPresets','timerInput','timerSetBtn','timerOffBtn','timerCancelBtn'
   ].forEach(id => els[id] = document.getElementById(id));
 
   loadState();
   activeSet = computeActiveSet();
   refreshSettingsUI();
+  renderTimerIdle();
   updateStatsDisplay();
   renderWeakList();
   wireEvents();
