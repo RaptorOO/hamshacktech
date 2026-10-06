@@ -15,7 +15,7 @@ Practical, no-install tools for CW practice and operating — built to run right
     <span class="tool-card-badge">Free · Browser App</span>
   </div>
 
-  <p>Drills Instant Character Recognition (ICR) — the skill of recognizing a Morse character the moment you hear it, rather than counting dits and dahs. Set your own speed (WPM), tone, and volume, and drill letters, numbers, punctuation, or a custom character set. A configurable Max Time to Answer keeps you honest about "instant," and the app automatically tracks which characters are giving you the most trouble — weighting practice toward them and offering a one-tap drill on your five weakest characters.</p>
+  <p>Drills Instant Character Recognition (ICR) — the skill of recognizing a Morse character the moment you hear it, rather than counting dits and dahs. Set your own speed (WPM), tone, and volume, and drill letters, numbers, punctuation, or a custom character set. A configurable Max Time to Answer keeps you honest about "instant," and the app automatically tracks which characters are giving you the most trouble — weighting practice toward them and offering a one-tap drill on your five weakest characters. An on-screen stopwatch tracks how long you've been practicing, and an optional practice timer rings a bell and ends the session when your time is up.</p>
 
   <h4>How to use it</h4>
   <ol>
