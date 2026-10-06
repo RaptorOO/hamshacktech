@@ -820,8 +820,21 @@
       round, so there's no list to memorize.
     </p>
     <p>
+      <strong>Common Words</strong> mixes the most frequent English words with on-the-air ham
+      vocabulary (QRP, FB, YAESU, EFHW…). <strong>Word Pool</strong> sets how deep into the
+      frequency list to go — start with the Top 100 and widen it as your copy improves.
+      Words and QSO Elements are dealt like a shuffled deck: nothing repeats until you've
+      heard every one at that setting.
+    </p>
+    <p>
       The <strong>Elapsed</strong> stopwatch counts up from Start Session. Tap <strong>Timer</strong>
       to choose how long to practice; when it runs out, a bell rings and the session stops.
+    </p>
+    <p class="credit" style="font-size:0.8em;opacity:0.75;">
+      Word frequency data:
+      <a href="https://github.com/rspeer/wordfreq" target="_blank" rel="noopener">wordfreq</a>
+      by Robyn Speer, licensed
+      <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.
     </p>
     <button type="button" class="btn-secondary" id="infoCloseBtn">Close</button>
   </dialog>
@@ -951,6 +964,19 @@
           </select>
         </div>
 
+        <!-- Only shown for the Common Words group. Picks how deep into the
+             ranked GENERAL_WORDS list to draw from; Tim's ham vocabulary
+             list is always mixed in on top of whichever size is chosen. -->
+        <div class="field" id="wordPoolField" style="display:none;">
+          <label for="wordPoolSelect">Word Pool</label>
+          <select id="wordPoolSelect">
+            <option value="100">Top 100 words + ham terms</option>
+            <option value="500">Top 500 words + ham terms</option>
+            <option value="1000">Top 1000 words + ham terms</option>
+            <option value="2000">Top 2000 words + ham terms</option>
+          </select>
+        </div>
+
         <div class="field" id="customField" style="display:none;">
           <label for="customInput">Custom Characters</label>
           <input type="text" id="customInput" placeholder="e.g. KMRSAT" />
@@ -1044,7 +1070,7 @@
 
   </div>
 
-  <footer class="note">HamShackTech CW Tools — practice often, don't quit.<div class="version-tag">Version 3</div></footer>
+  <footer class="note">HamShackTech CW Tools — practice often, don't quit.<div class="version-tag">Version 4</div></footer>
 </div>
 
 <script>
@@ -1092,12 +1118,21 @@
     "PSE", "SRI", "SIG"
   ];
 
-  /* Common Words — general high-frequency English words plus ham-radio
-     vocabulary (rig names, antenna types, QSO abbreviations), from Tim's
-     own Morserino practice list (deduplicated). Filtered by word length
-     at practice time via wordsOfLength() — the Characters per Group
-     control doubles as a word-length picker for this group (see
-     updateGroupSizeFieldUI). */
+  /* Common Words is built from two lists that are merged at practice
+     time (see wordsOfLength):
+
+     1. COMMON_WORDS (below) — Tim's own Morserino practice list: ham
+        vocabulary (rig names, antenna types, QSO abbreviations, prosigns)
+        plus everyday words. ALL of these are always in the pool, no
+        matter which Word Pool size is chosen, so on-the-air vocabulary
+        never drops out.
+
+     2. GENERAL_WORDS (further down) — the 2,000 most frequent English
+        words, most common first. The Word Pool setting takes the top
+        100 / 500 / 1000 / 2000 of them.
+
+     The Word Length control (shared with Characters per Group) then
+     filters the merged pool to words of exactly that length. */
   var COMMON_WORDS = [
     "/AR", "/BK", "/KN", "/SK", "73", "ABOUT", "AGN", "ALL", "AM", "AND",
     "ANT", "ARE", "AS", "AT", "BAND", "BE", "BEAM", "BEEN", "BK", "BT",
@@ -1119,6 +1154,188 @@
     "WARM", "WAS", "WATTS", "WE", "WEEK", "WELL", "WERE", "WHAT", "WHEN", "WHERE",
     "WHICH", "WHO", "WILL", "WITH", "WORD", "WOULD", "WRITE", "WX", "XYL", "YAESU",
     "YAGI", "YES", "YL", "YOU", "YOUR", "ZIP"
+  ];
+
+  /* GENERAL_WORDS — the 2,000 most frequent English words, ranked most
+     common first. Source: the wordfreq project by Robyn Speer
+     (https://github.com/rspeer/wordfreq), whose word-frequency data is
+     licensed CC BY-SA 4.0 — so this derived list is shared under that
+     same license. Before ranking, the raw list was cleaned up for CW
+     practice: dropped anything that isn't plain A–Z, stray single
+     letters and contraction fragments ("S", "T", "DON"), web/texting
+     junk ("HTTP", "LOL"), profanity, personal and place names, brand
+     names, and words on violence, religion, and party politics — so
+     every word is something you'd be comfortable hearing in a club
+     practice session. Positions after removals were simply closed up,
+     so "Top 500" means 500 usable words. */
+  var GENERAL_WORDS = [
+    "THE", "TO", "AND", "OF", "A", "IN", "I", "IS", "FOR", "THAT", "YOU", "IT",
+    "ON", "WITH", "THIS", "WAS", "BE", "AS", "ARE", "HAVE", "AT", "HE", "NOT", "BY",
+    "BUT", "FROM", "MY", "OR", "WE", "AN", "YOUR", "ALL", "SO", "HIS", "THEY", "ME",
+    "IF", "ONE", "CAN", "WILL", "JUST", "LIKE", "ABOUT", "UP", "OUT", "WHAT", "HAS", "WHEN",
+    "MORE", "DO", "NO", "WERE", "WHO", "HAD", "THEIR", "THERE", "HER", "WHICH", "TIME", "GET",
+    "BEEN", "WOULD", "SHE", "NEW", "PEOPLE", "HOW", "SOME", "ALSO", "THEM", "NOW", "OTHER", "ITS",
+    "OUR", "THAN", "GOOD", "ONLY", "AFTER", "FIRST", "HIM", "INTO", "KNOW", "SEE", "TWO", "MAKE",
+    "OVER", "THINK", "ANY", "THEN", "COULD", "BACK", "THESE", "US", "WANT", "BECAUSE", "GO", "WELL",
+    "SAID", "WAY", "MOST", "MUCH", "VERY", "WHERE", "EVEN", "SHOULD", "MAY", "HERE", "NEED", "REALLY",
+    "DID", "RIGHT", "WORK", "YEAR", "YEARS", "BEING", "DAY", "TOO", "GOING", "BEFORE", "OFF", "WHY",
+    "MADE", "STILL", "TAKE", "GOT", "MANY", "NEVER", "THOSE", "LIFE", "SAY", "WORLD", "DOWN", "GREAT",
+    "THROUGH", "LAST", "WHILE", "BEST", "SUCH", "LOVE", "MAN", "HOME", "LONG", "LOOK", "SOMETHING", "USE",
+    "SAME", "USED", "BOTH", "EVERY", "AM", "COME", "PART", "STATE", "THREE", "AROUND", "BETWEEN", "ALWAYS",
+    "BETTER", "FIND", "HELP", "HIGH", "LITTLE", "OLD", "SINCE", "ANOTHER", "DOES", "OWN", "THINGS", "UNDER",
+    "DURING", "GAME", "THING", "GIVE", "HOUSE", "PLACE", "SCHOOL", "AGAIN", "NEXT", "EACH", "WITHOUT", "AGAINST",
+    "END", "FOUND", "MUST", "SHOW", "BIG", "FEEL", "SURE", "TEAM", "EVER", "FAMILY", "KEEP", "MIGHT",
+    "PLEASE", "PUT", "MONEY", "FREE", "SECOND", "SOMEONE", "AWAY", "LEFT", "NUMBER", "CITY", "DAYS", "LOT",
+    "NAME", "NIGHT", "PLAY", "UNTIL", "COMPANY", "DOING", "FEW", "LET", "REAL", "CALLED", "DIFFERENT", "HAVING",
+    "SET", "THOUGHT", "DONE", "HOWEVER", "GETTING", "GOVERNMENT", "GROUP", "LOOKING", "PUBLIC", "TOP", "WOMEN", "BUSINESS",
+    "CARE", "START", "SYSTEM", "TIMES", "WEEK", "ALREADY", "ANYTHING", "CASE", "NOTHING", "PERSON", "TODAY", "CHANGE",
+    "ENOUGH", "EVERYTHING", "FULL", "LIVE", "MAKING", "POINT", "READ", "TOLD", "YET", "BAD", "FOUR", "HARD",
+    "MEAN", "ONCE", "SUPPORT", "TELL", "INCLUDING", "MUSIC", "POWER", "SEEN", "STATES", "STOP", "WATER", "BASED",
+    "BELIEVE", "CALL", "HEAD", "MEN", "NATIONAL", "SMALL", "TOOK", "WHITE", "CAME", "FAR", "JOB", "SIDE",
+    "THOUGH", "TRY", "WENT", "YES", "ACTUALLY", "LATER", "LESS", "LINE", "ORDER", "PARTY", "RUN", "SAYS",
+    "SERVICE", "COUNTRY", "OPEN", "SEASON", "THANK", "CHILDREN", "EVERYONE", "GENERAL", "TRYING", "UNITED", "USING", "AREA",
+    "BLACK", "FOLLOWING", "LAW", "MAKES", "TOGETHER", "WAR", "WHOLE", "CAR", "FACE", "FIVE", "KIND", "MAYBE",
+    "PER", "PRESIDENT", "STORY", "WORKING", "COURSE", "GAMES", "HEALTH", "HOPE", "IMPORTANT", "LEAST", "MEANS", "NEWS",
+    "WITHIN", "ABLE", "BOOK", "EARLY", "FRIENDS", "INFORMATION", "LOCAL", "OH", "POST", "THANKS", "VIDEO", "YOUNG",
+    "AGO", "OTHERS", "SOCIAL", "TALK", "COURT", "FACT", "GIVEN", "GUYS", "HALF", "HAND", "LEVEL", "MIND",
+    "OFTEN", "SINGLE", "BECOME", "BODY", "COMING", "CONTROL", "FOOD", "GUY", "HOURS", "OFFICE", "PAY", "PROBLEM",
+    "SOUTH", "TRUE", "ALMOST", "HISTORY", "KNOWN", "LARGE", "LOST", "RESEARCH", "ROOM", "SEVERAL", "STARTED", "TAKING",
+    "UNIVERSITY", "WIN", "WRONG", "ALONG", "ANYONE", "ELSE", "GIRL", "MATTER", "PRETTY", "REMEMBER", "AIR", "BIT",
+    "FRIEND", "HIT", "NEEDS", "NICE", "PLAYING", "PROBABLY", "SAYING", "UNDERSTAND", "CLASS", "CLOSE", "COMES", "IDEA",
+    "INTERNATIONAL", "LOOKS", "PAST", "POSSIBLE", "WANTED", "CAUSE", "DUE", "HAPPY", "HUMAN", "MEMBERS", "MONTHS", "MOVE",
+    "QUESTION", "SERIES", "WAIT", "WOMAN", "ASK", "COMMUNITY", "DATA", "LATE", "LEAVE", "NORTH", "SAW", "SPECIAL",
+    "WATCH", "EITHER", "FUTURE", "LIGHT", "LOW", "MILLION", "MORNING", "POLICE", "SHORT", "STAY", "TAKEN", "AGE",
+    "BUY", "DEAL", "RATHER", "REASON", "RED", "REPORT", "SOON", "THIRD", "TURN", "WHETHER", "AMONG", "CHECK",
+    "DEVELOPMENT", "FORM", "FURTHER", "HEART", "MINUTES", "MYSELF", "SERVICES", "YOURSELF", "ACT", "ALTHOUGH", "ASKED", "CHILD",
+    "FIRE", "FUN", "LIVING", "MAJOR", "MEDIA", "PHONE", "PLAYERS", "ART", "BEHIND", "BUILDING", "EASY", "MARKET",
+    "NEAR", "PLAN", "POLITICAL", "QUITE", "SIX", "TALKING", "WEST", "WORKS", "ACCORDING", "AVAILABLE", "EDUCATION", "FINAL",
+    "FORMER", "FRONT", "KIDS", "LIST", "READY", "SOMETIMES", "SON", "STREET", "BRING", "COLLEGE", "CURRENT", "EXAMPLE",
+    "EXPERIENCE", "HEARD", "MEET", "PROGRAM", "TYPE", "BABY", "CHANCE", "FATHER", "MARCH", "PROCESS", "SONG", "STUDY",
+    "WORD", "ACROSS", "ACTION", "CLEAR", "GAVE", "GETS", "HIMSELF", "MONTH", "OUTSIDE", "SELF", "STUDENTS", "WORDS",
+    "BOARD", "COST", "CUT", "FIELD", "HELD", "INSTEAD", "MAIN", "MOMENT", "MOTHER", "ROAD", "SEEMS", "THINKING",
+    "TOWN", "WANTS", "DEPARTMENT", "ENERGY", "FIGHT", "FINE", "FORCE", "HEAR", "ISSUE", "PLAYED", "POINTS", "PRICE",
+    "REST", "RESULTS", "RUNNING", "SHOWS", "SPACE", "SUMMER", "TERM", "WIFE", "BEAUTIFUL", "DATE", "GOES", "LAND",
+    "MISS", "PROJECT", "SHOT", "SITE", "STRONG", "ACCOUNT", "ESPECIALLY", "EYES", "INCLUDE", "JUNE", "PARENTS", "PERIOD",
+    "POSITION", "RECORD", "SIMILAR", "TOTAL", "ABOVE", "CLUB", "COMMON", "FILM", "HAPPENED", "KNEW", "LEAD", "LIKELY",
+    "MILITARY", "PERFECT", "PERSONAL", "SECURITY", "SHARE", "WON", "APRIL", "CENTER", "COUNTY", "COUPLE", "HAPPEN", "HOLD",
+    "INDUSTRY", "INSIDE", "ISSUES", "ONLINE", "PLAYER", "PRIVATE", "PROBLEMS", "RETURN", "RIGHTS", "SENSE", "STAR", "TEST",
+    "VIEW", "WEEKS", "BREAK", "COMPANIES", "EVENT", "HIGHER", "HOUR", "MEMBER", "MIDDLE", "NEEDED", "PRESENT", "RESULT",
+    "SORRY", "TAKES", "TRAINING", "WISH", "ANSWER", "BOY", "DESIGN", "FINALLY", "GIRLS", "GOLD", "GONE", "GUESS",
+    "INTEREST", "JULY", "KING", "LEARN", "POLICY", "SOCIETY", "ADDED", "ALONE", "AVERAGE", "BANK", "BROUGHT", "CERTAIN",
+    "EAST", "HANDS", "HOT", "LONGER", "MEDICAL", "MOVIE", "ORIGINAL", "PARK", "PERFORMANCE", "PRESS", "RECEIVED", "ROLE",
+    "SENT", "THEMSELVES", "TRIED", "WORKED", "WORTH", "AREAS", "BECAME", "BILL", "BOOKS", "COOL", "DIRECTOR", "EXACTLY",
+    "GIVING", "GROUND", "MEETING", "PROVIDE", "QUESTIONS", "RELATIONSHIP", "SEPTEMBER", "SOUND", "SOURCE", "USUALLY", "VALUE", "EVIDENCE",
+    "FOLLOW", "LIVES", "OFFICIAL", "PRODUCTION", "RATE", "READING", "ROUND", "SAVE", "STAND", "STUFF", "TAX", "WHATEVER",
+    "AMOUNT", "BLUE", "COUNTRIES", "DRIVE", "EAT", "FALL", "FAST", "FEDERAL", "FEELING", "FELT", "GREEN", "LEAGUE",
+    "MANAGEMENT", "MATCH", "MODEL", "PICTURE", "SIZE", "STEP", "TRUST", "CENTRAL", "CHANGES", "FORWARD", "GROUPS", "KEY",
+    "MOM", "PAGE", "PAID", "RANGE", "REVIEW", "SCIENCE", "TRADE", "UPON", "VARIOUS", "ATTENTION", "BROTHER", "CANNOT",
+    "CHARACTER", "CHIEF", "CUP", "FOOTBALL", "LED", "LOOKED", "LOWER", "NATURAL", "OCTOBER", "PROPERTY", "QUALITY", "SEND",
+    "STYLE", "VOTE", "AMAZING", "AUGUST", "BLOOD", "COMPLETE", "DOG", "ECONOMIC", "INVOLVED", "ITSELF", "LANGUAGE", "NOVEMBER",
+    "OIL", "RELATED", "SERIOUS", "STAGE", "TERMS", "TITLE", "ADD", "ARTICLE", "ATTACK", "BORN", "DECIDED", "DECISION",
+    "ENJOY", "ENTIRE", "JANUARY", "MET", "PERHAPS", "POOR", "RELEASE", "SITUATION", "TECHNOLOGY", "TURNED", "WEBSITE", "WRITTEN",
+    "CHOICE", "CODE", "CONSIDERED", "CONTINUE", "COUNCIL", "COVER", "CURRENTLY", "DOOR", "ELECTION", "EVENTS", "FINANCIAL", "FOREIGN",
+    "HAIR", "INCREASE", "LEGAL", "LOSE", "PICK", "RACE", "SEEM", "SEVEN", "SIGN", "SIMPLE", "SIMPLY", "STAFF",
+    "SUPER", "UNION", "WALK", "BED", "BEGAN", "BUILT", "CAREER", "CHANGED", "CRAZY", "DAILY", "DAUGHTER", "DECEMBER",
+    "DIE", "DIFFICULT", "FIGURE", "HOSPITAL", "KNOWS", "LOSS", "MODERN", "ONES", "PAPER", "PARTS", "POPULAR", "PUBLISHED",
+    "SAFE", "STARTING", "SYSTEMS", "VERSION", "VOICE", "WHOSE", "WRITING", "ARMY", "EARTH", "FORGET", "GOAL", "HUGE",
+    "INTERNET", "LISTEN", "OKAY", "PRACTICE", "RULES", "SEA", "SIR", "SUCCESS", "TOWARDS", "WAITING", "WAYS", "ACCESS",
+    "BASE", "BELOW", "CREATED", "DEEP", "FOLLOWED", "MARK", "MISSING", "OFFER", "PASS", "PROFESSIONAL", "RELEASED", "RISK",
+    "SCHOOLS", "SLEEP", "TABLE", "TEN", "TRUTH", "BALL", "BOX", "BUILD", "CARD", "CASES", "DARK", "DISTRICT",
+    "MINE", "MINISTER", "NOTE", "PERCENT", "PIECE", "PRODUCTS", "RECENT", "SEEING", "STRAIGHT", "VISIT", "WALL", "WROTE",
+    "ALLOWED", "BOYS", "CULTURE", "FANS", "FEBRUARY", "GIVES", "GROWTH", "INCLUDED", "MARRIED", "OFFICER", "PAIN", "PLACES",
+    "RESPECT", "RESPONSE", "RIVER", "ROCK", "SHALL", "SPEAK", "SPECIFIC", "STANDARD", "TONIGHT", "WRITE", "ALBUM", "CENTURY",
+    "CHARGE", "COLD", "CREATE", "EFFECT", "EIGHT", "EXCEPT", "EYE", "FUNNY", "LIMITED", "MOVING", "NETWORK", "PEACE",
+    "PROVIDED", "RECENTLY", "REQUIRED", "SALES", "SPENT", "STORE", "STUDENT", "TOMORROW", "TRACK", "VIA", "WATCHING", "WEIGHT",
+    "ADDITION", "AHEAD", "ALLOW", "ASSOCIATION", "BEAT", "BROWN", "CAPITAL", "COMMITTEE", "CONFERENCE", "DIFFERENCE", "DOUBLE", "EXPECT",
+    "GAS", "ISLAND", "MOVED", "NORMAL", "PLANS", "POPULATION", "POTENTIAL", "PRESSURE", "RADIO", "STATION", "TEXT", "TREATMENT",
+    "WESTERN", "BEGINNING", "CAMPAIGN", "CERTAINLY", "COMPLETELY", "CONTENT", "CREDIT", "CROSS", "DESCRIBED", "DESPITE", "FEMALE", "FOCUS",
+    "HI", "HUSBAND", "ICE", "INDIVIDUAL", "INTERESTING", "JOIN", "KEPT", "LEADING", "LOVED", "MESSAGE", "MILES", "NEARLY",
+    "PARTICULAR", "PREVIOUS", "QUICKLY", "REGION", "REPORTED", "SECTION", "SORT", "SPEED", "TRAVEL", "CONSIDER", "CONTACT", "DROP",
+    "FAIR", "FEET", "KID", "LINK", "POSITIVE", "SALE", "THROUGHOUT", "TOUR", "WELCOME", "ABSOLUTELY", "ADDITIONAL", "BEYOND",
+    "CONDITIONS", "EARLIER", "EXTRA", "FORCES", "IMMEDIATELY", "JOBS", "LEAVING", "MINUTE", "NATURE", "NUMBERS", "QUICK", "SELL",
+    "SIGNIFICANT", "STUDIES", "UNLESS", "WINNING", "AGREE", "CLEAN", "COMPUTER", "CONSTRUCTION", "EPISODE", "FAVORITE", "INCOME", "JUSTICE",
+    "LEVELS", "MANAGER", "MOVEMENT", "PHOTO", "POSTED", "SAFETY", "SCENE", "SOLD", "SOUNDS", "SPEND", "STATEMENT", "SUN",
+    "TEAMS", "ABILITY", "ANNOUNCED", "ASKING", "CALLING", "COACH", "COLLECTION", "CONTINUED", "COSTS", "DEFINITELY", "DESIGNED", "EXPECTED",
+    "FRIDAY", "HAPPENS", "HEAVY", "INCLUDES", "KNOWLEDGE", "PARTICULARLY", "SEARCH", "SUBJECT", "TRAIN", "WIDE", "AUTHOR", "CENTRE",
+    "CLAIM", "DAD", "DEVELOPED", "FEAR", "FIT", "GENERALLY", "GLOBAL", "GOALS", "HOTEL", "INTERESTED", "JUDGE", "LADY",
+    "LEADER", "LETTER", "LINES", "MATERIAL", "NAMED", "NOBODY", "OPPORTUNITY", "PLUS", "PRODUCT", "REGULAR", "SECRETARY", "SISTER",
+    "STORIES", "UNIT", "WORKERS", "ANNUAL", "ANYMORE", "BAR", "BATTLE", "BRAIN", "CONTRACT", "DEGREE", "FAMILIES", "FEATURES",
+    "FINISHED", "FLOOR", "GROWING", "HURT", "IMAGE", "INSURANCE", "MAJORITY", "MEANT", "OPENING", "OPINION", "PHYSICAL", "REACH",
+    "RULE", "SERIOUSLY", "SPORTS", "SUCCESSFUL", "ACTIVE", "ADMINISTRATION", "APPROACH", "BIGGEST", "CANCER", "CIVIL", "DANCE", "DEFENSE",
+    "DIRECTION", "INDEPENDENT", "MASTER", "NONE", "REASONS", "SHIP", "STOCK", "WEEKEND", "WONDER", "WORST", "AWESOME", "BAND",
+    "BEACH", "CASH", "CLEARLY", "COMMERCIAL", "COMPARED", "EFFORT", "ENDED", "FAN", "FIGHTING", "IMAGINE", "IMPACT", "LACK",
+    "LATEST", "LEARNING", "MULTIPLE", "OLDER", "OPERATION", "ORGANIZATION", "PASSED", "PICTURES", "PROTECT", "SECRET", "SENIOR", "SPRING",
+    "SUNDAY", "TELLING", "WEAR", "ACTIVITIES", "ADDRESS", "ANALYSIS", "ANYWAY", "BOUGHT", "CALLS", "CHOOSE", "CHRISTMAS", "COLOR",
+    "COMMISSION", "COMPETITION", "DETAILS", "DIRECT", "DREAM", "EASILY", "FINISH", "GRAND", "INCREASED", "LITERALLY", "LUCK", "MARRIAGE",
+    "NAMES", "NECESSARY", "PATIENTS", "RESOURCES", "RICH", "SKIN", "SPEAKING", "SUPPOSED", "SWEET", "THUS", "TOUCH", "YESTERDAY",
+    "CAUGHT", "CLOSED", "CONGRESS", "DAMAGE", "DIRECTLY", "DISEASE", "DOCTOR", "DOUBT", "DRINK", "DRIVING", "ESTABLISHED", "FEELS",
+    "FISH", "GLAD", "GREATER", "GROW", "LARGEST", "MACHINE", "NOTICE", "OVERALL", "PLANNING", "PROFESSOR", "PROGRAMS", "RECORDS",
+    "REPORTS", "SHOWN", "SIT", "TRIP", "ASSOCIATED", "BASIC", "CAPTAIN", "CARRY", "CARS", "CRIME", "EFFECTIVE", "EFFECTS",
+    "EXPLAIN", "FULLY", "HIGHLY", "HOLDING", "LAWS", "MALE", "PARTIES", "PLANT", "REALITY", "SPOT", "WINTER", "WORSE",
+    "ADVICE", "AGREEMENT", "AWARD", "BLOCK", "BROKEN", "CAUSED", "CHALLENGE", "CHARACTERS", "COMMENT", "EQUIPMENT", "EVENTUALLY", "HELPED",
+    "LIVED", "LOTS", "NATION", "OTHERWISE", "PRICES", "PRIMARY", "PURPOSE", "RATES", "RESPONSIBLE", "SHOP", "SHOWING", "SICK",
+    "TEACHER", "THEORY", "USES", "AGENCY", "AVOID", "CAMERA", "CATCH", "CELL", "COAST", "COMMENTS", "ECONOMY", "ENVIRONMENT",
+    "EXECUTIVE", "FOOT", "HALL", "MASS", "MEANING", "MISSION", "NINE", "OFFICERS", "OPERATIONS", "POLITICS", "POP", "PRODUCED",
+    "RAN", "SATURDAY", "STATUS", "THEREFORE", "TRIAL", "TRULY", "WEATHER", "ACTIVITY", "APP", "APPLICATION", "CLAIMS", "COFFEE",
+    "COMPLEX", "CONDITION", "DIVISION", "EVENING", "FLIGHT", "FREEDOM", "HEAT", "HIGHEST", "INTERVIEW", "LIBRARY", "LOCATED", "LOCATION",
+    "OFFERED", "PUTTING", "QUEEN", "SECONDS", "SHOWED", "SITTING", "STANDING", "STARS", "WALKING", "ACCEPT", "ACTUAL", "APPEAR",
+    "ATTEMPT", "BROKE", "CHANNEL", "DISTANCE", "EATING", "EXCHANGE", "FELL", "FINDING", "GLASS", "LEARNED", "LOSING", "MOBILE",
+    "NORTHERN", "OPENED", "PLACED", "POWERFUL", "PRIOR", "PROTECTION", "REACHED", "RECEIVE", "RIDE", "ROYAL", "SCREEN", "SERVE",
+    "SIGNED", "SLOW", "SPECIES", "SPEECH", "TRAFFIC", "TREE", "TYPES", "WEARING", "WHOM", "WONDERFUL", "AGREED", "AIRPORT",
+    "ANIMALS", "APPEARS", "BEGIN", "BENEFITS", "BOTTOM", "CITIES", "DEMAND", "ENGINE", "EVERYBODY", "FAMOUS", "IDEAS", "INVESTMENT",
+    "KEEPING", "LIE", "NOTES", "PARTNER", "PLAYS", "RAISED", "RUNS", "SAD", "SOLUTION", "SONGS", "SOURCES", "SOUTHERN",
+    "SQUARE", "STOPPED", "STRUCTURE", "TRADITIONAL", "TWICE", "WIND", "WORRY", "APPEARED", "BECOMES", "BRAND", "BUS", "CENT",
+    "COUNT", "COVERED", "CRITICAL", "DIGITAL", "FORCED", "FOURTH", "FRESH", "LAKE", "MENTAL", "MENTIONED", "MISSED", "MOSTLY",
+    "MOUTH", "OWNER", "PHOTOS", "PREVIOUSLY", "REALIZE", "REMAIN", "SCALE", "SCORE", "SEPARATE", "SMART", "STARTS", "SURFACE",
+    "THROW", "TOTALLY", "VIEWS", "WEDDING", "ACTING", "ACTIONS", "ARMS", "BENEFIT", "BUDGET", "CLICK", "ESTATE", "FAILED",
+    "FAITH", "FASHION", "FEATURE", "FUND", "GENERATION", "HEARING", "HILL", "JACK", "LARGER", "METAL", "PROFILE", "PULL",
+    "PUSH", "RETURNED", "ROSE", "SEAT", "SEEMED", "TARGET", "UNDERSTANDING", "VILLAGE", "AGENT", "ANIMAL", "APPLY", "AUTHORITY",
+    "BASIS", "BECOMING", "DRAW", "EMPLOYEES", "ENTER", "FOLLOWS", "FOUNDATION", "GAIN", "INDIVIDUALS", "LEADERS", "MEMORY", "PRIME",
+    "PROJECTS", "RING", "RISE", "SELLING", "SERVED", "SILVER", "SOUL", "SPREAD", "SUPPLY", "WASTE", "WEIRD", "ADULT",
+    "APPARENTLY", "ARTIST", "CHAIRMAN", "EDITION", "ENGINEERING", "GRADE", "HAPPENING", "HEALTHY", "INSTITUTE", "METHOD", "MONDAY", "NATIONS",
+    "OBVIOUSLY", "OPTION", "PRISON", "PROVIDES", "REMAINS", "SENATE", "SMALLER", "SOMEBODY", "STONE", "STRENGTH", "USERS", "WILD",
+    "WINDOW", "WINNER", "ARRIVED", "BAG", "BET", "CAMP", "CAST", "CONTINUES", "CORRECT", "DANGEROUS", "ED", "EXTREMELY",
+    "FIRM", "GREATEST", "HANDLE", "IMPROVE", "INDEED", "LEAVES", "MOVIES", "NEGATIVE", "PREVENT", "REMOVED", "SPIRIT", "TELEVISION",
+    "TILL", "TROUBLE", "VIDEOS", "ADVANTAGE", "APART", "AWARE", "CAT", "CUSTOMERS", "DECIDE", "DINNER", "DOLLARS", "EASTERN",
+    "FIFTH", "FUNCTION", "GIFT", "HELPING", "HERSELF", "IMPOSSIBLE", "INFLUENCE", "ITEMS", "MARKETING", "MATERIALS", "NOR", "PRODUCE",
+    "PROGRESS", "PROUD", "REQUIRE", "SHUT", "STANDARDS", "TELLS", "THINKS", "WOOD", "BACKGROUND", "BIRTH", "BRIDGE", "CARRIED",
+    "CLASSES", "COMPLETED", "CONCEPT", "COPY", "DEAR", "DOGS", "EFFORTS", "GARDEN", "HOST", "HOUSING", "JOURNAL", "LABOR",
+    "LEADERSHIP", "LENGTH", "LUCKY", "NEITHER", "ONTO", "PATIENT", "POSSIBLY", "PROVE", "RARE", "SETTING", "SKILLS", "SOFTWARE",
+    "THOUSANDS", "TOUGH", "UNITS", "ALIVE", "APPLE", "BALANCE", "BIRTHDAY", "BOSS", "CARDS", "CHANGING", "CONNECTION", "DRESS",
+    "EASIER", "FELLOW", "HORSE", "KNOWING", "LIKED", "MAGIC", "MANAGED", "MAP", "NET", "OWNED", "REQUEST", "STICK",
+    "TURNS", "VEHICLE", "VOLUME", "WAKE", "AID", "BEAUTY", "BELIEVED", "BILLION", "BUSY", "BUYING", "CELLS", "CONCERNED",
+    "CONVERSATION", "CORNER", "CRIMINAL", "CULTURAL", "DEVELOP", "DRIVER", "ENDS", "EXISTING", "FARM", "FILE", "FIX", "FLY",
+    "FRANK", "GUIDE", "IMAGES", "INVESTIGATION", "OPERATING", "PAYING", "PRESENTED", "RAISE", "RESPONSIBILITY", "ROLL", "SLIGHTLY", "SUGGEST",
+    "SURPRISE", "TECHNICAL", "THOUGHTS", "TREAT", "UNIQUE", "VARIETY", "YOURS", "YOUTH", "APPRECIATE", "BIGGER", "BREAKING", "DISCOVERED",
+    "DRY", "EDGE", "EVIL", "EXCITED", "FOREVER", "FUNDS", "HELPS", "INJURY", "IRON", "LOVELY", "MAD", "MAGAZINE",
+    "MODELS", "OFFERS", "ORDERED", "PARLIAMENT", "PREPARED", "REFERENCE", "SITES", "SOMEWHERE", "STATED", "STRATEGY", "TEACHERS", "WEB",
+    "WINE", "ACCOUNTS", "ARM", "AUDIENCE", "BAY", "BLOG", "CLOSER", "CORE", "DESCRIPTION", "DROPPED", "EXCELLENT", "EXIST",
+    "FIGURES", "FORMS", "GUARD", "HONEST", "ISSUED", "JOINED", "LIES", "LIKES", "MEDICINE", "MENTION", "MOUNTAIN", "NUCLEAR",
+    "ORDERS", "PORT", "PRESENCE", "REACTION", "REDUCE", "SHOOT", "SIDES", "SOLID", "SPORT", "STEPS", "STRESS", "TASTE",
+    "TEA", "VICTORY", "AFTERNOON", "ASSISTANT", "CITIZENS", "CLASSIC", "CLOTHES", "DECISIONS", "ELECTRIC", "EMERGENCY", "ENTERED", "ENTIRELY",
+    "FACTS", "FAILURE", "FESTIVAL", "FLAT", "FUEL", "HELLO", "HOUSES", "ILL", "INITIAL", "INTRODUCED", "KICK", "LINKS",
+    "MAIL", "MASSIVE", "MATTERS", "PAIR", "PICKED", "PIECES", "PLANE", "PLENTY", "PRINCE", "PROPER", "PROVIDING", "QUARTER",
+    "REGIONAL", "SESSION", "SHAPE", "SKY", "TEACHING", "TOWARD", "TRANSFER", "UPPER", "USEFUL", "VALLEY", "WATCHED", "WILLING",
+    "WINDOWS", "ZONE", "ACCIDENT", "ADVANCED", "ALTERNATIVE", "ANYWHERE", "ARTICLES", "AWARDS", "BEAR", "BOAT", "BRINGING", "CAPACITY",
+    "CHEAP", "CLIMATE", "COMMUNITIES", "DISCUSSION", "DRINKING", "DUTY", "FANTASTIC", "FEELINGS", "FLYING", "GOVERNOR", "HUNDRED", "INDUSTRIAL",
+    "JOINT", "MIX", "MUSEUM", "OPTIONS", "PATH", "PLANTS", "POLICIES", "PROMISE", "PROPOSED", "PURCHASE", "RAIN", "REMOVE",
+    "SIGNS", "SPENDING", "STEEL", "SUPPORTING", "TERRIBLE", "TIRED", "TREATED", "TURNING", "VICE", "WARM", "AFRAID", "ARTS",
+    "BEER", "BORDER", "COMMAND", "CREW", "CROWD", "DATING", "ELEMENTS", "ENEMY", "ENSURE", "ENVIRONMENTAL", "FILLED", "FIXED",
+    "FOREST", "INTELLIGENCE", "INTENDED", "LABOUR", "LIMIT", "MOON", "OCEAN", "POWERS", "PROFIT", "PROOF", "SOLDIERS", "SUIT",
+    "WINS", "APPEARANCE", "ATTORNEY", "BANKS", "BEHAVIOR", "BODIES", "BROTHERS", "BUILDINGS", "CHAIR", "CREATING", "DEBT", "DOMESTIC",
+    "EXPENSIVE", "GREW", "HISTORICAL", "HOMES", "HONESTLY", "HONOR", "JUMP", "LAUNCH", "LISTED", "MINIMUM", "NATIVE", "NOTED",
+    "ORIGINALLY", "PLANNED", "RAY", "SETS", "SUDDENLY", "SUPREME", "SURVEY", "TECH", "TREES", "UPDATE", "USER", "WRITER",
+    "YELLOW", "YOUNGER", "ANCIENT", "ATTACKS", "CHARGES", "COMBINED", "COMMUNICATION", "CONNECTED", "CONTAINS", "DOWNLOAD", "EMAIL", "ENDING",
+    "EXERCISE", "EXPRESS", "FLOW", "FORMED", "GIRLFRIEND", "HERO", "ILLEGAL", "INCREASING", "JOKE", "LOAN", "METHODS", "OFFICIALS",
+    "PERFORMED", "PLANET", "RELATIONSHIPS", "RESTAURANT", "SELECTED", "SHARED", "SHOPPING", "SOFT", "STUCK", "SUGAR", "SUGGESTED", "SUPPORTED",
+    "SURPRISED", "TAUGHT", "TRANSPORT", "ACCEPTED", "ADDING", "AFFAIRS", "ALLOWS", "APPEAL", "APPLIED", "APPROPRIATE", "ARTISTS", "CONFIRMED",
+    "DEVICE", "DRAMA", "ENTRY", "ERA", "FACTOR", "FEED", "GOLDEN", "GRANT", "GROWN", "HEADS", "HOPING", "KEEPS",
+    "LAWYER", "LEGS", "LYING", "MEASURES", "MISTAKE", "ORGANIZATIONS", "PLATFORM", "POOL", "PULLED", "REGARDING", "RELATIONS", "REQUIRES",
+    "ROUTE", "SAVED", "SCHEDULE", "SCIENTIFIC", "SHOES", "SMOKE", "SQUAD", "TEACH", "TESTING", "TESTS", "VALUES", "WALKED",
+    "ANGRY", "BUSINESSES", "CANDIDATE", "COMFORTABLE", "CONCERN", "DEVELOPING", "DISCUSS", "ELECTIONS", "EMOTIONAL", "EVERYWHERE", "FACILITIES", "FALLING",
+    "FOX", "HOLE", "HOLIDAY", "INTERESTS", "INTERNAL", "LAUGH", "LEG", "LETTERS", "LISTENING", "LOVES", "LUNCH", "MAX",
+    "MILK", "PACK", "PAYMENT", "PERFORM", "RECORDED", "RELATIVELY", "SECTOR", "SHARING", "SNOW", "STORM", "STREETS", "STRIKE",
+    "STUDIO", "WEAK", "ACTOR", "ADVANCE", "APARTMENT", "CHAIN", "CHAPTER", "COMMITTED"
   ];
 
   /* =====================================================================
@@ -1244,6 +1461,7 @@
       maxTimeSec: 6,
       unlimited: false,
       callMix: "mixed",  // Call Signs group only: "mixed" | "us" | "intl"
+      wordPool: 500,     // Common Words group only: how many of GENERAL_WORDS to draw from (100/500/1000/2000)
       headCopy: false,   // Head Copy Mode: no typing allowed while code is playing
       timerMin: 0        // Practice Timer length in minutes; 0 = off
     },
@@ -1257,6 +1475,7 @@
     playing: false,            // true while this round's group is sounding (first send or a Replay)
     currentAudio: null,        // promise for the most recent playback of this round (first send or Replay)
     callsUsed: {},             // call signs already sent this session, so none repeats
+    deck: { key: "", cards: [], last: null }, // shuffled batch of words/QSO elements still to be dealt (see drawFromDeck)
     reviewing: false,          // true while holding on a missed group's results, waiting for Next
     reviewStartTs: 0,          // when the current review began (for REVIEW_KEY_GUARD_MS)
     reviewResolver: null,      // resolves the review pause so the session loop moves on
@@ -1318,6 +1537,7 @@
 
     groupSelect: $("groupSelect"), customField: $("customField"), customInput: $("customInput"),
     callMixField: $("callMixField"), callMixSelect: $("callMixSelect"),
+    wordPoolField: $("wordPoolField"), wordPoolSelect: $("wordPoolSelect"),
     groupSizeField: $("groupSizeField"), groupSizeLabel: $("groupSizeLabel"), groupSizeSelect: $("groupSizeSelect"),
     wpmRange: $("wpmRange"), wpmVal: $("wpmVal"),
     fwpmRange: $("fwpmRange"), fwpmVal: $("fwpmVal"),
@@ -1363,6 +1583,7 @@
   // Mix picker instead.
   function updateGroupSizeFieldUI(group) {
     els.callMixField.style.display = group === "calls" ? "" : "none";
+    els.wordPoolField.style.display = group === "words" ? "" : "none";
     if (group === "qso" || group === "calls") {
       els.groupSizeField.style.display = "none";
     } else {
@@ -1387,6 +1608,7 @@
     els.unlimitedCheck.checked = s.unlimited;
     els.maxTimeRange.disabled = s.unlimited;
     els.callMixSelect.value = s.callMix;
+    els.wordPoolSelect.value = String(s.wordPool);
     renderHeadCopyBtn();
     renderTimerIdle();
   }
@@ -1671,8 +1893,51 @@
     return out;
   }
 
+  // The Common Words pool for a given word length: the top N of
+  // GENERAL_WORDS (N = Word Pool setting) merged with all of Tim's
+  // COMMON_WORDS, de-duplicated (plenty of words, like "THE" or "NAME",
+  // are on both lists and shouldn't get double the chance of coming up).
   function wordsOfLength(n) {
-    return COMMON_WORDS.filter(function (w) { return w.length === n; });
+    var size = [100, 500, 1000, 2000].indexOf(state.settings.wordPool) >= 0 ? state.settings.wordPool : 500;
+    var seen = {}, out = [];
+    GENERAL_WORDS.slice(0, size).concat(COMMON_WORDS).forEach(function (w) {
+      if (w.length === n && !seen[w]) { seen[w] = true; out.push(w); }
+    });
+    return out;
+  }
+
+  // "Shuffle bag" dealing, like a deck of cards: the whole pool is
+  // shuffled, then dealt one item per round. Nothing repeats until every
+  // item in the pool has been sent; then the deck is reshuffled. Plain
+  // random picking (the old behavior) is like rolling a die each round —
+  // by the "birthday problem," with 51 four-letter words a repeat was
+  // likely within about 9 rounds.
+  //
+  // "key" identifies the pool (group + settings). If the settings change,
+  // the key changes and a fresh deck is shuffled from the new pool. The
+  // deck deliberately survives Stop/Start, so several short sessions in
+  // a row keep working through the same deck instead of starting over.
+  function drawFromDeck(key, pool) {
+    var d = state.deck;
+    if (d.key !== key || !d.cards.length) {
+      var cards = pool.slice();
+      // Fisher–Yates shuffle: walk backward, swapping each slot with a
+      // random slot at or before it. Every ordering is equally likely.
+      for (var i = cards.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = cards[i]; cards[i] = cards[j]; cards[j] = tmp;
+      }
+      // Cards are dealt from the end (pop). If the first card of the new
+      // deck is the same as the last one sent from the old deck, swap it
+      // out of the way so a reshuffle never produces a back-to-back repeat.
+      if (d.key === key && cards.length > 1 && cards[cards.length - 1] === d.last) {
+        var t = cards[0]; cards[0] = cards[cards.length - 1]; cards[cards.length - 1] = t;
+      }
+      d.key = key;
+      d.cards = cards;
+    }
+    d.last = d.cards.pop();
+    return d.last;
   }
 
   // Builds the array of "cells" (one entry per character, including the
@@ -1687,13 +1952,13 @@
     var s = state.settings;
     if (s.group === "qso") {
       if (!QSO_ELEMENTS.length) return null;
-      return QSO_ELEMENTS[Math.floor(Math.random() * QSO_ELEMENTS.length)].split("");
+      return drawFromDeck("qso", QSO_ELEMENTS).split("");
     }
     if (s.group === "calls") return generateCallSign().split("");
     if (s.group === "words") {
       var pool = wordsOfLength(s.groupSize);
       if (!pool.length) return null;
-      return pool[Math.floor(Math.random() * pool.length)].split("");
+      return drawFromDeck("words:" + s.groupSize + ":" + s.wordPool, pool).split("");
     }
     var charset = getCharset();
     if (!charset.length) return null;
@@ -2384,6 +2649,10 @@
   });
   els.callMixSelect.addEventListener("change", function () {
     state.settings.callMix = els.callMixSelect.value;
+    saveSettings();
+  });
+  els.wordPoolSelect.addEventListener("change", function () {
+    state.settings.wordPool = parseInt(els.wordPoolSelect.value, 10);
     saveSettings();
   });
   els.customInput.addEventListener("input", function () {
