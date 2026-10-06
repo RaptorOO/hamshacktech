@@ -5,9 +5,27 @@ showDate: false
 showPagination: false
 ---
 
-Practical, no-install tools for CW practice and operating — built to run right in your browser. The two trainers work on desktop or phone; Morse Code Jeopardy is a desktop game for group practice over Zoom. More will land here over time.
+Practical tools for CW practice and operating — built to run right in your browser. The two trainers work on desktop or phone, and you can also install them together as the HamShackTech CW Trainer app, which works with no internet connection. Morse Code Jeopardy is a desktop game for group practice over Zoom. More will land here over time.
 
 <div class="tool-cards">
+
+<div class="tool-card">
+  <div class="tool-card-header">
+    <h3>HamShackTech CW Trainer App</h3>
+    <span class="tool-card-badge">Free · Installable App</span>
+  </div>
+
+  <p>The CW ICR Trainer and CW Code Groups Trainer together in one app you install on your computer or phone. Once installed it gets its own icon and its own window, and it works with no internet connection — handy on a shack PC that's rarely online, a laptop in the field, or anywhere coverage is spotty. Inside are the same two trainers described below, one tab each, and updates arrive automatically whenever you open the app while you're online.</p>
+
+  <h4>How to install it</h4>
+  <ol>
+    <li>Open the app in <strong>Microsoft Edge</strong> or <strong>Google Chrome</strong> (Windows, Mac, ChromeOS, or Android) and click <strong>Install app</strong> in its title bar — or the install icon at the right end of the browser's address bar.</li>
+    <li>On an iPhone or iPad, open it in Safari, tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</li>
+    <li>Launch it from your Start menu, dock, or home screen like any other app. If you've used the web trainers in the same browser, your settings come along automatically.</li>
+  </ol>
+
+  <a class="tool-card-button" href="/cw-trainer/">Open the CW Trainer App →</a>
+</div>
 
 <div class="tool-card">
   <div class="tool-card-header">
