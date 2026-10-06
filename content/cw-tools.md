@@ -21,6 +21,7 @@ Practical tools for CW practice and operating — built to run right in your bro
   <ol>
     <li>Open the app in <strong>Microsoft Edge</strong> or <strong>Google Chrome</strong> (Windows, Mac, ChromeOS, or Android) and click <strong>Install app</strong> in its title bar — or the install icon at the right end of the browser's address bar.</li>
     <li>On an iPhone or iPad, open it in Safari, tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</li>
+    <li>On a Mac with Safari (macOS Sonoma or later), open it and choose <strong>File → Add to Dock</strong>.</li>
     <li>Launch it from your Start menu, dock, or home screen like any other app. If you've used the web trainers in the same browser, your settings come along automatically.</li>
   </ol>
 
