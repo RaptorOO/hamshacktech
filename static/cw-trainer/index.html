@@ -117,6 +117,55 @@
   .install.show { display: block; }
   .install:hover { background: var(--lime); color: var(--lime-ink); }
 
+  /* Home link: back to hamshacktech.com. Only shown when the app is open
+     in a browser tab -- an installed app window has no use for it. */
+  .home, .gear {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px; height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--well);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .home:hover, .gear:hover { color: var(--lime); border-color: var(--lime); }
+  .home:focus-visible, .gear:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+  .home svg, .gear svg { width: 18px; height: 18px; }
+  @media (display-mode: standalone) { .home { display: none; } }
+
+  /* ---------- Settings panel (shared WPM / tone / volume) ---------- */
+  .settings {
+    width: min(420px, calc(100vw - 32px));
+    padding: 22px 22px 18px;
+    background: var(--bar);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .settings::backdrop { background: rgba(0, 0, 0, 0.6); }
+  .settings h2 { margin: 0 0 4px; font: 600 1.3rem/1.2 'Oswald', sans-serif; letter-spacing: 0.02em; }
+  .settings .lede { margin: 0 0 18px; color: var(--muted); font-size: 0.88rem; line-height: 1.45; }
+  .setting { margin-bottom: 16px; }
+  .setting label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 6px; }
+  .setting output { font-family: 'Oswald', sans-serif; font-weight: 500; color: var(--lime); }
+  .setting input[type="range"] { width: 100%; accent-color: var(--lime); }
+  .settings .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+  .btn {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    background: var(--well);
+    color: var(--text);
+    font: 500 0.9rem/1 'Inter', sans-serif;
+    cursor: pointer;
+  }
+  .btn:hover { border-color: var(--lime); }
+  .btn.primary { background: var(--lime); border-color: var(--lime); color: var(--lime-ink); }
+  .btn:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+
   /* ---------- trainer frames ---------- */
   main { flex: 1; position: relative; min-height: 0; }
   main iframe {
@@ -135,6 +184,7 @@
     .brand h1 .site { display: none; }   /* "CW Trainer" is enough on a phone */
     .offline { display: none !important; }
     .tab { padding: 7px 11px; }
+    .home { display: none; }             /* room is tight; the browser's Back works */
   }
   @media (max-width: 380px) {
     .brand h1 { display: none; }         /* mascot + tabs only */
@@ -144,6 +194,9 @@
 <body>
 
 <header class="bar">
+  <a class="home" href="/" aria-label="Back to hamshacktech.com" title="Back to hamshacktech.com">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+  </a>
   <div class="brand">
     <img src="icons/apple-touch-icon.png" alt="" width="30" height="30">
     <h1><span class="site">HamShackTech</span> CW Trainer</h1>
@@ -157,7 +210,33 @@
   <div class="spacer"></div>
   <span class="offline" id="offlineNote" title="Everything is saved on this device, so the app opens without internet.">Ready offline</span>
   <button class="install" id="installBtn" type="button">Install app</button>
+  <button class="gear" id="settingsBtn" type="button" aria-haspopup="dialog" aria-controls="settingsDialog" aria-label="Settings" title="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
 </header>
+
+<!-- Settings shared by both trainers. The same three sliders also appear
+     in each trainer's own settings; all of them stay in sync. -->
+<dialog class="settings" id="settingsDialog" aria-labelledby="settingsTitle">
+  <h2 id="settingsTitle">Settings</h2>
+  <p class="lede">Speed, tone and volume apply to both trainers.</p>
+  <div class="setting">
+    <label for="setWpm">Character speed <output id="setWpmVal"></output></label>
+    <input type="range" id="setWpm" min="5" max="40" step="1">
+  </div>
+  <div class="setting">
+    <label for="setTone">Tone <output id="setToneVal"></output></label>
+    <input type="range" id="setTone" min="300" max="1000" step="10">
+  </div>
+  <div class="setting">
+    <label for="setVol">Volume <output id="setVolVal"></output></label>
+    <input type="range" id="setVol" min="0" max="100" step="5">
+  </div>
+  <div class="actions">
+    <button class="btn" id="sampleBtn" type="button">Play sample</button>
+    <button class="btn primary" id="settingsDone" type="button">Done</button>
+  </div>
+</dialog>
 
 <main>
   <!-- The ICR frame loads right away; Code Groups loads the first time its
@@ -168,6 +247,7 @@
           title="Code Groups Trainer" data-src="code-groups/" hidden></iframe>
 </main>
 
+<script src="shared/hst-engine.js"></script>
 <script>
 (function () {
   'use strict';
@@ -244,10 +324,60 @@
     });
   });
 
-  // Start on the tab used last time (ICR the very first time).
+  // Which tab to open: a ?tab=icr / ?tab=code-groups link (the CW Tools
+  // page and the old trainer addresses use these) wins; otherwise the tab
+  // used last time; ICR the very first time.
+  var wanted = new URLSearchParams(location.search).get('tab');
   var saved = null;
   try { saved = localStorage.getItem(TAB_KEY); } catch (e) {}
-  showTab(saved === 'code-groups' ? 'code-groups' : 'icr', false);
+  if (wanted === 'icr' || wanted === 'code-groups') showTab(wanted, true);
+  else showTab(saved === 'code-groups' ? 'code-groups' : 'icr', false);
+
+  // ------------------------------------------------------------------
+  // Settings panel. The sliders write to HST.shared (see
+  // shared/hst-engine.js); both trainers listen for that change and
+  // update themselves, so nothing here talks to the trainers directly.
+  // ------------------------------------------------------------------
+  var dlg = document.getElementById('settingsDialog');
+  var fields = [
+    { key: 'wpm',    input: 'setWpm',  out: 'setWpmVal',  fmt: function (v) { return v + ' WPM'; } },
+    { key: 'toneHz', input: 'setTone', out: 'setToneVal', fmt: function (v) { return v + ' Hz'; } },
+    { key: 'volume', input: 'setVol',  out: 'setVolVal',  fmt: function (v) { return v + '%'; } }
+  ];
+  function renderSettings(shared) {
+    fields.forEach(function (f) {
+      document.getElementById(f.input).value = shared[f.key];
+      document.getElementById(f.out).textContent = f.fmt(shared[f.key]);
+    });
+  }
+  fields.forEach(function (f) {
+    document.getElementById(f.input).addEventListener('input', function (e) {
+      var patch = {}; patch[f.key] = Number(e.target.value);
+      HST.shared.set(patch);
+    });
+  });
+  HST.shared.onChange(renderSettings);
+
+  document.getElementById('settingsBtn').addEventListener('click', function () {
+    stopTrainer(current);          // settings change between sessions, never mid-session
+    renderSettings(HST.shared.get());
+    dlg.showModal();
+  });
+  document.getElementById('settingsDone').addEventListener('click', function () { dlg.close(); });
+  // Clicking the dimmed area outside the panel closes it too.
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener('close', function () {
+    HST.audio.stop();
+    var active = document.getElementById('frame-' + current);
+    try { active.contentWindow.focus(); } catch (e) {}
+  });
+
+  // "Play sample": sends CQ with the current settings so you can hear them.
+  document.getElementById('sampleBtn').addEventListener('click', function () {
+    var s = HST.shared.get();
+    HST.audio.stop();
+    HST.audio.playMorse(['C', 'Q'], { wpm: s.wpm, toneHz: s.toneHz, volume: s.volume });
+  });
 
   // ------------------------------------------------------------------
   // Offline support: register the service worker (sw.js), then show
