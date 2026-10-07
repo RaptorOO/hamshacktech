@@ -710,7 +710,7 @@
     </details>
   </div>
 
-  <footer>73 · Practice Often, Don't Quit<div class="version-tag">Version 4</div></footer>
+  <footer>73 · Practice Often, Don't Quit<div class="version-tag">Version 5</div></footer>
 </div>
 
 <!-- "OOPS!" POPUP — explains the space-bar-first flow when someone types a
@@ -858,6 +858,10 @@ function playBell(){ HST.audio.bell(settings.volume); }
 // The Elapsed / Timer chip logic is shared with the Code Groups Trainer
 // (HST.createClocks in ../shared/hst-engine.js); `clocks` is created in init().
 let clocks = null;
+
+// Practice History (Progress tab): records each session from Start to Stop.
+// Drills aren't recorded -- they're listening practice, not scored.
+const practiceLog = HST.history.recorder('icr');
 function renderTimerIdle(){ clocks.renderIdle(); }
 function startClocks(){ clocks.start(); }
 function stopClocks(expired){ clocks.stop(expired); }   // no-op if already stopped
@@ -1055,6 +1059,7 @@ function openAnswerFieldForSession(){
 
 function stopSession(){
   sessionRunning = false;
+  practiceLog.finish(); // save this session to Practice History (no-op if nothing was practiced)
   stopClocks(false); // no-op if timerExpired() already stopped them
   answerPhaseActive = false;
   awaitingRecognition = false;
@@ -1109,6 +1114,8 @@ function handleTimeout(){
   // Timeout = miss, scored against the character; skip answer entry
   // since there's nothing to grade, but still reveal the character.
   recordResult(currentChar, false, settings.ttaMs);
+  practiceLog.char(currentChar, false);
+  practiceLog.round(false, null, true);
   session.total += 1;
   session.timeouts += 1;
   session.streak = 0;
@@ -1125,6 +1132,8 @@ function submitAnswer(){
   const correct = guess === currentChar;
 
   recordResult(currentChar, correct, reactionTime);
+  practiceLog.char(currentChar, correct);
+  practiceLog.round(correct, reactionTime, false);
   session.total += 1;
   session.reactionTimes.push(reactionTime);
   if(correct){
@@ -1333,6 +1342,7 @@ function refreshSettingsUI(){
 function wireEvents(){
   els.startBtn.addEventListener('click', () => {
     initAudio();
+    practiceLog.start({ group: settings.group, wpm: settings.wpm });
     sessionRunning = true;
     els.startRow.style.display = 'none';
     els.stopRow.style.display = 'block';

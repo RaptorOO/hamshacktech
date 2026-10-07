@@ -11,6 +11,7 @@
  *   HST.shared         settings shared by both trainers (WPM, tone, volume)
  *   HST.audio          the sidetone generator plus the buzzer, beep and bell
  *   HST.createClocks() the Elapsed stopwatch + Practice Timer chips
+ *   HST.history       saved practice sessions (for the Progress tab)
  */
 (function () {
   'use strict';
@@ -349,5 +350,151 @@
 
     return { start: start, stop: stop, renderIdle: renderIdle,
              running: function () { return !!interval; } };
+  };
+
+  /* =====================================================================
+     PRACTICE HISTORY
+     Every finished practice session is saved as one record in IndexedDB,
+     the browser's built-in database (it holds far more than localStorage
+     and survives restarts). Nothing leaves the device.
+
+     A session record looks like:
+       { trainer: 'icr' | 'code-groups',
+         start, end, durationMs,            // wall-clock times (ms)
+         group, wpm, fwpm, groupSize,       // what was practiced, at what speed
+         rounds, roundsCorrect, timeouts,   // ICR: 1 character per round
+         charsTotal, charsCorrect,
+         chars: { A: [correct, total], ... },
+         timeSum, timeCount }               // ICR reaction / Code Groups answer
+                                            // times (ms), timeouts excluded
+
+       HST.history.all()      -> Promise of every record, oldest first
+       HST.history.add(rec)   -> Promise
+       HST.history.clear()    -> Promise
+       HST.history.onChange(fn)  fn() runs when history changes in any tab/frame
+       HST.history.recorder('icr' | 'code-groups')  -> see below
+     ===================================================================== */
+  var DB_NAME = 'hct-cw-trainer', STORE = 'sessions';
+  var dbPromise = null;
+  var memoryOnly = [];       // fallback if the browser blocks IndexedDB (rare)
+  var historyListeners = [];
+  // BroadcastChannel tells the other frames (e.g. the Progress tab) that a
+  // session was saved, so they can redraw without polling.
+  var channel = ('BroadcastChannel' in window) ? new BroadcastChannel('hct-cw-history') : null;
+
+  function openDb() {
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise(function (resolve) {
+      if (!window.indexedDB) return resolve(null);
+      var req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = function () {
+        req.result.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+      };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { resolve(null); };
+    });
+    return dbPromise;
+  }
+
+  // Run one IndexedDB request inside a transaction and resolve with its result.
+  function dbRequest(mode, makeRequest) {
+    return openDb().then(function (db) {
+      if (!db) return null;
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(STORE, mode);
+        var req = makeRequest(tx.objectStore(STORE));
+        tx.oncomplete = function () { resolve(req.result); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+
+  function historyChanged() {
+    historyListeners.forEach(function (fn) { try { fn(); } catch (e) { console.error(e); } });
+    if (channel) channel.postMessage('changed');
+  }
+  if (channel) channel.onmessage = function () {
+    historyListeners.forEach(function (fn) { try { fn(); } catch (e) { console.error(e); } });
+  };
+
+  HST.history = {
+    all: function () {
+      return dbRequest('readonly', function (s) { return s.getAll(); })
+        .then(function (rows) { return (rows || memoryOnly).slice().sort(function (a, b) { return a.start - b.start; }); });
+    },
+    add: function (rec) {
+      return dbRequest('readwrite', function (s) { return s.add(rec); })
+        .then(function (r) { if (r == null) memoryOnly.push(rec); historyChanged(); });
+    },
+    clear: function () {
+      return dbRequest('readwrite', function (s) { return s.clear(); })
+        .then(function () { memoryOnly = []; historyChanged(); });
+    },
+    onChange: function (fn) { historyListeners.push(fn); },
+
+    /* A recorder collects one practice session (Start ... Stop) and saves
+       it when the session ends:
+         var rec = HST.history.recorder('icr');
+         rec.start({ group: 'letters', wpm: 20 });     // at Start Session
+         rec.char('K', true);                           // each character graded
+         rec.round(true, 640, false);                   // each round: correct?, time ms, timed out?
+         rec.finish();                                  // at Stop / timer / tab switch
+       The session in progress is also kept in localStorage after every
+       round, so if the app window is closed mid-session it isn't lost:
+       it gets saved the next time that trainer opens. */
+    recorder: function (trainer) {
+      var DRAFT_KEY = 'hct-cw-run-' + trainer;
+      var run = null;
+
+      function saveDraft() {
+        try { localStorage.setItem(DRAFT_KEY, JSON.stringify(run)); } catch (e) {}
+      }
+      function commit(r) {
+        try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+        if (!r || !r.charsTotal) return Promise.resolve();   // nothing practiced: don't record
+        r.end = r.end || Date.now();
+        r.durationMs = Math.max(0, r.end - r.start);
+        return HST.history.add(r);
+      }
+
+      // Recover a session that was interrupted by closing the app.
+      try {
+        var left = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+        if (left) commit(left);
+      } catch (e) {}
+
+      return {
+        start: function (meta) {
+          if (run) commit(run);
+          run = { trainer: trainer, start: Date.now(), end: 0,
+                  rounds: 0, roundsCorrect: 0, timeouts: 0,
+                  charsTotal: 0, charsCorrect: 0, chars: {},
+                  timeSum: 0, timeCount: 0 };
+          Object.keys(meta || {}).forEach(function (k) { run[k] = meta[k]; });
+          saveDraft();
+        },
+        char: function (ch, correct) {
+          if (!run) return;
+          var c = run.chars[ch] || (run.chars[ch] = [0, 0]);
+          c[1]++; run.charsTotal++;
+          if (correct) { c[0]++; run.charsCorrect++; }
+        },
+        round: function (correct, ms, timedOut) {
+          if (!run) return;
+          run.rounds++;
+          if (correct) run.roundsCorrect++;
+          if (timedOut) run.timeouts++;
+          else if (ms != null && isFinite(ms)) { run.timeSum += ms; run.timeCount++; }
+          run.end = Date.now();
+          saveDraft();
+        },
+        finish: function () {
+          var r = run; run = null;
+          if (r) r.end = Date.now();
+          return commit(r);
+        },
+        active: function () { return !!run; }
+      };
+    }
   };
 })();

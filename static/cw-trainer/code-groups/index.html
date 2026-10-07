@@ -1033,7 +1033,7 @@
 
   </div>
 
-  <footer class="note">HamShackTech CW Tools — practice often, don't quit.<div class="version-tag">Version 5</div></footer>
+  <footer class="note">HamShackTech CW Tools — practice often, don't quit.<div class="version-tag">Version 6</div></footer>
 </div>
 
 <script src="../shared/hst-engine.js"></script>
@@ -1580,6 +1580,10 @@
 
   // Created in INIT below, once the clock chips are known.
   var clocks = null;
+
+  // Practice History (Progress tab): records each session from Start to
+  // Stop. Drills aren't recorded -- they're listening practice, not scored.
+  var practiceLog = HST.history.recorder("code-groups");
   function renderTimerIdle() { clocks.renderIdle(); }
   function startClocks() { clocks.start(); }
   function stopClocks(expired) { clocks.stop(expired); }   // no-op if already stopped
@@ -1956,6 +1960,7 @@
       var cs = getCharStat(actual);
       cs.played++;
       if (correct) cs.correct++;
+      practiceLog.char(actual, correct);
     }
     state.lastResults = results;
 
@@ -1973,6 +1978,7 @@
     var responseMs = Math.max(0, performance.now() - referenceTs);
     o.totalResponseMs += responseMs;
     o.responseCount++;
+    practiceLog.round(allCorrect, responseMs, !!timedOut);
     if (allCorrect) { o.currentStreak++; o.bestStreak = Math.max(o.bestStreak, o.currentStreak); }
     else o.currentStreak = 0;
 
@@ -2138,6 +2144,8 @@
     ensureAudioCtx();
     state.running = true;
     state.callsUsed = {}; // fresh session, fresh pool of call signs
+    practiceLog.start({ group: state.settings.group, wpm: state.settings.wpm,
+                    fwpm: state.settings.fwpm, groupSize: state.settings.groupSize });
     els.sessionBtn.textContent = "Stop Session";
     els.sessionBtn.classList.add("running");
     els.tapHint.style.display = "none";
@@ -2156,6 +2164,7 @@
   // Timer chip can show that it expired.
   function stopSession(idleMessage, timerRanOut) {
     state.running = false;
+    practiceLog.finish(); // save this session to Practice History (no-op if nothing was practiced)
     stopClocks(!!timerRanOut);
     if (state.acceptingInput) finishAnswer(false); // unblock a pending answer without scoring it
     state.timerActive = false;

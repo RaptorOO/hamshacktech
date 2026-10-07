@@ -15,7 +15,7 @@ Practical tools for CW practice and operating — built to run right in your bro
     <span class="tool-card-badge">Free · Installable App</span>
   </div>
 
-  <p>The CW ICR Trainer and CW Code Groups Trainer together in one app you install on your computer or phone. Once installed it gets its own icon and its own window, and it works with no internet connection — handy on a shack PC that's rarely online, a laptop in the field, or anywhere coverage is spotty. Inside are the two trainers described below, one tab each. Speed, tone, and volume are shared, so set them once (in either trainer or the app's Settings panel) and both use them. Updates arrive automatically whenever you open the app while you're online.</p>
+  <p>The CW ICR Trainer and CW Code Groups Trainer together in one app you install on your computer or phone. Once installed it gets its own icon and its own window, and it works with no internet connection — handy on a shack PC that's rarely online, a laptop in the field, or anywhere coverage is spotty. Inside are the two trainers described below, one tab each. Speed, tone, and volume are shared, so set them once (in either trainer or the app's Settings panel) and both use them. A Progress tab keeps your practice history on your device: practice time and day streaks, accuracy and speed trends, and the characters you miss most. Updates arrive automatically whenever you open the app while you're online.</p>
 
   <h4>How to install it</h4>
   <ol>
