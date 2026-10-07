@@ -166,6 +166,32 @@
   .btn.primary { background: var(--lime); border-color: var(--lime); color: var(--lime-ink); }
   .btn:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 
+  /* ---------- "Update ready" banner (below the title bar) ---------- */
+  .update {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 14px;
+    background: #1a2e05;                 /* lime-950 */
+    border-bottom: 1px solid #3f6212;    /* lime-800 */
+    color: var(--text);
+    font-size: 0.9rem;
+  }
+  .update[hidden] { display: none; }
+  .update .msg { flex: 1; min-width: 12em; }
+  .update .msg::before { content: "\2B06\FE0E  "; color: var(--lime); }
+  .update .btn { padding: 6px 12px; font-size: 0.85rem; }
+
+  /* ---------- What's new ---------- */
+  .whatsnew ul { margin: 0 0 4px; padding-left: 1.2em; line-height: 1.5; }
+  .whatsnew li { margin-bottom: 8px; }
+  .linkish {
+    border: 0; background: none; padding: 0; color: var(--lime);
+    font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+  }
+
   /* ---------- trainer frames ---------- */
   main { flex: 1; position: relative; min-height: 0; }
   main iframe {
@@ -188,7 +214,11 @@
   }
   @media (max-width: 480px) {
     .brand h1 { display: none; }         /* mascot + tabs + gear only */
-    .tab { padding: 7px 9px; font-size: 0.9rem; }
+    .tab { padding: 7px 8px; font-size: 0.88rem; }
+    .tab .long { display: none; }        /* "Code Groups" -> "Groups" */
+  }
+  @media (max-width: 400px) {
+    .brand { display: none; }            /* four tabs need the room */
   }
 </style>
 </head>
@@ -206,9 +236,11 @@
     <button class="tab" role="tab" id="tab-icr" data-tab="icr"
             aria-controls="frame-icr" aria-selected="true">ICR</button>
     <button class="tab" role="tab" id="tab-code-groups" data-tab="code-groups"
-            aria-controls="frame-code-groups" aria-selected="false">Code Groups</button>
+            aria-controls="frame-code-groups" aria-selected="false"><span class="long">Code </span>Groups</button>
     <button class="tab" role="tab" id="tab-progress" data-tab="progress"
             aria-controls="frame-progress" aria-selected="false">Progress</button>
+    <button class="tab" role="tab" id="tab-jeopardy" data-tab="jeopardy"
+            aria-controls="frame-jeopardy" aria-selected="false">Jeopardy</button>
   </nav>
   <div class="spacer"></div>
   <span class="offline" id="offlineNote" title="Everything is saved on this device, so the app opens without internet.">Ready offline</span>
@@ -218,11 +250,18 @@
   </button>
 </header>
 
+<!-- Shown when a new version has downloaded (see "Updates" in the script). -->
+<div class="update" id="updateBar" role="status" hidden>
+  <span class="msg" id="updateMsg">A new version of the app is ready.</span>
+  <button class="btn primary" id="updateRestart" type="button">Restart now</button>
+  <button class="btn" id="updateLater" type="button">Later</button>
+</div>
+
 <!-- Settings shared by both trainers. The same three sliders also appear
      in each trainer's own settings; all of them stay in sync. -->
 <dialog class="settings" id="settingsDialog" aria-labelledby="settingsTitle">
   <h2 id="settingsTitle">Settings</h2>
-  <p class="lede">Speed, tone and volume apply to both trainers.</p>
+  <p class="lede">Speed, tone and volume apply to both trainers. (Jeopardy keeps its own, set when you start a game.)</p>
   <div class="setting">
     <label for="setWpm">Character speed <output id="setWpmVal"></output></label>
     <input type="range" id="setWpm" min="5" max="40" step="1">
@@ -236,8 +275,21 @@
     <input type="range" id="setVol" min="0" max="100" step="5">
   </div>
   <div class="actions">
+    <button class="linkish" id="whatsNewLink" type="button" style="margin-right:auto">What's new</button>
     <button class="btn" id="sampleBtn" type="button">Play sample</button>
     <button class="btn primary" id="settingsDone" type="button">Done</button>
+  </div>
+</dialog>
+
+<!-- "What's new": shown once after an update brings a new release, and any
+     time from the Settings panel. Edit RELEASE and its notes in the script
+     below for each release. -->
+<dialog class="settings whatsnew" id="whatsNewDialog" aria-labelledby="whatsNewTitle">
+  <h2 id="whatsNewTitle">What's new</h2>
+  <p class="lede" id="whatsNewDate"></p>
+  <ul id="whatsNewList"></ul>
+  <div class="actions">
+    <button class="btn primary" id="whatsNewDone" type="button">Got it</button>
   </div>
 </dialog>
 
@@ -250,8 +302,19 @@
           title="Code Groups Trainer" data-src="code-groups/" hidden></iframe>
   <iframe id="frame-progress" role="tabpanel" aria-labelledby="tab-progress"
           title="Progress" data-src="progress/" hidden></iframe>
+  <iframe id="frame-jeopardy" role="tabpanel" aria-labelledby="tab-jeopardy"
+          title="Morse Code Jeopardy" data-src="jeopardy/" hidden></iframe>
 </main>
 
+<script>
+  // Has this device used the app before? Checked before the shared engine
+  // loads, because the engine creates its settings the first time it runs.
+  // (Used by "What's new": first-time visitors don't need release notes.)
+  window.HCT_RETURNING = (function () {
+    try { return !!(localStorage.getItem('hct-cw-shared-v1') || localStorage.getItem('hct-cw-app-tab')); }
+    catch (e) { return false; }
+  })();
+</script>
 <script src="shared/hst-engine.js"></script>
 <script>
 (function () {
@@ -291,6 +354,9 @@
     } else if (slug === 'code-groups') {
       clickIfStop('drillBtn');           // Code Groups relabels these buttons
       clickIfStop('sessionBtn');         // to "Stop ..." while running
+    } else if (slug === 'jeopardy') {
+      var stop = doc.getElementById('stopAudio');   // Jeopardy's own Stop Audio
+      if (stop) stop.click();
     }                                    // (Progress has nothing to stop)
   }
 
@@ -335,11 +401,15 @@
     });
   });
 
-  // Which tab to open: a ?tab=icr / code-groups / progress link (the CW
+  // Which tab to open: a ?tab=icr / code-groups / progress / jeopardy link (the CW
   // Tools page and the old trainer addresses use these) wins; otherwise
   // the tab used last time; ICR the very first time.
-  var TABS = ['icr', 'code-groups', 'progress'];
-  var wanted = new URLSearchParams(location.search).get('tab');
+  var TABS = ['icr', 'code-groups', 'progress', 'jeopardy'];
+  var params = new URLSearchParams(location.search);
+  var wanted = params.get('tab');
+  // Jeopardy's host mode (the Content editor) is turned on with host=1;
+  // pass it through to the Jeopardy frame.
+  if (params.get('host') === '1') document.getElementById('frame-jeopardy').dataset.src = 'jeopardy/?host=1';
   var saved = null;
   try { saved = localStorage.getItem(TAB_KEY); } catch (e) {}
   if (TABS.indexOf(wanted) >= 0) showTab(wanted, true);
@@ -396,15 +466,106 @@
   // "Ready offline" once every file has been saved on this device.
   // ------------------------------------------------------------------
   if ('serviceWorker' in navigator) {
+    var hadController = !!navigator.serviceWorker.controller;  // false on the very first visit
     navigator.serviceWorker
       // updateViaCache 'none': always check the server for a new sw.js
       .register('sw.js', { scope: './', updateViaCache: 'none' })
+      .then(watchForUpdates)
       .catch(function (err) { console.warn('Offline support unavailable:', err); });
 
     navigator.serviceWorker.ready.then(function () {
       document.getElementById('offlineNote').classList.add('ready');
     });
   }
+
+  // ------------------------------------------------------------------
+  // Updates. A new version downloads quietly in the background (see
+  // sw.js). Once it's ready, a banner offers to restart into it now;
+  // "Later" leaves it for the next launch, as before.
+  // ------------------------------------------------------------------
+  var updateBar = document.getElementById('updateBar');
+  var restarting = false;
+
+  function watchForUpdates(reg) {
+    // Already downloaded on an earlier visit and waiting?
+    if (reg.waiting && hadController) updateBar.hidden = false;
+    // Downloaded while the app is open?
+    reg.addEventListener('updatefound', function () {
+      var incoming = reg.installing;
+      if (!incoming) return;
+      incoming.addEventListener('statechange', function () {
+        if (incoming.state === 'installed' && navigator.serviceWorker.controller) updateBar.hidden = false;
+      });
+    });
+    // The browser checks for a new version each time the app opens. Also
+    // check when you come back to it, at most every 30 minutes, so an app
+    // that stays open for days still hears about updates.
+    var lastCheck = Date.now();
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible' && Date.now() - lastCheck > 30 * 60000) {
+        lastCheck = Date.now();
+        reg.update().catch(function () {});
+      }
+    });
+    document.getElementById('updateRestart').addEventListener('click', function () {
+      stopTrainer(current);        // saves the session in progress to Practice History
+      restarting = true;
+      if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      else location.reload();      // already switched over in another window
+    });
+  }
+  document.getElementById('updateLater').addEventListener('click', function () { updateBar.hidden = true; });
+
+  // The new version has taken over: reload into it if Restart was pressed
+  // here; if it was pressed in another app window, offer the same here.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (restarting) { location.reload(); return; }
+      if (hadController) {
+        document.getElementById('updateMsg').textContent = 'The app was updated in another window.';
+        updateBar.hidden = false;
+      }
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // What's new. Shown once on the first launch of a new release (not to
+  // first-time visitors), and from the Settings panel any time.
+  // For each release: change RELEASE and replace the notes.
+  // ------------------------------------------------------------------
+  var RELEASE = '2026-10-07';
+  var RELEASE_LABEL = 'October 2026';
+  var RELEASE_NOTES = [
+    '<strong>Morse Code Jeopardy</strong> is now part of the app, in its own tab \u2014 and like everything else here, it works offline.',
+    'When an update is ready you\u2019ll now see a banner with a <strong>Restart now</strong> button, instead of having to close and reopen the app.',
+    'This note appears once after each update. You can find it again under Settings (the gear icon).'
+  ];
+  var SEEN_KEY = 'hct-cw-seen-release';
+  var wnDlg = document.getElementById('whatsNewDialog');
+
+  function showWhatsNew() {
+    stopTrainer(current);
+    document.getElementById('whatsNewDate').textContent = RELEASE_LABEL;
+    document.getElementById('whatsNewList').innerHTML =
+      RELEASE_NOTES.map(function (n) { return '<li>' + n + '</li>'; }).join('');
+    if (dlg.open) dlg.close();
+    wnDlg.showModal();
+    try { localStorage.setItem(SEEN_KEY, RELEASE); } catch (e) {}
+  }
+  document.getElementById('whatsNewDone').addEventListener('click', function () { wnDlg.close(); });
+  wnDlg.addEventListener('click', function (e) { if (e.target === wnDlg) wnDlg.close(); });
+  document.getElementById('whatsNewLink').addEventListener('click', showWhatsNew);
+
+  (function () {
+    var seen = null;
+    try { seen = localStorage.getItem(SEEN_KEY); } catch (e) {}
+    if (seen === RELEASE) return;
+    if (!seen && !window.HCT_RETURNING) {          // brand-new visitor: no notes
+      try { localStorage.setItem(SEEN_KEY, RELEASE); } catch (e) {}
+      return;
+    }
+    setTimeout(showWhatsNew, 400);                 // let the first tab draw first
+  })();
 
   // ------------------------------------------------------------------
   // Install button. Chrome and Edge fire "beforeinstallprompt" when the

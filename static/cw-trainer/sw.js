@@ -12,15 +12,18 @@
  *  1. Each time the app opens online, the browser re-downloads this file.
  *  2. If VERSION changed (the build script derives it from a hash of every
  *     app file), the new worker downloads a fresh copy of everything below.
- *  3. It then waits until every app window is closed, and takes over on the
+ *  3. It then waits until every app window is closed and takes over on the
  *     next launch -- so a practice session is never swapped out mid-stream.
+ *     The app also shows an "Update ready" banner; its Restart button sends
+ *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = '00dc0a195e70';
+const VERSION = '53cde120151d';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline.
 const PRECACHE = [
   '/cw-trainer/code-groups/',
+  '/cw-trainer/fonts/bebas-neue-latin-400-normal.woff2',
   '/cw-trainer/fonts/fonts.css',
   '/cw-trainer/fonts/ibm-plex-mono-latin-400-normal.woff2',
   '/cw-trainer/fonts/ibm-plex-mono-latin-500-normal.woff2',
@@ -39,12 +42,17 @@ const PRECACHE = [
   '/cw-trainer/fonts/oswald-latin-500-normal.woff2',
   '/cw-trainer/fonts/oswald-latin-600-normal.woff2',
   '/cw-trainer/fonts/oswald-latin-700-normal.woff2',
+  '/cw-trainer/fonts/russo-one-latin-400-normal.woff2',
+  '/cw-trainer/fonts/source-sans-3-latin-400-normal.woff2',
+  '/cw-trainer/fonts/source-sans-3-latin-600-normal.woff2',
+  '/cw-trainer/fonts/source-sans-3-latin-700-normal.woff2',
   '/cw-trainer/icons/android-chrome-192x192.png',
   '/cw-trainer/icons/android-chrome-512x512.png',
   '/cw-trainer/icons/apple-touch-icon.png',
   '/cw-trainer/icons/favicon-32x32.png',
   '/cw-trainer/icr/',
   '/cw-trainer/',
+  '/cw-trainer/jeopardy/',
   '/cw-trainer/manifest.webmanifest',
   '/cw-trainer/progress/',
   '/cw-trainer/shared/hst-engine.js'
@@ -71,6 +79,12 @@ self.addEventListener('activate', (event) => {
         .map((k) => caches.delete(k)))
     )
   );
+});
+
+// Restart button in the app's "Update ready" banner: take over now instead
+// of waiting for every window to close. (The app reloads itself afterwards.)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // Fetch: answer from the saved copy when there is one ("cache first"),
