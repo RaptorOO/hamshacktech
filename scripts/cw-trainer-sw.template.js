@@ -12,8 +12,10 @@
  *  1. Each time the app opens online, the browser re-downloads this file.
  *  2. If VERSION changed (the build script derives it from a hash of every
  *     app file), the new worker downloads a fresh copy of everything below.
- *  3. It then waits until every app window is closed, and takes over on the
+ *  3. It then waits until every app window is closed and takes over on the
  *     next launch -- so a practice session is never swapped out mid-stream.
+ *     The app also shows an "Update ready" banner; its Restart button sends
+ *     SKIP_WAITING (below) so the new version takes over right away.
  */
 const VERSION = '__VERSION__';
 const CACHE = 'cw-trainer-' + VERSION;
@@ -44,6 +46,12 @@ self.addEventListener('activate', (event) => {
         .map((k) => caches.delete(k)))
     )
   );
+});
+
+// Restart button in the app's "Update ready" banner: take over now instead
+// of waiting for every window to close. (The app reloads itself afterwards.)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 // Fetch: answer from the saved copy when there is one ("cache first"),
