@@ -4,9 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Morse Code Jeopardy · HamShackTech</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@500;600;700&family=Russo+One&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../fonts/fonts.css" />
 <style>
   :root {
     --ink: #050805;
@@ -151,24 +149,8 @@
     border: 1px solid rgba(198,240,53,0.22);
     box-shadow: 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(198,240,53,0.08);
     border-radius: 12px; padding: 0 10px;
-    position: relative; /* anchors the home icon to the bar's left edge */
+    position: relative;
   }
-  /* Home icon: same house glyph and 34px square as the two CW trainers.
-     Pinned to the left end of the host bar so the New Game / Stop Audio
-     buttons stay centered. */
-  .home-link {
-    position: absolute; left: 7px; top: 50%; transform: translateY(-50%);
-    width: 34px; height: 34px;
-    display: inline-flex; align-items: center; justify-content: center;
-    background: linear-gradient(180deg, #1c3a18, #102410);
-    border: 1px solid rgba(198,240,53,0.28);
-    border-radius: 8px;
-    color: #c6d6b0;
-    text-decoration: none;
-    transition: color 0.15s ease, border-color 0.15s ease;
-  }
-  .home-link:hover, .home-link:focus-visible { color: var(--lime); border-color: var(--lime); }
-  .home-link svg { width: 18px; height: 18px; display: block; }
   button.btn {
     font-family: "Oswald", sans-serif; letter-spacing: 0.06em; text-transform: uppercase;
     border: 0; cursor: pointer; border-radius: 8px; padding: 7px 12px; font-size: 15px;
@@ -436,9 +418,6 @@
     </div>
   </header>
   <div class="hostbar">
-    <a class="home-link" href="/" aria-label="Back to HamShackTech" title="Back to HamShackTech">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    </a>
     <button class="btn" id="newGame">New Game</button>
     <button class="btn ghost" id="stopAudio">Stop Audio</button>
     <button class="btn ghost host-only" id="editContent">Content</button>
@@ -534,7 +513,7 @@
 
 <script>
 // Reuse the site's existing square alien-mascot icon (same artwork, already served at the site root)
-const LOGO_SRC = "/apple-touch-icon.png";
+const LOGO_SRC = "../icons/apple-touch-icon.png";
 const PLAY_DELAY_SEC = 3;
 const DOLLARS = [200, 400, 600, 800, 1000];
 

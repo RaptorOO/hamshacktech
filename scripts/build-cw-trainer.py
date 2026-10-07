@@ -4,7 +4,7 @@ Regenerate the service worker for the "HamShackTech CW Trainer" app
 (static/cw-trainer/sw.js).
 
 The app is a Progressive Web App (PWA): a small shell page with two tabs
-(ICR and Code Groups), sharing one engine (shared/hst-engine.js). Its
+(ICR, Code Groups, Progress, Jeopardy), sharing one engine (shared/hst-engine.js). Its
 service worker keeps a saved copy of every app file so the installed app
 opens with no internet connection.
 
@@ -34,7 +34,7 @@ STATIC = ROOT / "static"
 APP = STATIC / "cw-trainer"
 
 
-# Font files the two trainers use: (family name, fontsource package, weights).
+# Font files the app uses: (family name, fontsource package, weights).
 # Only the "latin" subset is bundled -- it covers everything the trainers
 # display and keeps the download small (~20 KB per weight).
 FONTS = [
@@ -43,6 +43,10 @@ FONTS = [
     ("JetBrains Mono", "jetbrains-mono", [400, 500, 700]),
     ("IBM Plex Sans", "ibm-plex-sans", [400, 500, 600]),
     ("IBM Plex Mono", "ibm-plex-mono", [400, 500, 600, 700]),
+    # Morse Code Jeopardy
+    ("Bebas Neue", "bebas-neue", [400]),
+    ("Russo One", "russo-one", [400]),
+    ("Source Sans 3", "source-sans-3", [400, 600, 700]),
 ]
 
 
