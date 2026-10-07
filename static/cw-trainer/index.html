@@ -186,8 +186,9 @@
     .tab { padding: 7px 11px; }
     .home { display: none; }             /* room is tight; the browser's Back works */
   }
-  @media (max-width: 380px) {
-    .brand h1 { display: none; }         /* mascot + tabs only */
+  @media (max-width: 480px) {
+    .brand h1 { display: none; }         /* mascot + tabs + gear only */
+    .tab { padding: 7px 9px; font-size: 0.9rem; }
   }
 </style>
 </head>
@@ -206,6 +207,8 @@
             aria-controls="frame-icr" aria-selected="true">ICR</button>
     <button class="tab" role="tab" id="tab-code-groups" data-tab="code-groups"
             aria-controls="frame-code-groups" aria-selected="false">Code Groups</button>
+    <button class="tab" role="tab" id="tab-progress" data-tab="progress"
+            aria-controls="frame-progress" aria-selected="false">Progress</button>
   </nav>
   <div class="spacer"></div>
   <span class="offline" id="offlineNote" title="Everything is saved on this device, so the app opens without internet.">Ready offline</span>
@@ -239,12 +242,14 @@
 </dialog>
 
 <main>
-  <!-- The ICR frame loads right away; Code Groups loads the first time its
-       tab is opened (data-src), so only one trainer starts up at launch. -->
+  <!-- The first tab shown loads right away; the others load the first time
+       their tab is opened (data-src), so only one starts up at launch. -->
   <iframe id="frame-icr" role="tabpanel" aria-labelledby="tab-icr"
           title="ICR Trainer" src="icr/"></iframe>
   <iframe id="frame-code-groups" role="tabpanel" aria-labelledby="tab-code-groups"
           title="Code Groups Trainer" data-src="code-groups/" hidden></iframe>
+  <iframe id="frame-progress" role="tabpanel" aria-labelledby="tab-progress"
+          title="Progress" data-src="progress/" hidden></iframe>
 </main>
 
 <script src="shared/hst-engine.js"></script>
@@ -283,10 +288,10 @@
     if (slug === 'icr') {
       clickIfVisible('stopDrillBtn');    // a drill first (it may resume the session)...
       clickIfVisible('stopSessionBtn');  // ...then the session itself
-    } else {
+    } else if (slug === 'code-groups') {
       clickIfStop('drillBtn');           // Code Groups relabels these buttons
       clickIfStop('sessionBtn');         // to "Stop ..." while running
-    }
+    }                                    // (Progress has nothing to stop)
   }
 
   function showTab(slug, remember) {
@@ -308,6 +313,12 @@
 
     if (remember) { try { localStorage.setItem(TAB_KEY, slug); } catch (e) {} }
 
+    // Progress redraws each time it's opened, so it includes the session
+    // that was just stopped by switching here.
+    if (slug === 'progress') {
+      try { document.getElementById('frame-progress').contentWindow.HSTProgress.refresh(); } catch (e) {}
+    }
+
     // Hand keyboard focus to the trainer so typing goes straight to it.
     var active = document.getElementById('frame-' + slug);
     setTimeout(function () { try { active.contentWindow.focus(); } catch (e) {} }, 0);
@@ -324,14 +335,15 @@
     });
   });
 
-  // Which tab to open: a ?tab=icr / ?tab=code-groups link (the CW Tools
-  // page and the old trainer addresses use these) wins; otherwise the tab
-  // used last time; ICR the very first time.
+  // Which tab to open: a ?tab=icr / code-groups / progress link (the CW
+  // Tools page and the old trainer addresses use these) wins; otherwise
+  // the tab used last time; ICR the very first time.
+  var TABS = ['icr', 'code-groups', 'progress'];
   var wanted = new URLSearchParams(location.search).get('tab');
   var saved = null;
   try { saved = localStorage.getItem(TAB_KEY); } catch (e) {}
-  if (wanted === 'icr' || wanted === 'code-groups') showTab(wanted, true);
-  else showTab(saved === 'code-groups' ? 'code-groups' : 'icr', false);
+  if (TABS.indexOf(wanted) >= 0) showTab(wanted, true);
+  else showTab(TABS.indexOf(saved) >= 0 ? saved : 'icr', false);
 
   // ------------------------------------------------------------------
   // Settings panel. The sliders write to HST.shared (see

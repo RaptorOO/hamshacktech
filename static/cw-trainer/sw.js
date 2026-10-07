@@ -15,7 +15,7 @@
  *  3. It then waits until every app window is closed, and takes over on the
  *     next launch -- so a practice session is never swapped out mid-stream.
  */
-const VERSION = '8b561ab201db';
+const VERSION = '00dc0a195e70';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline.
@@ -46,6 +46,7 @@ const PRECACHE = [
   '/cw-trainer/icr/',
   '/cw-trainer/',
   '/cw-trainer/manifest.webmanifest',
+  '/cw-trainer/progress/',
   '/cw-trainer/shared/hst-engine.js'
 ];
 
