@@ -1,0 +1,9 @@
+# Cloudflare Pages redirects (https://developers.cloudflare.com/pages/configuration/redirects/)
+# The ICR and Code Groups trainers now live in the CW Trainer app. Old links,
+# bookmarks and blog-post links land on the matching tab of the app.
+/cw-tools/icr-trainer            /cw-trainer/?tab=icr          301
+/cw-tools/icr-trainer/           /cw-trainer/?tab=icr          301
+/cw-tools/icr-trainer/*          /cw-trainer/?tab=icr          301
+/cw-tools/code-groups-trainer    /cw-trainer/?tab=code-groups  301
+/cw-tools/code-groups-trainer/   /cw-trainer/?tab=code-groups  301
+/cw-tools/code-groups-trainer/*  /cw-trainer/?tab=code-groups  301
