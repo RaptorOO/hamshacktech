@@ -15,7 +15,7 @@ Practical tools for CW practice and operating — built to run right in your bro
     <span class="tool-card-badge">Free · Installable App</span>
   </div>
 
-  <p>The CW ICR Trainer and CW Code Groups Trainer together in one app you install on your computer or phone. Once installed it gets its own icon and its own window, and it works with no internet connection — handy on a shack PC that's rarely online, a laptop in the field, or anywhere coverage is spotty. Inside are the same two trainers described below, one tab each, and updates arrive automatically whenever you open the app while you're online.</p>
+  <p>The CW ICR Trainer and CW Code Groups Trainer together in one app you install on your computer or phone. Once installed it gets its own icon and its own window, and it works with no internet connection — handy on a shack PC that's rarely online, a laptop in the field, or anywhere coverage is spotty. Inside are the two trainers described below, one tab each. Speed, tone, and volume are shared, so set them once (in either trainer or the app's Settings panel) and both use them. Updates arrive automatically whenever you open the app while you're online.</p>
 
   <h4>How to install it</h4>
   <ol>
@@ -44,7 +44,7 @@ Practical tools for CW practice and operating — built to run right in your bro
     <li>Check <strong>Your Worst Characters</strong> any time and tap <strong>Drill These Characters</strong> for focused repetition on your weak points.</li>
   </ol>
 
-  <a class="tool-card-button" href="/cw-tools/icr-trainer/">Launch CW ICR Trainer →</a>
+  <a class="tool-card-button" href="/cw-trainer/?tab=icr">Launch CW ICR Trainer →</a>
 </div>
 
 <div class="tool-card">
@@ -63,7 +63,7 @@ Practical tools for CW practice and operating — built to run right in your bro
     <li>Check <strong>Your Worst Characters</strong> any time and tap <strong>Drill These Characters</strong> to just listen to your weak points on repeat.</li>
   </ol>
 
-  <a class="tool-card-button" href="/cw-tools/code-groups-trainer/">Launch CW Code Groups Trainer →</a>
+  <a class="tool-card-button" href="/cw-trainer/?tab=code-groups">Launch CW Code Groups Trainer →</a>
 </div>
 
 <div class="tool-card">
