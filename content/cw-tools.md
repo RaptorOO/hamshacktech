@@ -5,7 +5,7 @@ showDate: false
 showPagination: false
 ---
 
-Practical tools for CW practice and operating — built to run right in your browser. The two trainers work on desktop or phone, and you can also install them together as the HamShackTech CW Trainer app, which works with no internet connection. Morse Code Jeopardy is a desktop game for group practice over Zoom. More will land here over time.
+Practical tools for CW practice and operating — built to run right in your browser. The two trainers work on desktop or phone, and Morse Code Jeopardy is a desktop game for group practice over Zoom. All three come together in the HamShackTech CW Trainer app, which you can install and use with no internet connection. More will land here over time.
 
 <div class="tool-cards">
 
@@ -15,7 +15,7 @@ Practical tools for CW practice and operating — built to run right in your bro
     <span class="tool-card-badge">Free · Installable App</span>
   </div>
 
-  <p>The CW ICR Trainer and CW Code Groups Trainer together in one app you install on your computer or phone. Once installed it gets its own icon and its own window, and it works with no internet connection — handy on a shack PC that's rarely online, a laptop in the field, or anywhere coverage is spotty. Inside are the two trainers described below, one tab each. Speed, tone, and volume are shared, so set them once (in either trainer or the app's Settings panel) and both use them. A Progress tab keeps your practice history on your device: practice time and day streaks, accuracy and speed trends, and the characters you miss most. Updates arrive automatically whenever you open the app while you're online.</p>
+  <p>The CW ICR Trainer, CW Code Groups Trainer, and Morse Code Jeopardy together in one app you install on your computer or phone. Once installed it gets its own icon and its own window, and it works with no internet connection — handy on a shack PC that's rarely online, a laptop in the field, or anywhere coverage is spotty. Inside are the three tools described below, one tab each. The two trainers share speed, tone, and volume, so set them once (in either trainer or the app's Settings panel) and both use them. A Progress tab keeps your practice history on your device: practice time and day streaks, accuracy and speed trends, and the characters you miss most. Updates arrive automatically whenever you open the app while you're online.</p>
 
   <h4>How to install it</h4>
   <ol>
@@ -82,7 +82,7 @@ Practical tools for CW practice and operating — built to run right in your bro
     <li>Players take turns calling a category and dollar amount. Click the tile, wait for the 3-second countdown, and listen. Use <strong>Play Slower</strong>, <strong>Got it</strong>, or <strong>Reveal</strong> as the group works it out.</li>
   </ol>
 
-  <a class="tool-card-button" href="/cw-tools/morse-code-jeopardy/">Launch Morse Code Jeopardy →</a>
+  <a class="tool-card-button" href="/cw-trainer/?tab=jeopardy">Launch Morse Code Jeopardy →</a>
 </div>
 
 </div>
