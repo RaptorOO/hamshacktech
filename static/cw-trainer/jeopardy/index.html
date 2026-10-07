@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Morse Code Jeopardy · HamShackTech</title>
+<link rel="stylesheet" href="../fonts/fonts.css" />
+<style>
+  :root {
+    --ink: #050805;
+    --stage: #07110a;
+    --lime: #c6f035;
+    --lime-deep: #8fbf12;
+    --lime-dim: #6a9a16;
+    --lime-glow: rgba(198, 240, 53, 0.42);
+    --gold: #f4d35e;
+    --cream: #f4f7e8;
+    --muted: #9fb392;
+    --cat-h: 52px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: var(--stage);
+    color: var(--cream);
+    font-family: "Source Sans 3", "Segoe UI", sans-serif;
+    overflow: hidden;
+  }
+  body {
+    background:
+      radial-gradient(ellipse 70% 45% at 50% -8%, rgba(198, 240, 53, 0.16), transparent 55%),
+      radial-gradient(ellipse 40% 40% at 8% 100%, rgba(40, 90, 20, 0.22), transparent 50%),
+      radial-gradient(ellipse 40% 40% at 92% 100%, rgba(30, 70, 140, 0.16), transparent 50%),
+      var(--stage);
+  }
+  .stars {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      radial-gradient(1px 1px at 20px 30px, #d8ff8a, transparent),
+      radial-gradient(1px 1px at 80px 120px, #cde, transparent),
+      radial-gradient(1.5px 1.5px at 160px 70px, #fff, transparent),
+      radial-gradient(1px 1px at 240px 180px, #9f6, transparent),
+      radial-gradient(1px 1px at 300px 40px, #fff, transparent);
+    background-size: 340px 220px;
+    opacity: 0.4;
+  }
+  .scanlines {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: repeating-linear-gradient(to bottom, transparent 0 3px, rgba(198,240,53,0.03) 3px 4px);
+    opacity: 0.55;
+  }
+  .app {
+    position: relative; z-index: 1;
+    height: 100%;
+    display: grid;
+    grid-template-rows: 92px 48px minmax(0, 1fr) 22px 24px;
+    padding: 8px 16px 8px;
+    gap: 6px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  header.masthead {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+    position: relative;
+    height: 92px;
+  }
+  .halo {
+    position: absolute; left: 50%; top: 50%;
+    width: min(900px, 94%); height: 96px;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(ellipse, var(--lime-glow), rgba(80,140,255,0.06) 50%, transparent 70%);
+    filter: blur(10px); pointer-events: none;
+  }
+  .brand-mark {
+    position: relative; z-index: 1;
+    width: 78px; height: 78px; flex: 0 0 78px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 0 0 2px var(--lime-dim), 0 0 24px var(--lime-glow);
+  }
+  .brand-mark svg { width: 100%; height: 100%; display: block; }
+  .brand-mark img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  .brand-mark img.is-on { display: block; }
+  .logo { position: relative; text-align: left; }
+  .logo-kicker {
+    font-family: "Oswald", sans-serif;
+    letter-spacing: 0.42em;
+    font-size: 11px;
+    color: var(--lime);
+    text-transform: uppercase;
+    text-shadow: 0 0 10px var(--lime-glow);
+  }
+  .logo h1 {
+    font-family: "Russo One", "Oswald", sans-serif;
+    font-size: clamp(22px, 3.6vw, 40px);
+    letter-spacing: 0.05em;
+    line-height: 0.95;
+    background: linear-gradient(180deg, #f7ffd0 0%, var(--lime) 38%, #c6e04a 68%, #fffad0 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 2px 0 #1c2a00) drop-shadow(0 0 16px var(--lime-glow));
+  }
+  .logo-sub {
+    margin-top: 2px;
+    font-family: "Oswald", sans-serif;
+    letter-spacing: 0.28em;
+    font-size: 12px;
+    color: #c6d6b0;
+    text-transform: uppercase;
+  }
+  .bank {
+    position: relative; z-index: 1;
+    margin-left: auto;
+    min-width: 210px;
+    padding: 6px 18px 4px;
+    text-align: center;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #1a2a0c, #0b1406);
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 24px rgba(244,211,94,0.28), inset 0 1px 0 rgba(255,255,255,0.12);
+  }
+  .bank-label {
+    font-family: "Oswald", sans-serif;
+    letter-spacing: 0.22em;
+    font-size: 11px;
+    color: #d8c070;
+    text-transform: uppercase;
+  }
+  .bank-value {
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-size: clamp(32px, 4.6vw, 52px);
+    line-height: 0.9;
+    color: var(--gold);
+    text-shadow: 0 2px 0 #5a4300, 0 0 18px rgba(244,211,94,0.45);
+  }
+  .hostbar {
+    display: flex; flex-wrap: nowrap; align-items: center; justify-content: center;
+    gap: 8px 10px;
+    height: 48px;
+    background: linear-gradient(180deg, rgba(18,36,16,0.92), rgba(8,16,8,0.82));
+    border: 1px solid rgba(198,240,53,0.22);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(198,240,53,0.08);
+    border-radius: 12px; padding: 0 10px;
+    position: relative;
+  }
+  button.btn {
+    font-family: "Oswald", sans-serif; letter-spacing: 0.06em; text-transform: uppercase;
+    border: 0; cursor: pointer; border-radius: 8px; padding: 7px 12px; font-size: 15px;
+    color: #142000; background: linear-gradient(180deg, #e8ff7a, var(--lime-deep));
+    box-shadow: 0 2px 0 #4a6a08, 0 6px 16px rgba(0,0,0,0.35);
+    white-space: nowrap;
+  }
+  button.btn:hover { filter: brightness(1.08); }
+  button.btn.ghost {
+    background: linear-gradient(180deg, #1c3a18, #102410); color: #e8ffc8;
+    box-shadow: 0 2px 0 #061006, 0 6px 16px rgba(0,0,0,0.35);
+  }
+  .host-only { display: none !important; }
+  body.host-mode .host-only { display: inline-block !important; }
+  .stage-frame {
+    position: relative;
+    min-height: 0;
+    height: 100%;
+    padding: 8px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(16,40,18,0.45), rgba(6,12,8,0.72));
+    box-shadow: 0 0 0 2px rgba(198,240,53,0.28), 0 0 0 8px rgba(6,12,8,0.92), 0 20px 50px rgba(0,0,0,0.55);
+  }
+  .waves {
+    position: absolute; inset: 8px; pointer-events: none; opacity: 0.1;
+    background: repeating-radial-gradient(circle at 50% 110%, transparent 0 18px, rgba(198,240,53,0.45) 19px, transparent 22px);
+    mask-image: linear-gradient(to top, black, transparent 70%);
+  }
+  .board {
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-rows: var(--cat-h) repeat(5, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .cat, .tile {
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    user-select: none;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .cat {
+    font-family: "Oswald", sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    font-size: clamp(15px, 2.1vw, 28px);
+    line-height: 1.05;
+    text-transform: uppercase;
+    color: #f3ffd4;
+    padding: 6px 4px;
+    height: var(--cat-h);
+    background: linear-gradient(180deg, #3a6adf 0%, #1c3f9c 48%, #122a72 100%);
+    box-shadow: inset 0 2px 3px rgba(255,255,255,0.28), inset 0 -10px 16px rgba(0,0,0,0.35);
+  }
+  .tile {
+    position: relative; cursor: pointer;
+    background: linear-gradient(165deg, #3b74ea 0%, #1a4bb8 38%, #12368a 72%, #0c2464 100%);
+    box-shadow: inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -14px 22px rgba(0,10,40,0.45), 0 8px 16px rgba(0,0,0,0.4);
+    flex-direction: column;
+    gap: 2px;
+  }
+  .tile::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.18), transparent 36%);
+    pointer-events: none;
+  }
+  .tile:hover:not(.armed):not(.dd-open):not(.dd-face) {
+    filter: brightness(1.12);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.45), 0 0 22px var(--lime-glow);
+  }
+  .tile.armed, .tile.dd-open, .tile.dd-face {
+    box-shadow: 0 0 0 2px var(--lime), 0 0 22px var(--lime-glow);
+  }
+  .tile.revealed, .tile.awarded {
+    background: linear-gradient(165deg, #163816, #0a1a0a);
+    box-shadow: inset 0 0 24px rgba(198,240,53,0.12), 0 0 0 1px rgba(198,240,53,0.28);
+  }
+  .tile.awarded {
+    background: linear-gradient(165deg, #1d4a18, #0c220c);
+  }
+  .dollars {
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-size: clamp(26px, 4.2vw, 54px);
+    letter-spacing: 0.02em;
+    color: var(--gold);
+    text-shadow: 0 2px 0 #5a4300, 0 0 16px rgba(244,211,94,0.45);
+    position: relative; z-index: 1; line-height: 0.9;
+  }
+  .wpm {
+    font-family: "Oswald", sans-serif;
+    font-size: clamp(12px, 1.25vw, 18px);
+    letter-spacing: 0.08em;
+    color: #d7e7ff;
+    text-shadow: 0 1px 0 #0a1a40;
+    position: relative; z-index: 1;
+  }
+  .dd-banner {
+    display: none;
+    position: relative; z-index: 1;
+    font-family: "Russo One", "Oswald", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: clamp(16px, 1.8vw, 26px);
+    line-height: 1.1;
+    color: var(--gold);
+    text-shadow: 0 0 16px rgba(244,211,94,0.55);
+    padding: 8px;
+  }
+  .tile-actions {
+    position: relative; z-index: 2; display: none; flex-direction: column; gap: 4px;
+    padding: 6px; width: 100%; height: 100%; justify-content: center;
+  }
+  .tile.armed .face, .tile.dd-open .face, .tile.dd-face .face { display: none; }
+  .tile.dd-face .dd-banner { display: block; }
+  .tile.armed .tile-actions, .tile.dd-open .tile-actions { display: flex; }
+  .tile.revealed .face, .tile.revealed .tile-actions, .tile.revealed .dd-banner,
+  .tile.awarded .face, .tile.awarded .tile-actions, .tile.awarded .dd-banner { display: none; }
+  .tile-actions button {
+    font-family: "Oswald", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: clamp(11px, 1.15vw, 15px);
+    border: 0;
+    border-radius: 6px;
+    padding: 6px 4px;
+    cursor: pointer;
+    color: #142000;
+    background: linear-gradient(180deg, #e8ff7a, var(--lime-deep));
+    box-shadow: 0 2px 0 #4a6a08;
+  }
+  .tile-actions button.reveal {
+    background: linear-gradient(180deg, #ffe9a8, #e0b33a);
+    box-shadow: 0 2px 0 #8a6808; color: #1a1400;
+  }
+  .tile-actions button.award {
+    background: linear-gradient(180deg, #c8ff9a, #5aaa22);
+    box-shadow: 0 2px 0 #2a5a10;
+  }
+  .tile-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .answer {
+    display: none;
+    position: relative;
+    z-index: 1;
+    padding: 6px 8px;
+    font-family: "Oswald", sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-size: clamp(16px, 2.2vw + 0.6vh, 36px);
+    color: var(--lime);
+    text-shadow: 0 0 14px var(--lime-glow);
+    line-height: 1.08;
+    word-break: break-word;
+  }
+  .tile.revealed .answer, .tile.awarded .answer { display: block; }
+  .status { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--muted); padding: 0 4px; height: 22px; }
+  .status code { color: var(--lime); font-family: "Oswald", sans-serif; }
+  .brand-foot { text-align: center; height: 24px; }
+  .brand-foot a {
+    font-family: "Oswald", sans-serif; letter-spacing: 0.22em; color: var(--lime);
+    text-decoration: none; font-size: 15px; text-shadow: 0 0 12px var(--lime-glow);
+  }
+  .brand-foot .copyright {
+    margin-left: 14px;
+    font-family: "Oswald", sans-serif; letter-spacing: 0.08em;
+    font-size: 12px; color: var(--muted);
+  }
+  .modal-back {
+    position: fixed; inset: 0; z-index: 20; background: rgba(4,10,4,0.82);
+    display: none; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-back.show { display: flex; }
+  .modal {
+    width: min(860px, 100%); max-height: 92vh; overflow: auto;
+    background: linear-gradient(180deg, #152414, #0c160c);
+    border: 1px solid rgba(198,240,53,0.35); border-radius: 16px; padding: 20px 22px;
+  }
+  .modal.gameover { text-align: center; width: min(700px, 96%); padding: 28px 32px; }
+  .modal h2 { font-family: "Russo One", sans-serif; color: var(--lime); margin-bottom: 8px; font-size: 28px; }
+  .modal.gameover h2 { font-size: 52px; margin-bottom: 12px; }
+  .go-score {
+    font-family: "Bebas Neue", Impact, sans-serif;
+    font-size: 70px;
+    color: var(--gold);
+    line-height: 1;
+    margin: 12px 0 10px;
+    text-shadow: 0 2px 0 #5a4300, 0 0 18px rgba(244,211,94,0.45);
+  }
+  .modal h3 {
+    font-family: "Oswald", sans-serif; letter-spacing: 0.08em; color: var(--gold);
+    margin: 14px 0 8px; text-transform: uppercase; font-size: 16px;
+  }
+  .modal p, .modal li { color: #c5d6b4; font-size: 15px; line-height: 1.45; }
+  .modal.gameover p { font-size: 19px; }
+  .modal ul { padding-left: 18px; margin-bottom: 8px; }
+  .modal li { margin: 6px 0; }
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+  .setting {
+    display: flex; flex-direction: column; gap: 4px;
+    font-family: "Oswald", sans-serif; color: #d5e8c4;
+  }
+  .setting label { letter-spacing: 0.06em; font-size: 14px; }
+  .setting input {
+    background: #081208; color: var(--lime);
+    border: 1px solid #3d5a22; border-radius: 6px; padding: 7px 8px;
+    font-family: "Oswald", sans-serif; font-size: 17px;
+  }
+  .modal-actions { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .modal.gameover .modal-actions { justify-content: center; }
+  .pools { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+  .pool label { display: block; font-family: "Oswald", sans-serif; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .pool textarea {
+    width: 100%; height: 160px; background: #070f07; color: #e8f8d8;
+    border: 1px solid #3d5a22; border-radius: 8px; padding: 8px;
+    font-family: ui-monospace, Consolas, monospace; font-size: 12px;
+  }
+  .error { color: #ffb4b4; background: rgba(80,20,20,0.45); border: 1px solid #a44; padding: 8px 10px; border-radius: 8px; margin: 8px 0; display: none; }
+  .error.show { display: block; }
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="scanlines"></div>
+<div class="app">
+  <header class="masthead">
+    <div class="halo"></div>
+    <div class="brand-mark" title="HamShackTech">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <rect width="200" height="200" fill="#000"/>
+        <path d="M28 86h26M28 96h22M28 106h26M28 116h20M146 86h26M150 96h22M146 106h26M152 116h20" stroke="#8fdc22" stroke-width="3.2" stroke-linecap="round"/>
+        <path d="M36 48c40-28 88-28 128 0" fill="none" stroke="#c6f035" stroke-width="16" stroke-linecap="round"/>
+        <path d="M48 78c8-34 96-34 104 8 6 34-10 78-52 92-42-14-58-58-52-92z" fill="#8fdc22"/>
+        <path d="M58 86c8-24 76-24 84 6 5 26-8 62-42 74-34-12-47-48-42-74z" fill="#c6f035"/>
+        <path d="M46 78c-8 6-14 18-12 32 3 16 14 22 24 16 6-4 8-14 6-24-3-16-10-26-18-24z" fill="#1a2a00" stroke="#8fdc22" stroke-width="3"/>
+        <path d="M154 78c8 6 14 18 12 32-3 16-14 22-24 16-6-4-8-14-6-24 3-16 10-26 18-24z" fill="#1a2a00" stroke="#8fdc22" stroke-width="3"/>
+        <path d="M62 68h76c6 0 12 8 12 18v10H50V86c0-10 6-18 12-18z" fill="#0b1400" stroke="#b6e824" stroke-width="3"/>
+        <circle cx="78" cy="92" r="7" fill="#8fdc22"/>
+        <path d="M70 118c8 18 52 18 62 2" fill="none" stroke="#0b1400" stroke-width="10" stroke-linecap="round"/>
+        <ellipse cx="78" cy="128" rx="16" ry="20" fill="#0b1400"/>
+        <ellipse cx="122" cy="128" rx="16" ry="20" fill="#0b1400"/>
+        <ellipse cx="73" cy="122" rx="5" ry="7" fill="#fff"/>
+        <ellipse cx="117" cy="122" rx="5" ry="7" fill="#fff"/>
+        <path d="M86 158c10 10 22 10 32 0" fill="none" stroke="#0b1400" stroke-width="4" stroke-linecap="round"/>
+        <path d="M88 162c8 8 18 8 26 0" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <img id="brandLogo" alt="HamShackTech" />
+    </div>
+    <div class="logo">
+      <div class="logo-kicker">HamShackTech · CW Practice</div>
+      <h1>MORSE CODE JEOPARDY</h1>
+      <div class="logo-sub">Solve the board together</div>
+    </div>
+    <div class="bank">
+      <div class="bank-label">Group Score</div>
+      <div class="bank-value" id="bankValue">$0</div>
+    </div>
+  </header>
+  <div class="hostbar">
+    <button class="btn" id="newGame">New Game</button>
+    <button class="btn ghost" id="stopAudio">Stop Audio</button>
+    <button class="btn ghost host-only" id="editContent">Content</button>
+  </div>
+  <div class="stage-frame">
+    <div class="waves"></div>
+    <div class="board" id="board"></div>
+  </div>
+  <div class="status">
+    <div>Zoom: Share screen + Share sound · group solves together · Daily Double = send CW live</div>
+    <div>Now: <code id="nowPlaying">idle</code></div>
+  </div>
+  <footer class="brand-foot">
+    <a href="https://hamshacktech.com" target="_blank" rel="noopener">hamshacktech.com</a>
+    <span class="copyright">Copyright &copy; 2026 Ham Shack Tech LLC</span>
+  </footer>
+</div>
+
+<div class="modal-back show" id="launchModal">
+  <div class="modal">
+    <h2>Host Instructions</h2>
+    <h3>To share the game on Zoom</h3>
+    <ul>
+      <li>Open Morse Code Jeopardy in a browser window</li>
+      <li>On Zoom, click the Share Screen button at the bottom</li>
+      <li>Select just the Application Window that shows your browser screen with Jeopardy loaded</li>
+      <li>On the right panel, select Share Sound. IF YOU DO NOT DO THIS, PLAYERS WILL NOT BE ABLE TO HEAR CODE!</li>
+    </ul>
+    <h3>How to play</h3>
+    <ul>
+      <li>THIS GAME IS NOT COMPETITIVE AND INDIVIDUAL PLAYERS ARE NOT SCORED. THIS IS TO HELP OUR GROUP HAVE FUN.</li>
+      <li>Players take turns calling a category and dollar amount.</li>
+      <li>After a 3-second delay, the hidden answer plays in Morse — up to three times (original speed, then two slower plays).</li>
+      <li>If the group copies it on the first play, click Got it for 100% of the tile. Second play = 50%. Third play = 25%.</li>
+      <li>Each column hides one Daily Double. That player must think of an answer that would be fitting for that category and send it to the group in CW. The group copies live and the tile is scored like other tiles depending on how many times the player has to send the code.</li>
+      <li>After Reveal, click the answer to hear it again.</li>
+    </ul>
+    <h3>Game settings</h3>
+    <div class="settings-grid">
+      <div class="setting">
+        <label for="charWpm">Character speed (WPM)</label>
+        <input id="charWpm" type="number" min="10" max="40" step="1" value="25" />
+      </div>
+      <div class="setting">
+        <label for="tone">Tone (Hz)</label>
+        <input id="tone" type="number" min="400" max="900" step="10" value="600" />
+      </div>
+      <div class="setting">
+        <label for="volume">Volume (%)</label>
+        <input id="volume" type="number" min="0" max="100" step="1" value="90" />
+      </div>
+      <div class="setting">
+        <label for="tiers">WPM tiers (5 speeds)</label>
+        <input id="tiers" type="text" value="6, 9, 12, 16, 20" />
+      </div>
+      <div class="setting">
+        <label for="slowSteps">Slower plays</label>
+        <input id="slowSteps" type="text" value="70%, 50%" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="letsPlay">Let’s Play</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="gameOverModal">
+  <div class="modal gameover">
+    <h2>Game Over</h2>
+    <p>Group Score:</p>
+    <div class="go-score" id="gameOverScore">$0</div>
+    <p style="font-size:28px;color:var(--lime);margin:10px 0;">Great Job!</p>
+    <p>Post your score on your group's WhatsApp and/or Groups.io account!</p>
+    <div class="modal-actions">
+      <button class="btn" id="playAgain">New Game</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="contentModal">
+  <div class="modal">
+    <h2>Category content</h2>
+    <p>Host only. One answer per line. <code>#</code> comments and blank lines are ignored. Edits stay in this browser; they are not published to the website.</p>
+    <div class="error" id="contentError"></div>
+    <div class="pools" id="poolEditors"></div>
+    <div class="modal-actions">
+      <button class="btn" id="saveContent">Save</button>
+      <button class="btn ghost" id="resetContent">Restore defaults</button>
+      <button class="btn ghost" id="closeContent">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Reuse the site's existing square alien-mascot icon (same artwork, already served at the site root)
+const LOGO_SRC = "../icons/apple-touch-icon.png";
+const PLAY_DELAY_SEC = 3;
+const DOLLARS = [200, 400, 600, 800, 1000];
+
+const DEFAULT_CATEGORIES = [
+  { id:"numbers", name:"NUMBERS", lines:`5NN
+599
+449
+339
+73
+88
+599 73
+RST 599
+RST 579
+RST 445
+UR 5NN
+PWR 5W
+PWR 100W
+QRG 7030
+2456
+1265
+2245
+7543
+5326
+3567
+5444
+14025
+13321
+99898
+05051
+21050
+1 2 3 4 5
+5 4 3 2 1
+73 73
+1989
+1984
+1956
+1960
+1990
+1989
+2021
+2007
+2011
+2027
+AUG 17
+JUNE 15
+FEB 2
+NOV 3
+MAR 20
+AGE 21
+AGE 16
+AGE 62
+WC/SC023
+WC/SC044
+ANT 40M
+SKED 0100Z` },
+  { id:"callsigns", name:"CALLSIGNS", lines:`W1AW
+K1JT
+N0AX
+W3LPL
+K0CF
+K3RRP
+N6TR
+W4RIP
+K4PZU
+AG4CR
+NN9Z
+WA6YU
+W6OAT
+VE3NEA
+G4FON
+G4SAP
+PA0RDT
+JA1ABC
+VK2XYZ
+ZL1KDR
+G4MFQ
+DL1TNW
+EA7XYZ
+PY2RBC
+LU1HQA
+ZS6WLP
+VU2DKM
+HL2SJE
+OH2BTK
+CE3FRD
+4X4MLG
+EI5KDB
+5B4AHN
+A71QX
+3B8PKM
+VP8LDF
+KH6TWQ
+JA1NUT
+VK2GR
+ZL1AN
+N6NFL
+W7NBA
+AA4TO
+KI5YDI
+KC1BB
+K7TOE/6
+EA8OM
+F8PDR
+S53R
+N6WAX
+N0PE
+K1TTY
+N3RD
+G3EEK
+W1NE
+K0FEE
+N1CE
+W1ZRD
+M0OSE
+G0OSE
+N0SY
+W0RM
+K9DOG
+O0PS
+OK1RR
+K1ABC/4
+W1/G4ABC
+N7QMT
+AA5TB
+WB8IMY` },
+  { id:"names", name:"NAMES", lines:`BOB
+JIM
+TOM
+ANN
+MARY
+JOHN
+OP IS SUE
+MIKE
+YL PAT
+SPARKY
+BUBBA
+PICKLES
+NOODLES
+ZIPPY
+WALDO
+GUMBO
+DOODLES
+BINGO
+FUZZY
+LIZ
+DAVE
+JAMES
+MARY
+ROBERT
+LINDA
+MICHAEL
+SUSAN
+WILLIAM
+KAREN
+DAVID
+NANCY
+KATE
+OM BOB
+OM JIM
+YL ANN
+NAME BOB
+NAME IS ANN
+NAME HR TOM
+OP JIM
+OP IS SUE
+NAME MIKE
+NAME PAT` },
+  { id:"qths", name:"QTHS", lines:`CHICAGO IL
+BOSTON MA
+AUSTIN TX
+DENVER CO
+SEATTLE WA
+MIAMI FL
+PORTLAND OR
+PHOENIX AZ
+LONDON UK
+TOKYO JA
+SYDNEY AU
+TORONTO ON
+JA
+VK
+ZL
+DL
+EA
+PY
+LU
+ZS
+VU
+EI
+QTH OHIO
+QTH MAINE
+QTH TEXAS
+QTH CA
+QTH AZ
+QTH MA
+QTH FL
+QTH IL
+QTH WY
+QTH INDIA
+QTH UK
+QTH SERBIA
+NR BOSTON
+NR CHICAGO
+NR LAX
+GRID FN42
+GRID CM87
+GRID DM04
+GRID EM93
+RURAL IOWA
+UPSTATE NY` },
+  { id:"qsignals", name:"Q-SIGNALS", lines:`QTH?
+QTH IS
+QSL?
+QSL VIA BURO
+QRZ?
+QRM
+QRN
+QSB
+QSY
+QRT
+QRX
+QSO
+QRP
+QRO
+QRL?
+QRX 5
+QSY UP 1
+QSB BAD
+SRI QRM
+SRI QRN
+QTH GRID
+QSL UR 599` },
+  { id:"hamtalk", name:"HAM TALK", lines:`HW CPY?
+FB OM
+BACK HURTS
+SAW DR TODAY
+UR RST 111
+XYL SAYS QRT
+RIG IS 2 CANS
+ANT IS FENCE
+QRP 1500 WATTS
+NEED COFFEE QRX
+SRI ASLEEP
+QSL SENT
+TNX FER QSO
+TNX FER RPT
+TU FER CALL
+UR RST 599
+PSE RPT
+AGN PSE
+YAESU
+ICOM
+FLEX
+ELECRAFT
+KENWOOD
+TOWER
+HAMVENTION
+ARRL
+GE OM
+GA ES GL
+WX IS FB
+73 ES GL
+MORE SNOW
+SNOW HR
+NO RAIN NOW
+POTA
+SOTA
+IOTA
+BK
+SK
+CL
+R R
+SOLID CPY
+CPI FB
+HR RIG IS
+ANT IS DIPOLE
+VERTICAL
+ES
+TU
+NIL
+TNX FER INFO
+NAME HR IS
+SRI QRM` }
+];
+
+const ITU = {
+  A:".-", B:"-...", C:"-.-.", D:"-..", E:".", F:"..-.", G:"--.", H:"....",
+  I:"..", J:".---", K:"-.-", L:".-..", M:"--", N:"-.", O:"---", P:".--.",
+  Q:"--.-", R:".-.", S:"...", T:"-", U:"..-", V:"...-", W:".--", X:"-..-",
+  Y:"-.--", Z:"--..",
+  "0":"-----","1":".----","2":"..---","3":"...--","4":"....-","5":".....",
+  "6":"-....","7":"--...","8":"---..","9":"----.",
+  ".":".-.-.-", ",":"--..--", "?":"..--..", "/":"-..-.", "=":"-...-",
+  "+":".-.-.", "-":"-....-", "@":".--.-.", "'":".----.", "!":"-.-.--",
+  "(":"-.--.", ")":"-.--.-", ":":"---...", ";":"-.-.-.", '"':".-..-.",
+  "$":"...-..-", "&":".-...", "_":"..--.-"
+};
+
+const $ = (id) => document.getElementById(id);
+const state = {
+  categories: [], board: [], audio: null, host: false,
+  pendingPlay: null, countdown: null, bank: 0
+};
+
+function parseLines(text) {
+  return text.split(/\r?\n/).map(s => s.trim()).filter(s => s && !s.startsWith("#"));
+}
+function volumeLevel() {
+  return Math.max(0, Math.min(1, Number($("volume").value) / 100));
+}
+function clampInput(el, min, max) {
+  let n = Number(el.value);
+  if (!Number.isFinite(n)) n = min;
+  n = Math.max(min, Math.min(max, n));
+  el.value = String(Math.round(n));
+  return n;
+}
+function loadSettings() {
+  try {
+    const raw = JSON.parse(localStorage.getItem("mcj-settings") || "{}");
+    if (raw.charWpm) $("charWpm").value = raw.charWpm;
+    if (raw.tone) $("tone").value = raw.tone;
+    if (raw.tiers) $("tiers").value = raw.tiers;
+    if (raw.slowSteps) $("slowSteps").value = raw.slowSteps;
+    if (raw.volume != null) $("volume").value = raw.volume;
+  } catch {}
+}
+function saveSettings() {
+  localStorage.setItem("mcj-settings", JSON.stringify({
+    charWpm: $("charWpm").value, tone: $("tone").value,
+    tiers: $("tiers").value, slowSteps: $("slowSteps").value,
+    volume: $("volume").value
+  }));
+}
+function loadPools() {
+  if (state.host) {
+    try {
+      const saved = JSON.parse(localStorage.getItem("mcj-pools") || "null");
+      if (saved && Array.isArray(saved) && saved.length) {
+        state.categories = saved;
+        return;
+      }
+    } catch {}
+  }
+  state.categories = DEFAULT_CATEGORIES.map(c => ({...c}));
+}
+function savePools() {
+  if (!state.host) return;
+  localStorage.setItem("mcj-pools", JSON.stringify(state.categories));
+}
+function parseTiers() {
+  const nums = $("tiers").value.split(/[,\s]+/).map(Number).filter(n => n > 0 && n < 80);
+  if (nums.length !== 5) throw new Error("WPM tiers must be exactly 5 positive numbers.");
+  return nums;
+}
+function parseSlowSteps() {
+  const parts = $("slowSteps").value.split(/[,\s]+/).map(s => s.replace("%","")).map(Number);
+  const fracs = parts.filter(n => n > 0 && n <= 100).map(n => n > 1 ? n / 100 : n);
+  return fracs.length ? fracs.slice(0, 2) : [0.7, 0.5];
+}
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function money(n) { return "$" + Math.round(n).toLocaleString("en-US"); }
+function awardFraction(plays) {
+  if (plays <= 1) return 1;
+  if (plays === 2) return 0.5;
+  return 0.25;
+}
+function updateBank() { $("bankValue").textContent = money(state.bank); }
+
+function setHostMode(on) {
+  state.host = !!on;
+  document.body.classList.toggle("host-mode", state.host);
+  if (state.host) sessionStorage.setItem("mcj-host", "1");
+  else sessionStorage.removeItem("mcj-host");
+}
+function tryUnlockHost() {
+  const params = new URLSearchParams(location.search);
+  if (params.get("host") === "1" || sessionStorage.getItem("mcj-host") === "1") {
+    setHostMode(true);
+    return;
+  }
+  setHostMode(false);
+}
+
+function cancelScheduledPlay() {
+  if (state.pendingPlay) { clearTimeout(state.pendingPlay); state.pendingPlay = null; }
+  if (state.countdown) { clearInterval(state.countdown); state.countdown = null; }
+}
+function schedulePlay(text, effectiveWpm, label) {
+  cancelScheduledPlay();
+  if (state.audio) state.audio.stop();
+  let left = PLAY_DELAY_SEC;
+  $("nowPlaying").textContent = `Stand by · ${left}`;
+  state.countdown = setInterval(() => {
+    left -= 1;
+    if (left > 0) $("nowPlaying").textContent = `Stand by · ${left}`;
+  }, 1000);
+  state.pendingPlay = setTimeout(() => {
+    cancelScheduledPlay();
+    state.audio.play(text, effectiveWpm, label);
+  }, PLAY_DELAY_SEC * 1000);
+}
+
+function boardFinished() {
+  return state.board.length > 0 && state.board.every(c => c.status === "revealed" || c.awarded);
+}
+function maybeGameOver() {
+  if (!boardFinished()) return;
+  $("gameOverScore").textContent = money(state.bank);
+  $("gameOverModal").classList.add("show");
+}
+
+class MorseAudio {
+  constructor() {
+    this.ctx = null; this.osc = null; this.toneGain = null; this.master = null; this.timer = 0;
+  }
+  ensure() {
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = volumeLevel();
+      this.master.connect(this.ctx.destination);
+      this.osc = this.ctx.createOscillator();
+      this.toneGain = this.ctx.createGain();
+      this.osc.type = "sine";
+      this.osc.frequency.value = Number($("tone").value);
+      this.toneGain.gain.value = 0;
+      this.osc.connect(this.toneGain).connect(this.master);
+      this.osc.start();
+    }
+    if (this.ctx.state === "suspended") this.ctx.resume();
+    this.osc.frequency.setTargetAtTime(Number($("tone").value), this.ctx.currentTime, 0.01);
+    this.setVolume(volumeLevel());
+  }
+  setTone(hz) { if (this.osc) this.osc.frequency.setTargetAtTime(hz, this.ctx.currentTime, 0.01); }
+  setVolume(v) { if (this.master) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.02); }
+  stop() {
+    if (!this.ctx || !this.toneGain) return;
+    const t = this.ctx.currentTime;
+    this.toneGain.gain.cancelScheduledValues(t);
+    this.toneGain.gain.setTargetAtTime(0, t, 0.01);
+    this.timer++;
+    $("nowPlaying").textContent = "idle";
+  }
+  beep(freq, start, dur, level, type) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type || "sine";
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0, start);
+    g.gain.linearRampToValueAtTime(level, start + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    o.connect(g).connect(this.master);
+    o.start(start);
+    o.stop(start + dur + 0.02);
+  }
+  timings(charWpm, effectiveWpm) {
+    let send = charWpm;
+    if (effectiveWpm >= charWpm) send = effectiveWpm;
+    const tDit = 1.2 / send;
+    let tSpace = tDit;
+    if (effectiveWpm < send) {
+      tSpace = ((60 / effectiveWpm) - 31 * tDit) / 19;
+      if (tSpace < tDit) tSpace = tDit;
+    }
+    return { tDit, tSpace };
+  }
+  play(text, effectiveWpm, label) {
+    this.ensure(); this.stop();
+    const my = ++this.timer;
+    const charWpm = Number($("charWpm").value) || 25;
+    const { tDit, tSpace } = this.timings(charWpm, effectiveWpm);
+    const fade = Math.min(0.004, tDit * 0.35);
+    const level = 0.7;
+    let t = this.ctx.currentTime + 0.04;
+    const g = this.toneGain.gain;
+    g.setValueAtTime(0, t);
+    const words = String(text).toUpperCase().trim().split(/\s+/);
+    for (let w = 0; w < words.length; w++) {
+      const word = words[w];
+      for (let i = 0; i < word.length; i++) {
+        const code = ITU[word[i]];
+        if (!code) continue;
+        for (let k = 0; k < code.length; k++) {
+          const dur = code[k] === "-" ? 3 * tDit : tDit;
+          g.setValueAtTime(0, t);
+          g.linearRampToValueAtTime(level, t + fade);
+          g.setValueAtTime(level, t + dur - fade);
+          g.linearRampToValueAtTime(0, t + dur);
+          t += dur;
+          if (k < code.length - 1) t += tDit;
+        }
+        if (i < word.length - 1) t += 3 * tSpace;
+      }
+      if (w < words.length - 1) t += 7 * tSpace;
+    }
+    t += 0.15;
+    $("nowPlaying").textContent = `${label} · ${effectiveWpm} WPM effective · char ${charWpm}`;
+    const endMs = Math.max(0, (t - this.ctx.currentTime) * 1000);
+    setTimeout(() => {
+      if (this.timer !== my) return;
+      $("nowPlaying").textContent = "idle";
+    }, endMs);
+  }
+  revealSting() {
+    this.ensure();
+    const t0 = this.ctx.currentTime + 0.01;
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.beep(f, t0 + i * 0.07, 0.2, 0.32, "triangle"));
+  }
+  dailyDoubleSting() {
+    this.ensure();
+    const t0 = this.ctx.currentTime + 0.02;
+    this.beep(196.00, t0, 0.28, 0.28, "sawtooth");
+    this.beep(246.94, t0 + 0.16, 0.28, 0.3, "sawtooth");
+    this.beep(329.63, t0 + 0.34, 0.36, 0.34, "triangle");
+    this.beep(392.00, t0 + 0.52, 0.55, 0.38, "triangle");
+    this.beep(523.25, t0 + 0.72, 0.7, 0.28, "sine");
+  }
+}
+
+function newGame() {
+  saveSettings();
+  cancelScheduledPlay();
+  state.audio && state.audio.stop();
+  $("gameOverModal").classList.remove("show");
+  let tiers;
+  try { tiers = parseTiers(); } catch (e) { alert(e.message); return; }
+  const rows = tiers.length, next = [];
+  const ddRowByCat = state.categories.map(() => Math.floor(Math.random() * rows));
+  for (let c = 0; c < state.categories.length; c++) {
+    const pool = parseLines(state.categories[c].lines);
+    if (pool.length < rows) {
+      alert(`Category “${state.categories[c].name}” has ${pool.length} usable lines; need at least ${rows}.`);
+      return;
+    }
+    const pick = shuffle(pool).slice(0, rows);
+    for (let r = 0; r < rows; r++) {
+      next.push({
+        cat: c, row: r, wpm: tiers[r], dollars: DOLLARS[r] || (r + 1) * 200,
+        answer: pick[r], slowUsed: 0, plays: 0, status: "idle",
+        dailyDouble: ddRowByCat[c] === r, awarded: 0
+      });
+    }
+  }
+  state.board = next;
+  state.bank = 0;
+  updateBank();
+  renderBoard();
+}
+
+function renderBoard() {
+  const board = $("board");
+  board.innerHTML = "";
+  const cats = state.categories;
+  cats.forEach((cat, i) => {
+    const el = document.createElement("div");
+    el.className = "cat";
+    el.textContent = cat.name.toUpperCase();
+    if (state.host) {
+      el.contentEditable = "true";
+      el.spellcheck = false;
+      el.addEventListener("blur", () => {
+        const name = el.textContent.trim().toUpperCase() || cat.name;
+        state.categories[i].name = name;
+        el.textContent = name;
+        savePools();
+      });
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); el.blur(); }
+      });
+    }
+    board.appendChild(el);
+  });
+  const tiers = [...new Set(state.board.map(t => t.row))].sort((a,b)=>a-b);
+  tiers.forEach(row => {
+    for (let c = 0; c < cats.length; c++) {
+      board.appendChild(renderTile(state.board.find(t => t.cat === c && t.row === row)));
+    }
+  });
+}
+
+function renderTile(cell) {
+  const el = document.createElement("div");
+  el.className = "tile " + (cell.awarded ? "awarded" : cell.status);
+  const catName = state.categories[cell.cat].name;
+  const fracNow = awardFraction(Math.max(1, cell.plays));
+  el.innerHTML = `
+    <div class="face">
+      <div class="dollars">${money(cell.dollars)}</div>
+      <div class="wpm">${cell.wpm} WPM</div>
+    </div>
+    <div class="dd-banner">Daily Double</div>
+    <div class="tile-actions"></div>
+    <div class="answer"></div>`;
+  const actions = el.querySelector(".tile-actions");
+  if (cell.dailyDouble && cell.status === "dd-open") {
+    actions.innerHTML = `
+      <button type="button" class="award" data-act="award1">Got it · ${money(cell.dollars)}</button>
+      <button type="button" class="award" data-act="award2">2nd try · ${money(cell.dollars * 0.5)}</button>
+      <button type="button" class="award" data-act="award3">3rd try · ${money(cell.dollars * 0.25)}</button>
+      <button type="button" class="reveal" data-act="pass">Pass</button>`;
+  } else if (!cell.dailyDouble) {
+    actions.innerHTML = `
+      <button type="button" data-act="slower">Play Slower</button>
+      <button type="button" class="award" data-act="award">${"Got it · " + money(cell.dollars * fracNow)}</button>
+      <button type="button" class="reveal" data-act="reveal">Reveal</button>`;
+  }
+  const ans = el.querySelector(".answer");
+  if (cell.dailyDouble && (cell.status === "revealed" || cell.awarded)) {
+    ans.textContent = cell.awarded ? money(cell.awarded) : "—";
+  } else {
+    ans.textContent = cell.answer.toUpperCase();
+  }
+  const slower = el.querySelector("[data-act=slower]");
+  if (slower && cell.slowUsed >= parseSlowSteps().length) slower.disabled = true;
+
+  el.addEventListener("click", (e) => {
+    const act = e.target.getAttribute && e.target.getAttribute("data-act");
+    if (act === "slower") { e.stopPropagation(); playSlower(cell); return; }
+    if (act === "reveal") { e.stopPropagation(); reveal(cell); return; }
+    if (act === "award") { e.stopPropagation(); award(cell, cell.plays || 1); return; }
+    if (act === "award1") { e.stopPropagation(); award(cell, 1); return; }
+    if (act === "award2") { e.stopPropagation(); award(cell, 2); return; }
+    if (act === "award3") { e.stopPropagation(); award(cell, 3); return; }
+    if (act === "pass") { e.stopPropagation(); passDD(cell); return; }
+    if (cell.status === "revealed" || cell.awarded) {
+      if (!cell.dailyDouble) schedulePlay(cell.answer, cell.wpm, catName);
+      return;
+    }
+    if (cell.status === "idle") firstPlay(cell);
+    else if (cell.status === "dd-face") openDDControls(cell);
+  });
+  return el;
+}
+
+function firstPlay(cell) {
+  if (cell.dailyDouble) {
+    cell.status = "dd-face";
+    $("nowPlaying").textContent = "Daily Double";
+    state.audio.dailyDoubleSting();
+    renderBoard();
+    return;
+  }
+  cell.status = "armed";
+  cell.plays = 1;
+  renderBoard();
+  schedulePlay(cell.answer, cell.wpm, state.categories[cell.cat].name);
+}
+function openDDControls(cell) {
+  cell.status = "dd-open";
+  renderBoard();
+}
+function playSlower(cell) {
+  const steps = parseSlowSteps();
+  if (cell.slowUsed >= steps.length) return;
+  const speed = Math.max(3, Math.round(cell.wpm * steps[cell.slowUsed] * 10) / 10);
+  cell.slowUsed += 1;
+  cell.plays += 1;
+  renderBoard();
+  schedulePlay(cell.answer, speed, state.categories[cell.cat].name + " slower");
+}
+function reveal(cell) {
+  cell.status = "revealed";
+  state.audio.revealSting();
+  renderBoard();
+  maybeGameOver();
+}
+function award(cell, plays) {
+  if (cell.awarded) return;
+  const frac = awardFraction(plays);
+  cell.awarded = Math.round(cell.dollars * frac);
+  cell.plays = plays;
+  state.bank += cell.awarded;
+  cell.status = "revealed";
+  updateBank();
+  state.audio.revealSting();
+  renderBoard();
+  maybeGameOver();
+}
+function passDD(cell) {
+  cell.status = "revealed";
+  cell.awarded = 0;
+  renderBoard();
+  maybeGameOver();
+}
+
+function openLaunch() {
+  $("gameOverModal").classList.remove("show");
+  $("launchModal").classList.add("show");
+}
+function launchGame() {
+  saveSettings();
+  $("launchModal").classList.remove("show");
+  $("gameOverModal").classList.remove("show");
+  newGame();
+}
+
+function openContent() {
+  if (!state.host) return;
+  const wrap = $("poolEditors");
+  wrap.innerHTML = "";
+  state.categories.forEach((cat) => {
+    const box = document.createElement("div");
+    box.className = "pool";
+    box.innerHTML = `<label></label><textarea></textarea>`;
+    box.querySelector("label").textContent = cat.name;
+    box.querySelector("textarea").value = cat.lines;
+    wrap.appendChild(box);
+  });
+  $("contentModal").classList.add("show");
+}
+function saveContentFromEditor() {
+  if (!state.host) return;
+  const areas = [...document.querySelectorAll("#poolEditors textarea")];
+  const next = areas.map((ta, i) => ({
+    id: state.categories[i].id, name: state.categories[i].name, lines: ta.value
+  }));
+  const tiers = parseTiers();
+  const bad = next.find(c => parseLines(c.lines).length < tiers.length);
+  const err = $("contentError");
+  if (bad) {
+    err.textContent = `“${bad.name}” needs at least ${tiers.length} answers.`;
+    err.classList.add("show");
+    return;
+  }
+  err.classList.remove("show");
+  state.categories = next;
+  savePools();
+  $("contentModal").classList.remove("show");
+}
+
+(function initLogo() {
+  const img = $("brandLogo");
+  img.onload = () => img.classList.add("is-on");
+  img.onerror = () => img.classList.remove("is-on");
+  img.src = LOGO_SRC;
+})();
+
+state.audio = new MorseAudio();
+tryUnlockHost();
+loadSettings();
+loadPools();
+
+$("tone").addEventListener("change", () => {
+  state.audio.setTone(clampInput($("tone"), 400, 900));
+  saveSettings();
+});
+$("volume").addEventListener("change", () => {
+  clampInput($("volume"), 0, 100);
+  state.audio.ensure();
+  state.audio.setVolume(volumeLevel());
+  saveSettings();
+});
+$("charWpm").addEventListener("change", () => {
+  clampInput($("charWpm"), 10, 40);
+  saveSettings();
+});
+["tiers","slowSteps"].forEach(id => $(id).addEventListener("change", saveSettings));
+$("letsPlay").addEventListener("click", launchGame);
+$("newGame").addEventListener("click", openLaunch);
+$("playAgain").addEventListener("click", openLaunch);
+$("stopAudio").addEventListener("click", () => {
+  cancelScheduledPlay();
+  state.audio.stop();
+  $("nowPlaying").textContent = "idle";
+});
+$("editContent").addEventListener("click", openContent);
+$("closeContent").addEventListener("click", () => $("contentModal").classList.remove("show"));
+$("saveContent").addEventListener("click", saveContentFromEditor);
+$("resetContent").addEventListener("click", () => {
+  state.categories = DEFAULT_CATEGORIES.map(c => ({...c}));
+  savePools();
+  openContent();
+});
+$("contentModal").addEventListener("click", (e) => {
+  if (e.target.id === "contentModal") $("contentModal").classList.remove("show");
+});
+</script>
+</body>
+</html>
