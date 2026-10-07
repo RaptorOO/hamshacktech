@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progress — HamShackTech CW Trainer</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+  /* Same avocado palette as the app shell and trainers. */
+  :root {
+    --bg: #100e0c;
+    --panel: #1c1917;      /* stone-900 */
+    --well: #292524;       /* stone-800 */
+    --border: #44403c;     /* stone-700 */
+    --grid: #2f2a27;
+    --text: #fafaf9;       /* stone-50 */
+    --muted: #a8a29e;      /* stone-400 */
+    --dim: #78716c;        /* stone-500 */
+    --icr: #a3e635;        /* lime-400: ICR everywhere on this page */
+    --cg: #34d399;         /* emerald-400: Code Groups everywhere on this page */
+    --bad: #f87171;        /* red-400 */
+    --lime-ink: #1a2e05;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 22px 18px 56px; }
+
+  /* ---------- header ---------- */
+  .head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-bottom: 18px; }
+  h1 { margin: 0; font: 600 1.9rem/1.1 'Oswald', sans-serif; letter-spacing: 0.02em; }
+  .head .spacer { flex: 1; }
+  .range { display: flex; padding: 3px; gap: 3px; background: var(--well); border: 1px solid var(--border); border-radius: 9px; }
+  .range button {
+    border: 0; border-radius: 6px; padding: 6px 12px; background: transparent; color: var(--muted);
+    font: 500 0.85rem/1 'Inter', sans-serif; cursor: pointer;
+  }
+  .range button[aria-pressed="true"] { background: var(--icr); color: var(--lime-ink); }
+  .range button:focus-visible, .linkbtn:focus-visible { outline: 2px solid var(--icr); outline-offset: 2px; }
+
+  /* ---------- summary tiles ---------- */
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .tile { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .tile .val { font: 600 1.7rem/1.1 'Oswald', sans-serif; }
+  .tile .lbl { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+  .tile .sub { color: var(--dim); font-size: 0.8rem; margin-top: 2px; }
+
+  /* ---------- cards ---------- */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 16px 12px; min-width: 0; }
+  .card.wide { grid-column: 1 / -1; }
+  .card h2 { margin: 0 0 2px; font: 600 1.05rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+  .card .note { margin: 0 0 10px; color: var(--dim); font-size: 0.8rem; }
+  .legend { display: flex; gap: 14px; font-size: 0.8rem; color: var(--muted); margin: 0 0 6px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: currentColor; }
+  .legend .icr { color: var(--icr); } .legend .cg { color: var(--cg); }
+  .legend .icr, .legend .cg { font-weight: 500; }
+  svg.chart { display: block; max-width: 100%; overflow: visible; }
+  svg.chart text { fill: var(--dim); font: 11px 'Inter', sans-serif; }
+  .nodata { color: var(--dim); font-size: 0.85rem; padding: 26px 0; text-align: center; }
+
+  /* ---------- trouble characters ---------- */
+  .trouble { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 22px; }
+  .trow { display: grid; grid-template-columns: 34px 1fr 92px; align-items: center; gap: 10px; }
+  .trow .ch { font: 600 1.25rem/1 'JetBrains Mono', monospace; text-align: center; }
+  .bar { height: 8px; background: var(--well); border-radius: 4px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--bad); border-radius: 4px; }
+  .trow .num { color: var(--muted); font: 0.8rem 'JetBrains Mono', monospace; text-align: right; }
+  .practice-set { margin: 12px 0 0; color: var(--muted); font-size: 0.85rem; }
+  .practice-set code { font: 600 0.95rem 'JetBrains Mono', monospace; color: var(--text); background: var(--well); padding: 2px 8px; border-radius: 5px; }
+
+  /* ---------- recent sessions ---------- */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th { color: var(--dim); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  td.num, th.num { text-align: right; font-family: 'JetBrains Mono', monospace; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: var(--lime-ink); }
+  .tag.icr { background: var(--icr); } .tag.cg { background: var(--cg); }
+
+  /* ---------- empty state + footer ---------- */
+  .empty { text-align: center; padding: 70px 20px; color: var(--muted); }
+  .empty h2 { font: 600 1.4rem 'Oswald', sans-serif; color: var(--text); margin: 0 0 8px; }
+  .foot { margin-top: 22px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--dim); font-size: 0.8rem; }
+  .linkbtn { border: 1px solid var(--border); background: transparent; color: var(--muted); border-radius: 8px; padding: 7px 12px; font: 0.82rem 'Inter', sans-serif; cursor: pointer; }
+  .linkbtn:hover { color: var(--bad); border-color: var(--bad); }
+
+  @media (max-width: 760px) {
+    .tiles { grid-template-columns: 1fr 1fr; }
+    .grid { grid-template-columns: 1fr; }
+    h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>Your Progress</h1>
+    <div class="spacer"></div>
+    <div class="range" role="group" aria-label="Time range">
+      <button type="button" data-days="7">7 days</button>
+      <button type="button" data-days="30">30 days</button>
+      <button type="button" data-days="90">90 days</button>
+      <button type="button" data-days="0">All</button>
+    </div>
+  </div>
+
+  <div id="empty" class="empty" hidden>
+    <h2>No practice recorded yet</h2>
+    <p>Run a session in the ICR or Code Groups tab. When you stop (or the Practice Timer rings), it shows up here.</p>
+  </div>
+
+  <div id="content" hidden>
+    <div class="tiles">
+      <div class="tile"><div class="val" id="tTime">—</div><div class="lbl">Practice time</div><div class="sub" id="tTimeSub"></div></div>
+      <div class="tile"><div class="val" id="tStreak">—</div><div class="lbl">Day streak</div><div class="sub" id="tStreakSub"></div></div>
+      <div class="tile"><div class="val" id="tChars">—</div><div class="lbl">Characters copied</div><div class="sub" id="tCharsSub"></div></div>
+      <div class="tile"><div class="val" id="tSessions">—</div><div class="lbl">Sessions</div><div class="sub" id="tSessionsSub"></div></div>
+    </div>
+
+    <div class="grid">
+      <section class="card wide">
+        <h2>Practice time</h2>
+        <p class="note" id="timeNote">Minutes per day.</p>
+        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span></div>
+        <div id="chTime"></div>
+      </section>
+
+      <section class="card">
+        <h2>Accuracy</h2>
+        <p class="note">Characters copied correctly, %. Higher is better.</p>
+        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span></div>
+        <div id="chAcc"></div>
+      </section>
+
+      <section class="card">
+        <h2>Speed</h2>
+        <p class="note">Character speed you practiced at, WPM.</p>
+        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span></div>
+        <div id="chWpm"></div>
+      </section>
+
+      <section class="card">
+        <h2>ICR reaction time</h2>
+        <p class="note">From the end of the character to your space bar, ms. Lower is better.</p>
+        <div id="chRt"></div>
+      </section>
+
+      <section class="card">
+        <h2>Code Groups answer time</h2>
+        <p class="note">From the end of the group to your last keystroke, seconds. Lower is better.</p>
+        <div id="chAns"></div>
+      </section>
+
+      <section class="card wide">
+        <h2>Trouble characters</h2>
+        <p class="note">Lowest accuracy across both trainers (at least 5 tries each).</p>
+        <div id="trouble"></div>
+      </section>
+
+      <section class="card wide">
+        <h2>Recent sessions</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>When</th><th>Trainer</th><th>Practiced</th><th class="num">WPM</th><th class="num">Time</th><th class="num">Chars</th><th class="num">Accuracy</th></tr></thead>
+            <tbody id="recent"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>Your history is saved only on this device.</span>
+    <button type="button" class="linkbtn" id="clearBtn">Clear history</button>
+  </div>
+</div>
+
+<script src="../shared/hst-engine.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var DAY = 86400000;
+  var RANGE_KEY = 'hct-cw-progress-range';
+  var COLORS = { icr: 'var(--icr)', 'code-groups': 'var(--cg)' };
+  var GROUP_NAMES = {
+    letters: 'Letters', numbers: 'Numbers', mixed: 'Mixed', punctuation: 'Punctuation',
+    all: 'All', custom: 'Custom', qso: 'QSO Elements', words: 'Common Words', calls: 'Call Signs'
+  };
+  var $ = function (id) { return document.getElementById(id); };
+  var rangeDays = 30;
+  try { var r = Number(localStorage.getItem(RANGE_KEY)); if ([7, 30, 90, 0].indexOf(r) >= 0 && localStorage.getItem(RANGE_KEY) !== null) rangeDays = r; } catch (e) {}
+
+  /* ---------------- small helpers ---------------- */
+  // Local calendar day (midnight) for a timestamp, so "a day" means your day.
+  function dayStart(ts) { var d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  function addDays(ts, n) { var d = new Date(ts); d.setDate(d.getDate() + n); return d.getTime(); }
+  function fmtMinutes(ms) {
+    var m = Math.round(ms / 60000);
+    if (ms > 0 && m < 1) return '< 1 min';
+    return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min';
+  }
+  function pct(c, t) { return t ? Math.round(100 * c / t) : null; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function shortDate(ts) { return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
+
+  /* ---------------- streaks ----------------
+     A streak is a run of consecutive calendar days with at least one
+     session. It's still "current" if the last practice day was today or
+     yesterday (you haven't missed a day yet). */
+  function streaks(rows) {
+    var days = {};
+    rows.forEach(function (s) { days[dayStart(s.start)] = true; });
+    var keys = Object.keys(days).map(Number).sort(function (a, b) { return a - b; });
+    var best = 0, run = 0, prev = null;
+    keys.forEach(function (d) {
+      run = (prev !== null && addDays(prev, 1) === d) ? run + 1 : 1;
+      best = Math.max(best, run);
+      prev = d;
+    });
+    var today = dayStart(Date.now()), current = 0;
+    var cursor = days[today] ? today : addDays(today, -1);
+    while (days[cursor]) { current++; cursor = addDays(cursor, -1); }
+    return { current: current, best: best };
+  }
+
+  /* ---------------- buckets ----------------
+     Charts group sessions into one bar/point per day. For long ranges
+     (over 90 days) they group by week instead, so bars stay readable. */
+  function buildBuckets(rows, from) {
+    var today = dayStart(Date.now());
+    var spanDays = Math.round((today - from) / DAY) + 1;
+    var step = spanDays > 90 ? 7 : 1;
+    var buckets = [];
+    for (var t = from; t <= today; t = addDays(t, step)) {
+      buckets.push({ start: t, end: addDays(t, step), step: step,
+        icr: blank(), 'code-groups': blank() });
+    }
+    rows.forEach(function (s) {
+      for (var i = buckets.length - 1; i >= 0; i--) {
+        if (s.start >= buckets[i].start) {
+          var b = buckets[i][s.trainer];
+          if (!b) return;
+          b.ms += s.durationMs || 0;
+          b.chars += s.charsTotal; b.correct += s.charsCorrect;
+          b.wpmW += s.wpm * s.charsTotal;                     // speed averaged by characters sent
+          b.timeSum += s.timeSum || 0; b.timeCount += s.timeCount || 0;
+          return;
+        }
+      }
+    });
+    return buckets;
+  }
+  function blank() { return { ms: 0, chars: 0, correct: 0, wpmW: 0, timeSum: 0, timeCount: 0 }; }
+  function bucketLabel(b) { return b.step === 1 ? shortDate(b.start) : 'Wk of ' + shortDate(b.start); }
+
+  /* ---------------- SVG charts ----------------
+     Hand-drawn so the app needs no chart library (and works offline).
+     Each chart is drawn at its card's real pixel width, so text stays the
+     same size on a phone or a wide monitor; it redraws if the window
+     is resized. */
+  var H = 200, L = 40, R = 10, T = 10, B = 26;
+
+  // A "nice" axis: steps of 1, 2 or 5 x 10^n, about 4 steps tall, so the
+  // labels read 0 / 10 / 20 rather than 0 / 13 / 25.
+  function axis(lo, hi) {
+    if (hi <= lo) hi = lo + 1;
+    var raw = (hi - lo) / 4, p = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / p;
+    var step = (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p;
+    var min = Math.floor(lo / step) * step, max = Math.ceil(hi / step) * step;
+    return { min: min, max: max, step: step };
+  }
+
+  function makeChart(el, buckets, ax, yFmt) {
+    var W = Math.max(280, el.clientWidth || 560), n = buckets.length;
+    var c = {
+      W: W, n: n,
+      x: function (i) { return L + (W - L - R) * (i + 0.5) / n; },
+      y: function (v) { return T + (H - T - B) * (1 - (v - ax.min) / (ax.max - ax.min)); },
+      svg: ''
+    };
+    // Gridlines + y labels
+    for (var v = ax.min; v <= ax.max + ax.step / 2; v += ax.step) {
+      var y = c.y(v);
+      c.svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '" stroke="var(--grid)"/>' +
+               '<text x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + yFmt(v) + '</text>';
+    }
+    // About one x label per 90 px
+    var every = Math.max(1, Math.ceil(n / Math.max(2, Math.floor((W - L) / 90))));
+    for (var j = 0; j < n; j += every) {
+      c.svg += '<text x="' + c.x(j) + '" y="' + (H - 6) + '" text-anchor="middle">' + esc(bucketLabel(buckets[j])) + '</text>';
+    }
+    c.done = function (label) {
+      el.innerHTML = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H +
+                     '" role="img" aria-label="' + esc(label) + '">' + c.svg + '</svg>';
+    };
+    return c;
+  }
+
+  // Stacked bars: ICR on the bottom, Code Groups on top.
+  function barChart(el, buckets, label) {
+    var maxMin = 0;
+    buckets.forEach(function (b) { maxMin = Math.max(maxMin, (b.icr.ms + b['code-groups'].ms) / 60000); });
+    if (!maxMin) { el.innerHTML = '<div class="nodata">No practice in this range.</div>'; return; }
+    var ax = axis(0, maxMin);
+    var c = makeChart(el, buckets, ax, function (v) { return Math.round(v); });
+    var bw = Math.max(2, Math.min(28, (c.W - L - R) / c.n * 0.7));
+    buckets.forEach(function (b, i) {
+      var top = c.y(0), sum = 0;
+      ['icr', 'code-groups'].forEach(function (k) {
+        var m = b[k].ms / 60000;
+        if (!m) return;
+        sum += m;
+        var y = c.y(sum);
+        c.svg += '<rect x="' + (c.x(i) - bw / 2).toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) +
+                 '" height="' + (top - y).toFixed(1) + '" rx="2" fill="' + COLORS[k] + '"><title>' + esc(bucketLabel(b)) +
+                 ' · ' + (k === 'icr' ? 'ICR' : 'Code Groups') + ': ' + Math.round(m) + ' min</title></rect>';
+        top = y;
+      });
+    });
+    c.done(label);
+  }
+
+  // Lines with dots. Days with no practice are skipped; the line connects
+  // the days that have data. The y-axis starts just below the lowest value
+  // (opts.floor caps how low), so week-to-week changes are easy to see.
+  function lineChart(el, buckets, series, opts) {
+    var vals = [];
+    series.forEach(function (s) { buckets.forEach(function (b) { var v = s.value(b); if (v != null) vals.push(v); }); });
+    if (!vals.length) { el.innerHTML = '<div class="nodata">No practice in this range.</div>'; return; }
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    var pad = Math.max((hi - lo) * 0.15, hi * 0.05, 1e-9);
+    var ax = axis(Math.max(opts.floor || 0, lo - pad), opts.ceil != null ? Math.min(opts.ceil, hi + pad) : hi + pad);
+    var c = makeChart(el, buckets, ax, opts.yFmt);
+    series.forEach(function (s) {
+      var pts = [];
+      buckets.forEach(function (b, i) { var v = s.value(b); if (v != null) pts.push([c.x(i), c.y(v), v, b]); });
+      if (pts.length > 1) {
+        c.svg += '<polyline fill="none" stroke="' + s.color + '" stroke-width="2" stroke-linejoin="round" points="' +
+                 pts.map(function (q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' ') + '"/>';
+      }
+      pts.forEach(function (q) {
+        c.svg += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="3.5" fill="' + s.color + '"><title>' +
+                 esc(bucketLabel(q[3])) + ' · ' + s.name + ': ' + opts.tip(q[2]) + '</title></circle>';
+      });
+    });
+    c.done(opts.label);
+  }
+
+  var lastBuckets = null;
+  function drawCharts(buckets) {
+    var both = [
+      { name: 'ICR', color: COLORS.icr, key: 'icr' },
+      { name: 'Code Groups', color: COLORS['code-groups'], key: 'code-groups' }
+    ];
+    barChart($('chTime'), buckets, 'Practice minutes');
+    lineChart($('chAcc'), buckets, both.map(function (s) {
+      return { name: s.name, color: s.color, value: function (b) { return pct(b[s.key].correct, b[s.key].chars); } };
+    }), { ceil: 100, yFmt: function (v) { return Math.round(v); }, tip: function (v) { return v + '%'; }, label: 'Accuracy' });
+    lineChart($('chWpm'), buckets, both.map(function (s) {
+      return { name: s.name, color: s.color, value: function (b) { var x = b[s.key]; return x.chars ? Math.round(x.wpmW / x.chars) : null; } };
+    }), { yFmt: function (v) { return Math.round(v); }, tip: function (v) { return v + ' WPM'; }, label: 'Speed' });
+    lineChart($('chRt'), buckets, [{ name: 'ICR', color: COLORS.icr,
+      value: function (b) { var x = b.icr; return x.timeCount ? Math.round(x.timeSum / x.timeCount) : null; } }],
+      { yFmt: function (v) { return Math.round(v); }, tip: function (v) { return v + ' ms'; }, label: 'ICR reaction time' });
+    lineChart($('chAns'), buckets, [{ name: 'Code Groups', color: COLORS['code-groups'],
+      value: function (b) { var x = b['code-groups']; return x.timeCount ? Math.round(x.timeSum / x.timeCount / 100) / 10 : null; } }],
+      { yFmt: function (v) { return (Math.round(v * 10) / 10).toString(); }, tip: function (v) { return v.toFixed(1) + ' s'; }, label: 'Code Groups answer time' });
+  }
+  // Redraw at the new width after the window is resized (debounced).
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () { if (lastBuckets && !$('content').hidden) drawCharts(lastBuckets); }, 150);
+  });
+
+  /* ---------------- render ---------------- */
+  function render(allRows) {
+    var has = allRows.length > 0;
+    $('empty').hidden = has;
+    $('content').hidden = !has;
+    $('clearBtn').hidden = !has;
+    document.querySelectorAll('.range button').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(Number(b.dataset.days) === rangeDays));
+    });
+    if (!has) return;
+
+    var today = dayStart(Date.now());
+    var from = rangeDays ? addDays(today, -(rangeDays - 1)) : dayStart(allRows[0].start);
+    var rows = allRows.filter(function (s) { return s.start >= from; });
+    var rangeText = rangeDays ? 'last ' + rangeDays + ' days' : 'all time';
+
+    // Tiles
+    var ms = 0, chars = 0, correct = 0, byTrainer = { icr: 0, 'code-groups': 0 };
+    rows.forEach(function (s) { ms += s.durationMs || 0; chars += s.charsTotal; correct += s.charsCorrect; byTrainer[s.trainer]++; });
+    var st = streaks(allRows);
+    $('tTime').textContent = fmtMinutes(ms);
+    $('tTimeSub').textContent = rangeText;
+    $('tStreak').textContent = st.current + (st.current === 1 ? ' day' : ' days');
+    $('tStreakSub').textContent = 'best ' + st.best + (st.best === 1 ? ' day' : ' days');
+    $('tChars').textContent = chars.toLocaleString();
+    $('tCharsSub').textContent = chars ? pct(correct, chars) + '% correct · ' + rangeText : rangeText;
+    $('tSessions').textContent = rows.length;
+    $('tSessionsSub').textContent = byTrainer.icr + ' ICR · ' + byTrainer['code-groups'] + ' Code Groups';
+
+    // Charts
+    var buckets = buildBuckets(rows, from);
+    $('timeNote').textContent = buckets[0].step === 1 ? 'Minutes per day.' : 'Minutes per week.';
+    lastBuckets = buckets;
+    drawCharts(buckets);
+
+    // Trouble characters: combine both trainers' per-character tallies.
+    var tally = {};
+    rows.forEach(function (s) {
+      Object.keys(s.chars || {}).forEach(function (ch) {
+        var t = tally[ch] || (tally[ch] = [0, 0]);
+        t[0] += s.chars[ch][0]; t[1] += s.chars[ch][1];
+      });
+    });
+    var worst = Object.keys(tally)
+      .filter(function (ch) { return tally[ch][1] >= 5 && tally[ch][0] < tally[ch][1]; })
+      .sort(function (a, b) {
+        var pa = tally[a][0] / tally[a][1], pb = tally[b][0] / tally[b][1];
+        return pa - pb || tally[b][1] - tally[a][1];
+      }).slice(0, 10);
+    if (!worst.length) {
+      $('trouble').innerHTML = '<div class="nodata">' + (Object.keys(tally).length
+        ? 'Nothing to flag — every character with 5+ tries is at 100%. Nice copying!'
+        : 'Practice a little more and the characters you miss most will show up here.') + '</div>';
+    } else {
+      $('trouble').innerHTML = '<div class="trouble">' + worst.map(function (ch) {
+        var t = tally[ch], p = pct(t[0], t[1]);
+        return '<div class="trow"><span class="ch">' + esc(ch) + '</span><span class="bar"><i style="width:' + (100 - p) +
+               '%"></i></span><span class="num">' + p + '% · ' + t[0] + '/' + t[1] + '</span></div>';
+      }).join('') + '</div>' +
+      '<p class="practice-set">To focus on these, put <code>' + esc(worst.join('')) +
+      '</code> in Custom Characters in either trainer. The red bar is the share missed.</p>';
+    }
+
+    // Recent sessions (newest first, last 10 in the range)
+    $('recent').innerHTML = rows.slice(-10).reverse().map(function (s) {
+      var when = new Date(s.start).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      var icr = s.trainer === 'icr';
+      var what = GROUP_NAMES[s.group] || s.group || '';
+      if (!icr && s.groupSize && ['qso', 'calls'].indexOf(s.group) < 0) what += s.group === 'words' ? ' · ' + s.groupSize + '-letter' : ' · ' + s.groupSize + '/group';
+      var wpm = s.wpm + (s.fwpm && s.fwpm < s.wpm ? '/' + s.fwpm : '');
+      return '<tr><td>' + esc(when) + '</td><td><span class="tag ' + (icr ? 'icr">ICR' : 'cg">Code Groups') + '</span></td><td>' +
+             esc(what) + '</td><td class="num">' + esc(wpm) + '</td><td class="num">' + HST.fmtClock(s.durationMs || 0) +
+             '</td><td class="num">' + s.charsTotal + '</td><td class="num">' + pct(s.charsCorrect, s.charsTotal) + '%</td></tr>';
+    }).join('');
+  }
+
+  var cache = [];
+  function refresh() { return HST.history.all().then(function (rows) { cache = rows; render(rows); }); }
+
+  document.querySelectorAll('.range button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      rangeDays = Number(b.dataset.days);
+      try { localStorage.setItem(RANGE_KEY, String(rangeDays)); } catch (e) {}
+      render(cache);
+    });
+  });
+
+  $('clearBtn').addEventListener('click', function () {
+    if (confirm('Delete all saved practice history on this device? This can\'t be undone.')) HST.history.clear();
+  });
+
+  // Redraw whenever a trainer saves a session (or history is cleared).
+  HST.history.onChange(refresh);
+  // The app shell calls this when the Progress tab is opened.
+  window.HSTProgress = { refresh: refresh };
+  refresh();
+})();
+</script>
+</body>
+</html>
