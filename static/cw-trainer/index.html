@@ -7,6 +7,18 @@
 <meta name="description" content="ICR and Code Groups Morse code trainers in one installable app that works offline.">
 <meta name="theme-color" content="#1c1917">
 <link rel="manifest" href="manifest.webmanifest">
+<script>
+  // Catch Chrome/Edge's "this app can be installed" signal as early as
+  // possible. The browser sends it only once per page load, and it can arrive
+  // before the main script at the bottom of the page has run -- if nobody is
+  // listening yet, it's lost and the Install button never lights up.
+  window.HCT_INSTALL_PROMPT = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();                       // we show our own button instead
+    window.HCT_INSTALL_PROMPT = e;
+    document.dispatchEvent(new Event('hct-install-ready'));
+  });
+</script>
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="fonts/fonts.css">
@@ -102,8 +114,10 @@
     background: var(--lime);
   }
 
-  /* Install button: only shown in a browser that offers installation and
-     only while the app isn't already installed. */
+  /* Install button: shown whenever the app is open in a browser tab, and
+     hidden inside the installed app's own window. In Chrome/Edge it brings
+     up the browser's install prompt; anywhere else it opens "How to
+     install" with the steps for that browser. */
   .install {
     display: none;
     border: 1px solid var(--lime);
@@ -114,7 +128,8 @@
     font: 500 0.85rem/1 'Inter', sans-serif;
     cursor: pointer;
   }
-  .install.show { display: block; }
+  .install.show { display: inline-flex; align-items: center; gap: 6px; }
+  .install svg { width: 15px; height: 15px; }
   .install:hover { background: var(--lime); color: var(--lime-ink); }
 
   /* Home link: back to hamshacktech.com. Only shown when the app is open
@@ -134,7 +149,14 @@
   .home:hover, .gear:hover { color: var(--lime); border-color: var(--lime); }
   .home:focus-visible, .gear:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
   .home svg, .gear svg { width: 18px; height: 18px; }
-  @media (display-mode: standalone) { .home { display: none; } }
+  @media (display-mode: standalone) { .home, .install.show { display: none; } }
+
+  /* "How to install" dialog: steps for the browser in use come first. */
+  .howto ol { margin: 0 0 4px; padding-left: 1.2em; line-height: 1.5; }
+  .howto li { margin-bottom: 8px; }
+  .howto .other { margin: 12px 0 0; font-size: 0.85rem; color: var(--muted); }
+  .howto .other summary { cursor: pointer; color: var(--lime); }
+  .howto .other ul { padding-left: 1.2em; line-height: 1.5; }
 
   /* ---------- Settings panel (shared WPM / tone / volume) ---------- */
   .settings {
@@ -214,11 +236,19 @@
   }
   @media (max-width: 480px) {
     .brand h1 { display: none; }         /* mascot + tabs + gear only */
+    /* Install becomes an icon-only square, the same size as the gear. */
+    .install.show { width: 34px; height: 34px; padding: 0; justify-content: center; }
+    .install .label { display: none; }
+    .install svg { width: 18px; height: 18px; }
     .tab { padding: 7px 8px; font-size: 0.88rem; }
     .tab .long { display: none; }        /* "Code Groups" -> "Groups" */
   }
   @media (max-width: 400px) {
     .brand { display: none; }            /* four tabs need the room */
+  }
+  @media (max-width: 360px) {            /* smallest phones (e.g. iPhone SE 1st gen) */
+    .bar { gap: 6px; padding-left: 6px; padding-right: 6px; }
+    .tab { padding: 7px 6px; font-size: 0.82rem; }
   }
 </style>
 </head>
@@ -244,7 +274,7 @@
   </nav>
   <div class="spacer"></div>
   <span class="offline" id="offlineNote" title="Everything is saved on this device, so the app opens without internet.">Ready offline</span>
-  <button class="install" id="installBtn" type="button">Install app</button>
+  <button class="install" id="installBtn" type="button" aria-label="Install app" title="Install app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span class="label">Install app</span></button>
   <button class="gear" id="settingsBtn" type="button" aria-haspopup="dialog" aria-controls="settingsDialog" aria-label="Settings" title="Settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
@@ -290,6 +320,27 @@
   <ul id="whatsNewList"></ul>
   <div class="actions">
     <button class="btn primary" id="whatsNewDone" type="button">Got it</button>
+  </div>
+</dialog>
+
+<!-- "How to install": opened by the Install button when the browser can't
+     show its own install prompt (Safari, Firefox, or Chrome/Edge before
+     they've decided the app is installable). Filled in by the script. -->
+<dialog class="settings howto" id="howtoDialog" aria-labelledby="howtoTitle">
+  <h2 id="howtoTitle">Install the app</h2>
+  <p class="lede" id="howtoLede"></p>
+  <ol id="howtoSteps"></ol>
+  <details class="other">
+    <summary>Using a different browser or device?</summary>
+    <ul>
+      <li><strong>Chrome or Edge</strong> (Windows, Mac, ChromeOS, Android): click the install icon at the right end of the address bar, or open the browser menu (&#8942; or &#8943;) and choose <em>Install</em> / <em>Apps &rarr; Install this site as an app</em>.</li>
+      <li><strong>Safari on a Mac</strong> (macOS Sonoma or later): <em>File &rarr; Add to Dock</em>.</li>
+      <li><strong>iPhone or iPad</strong>: in Safari, tap <em>Share</em>, then <em>Add to Home Screen</em>.</li>
+      <li><strong>Firefox</strong> can't install apps &mdash; open this page in Chrome or Edge instead. Everything still works right here in the browser tab.</li>
+    </ul>
+  </details>
+  <div class="actions">
+    <button class="btn primary" id="howtoDone" type="button">Got it</button>
   </div>
 </dialog>
 
@@ -568,26 +619,66 @@
   })();
 
   // ------------------------------------------------------------------
-  // Install button. Chrome and Edge fire "beforeinstallprompt" when the
-  // app can be installed; we hold on to it and show our own button, which
-  // is easier to find than the small icon in the address bar.
-  // (Safari doesn't support this -- there it's Share > Add to Home Screen.)
+  // Install button. Always shown in a browser tab (CSS hides it inside the
+  // installed app's own window).
+  //  - Chrome/Edge: when the browser has said the app is installable (the
+  //    early listener in <head> saved its prompt), the button opens the
+  //    browser's own install prompt.
+  //  - Everywhere else -- Safari, Firefox, or Chrome/Edge before they've
+  //    offered it (they can hold off until you've used the page a little) --
+  //    the button opens "How to install" with steps for this browser.
   // ------------------------------------------------------------------
   var installBtn = document.getElementById('installBtn');
-  var deferredPrompt = null;
-  window.addEventListener('beforeinstallprompt', function (e) {
-    e.preventDefault();
-    deferredPrompt = e;
-    installBtn.classList.add('show');
-  });
+  var howtoDlg = document.getElementById('howtoDialog');
+  var standalone = window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone === true;   // iOS home-screen app
+  if (!standalone) installBtn.classList.add('show');
+
+  // Best guess at the browser, just to put the right steps first.
+  function browserSteps() {
+    var ua = navigator.userAgent;
+    var iOS = /iPhone|iPad|iPod/.test(ua) ||
+              (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1); // iPadOS says "Mac"
+    if (iOS) return ['On an iPhone or iPad, using Safari:', [
+      'Tap the <strong>Share</strong> button (the square with an arrow).',
+      'Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.',
+      'Open <strong>CW Trainer</strong> from your home screen.']];
+    if (/Firefox\//.test(ua)) return ['Firefox can’t install web apps.', [
+      'Open <strong>hamshacktech.com/cw-trainer/</strong> in <strong>Chrome</strong> or <strong>Edge</strong> and click <strong>Install app</strong> there.',
+      'Or just keep using it here in the browser tab — everything works the same.']];
+    if (/Edg\//.test(ua)) return ['In Microsoft Edge:', [
+      'Click the <strong>App available</strong> icon at the right end of the address bar, then <strong>Install</strong>.',
+      'No icon? Open the <strong>&#8943;</strong> menu and choose <strong>Apps &rarr; Install this site as an app</strong>.',
+      'Launch <strong>CW Trainer</strong> from the Start menu or taskbar like any other app.']];
+    if (/Chrome\//.test(ua)) return ['In Google Chrome:', [
+      'Click the <strong>install</strong> icon at the right end of the address bar (a monitor with a down arrow), then <strong>Install</strong>.',
+      'No icon? Open the <strong>&#8942;</strong> menu and choose <strong>Cast, save, and share &rarr; Install page as app</strong>.',
+      'Already installed? Chrome shows an <strong>Open in app</strong> icon there instead.']];
+    if (/Safari\//.test(ua) && /Macintosh/.test(ua)) return ['In Safari on a Mac (macOS Sonoma or later):', [
+      'Choose <strong>File &rarr; Add to Dock</strong>, then <strong>Add</strong>.',
+      'Launch <strong>CW Trainer</strong> from the Dock like any other app.']];
+    return ['To install the app:', [
+      'Open this page in <strong>Chrome</strong> or <strong>Edge</strong> and click <strong>Install app</strong>.']];
+  }
+
+  function showHowto() {
+    var s = browserSteps();
+    document.getElementById('howtoLede').textContent = s[0];
+    document.getElementById('howtoSteps').innerHTML =
+      s[1].map(function (n) { return '<li>' + n + '</li>'; }).join('');
+    if (dlg.open) dlg.close();
+    howtoDlg.showModal();
+  }
+  document.getElementById('howtoDone').addEventListener('click', function () { howtoDlg.close(); });
+  howtoDlg.addEventListener('click', function (e) { if (e.target === howtoDlg) howtoDlg.close(); });
+
   installBtn.addEventListener('click', function () {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.finally(function () {
-      deferredPrompt = null;
-      installBtn.classList.remove('show');
-    });
+    var p = window.HCT_INSTALL_PROMPT;
+    if (!p) { showHowto(); return; }           // browser hasn't offered: show the steps
+    p.prompt();                                // the browser's own "Install?" box
+    p.userChoice.finally(function () { window.HCT_INSTALL_PROMPT = null; });  // usable once
   });
+  // Installed from here (or from the address bar): no need for the button in this tab.
   window.addEventListener('appinstalled', function () {
     installBtn.classList.remove('show');
   });
