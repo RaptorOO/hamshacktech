@@ -311,6 +311,79 @@
     word-break: break-word;
   }
   .tile.revealed .answer, .tile.awarded .answer { display: block; }
+
+  /* ---- Clue card: the "zoom out of the tile" effect, like the TV show ----
+     When the host picks a tile, a big blue card grows out of that tile until
+     it covers the whole board, so everyone on Zoom can see that a clue is
+     coming and that they should listen. JS sets left/top/width/height in px
+     (first matching the tile, then the full board); the transition below
+     animates between the two. It shrinks back into the tile when the Morse
+     finishes. */
+  .clue {
+    position: absolute; z-index: 5;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1.5vh; padding: 16px; overflow: hidden; cursor: pointer;
+    border-radius: 8px;
+    background: linear-gradient(165deg, #3b74ea 0%, #1a4bb8 38%, #12368a 72%, #0c2464 100%);
+    box-shadow: inset 0 3px 6px rgba(255,255,255,0.3), inset 0 -30px 60px rgba(0,10,40,0.5),
+                0 0 0 3px var(--lime), 0 0 40px var(--lime-glow);
+    transition: left .5s cubic-bezier(.2,.8,.2,1), top .5s cubic-bezier(.2,.8,.2,1),
+                width .5s cubic-bezier(.2,.8,.2,1), height .5s cubic-bezier(.2,.8,.2,1),
+                border-radius .5s;
+  }
+  .clue[hidden] { display: none; }
+  .clue.open { border-radius: 12px; }
+  /* The text fades in once the card has (mostly) finished growing, and fades
+     out right away when it starts shrinking, so it never looks squashed. */
+  .clue > * { opacity: 0; transition: opacity .2s; text-align: center; }
+  .clue.open > * { opacity: 1; transition: opacity .3s .3s; }
+  .clue-cat {
+    font-family: "Oswald", sans-serif; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; font-size: clamp(22px, 3.6vw, 52px); color: #f3ffd4;
+  }
+  .clue-dollars {
+    font-family: "Bebas Neue", Impact, sans-serif; line-height: 0.9;
+    font-size: clamp(70px, 13vw, 190px); color: var(--gold);
+    text-shadow: 0 4px 0 #5a4300, 0 0 30px rgba(244,211,94,0.5);
+  }
+  .clue-dd {
+    display: none;
+    font-family: "Russo One", "Oswald", sans-serif; text-transform: uppercase;
+    font-size: clamp(40px, 7vw, 110px); line-height: 1; color: var(--gold);
+    text-shadow: 0 0 30px rgba(244,211,94,0.6);
+  }
+  .clue.dd .clue-dd { display: block; }
+  .clue-wpm {
+    font-family: "Oswald", sans-serif; letter-spacing: 0.1em;
+    font-size: clamp(16px, 2vw, 30px); color: #d7e7ff;
+  }
+  .clue-status {
+    display: flex; align-items: center; gap: 14px; margin-top: 1vh;
+    font-family: "Russo One", "Oswald", sans-serif; text-transform: uppercase;
+    letter-spacing: 0.08em; font-size: clamp(22px, 3.4vw, 48px); color: var(--lime);
+    text-shadow: 0 0 18px var(--lime-glow);
+  }
+  .clue.dd .clue-status { display: none; }
+  /* A lime dot that pulses while the Morse is playing ("Listen"). It only
+     pulses steadily; it does NOT blink with the code, so it can't be read. */
+  .clue-dot {
+    width: 0.6em; height: 0.6em; border-radius: 50%;
+    background: var(--lime); box-shadow: 0 0 18px var(--lime-glow);
+    opacity: 0.35;
+  }
+  .clue.listening .clue-dot { animation: clue-pulse 1.1s ease-in-out infinite; opacity: 1; }
+  @keyframes clue-pulse {
+    0%, 100% { transform: scale(0.8); opacity: 0.55; }
+    50% { transform: scale(1.25); opacity: 1; }
+  }
+  .clue-hint { font-size: 12px; color: rgba(215,231,255,0.55); letter-spacing: 0.06em; }
+  /* People who've asked their computer for less motion get a quick fade
+     instead of the zoom. */
+  @media (prefers-reduced-motion: reduce) {
+    .clue { transition: none; }
+    .clue.listening .clue-dot { animation: none; }
+  }
+
   .status { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--muted); padding: 0 4px; height: 22px; }
   .status code { color: var(--lime); font-family: "Oswald", sans-serif; }
   .brand-foot { text-align: center; height: 24px; }
@@ -425,6 +498,15 @@
   <div class="stage-frame">
     <div class="waves"></div>
     <div class="board" id="board"></div>
+    <!-- Clue card that zooms out of the chosen tile (see .clue CSS / openClue JS) -->
+    <div class="clue" id="clue" hidden role="status" aria-live="polite" title="Click to hide this card">
+      <div class="clue-cat" id="clueCat"></div>
+      <div class="clue-dd">Daily Double</div>
+      <div class="clue-dollars" id="clueDollars"></div>
+      <div class="clue-wpm" id="clueWpm"></div>
+      <div class="clue-status"><span class="clue-dot"></span><span id="clueText"></span></div>
+      <div class="clue-hint">Host: click to hide · Stop Audio to cancel</div>
+    </div>
   </div>
   <div class="status">
     <div>Zoom: Share screen + Share sound · group solves together · Daily Double = send CW live</div>
@@ -450,7 +532,7 @@
     <ul>
       <li>THIS GAME IS NOT COMPETITIVE AND INDIVIDUAL PLAYERS ARE NOT SCORED. THIS IS TO HELP OUR GROUP HAVE FUN.</li>
       <li>Players take turns calling a category and dollar amount.</li>
-      <li>After a 3-second delay, the hidden answer plays in Morse — up to three times (original speed, then two slower plays).</li>
+      <li>The tile zooms out to fill the screen. After a 3-second countdown you'll hear VVV, then the hidden answer in Morse — up to three times (original speed, then two slower plays).</li>
       <li>If the group copies it on the first play, click Got it for 100% of the tile. Second play = 50%. Third play = 25%.</li>
       <li>Each column hides one Daily Double. That player must think of an answer that would be fitting for that category and send it to the group in CW. The group copies live and the tile is scored like other tiles depending on how many times the player has to send the code.</li>
       <li>After Reveal, click the answer to hear it again.</li>
@@ -515,6 +597,13 @@
 // Reuse the site's existing square alien-mascot icon (same artwork, already served at the site root)
 const LOGO_SRC = "../icons/apple-touch-icon.png";
 const PLAY_DELAY_SEC = 3;
+// Sent before every answer, like a station's test transmission, so the group
+// hears the code is starting (and at what speed) before the answer itself.
+// "VVV" is sent as one word (letter spacing between the V's), then a normal
+// word space, then the answer.
+const PREAMBLE = "VVV";
+const CLUE_HOLD_MS = 700;      // how long the clue card stays up after the Morse ends
+const DD_CARD_MS = 2600;       // how long the Daily Double card stays up
 const DOLLARS = [200, 400, 600, 800, 1000];
 
 const DEFAULT_CATEGORIES = [
@@ -815,7 +904,9 @@ const ITU = {
 const $ = (id) => document.getElementById(id);
 const state = {
   categories: [], board: [], audio: null, host: false,
-  pendingPlay: null, countdown: null, bank: 0
+  pendingPlay: null, countdown: null, bank: 0,
+  clueCell: null,   // the tile the clue card is currently showing (null = card hidden)
+  clueTimer: null   // timer that shrinks the card back into its tile
 };
 
 function parseLines(text) {
@@ -909,19 +1000,112 @@ function cancelScheduledPlay() {
   if (state.pendingPlay) { clearTimeout(state.pendingPlay); state.pendingPlay = null; }
   if (state.countdown) { clearInterval(state.countdown); state.countdown = null; }
 }
-function schedulePlay(text, effectiveWpm, label) {
+// Play a tile's answer: the clue card zooms out of the tile, counts down
+// "Stand by · 3, 2, 1", then shows "Listen" while VVV + the answer is sent,
+// then shrinks back into the tile so the host can use its buttons.
+function schedulePlay(cell, text, effectiveWpm, label, speedNote) {
   cancelScheduledPlay();
   if (state.audio) state.audio.stop();
+  openClue(cell, { wpmText: speedNote || `${effectiveWpm} WPM` });
   let left = PLAY_DELAY_SEC;
-  $("nowPlaying").textContent = `Stand by · ${left}`;
+  const standBy = () => {
+    $("nowPlaying").textContent = `Stand by · ${left}`;
+    setClueStatus(`Stand by · ${left}`, false);
+  };
+  standBy();
   state.countdown = setInterval(() => {
     left -= 1;
-    if (left > 0) $("nowPlaying").textContent = `Stand by · ${left}`;
+    if (left > 0) standBy();
   }, 1000);
   state.pendingPlay = setTimeout(() => {
     cancelScheduledPlay();
-    state.audio.play(text, effectiveWpm, label);
+    const ms = state.audio.play(PREAMBLE + " " + text, effectiveWpm, label);
+    setClueStatus("Listen", true);
+    closeClueAfter(ms + CLUE_HOLD_MS);
   }, PLAY_DELAY_SEC * 1000);
+}
+
+// ---- Clue card (the zoom effect) ----------------------------------------
+
+// The tile element currently on screen for a board cell. renderBoard()
+// rebuilds every tile, so look it up fresh each time instead of keeping it.
+function tileEl(cell) {
+  return document.querySelector(`.tile[data-cat="${cell.cat}"][data-row="${cell.row}"]`);
+}
+// Position the card exactly over a rectangle, measured relative to the board
+// frame (the card is absolutely positioned inside .stage-frame).
+function placeClue(rect) {
+  const card = $("clue");
+  card.style.left = rect.left + "px";
+  card.style.top = rect.top + "px";
+  card.style.width = rect.width + "px";
+  card.style.height = rect.height + "px";
+}
+function tileRect(cell) {
+  const tile = tileEl(cell), frame = document.querySelector(".stage-frame");
+  if (!tile) return fullRect();
+  const t = tile.getBoundingClientRect(), f = frame.getBoundingClientRect();
+  return { left: t.left - f.left, top: t.top - f.top, width: t.width, height: t.height };
+}
+// The whole board area: the frame minus its 8px padding.
+function fullRect() {
+  const frame = document.querySelector(".stage-frame");
+  return { left: 8, top: 8, width: frame.clientWidth - 16, height: frame.clientHeight - 16 };
+}
+function openClue(cell, opts) {
+  const card = $("clue");
+  if (state.clueTimer) { clearTimeout(state.clueTimer); state.clueTimer = null; }
+  $("clueCat").textContent = state.categories[cell.cat].name.toUpperCase();
+  $("clueDollars").textContent = money(cell.dollars);
+  $("clueWpm").textContent = opts.wpmText || "";
+  card.classList.toggle("dd", !!opts.dd);
+  card.classList.remove("listening");
+  const alreadyOpen = state.clueCell !== null;
+  state.clueCell = cell;
+  if (alreadyOpen) { placeClue(fullRect()); return; }   // e.g. a replay: just update the text
+  // Start the card sitting exactly on top of the tile...
+  card.classList.remove("open");
+  placeClue(tileRect(cell));
+  card.hidden = false;
+  void card.offsetWidth;   // force the browser to lay it out there first
+  // ...then on the next frame, stretch it to cover the board; the CSS
+  // transition turns that jump into the zoom.
+  requestAnimationFrame(() => {
+    card.classList.add("open");
+    placeClue(fullRect());
+  });
+}
+function setClueStatus(text, listening) {
+  $("clueText").textContent = text;
+  $("clue").classList.toggle("listening", !!listening);
+}
+function closeClueAfter(ms) {
+  if (state.clueTimer) clearTimeout(state.clueTimer);
+  state.clueTimer = setTimeout(closeClue, ms);
+}
+// Shrink the card back into its tile, then hide it.
+function closeClue() {
+  if (state.clueTimer) { clearTimeout(state.clueTimer); state.clueTimer = null; }
+  const card = $("clue"), cell = state.clueCell;
+  if (!cell) return;
+  state.clueCell = null;
+  card.classList.remove("open", "listening");
+  placeClue(tileRect(cell));
+  // Hide once the shrink finishes (the timeout is a backstop in case the
+  // transitionend event doesn't fire, e.g. with reduced motion).
+  const done = () => { if (state.clueCell === null) card.hidden = true; };
+  card.addEventListener("transitionend", function te(e) {
+    if (e.propertyName === "width") { card.removeEventListener("transitionend", te); done(); }
+  });
+  setTimeout(done, 600);
+}
+// Hide the card immediately with no animation (New Game, etc.).
+function hideClueNow() {
+  if (state.clueTimer) { clearTimeout(state.clueTimer); state.clueTimer = null; }
+  state.clueCell = null;
+  const card = $("clue");
+  card.classList.remove("open", "listening");
+  card.hidden = true;
 }
 
 function boardFinished() {
@@ -1024,6 +1208,7 @@ class MorseAudio {
       if (this.timer !== my) return;
       $("nowPlaying").textContent = "idle";
     }, endMs);
+    return endMs;   // length of the whole transmission, in ms
   }
   revealSting() {
     this.ensure();
@@ -1045,6 +1230,7 @@ function newGame() {
   saveSettings();
   cancelScheduledPlay();
   state.audio && state.audio.stop();
+  hideClueNow();
   $("gameOverModal").classList.remove("show");
   let tiers;
   try { tiers = parseTiers(); } catch (e) { alert(e.message); return; }
@@ -1105,6 +1291,8 @@ function renderBoard() {
 function renderTile(cell) {
   const el = document.createElement("div");
   el.className = "tile " + (cell.awarded ? "awarded" : cell.status);
+  el.dataset.cat = cell.cat;   // lets the clue card find this tile again
+  el.dataset.row = cell.row;
   const catName = state.categories[cell.cat].name;
   const fracNow = awardFraction(Math.max(1, cell.plays));
   el.innerHTML = `
@@ -1147,7 +1335,7 @@ function renderTile(cell) {
     if (act === "award3") { e.stopPropagation(); award(cell, 3); return; }
     if (act === "pass") { e.stopPropagation(); passDD(cell); return; }
     if (cell.status === "revealed" || cell.awarded) {
-      if (!cell.dailyDouble) schedulePlay(cell.answer, cell.wpm, catName);
+      if (!cell.dailyDouble) schedulePlay(cell, cell.answer, cell.wpm, catName);
       return;
     }
     if (cell.status === "idle") firstPlay(cell);
@@ -1162,12 +1350,16 @@ function firstPlay(cell) {
     $("nowPlaying").textContent = "Daily Double";
     state.audio.dailyDoubleSting();
     renderBoard();
+    // Same zoom for a Daily Double, showing "Daily Double" instead of a
+    // countdown (no Morse plays: the player sends live).
+    openClue(cell, { dd: true, wpmText: `${cell.wpm} WPM` });
+    closeClueAfter(DD_CARD_MS);
     return;
   }
   cell.status = "armed";
   cell.plays = 1;
   renderBoard();
-  schedulePlay(cell.answer, cell.wpm, state.categories[cell.cat].name);
+  schedulePlay(cell, cell.answer, cell.wpm, state.categories[cell.cat].name);
 }
 function openDDControls(cell) {
   cell.status = "dd-open";
@@ -1180,7 +1372,8 @@ function playSlower(cell) {
   cell.slowUsed += 1;
   cell.plays += 1;
   renderBoard();
-  schedulePlay(cell.answer, speed, state.categories[cell.cat].name + " slower");
+  schedulePlay(cell, cell.answer, speed, state.categories[cell.cat].name + " slower",
+               `Slower · ${speed} WPM`);
 }
 function reveal(cell) {
   cell.status = "revealed";
@@ -1286,7 +1479,12 @@ $("stopAudio").addEventListener("click", () => {
   cancelScheduledPlay();
   state.audio.stop();
   $("nowPlaying").textContent = "idle";
+  closeClue();
 });
+// Clicking the clue card hides it early (the Morse keeps playing).
+$("clue").addEventListener("click", closeClue);
+// Keep the card filling the board if the window is resized while it's up.
+window.addEventListener("resize", () => { if (state.clueCell) placeClue(fullRect()); });
 $("editContent").addEventListener("click", openContent);
 $("closeContent").addEventListener("click", () => $("contentModal").classList.remove("show"));
 $("saveContent").addEventListener("click", saveContentFromEditor);
