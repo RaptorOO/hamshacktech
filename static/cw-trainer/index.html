@@ -97,23 +97,6 @@
 
   .spacer { flex: 1; }
 
-  /* "Ready offline" note: only appears once the app is fully saved locally. */
-  .offline {
-    display: none;
-    align-items: center;
-    gap: 6px;
-    color: var(--muted);
-    font-size: 0.8rem;
-    white-space: nowrap;
-  }
-  .offline.ready { display: flex; }
-  .offline::before {
-    content: "";
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--lime);
-  }
-
   /* Install button: shown whenever the app is open in a browser tab, and
      hidden inside the installed app's own window. In Chrome/Edge it brings
      up the browser's install prompt; anywhere else it opens "How to
@@ -128,7 +111,7 @@
     font: 500 0.85rem/1 'Inter', sans-serif;
     cursor: pointer;
   }
-  .install.show { display: inline-flex; align-items: center; gap: 6px; }
+  .install.show { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }  /* keep "Install app" on one line */
   .install svg { width: 15px; height: 15px; }
   .install:hover { background: var(--lime); color: var(--lime-ink); }
 
@@ -230,7 +213,6 @@
   @media (max-width: 620px) {
     .bar { gap: 10px; padding-left: 10px; padding-right: 10px; }
     .brand h1 .site { display: none; }   /* "CW Trainer" is enough on a phone */
-    .offline { display: none !important; }
     .tab { padding: 7px 11px; }
     .home { display: none; }             /* room is tight; the browser's Back works */
   }
@@ -273,7 +255,6 @@
             aria-controls="frame-jeopardy" aria-selected="false">Jeopardy</button>
   </nav>
   <div class="spacer"></div>
-  <span class="offline" id="offlineNote" title="Everything is saved on this device, so the app opens without internet.">Ready offline</span>
   <button class="install" id="installBtn" type="button" aria-label="Install app" title="Install app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span class="label">Install app</span></button>
   <button class="gear" id="settingsBtn" type="button" aria-haspopup="dialog" aria-controls="settingsDialog" aria-label="Settings" title="Settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -513,8 +494,8 @@
   });
 
   // ------------------------------------------------------------------
-  // Offline support: register the service worker (sw.js), then show
-  // "Ready offline" once every file has been saved on this device.
+  // Offline support: register the service worker (sw.js), which saves
+  // every app file on this device so the app opens without internet.
   // ------------------------------------------------------------------
   if ('serviceWorker' in navigator) {
     var hadController = !!navigator.serviceWorker.controller;  // false on the very first visit
@@ -523,10 +504,6 @@
       .register('sw.js', { scope: './', updateViaCache: 'none' })
       .then(watchForUpdates)
       .catch(function (err) { console.warn('Offline support unavailable:', err); });
-
-    navigator.serviceWorker.ready.then(function () {
-      document.getElementById('offlineNote').classList.add('ready');
-    });
   }
 
   // ------------------------------------------------------------------
