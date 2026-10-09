@@ -307,11 +307,39 @@
     }
 
     /* ---- inputs from MIDI (Vail adapter) ----
-       A MIDI "note on" is a key closing, "note off" (or note on with
-       velocity 0) is it opening. Assumed mapping: note 0 = straight key,
-       1 = dit, 2 = dah. The test panel shows every raw message, so the
-       mapping can be checked against a real adapter. */
-    var midiAccess = null;
+       From the Vail adapter's MIDI spec (github.com/Vail-CW/vail-adapter,
+       docs/MIDI_INTEGRATION_SPEC.md):
+         - It sends note on/off on channel 1: note 0 = straight key,
+           1 = dit, 2 = dah. "Note on" is a contact closing; "note off"
+           (or note on with velocity 0) is it opening.
+         - It ALWAYS powers up in keyboard mode and sends no notes until
+           the host tells it to switch: Control Change 0 with a value below
+           64 (B0 00 00) = MIDI mode; 64 or above (B0 00 7F) = keyboard mode.
+           This setting isn't saved, so it's sent every time.
+         - Program Change 0 (C0 00) selects "passthrough": the adapter
+           reports each paddle as-is and the app does the dit/dah timing --
+           the same setting the Vail web repeater uses. (The adapter saves
+           its keyer type, but every host that uses it sets its own.) */
+    var midiAccess = null, pagehideHooked = false;
+    var VAIL_MIDI_MODE = [0xB0, 0x00, 0x00];      // CC0 = 0   -> MIDI mode
+    var VAIL_KEYBOARD_MODE = [0xB0, 0x00, 0x7F];  // CC0 = 127 -> keyboard mode
+    var VAIL_PASSTHROUGH = [0xC0, 0x00];          // Program Change 0 -> passthrough
+
+    // Only talk to outputs that look like a Vail adapter. These commands
+    // mean "bank select" and "change instrument" to an ordinary MIDI synth,
+    // so they aren't sent to just any device. Vail adapters are built on
+    // Adafruit QT Py / Trinkey and Seeed XIAO boards, which is the name the
+    // computer sees. If there's exactly one MIDI output, it's used regardless.
+    function vailOutputs() {
+      if (!midiAccess) return [];
+      var all = [];
+      midiAccess.outputs.forEach(function (out) { all.push(out); });
+      var named = all.filter(function (out) { return /vail|qt ?py|trinkey|xiao|seeed/i.test(out.name || ''); });
+      return named.length ? named : (all.length === 1 ? all : []);
+    }
+    function sendToVail(bytes) {
+      vailOutputs().forEach(function (out) { try { out.send(bytes); } catch (e) { console.warn('MIDI send failed', e); } });
+    }
     function onMidi(e) {
       var d = e.data, cmd = d[0] & 0xf0, note = d[1], vel = d[2];
       var on = cmd === 0x90 && vel > 0, off = cmd === 0x80 || (cmd === 0x90 && vel === 0);
@@ -331,16 +359,35 @@
         function hook() {
           names.length = 0;
           access.inputs.forEach(function (inp) { inp.onmidimessage = onMidi; names.push(inp.name); });
+          // Switch the adapter to MIDI + passthrough. Repeated whenever a
+          // device appears, since a replugged adapter starts in keyboard mode.
+          sendToVail(VAIL_MIDI_MODE);
+          sendToVail(VAIL_PASSTHROUGH);
         }
         hook();
-        access.onstatechange = hook;           // adapter plugged in later
-        return { ok: true, names: names, msg: names.length ? 'MIDI devices found: ' + names.join(', ') : 'No MIDI device found yet. Plug in the Vail adapter.' };
+        // If the app is closed while in MIDI mode, switch the adapter back too.
+        // (Added once; it does nothing after detachMidi, which clears midiAccess.)
+        if (!pagehideHooked) {
+          pagehideHooked = true;
+          window.addEventListener('pagehide', function () { sendToVail(VAIL_KEYBOARD_MODE); });
+        }
+        access.onstatechange = function (e) {   // adapter plugged in (or out) later
+          if (e && e.port && e.port.state === 'connected') hook();
+        };
+        var sent = vailOutputs().length > 0;
+        var msg = !names.length ? 'No MIDI device found yet. Plug in the Vail adapter.'
+          : 'MIDI devices found: ' + names.join(', ') +
+            (sent ? '. Adapter switched to MIDI mode.' : '. No Vail adapter output found to switch to MIDI mode.');
+        return { ok: names.length > 0 && sent, names: names, msg: msg };
       }, function (err) {
         return { ok: false, msg: 'MIDI access was blocked (' + (err && err.message || err) + '). Allow MIDI for this site in the browser’s settings, or use the Keyboard input method.' };
       });
     }
     function detachMidi() {
       if (!midiAccess) return;
+      // Hand the adapter back in keyboard mode, so it works as usual in
+      // other apps (and in this one with the Keyboard input method).
+      sendToVail(VAIL_KEYBOARD_MODE);
       midiAccess.inputs.forEach(function (inp) { inp.onmidimessage = null; });
       midiAccess.onstatechange = null;
       midiAccess = null;
