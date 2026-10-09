@@ -735,7 +735,7 @@
       var waitTimer = setTimeout(function () {
         if (answered) return;
         var status = $('kStatus');
-        status.textContent = 'Waiting for permission to use MIDI. Look for a prompt, or click the icon at the left of the address/title bar → Site settings → MIDI devices → Allow.';
+        status.textContent = 'Waiting for permission to use MIDI. Look for a permission prompt, or allow it in the browser’s settings: Site permissions (Edge) or Site settings (Chrome) → hamshacktech.com → MIDI devices → Allow. If it’s already allowed, unplug and replug the adapter, then close and reopen the browser.';
         status.classList.add('warn');
       }, 5000);
       keyer.attachMidi().then(function (r) {

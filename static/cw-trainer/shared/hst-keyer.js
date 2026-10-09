@@ -344,7 +344,28 @@
       var named = all.filter(function (out) { return /vail|qt ?py|trinkey|xiao|seeed/i.test(out.name || ''); });
       return named.length ? named : (all.length === 1 ? all : []);
     }
-    function sendToVail(bytes) {
+    /* Commands to the adapter go through a queue, one at a time, with a
+       pause after each. The adapter reads one MIDI message per pass of its
+       main loop, and a keyer-type change (C0) makes it save to its memory,
+       which takes a second or two. Tim's adapter froze -- dead to keyboard
+       and MIDI until unplugged -- when several commands arrived in a burst
+       during that save, so the queue waits 250 ms after an ordinary
+       command and 2.5 s after a keyer-type change. */
+    var queue = [], queueBusy = false;
+    var GAP_MS = 250, SAVE_GAP_MS = 2500;
+    function sendToVail(bytes, immediate) {
+      if (immediate) return sendNow(bytes);      // page closing: no time to wait
+      queue.push(bytes);
+      if (!queueBusy) drain();
+    }
+    function drain() {
+      var bytes = queue.shift();
+      if (!bytes) { queueBusy = false; return; }
+      queueBusy = true;
+      sendNow(bytes);
+      setTimeout(drain, bytes[0] === 0xC0 ? SAVE_GAP_MS : GAP_MS);
+    }
+    function sendNow(bytes) {
       vailOutputs().forEach(function (out) {
         try { out.send(bytes); } catch (e) { console.warn('MIDI send failed', e); }
         if (h.midiLog) h.midiLog('sent ' + bytes.map(function (b) { return ('0' + b.toString(16)).slice(-2); }).join(' ') + ' to ' + out.name, performance.now(), true);
@@ -364,6 +385,7 @@
       if (!navigator.requestMIDIAccess) {
         return Promise.resolve({ ok: false, msg: 'This browser can’t read MIDI devices. Chrome and Edge can; Safari and Firefox can’t. Use the Keyboard input method instead.' });
       }
+      if (midiAccess) return Promise.resolve(status());   // already connected
       return navigator.requestMIDIAccess().then(function (access) {
         try { return connected(access); }
         catch (e) {                            // never leave the panel saying "Connecting..."
@@ -374,38 +396,62 @@
         return { ok: false, msg: 'MIDI access was blocked (' + (err && err.message || err) + '). Allow MIDI for this site in the browser’s settings, or use the Keyboard input method.' };
       });
     }
+    /* Switch the adapter to MIDI + passthrough ONCE per connection. Edge
+       and Chrome fire several "statechange" events while a device connects
+       (and again when the app opens its ports), and answering each one with
+       a fresh setup is what flooded the adapter. So: wait until the events
+       settle (400 ms), then set up any adapter output not set up yet. An
+       output is forgotten when it's unplugged, so a replugged adapter (which
+       starts in keyboard mode again) gets set up afresh. */
+    var setupDone = {}, setupTimer = null;
+    function scheduleSetup() {
+      clearTimeout(setupTimer);
+      setupTimer = setTimeout(function () {
+        var fresh = vailOutputs().filter(function (out) { return !setupDone[out.id]; });
+        if (!fresh.length) return;
+        fresh.forEach(function (out) { setupDone[out.id] = true; });
+        sendToVail(VAIL_MIDI_MODE);
+        sendToVail(VAIL_PASSTHROUGH);
+      }, 400);
+    }
     function connected(access) {
+        if (midiAccess === access) return status();   // already connected: nothing to resend
         midiAccess = access;
-        var names = [];
         function hook() {
-          names.length = 0;
-          access.inputs.forEach(function (inp) { inp.onmidimessage = onMidi; names.push(inp.name); });
-          // Switch the adapter to MIDI + passthrough. Repeated whenever a
-          // device appears, since a replugged adapter starts in keyboard mode.
-          sendToVail(VAIL_MIDI_MODE);
-          sendToVail(VAIL_PASSTHROUGH);
+          access.inputs.forEach(function (inp) { inp.onmidimessage = onMidi; });
+          scheduleSetup();
         }
         hook();
         // If the app is closed while in MIDI mode, switch the adapter back too.
         // (Added once; it does nothing after detachMidi, which clears midiAccess.)
         if (!pagehideHooked) {
           pagehideHooked = true;
-          window.addEventListener('pagehide', function () { sendToVail(VAIL_KEYBOARD_MODE); });
+          window.addEventListener('pagehide', function () { sendToVail(VAIL_KEYBOARD_MODE, true); });
         }
         access.onstatechange = function (e) {   // adapter plugged in (or out) later
-          if (e && e.port && e.port.state === 'connected') hook();
+          if (!e || !e.port) return;
+          if (e.port.state === 'disconnected') delete setupDone[e.port.id];
+          else hook();
         };
-        var sent = vailOutputs().length > 0;
+        return status();
+    }
+    function status() {
+        var names = [];
+        if (midiAccess) midiAccess.inputs.forEach(function (inp) { names.push(inp.name); });
+        var found = vailOutputs().length > 0;
         var msg = !names.length ? 'No MIDI device found yet. Plug in the Vail adapter.'
           : 'MIDI devices found: ' + names.join(', ') +
-            (sent ? '. Adapter switched to MIDI mode.' : '. No Vail adapter output found to switch to MIDI mode.');
-        return { ok: names.length > 0 && sent, names: names, msg: msg };
+            (found ? '. Switching the adapter to MIDI mode (takes about 3 seconds).' : '. No Vail adapter output found to switch to MIDI mode.');
+        return { ok: names.length > 0 && found, names: names, msg: msg };
     }
     function detachMidi() {
       if (!midiAccess) return;
+      clearTimeout(setupTimer);
+      queue = [];                               // drop any setup not yet sent
       // Hand the adapter back in keyboard mode, so it works as usual in
       // other apps (and in this one with the Keyboard input method).
-      sendToVail(VAIL_KEYBOARD_MODE);
+      if (Object.keys(setupDone).length) sendToVail(VAIL_KEYBOARD_MODE);
+      setupDone = {};
       midiAccess.inputs.forEach(function (inp) { inp.onmidimessage = null; });
       midiAccess.onstatechange = null;
       midiAccess = null;
