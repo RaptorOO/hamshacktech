@@ -259,7 +259,12 @@
   .diag summary { cursor: pointer; color: var(--lime); }
   .diag dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 8px 0 0; }
   .diag dt { color: var(--muted); }
+  #dPorts { white-space: pre-line; }
   .diag dd { margin: 0; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; word-break: break-word; }
+  .midilog {
+    margin: 0 0 4px; max-height: 12em; overflow-y: auto;
+    white-space: pre-wrap; font: 0.74rem/1.45 'JetBrains Mono', monospace; color: var(--text);
+  }
   @media (max-width: 480px) { .kgrid { grid-template-columns: 1fr; } }
 
   /* ---------- What's new ---------- */
@@ -441,6 +446,8 @@
       <dl>
         <dt>Last input</dt><dd id="dLast">&mdash;</dd>
         <dt>Audio delay</dt><dd id="dAudio">&mdash;</dd>
+        <dt>MIDI ports</dt><dd id="dPorts">MIDI not in use.</dd>
+        <dt>MIDI log</dt><dd><pre id="dMidiLog" class="midilog">Messages to and from the adapter appear here when MIDI is the input method.</pre><button class="linkish" id="dCopyLog" type="button">Copy log</button></dd>
         <dt>Keyboard vs MIDI</dt><dd id="dCompare">Shown only if one press arrives by both routes. A Vail adapter in MIDI mode stops sending keyboard presses, so compare the two by recording key clicks and sidetone with a microphone instead.</dd>
       </dl>
     </details>
@@ -725,6 +732,7 @@
         var status = $('kStatus');
         status.textContent = r.msg;
         status.classList.toggle('warn', !r.ok);
+        showPorts();
       });
     } else {
       keyer.detachMidi();
@@ -758,6 +766,31 @@
     }
   }
 
+  // MIDI log for Diagnostics: the last 20 messages to and from the adapter,
+  // each with the milliseconds since the previous one, so the order and
+  // timing of note-on / note-off messages can be read off directly.
+  //   90 = note on, 80 = note off; 2nd byte = note (00 key, 01 dit, 02 dah);
+  //   3rd byte = velocity (7f pressed, 00 released).
+  var midiLog = [], midiLastT = null;
+  function onMidiLog(text, t, outgoing) {
+    var gap = midiLastT == null ? '' : '+' + Math.round(t - midiLastT) + ' ms  ';
+    midiLastT = t;
+    midiLog.push((outgoing ? '' : gap) + text);
+    if (midiLog.length > 20) midiLog.shift();
+    $('dMidiLog').textContent = midiLog.join('\n');
+    $('dMidiLog').scrollTop = 1e6;
+    showPorts();
+  }
+  function showPorts() {
+    var ports = keyer ? keyer.midiPorts() : [];
+    $('dPorts').textContent = ports.length ? ports.join('\n') : 'MIDI not in use.';
+  }
+  $('dCopyLog').addEventListener('click', function () {
+    var text = 'Ports:\n' + $('dPorts').textContent + '\nLog:\n' + $('dMidiLog').textContent;
+    try { navigator.clipboard.writeText(text); $('dCopyLog').textContent = 'Copied'; } catch (e) {}
+    setTimeout(function () { $('dCopyLog').textContent = 'Copy log'; }, 1500);
+  });
+
   function showAudioDelay() {
     var ms = HST.audioLatencyMs();
     $('dAudio').textContent = ms ? 'about ' + Math.round(ms) + ' ms, as reported by the browser (Bluetooth headphones add more)'
@@ -767,7 +800,8 @@
   function openKeyer() {
     if (dlg.open) dlg.close();
     HST.audio.unlock();                     // allowed here: this runs from a click
-    keyer = HST.createKeyer({ key: onKey, raw: onRaw });
+    keyer = HST.createKeyer({ key: onKey, raw: onRaw, midiLog: onMidiLog });
+    midiLog = [];
     decoder = HST.createDecoder({
       unitMs: function () { return 1200 / HST.keyerSettings.get().wpm; },
       // Learn the sender's own speed when a person times the elements.
