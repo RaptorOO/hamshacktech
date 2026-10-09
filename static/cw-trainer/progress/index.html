@@ -20,6 +20,7 @@
     --cg: #34d399;         /* emerald-400: Code Groups everywhere on this page */
     --key: #fbbf24;        /* amber-400: Keyer Practice (sending) everywhere on this page */
     --key2: #93c5fd;       /* blue-300: second sending series (overall speed) */
+    --qso: #f472b6;        /* pink-400: QSO practice everywhere on this page */
     --bad: #f87171;        /* red-400 */
     --lime-ink: #1a2e05;
     color-scheme: dark;
@@ -62,7 +63,7 @@
   .legend { display: flex; gap: 14px; font-size: 0.8rem; color: var(--muted); margin: 0 0 6px; }
   .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: currentColor; }
   .legend .icr { color: var(--icr); } .legend .cg { color: var(--cg); }
-  .legend .key { color: var(--key); } .legend .key2 { color: var(--key2); }
+  .legend .key { color: var(--key); } .legend .key2 { color: var(--key2); } .legend .qso { color: var(--qso); font-weight: 500; }
   .legend .icr, .legend .cg, .legend .key, .legend .key2 { font-weight: 500; }
   .section-title { grid-column: 1 / -1; margin: 10px 0 -4px; font: 600 1.25rem/1.2 'Oswald', sans-serif; letter-spacing: 0.03em; }
   .section-title small { font: 400 0.82rem 'Inter', sans-serif; color: var(--dim); margin-left: 8px; letter-spacing: 0; }
@@ -87,7 +88,7 @@
   th { color: var(--dim); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
   td.num, th.num { text-align: right; font-family: 'JetBrains Mono', monospace; }
   .tag { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: var(--lime-ink); }
-  .tag.icr { background: var(--icr); } .tag.cg { background: var(--cg); } .tag.key { background: var(--key); }
+  .tag.icr { background: var(--icr); } .tag.cg { background: var(--cg); } .tag.key { background: var(--key); } .tag.qso { background: var(--qso); }
 
   /* ---------- empty state + footer ---------- */
   .empty { text-align: center; padding: 70px 20px; color: var(--muted); }
@@ -118,7 +119,7 @@
 
   <div id="empty" class="empty" hidden>
     <h2>No practice recorded yet</h2>
-    <p>Run a session in the ICR, Code Groups or Keyer tab. When you stop (or the Practice Timer rings, or you leave the Keyer tab), it shows up here.</p>
+    <p>Run a session in the ICR, Code Groups, Keyer or QSO tab. When you stop (or the Practice Timer rings, or you leave the Keyer tab), it shows up here.</p>
   </div>
 
   <div id="content" hidden>
@@ -133,7 +134,7 @@
       <section class="card wide">
         <h2>Practice time</h2>
         <p class="note" id="timeNote">Minutes per day.</p>
-        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span><span class="key" id="timeKeyLegend">Keyer</span></div>
+        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span><span class="key" id="timeKeyLegend">Keyer</span><span class="qso" id="timeQsoLegend">QSO</span></div>
         <div id="chTime"></div>
       </section>
 
@@ -218,8 +219,10 @@
 
   var DAY = 86400000;
   var RANGE_KEY = 'hct-cw-progress-range';
-  var COLORS = { icr: 'var(--icr)', 'code-groups': 'var(--cg)', keyer: 'var(--key)' };
-  var TRAINER_NAMES = { icr: 'ICR', 'code-groups': 'Code Groups', keyer: 'Keyer' };
+  var COLORS = { icr: 'var(--icr)', 'code-groups': 'var(--cg)', keyer: 'var(--key)', qso: 'var(--qso)' };
+  var TRAINER_NAMES = { icr: 'ICR', 'code-groups': 'Code Groups', keyer: 'Keyer', qso: 'QSO' };
+  var QSO_NAMES = { 'std-they': 'Standard QSO \u00b7 answered CQ', 'std-you': 'Standard QSO \u00b7 called CQ',
+                    'pota-they': 'POTA \u00b7 hunted', 'pota-you': 'POTA \u00b7 activated' };
   var GROUP_NAMES = {
     letters: 'Letters', numbers: 'Numbers', mixed: 'Mixed', punctuation: 'Punctuation',
     all: 'All', custom: 'Custom', qso: 'QSO Elements', words: 'Common Words', calls: 'Call Signs'
@@ -272,7 +275,7 @@
     var buckets = [];
     for (var t = from; t <= today; t = addDays(t, step)) {
       buckets.push({ start: t, end: addDays(t, step), step: step,
-        icr: blank(), 'code-groups': blank(), keyer: blank() });
+        icr: blank(), 'code-groups': blank(), keyer: blank(), qso: blank() });
     }
     rows.forEach(function (s) {
       for (var i = buckets.length - 1; i >= 0; i--) {
@@ -280,6 +283,7 @@
           var b = buckets[i][s.trainer];
           if (!b) return;
           b.ms += s.durationMs || 0;
+          if (s.trainer === 'qso') return;                    // QSOs count toward practice time only
           b.chars += s.charsTotal; b.correct += s.charsCorrect;
           if (s.trainer === 'keyer') {                        // sending: weight by letters sent
             var n = s.sentChars || 0;
@@ -341,17 +345,17 @@
     return c;
   }
 
-  // Stacked bars: ICR on the bottom, then Code Groups, then Keyer.
+  // Stacked bars: ICR on the bottom, then Code Groups, Keyer and QSO.
   function barChart(el, buckets, label) {
     var maxMin = 0;
-    buckets.forEach(function (b) { maxMin = Math.max(maxMin, (b.icr.ms + b['code-groups'].ms + b.keyer.ms) / 60000); });
+    buckets.forEach(function (b) { maxMin = Math.max(maxMin, (b.icr.ms + b['code-groups'].ms + b.keyer.ms + b.qso.ms) / 60000); });
     if (!maxMin) { el.innerHTML = '<div class="nodata">No practice in this range.</div>'; return; }
     var ax = axis(0, maxMin);
     var c = makeChart(el, buckets, ax, function (v) { return Math.round(v); });
     var bw = Math.max(2, Math.min(28, (c.W - L - R) / c.n * 0.7));
     buckets.forEach(function (b, i) {
       var top = c.y(0), sum = 0;
-      ['icr', 'code-groups', 'keyer'].forEach(function (k) {
+      ['icr', 'code-groups', 'keyer', 'qso'].forEach(function (k) {
         var m = b[k].ms / 60000;
         if (!m) return;
         sum += m;
@@ -450,16 +454,19 @@
     // Tiles
     // Practice time, streak and sessions count every tab; "Characters copied"
     // and the copying charts count only ICR and Code Groups (receiving).
-    var ms = 0, chars = 0, correct = 0, byTrainer = { icr: 0, 'code-groups': 0, keyer: 0 };
+    var ms = 0, chars = 0, correct = 0, byTrainer = { icr: 0, 'code-groups': 0, keyer: 0, qso: 0 };
+    function copying(s) { return s.trainer === 'icr' || s.trainer === 'code-groups'; }
     rows.forEach(function (s) {
       ms += s.durationMs || 0; byTrainer[s.trainer] = (byTrainer[s.trainer] || 0) + 1;
-      if (s.trainer !== 'keyer') { chars += s.charsTotal; correct += s.charsCorrect; }
+      if (copying(s)) { chars += s.charsTotal; correct += s.charsCorrect; }
     });
-    var copyRows = rows.filter(function (s) { return s.trainer !== 'keyer'; });
+    var copyRows = rows.filter(copying);
+    var hasQso = allRows.some(function (s) { return s.trainer === 'qso'; });
     var sendRows = rows.filter(function (s) { return s.trainer === 'keyer'; });
     hasSending = allRows.some(function (s) { return s.trainer === 'keyer'; });
     document.querySelectorAll('.sending').forEach(function (el) { el.hidden = !hasSending; });
     $('timeKeyLegend').hidden = !hasSending;
+    $('timeQsoLegend').hidden = !hasQso;
     var st = streaks(allRows);
     $('tTime').textContent = fmtMinutes(ms);
     $('tTimeSub').textContent = rangeText;
@@ -469,7 +476,7 @@
     $('tCharsSub').textContent = chars ? pct(correct, chars) + '% correct · ' + rangeText : rangeText;
     $('tSessions').textContent = rows.length;
     $('tSessionsSub').textContent = byTrainer.icr + ' ICR · ' + byTrainer['code-groups'] + ' Code Groups' +
-      (hasSending ? ' · ' + byTrainer.keyer + ' Keyer' : '');
+      (hasSending ? ' · ' + byTrainer.keyer + ' Keyer' : '') + (hasQso ? ' · ' + byTrainer.qso + ' QSO' : '');
 
     // Charts
     var buckets = buildBuckets(rows, from);
@@ -531,6 +538,13 @@
     // Recent sessions (newest first, last 10 in the range)
     $('recent').innerHTML = rows.slice(-10).reverse().map(function (s) {
       var when = new Date(s.start).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      if (s.trainer === 'qso') {
+        return '<tr><td>' + esc(when) + '</td><td><span class="tag qso">QSO</span></td><td>' +
+               esc((QSO_NAMES[s.style + '-' + s.who] || 'QSO') + (s.completed ? '' : ' (ended early)')) +
+               '</td><td class="num">' + esc(s.wpm || '') + '</td><td class="num">' + HST.fmtClock(s.durationMs || 0) +
+               '</td><td class="num">' + (s.sentChars || 0) + '</td><td class="num">' +
+               (s.copyTotal ? pct(s.copyRight, s.copyTotal) + '%' : '\u2014') + '</td></tr>';
+      }
       if (s.trainer === 'keyer') {
         var kw = s.mode === 'free' ? 'Free send' : 'Copy this · ' + (SEND_SOURCES[s.source] || s.source || '');
         return '<tr><td>' + esc(when) + '</td><td><span class="tag key">Keyer</span></td><td>' + esc(kw) +

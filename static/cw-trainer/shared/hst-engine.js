@@ -359,7 +359,7 @@
      and survives restarts). Nothing leaves the device.
 
      A session record looks like:
-       { trainer: 'icr' | 'code-groups' | 'keyer',
+       { trainer: 'icr' | 'code-groups' | 'keyer' | 'qso',
          start, end, durationMs,            // wall-clock times (ms)
          group, wpm, fwpm, groupSize,       // what was practiced, at what speed
          rounds, roundsCorrect, timeouts,   // ICR: 1 character per round
@@ -371,6 +371,9 @@
      keyType, sentChars, charGapSum/charGapN, wordGapSum/wordGapN (units),
      overallWpm. There, charsTotal/charsCorrect count only Copy this
      letters, and wpm is the measured character speed.
+     QSO records (Milestone 7): style ('std' | 'pota'), who ('they' | 'you'
+     called CQ), dxCall, theirWpm, completed, overs, copyRight/copyTotal
+     (the copy check), plus the same sending fields as Keyer.
 
        HST.history.all()      -> Promise of every record, oldest first
        HST.history.add(rec)   -> Promise

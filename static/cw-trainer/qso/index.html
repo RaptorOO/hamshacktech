@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QSO Practice — HamShackTech CW Trainer</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+  /* Same avocado palette as the app shell and the other tabs. */
+  :root {
+    --bg: #100e0c;
+    --panel: #1c1917;      /* stone-900 */
+    --well: #292524;       /* stone-800 */
+    --border: #44403c;     /* stone-700 */
+    --text: #fafaf9;       /* stone-50 */
+    --muted: #a8a29e;      /* stone-400 */
+    --dim: #78716c;        /* stone-500 */
+    --lime: #a3e635;       /* lime-400: you */
+    --lime-ink: #1a2e05;
+    --them: #93c5fd;       /* blue-300: the other station */
+    --good: #4ade80;       /* green-400 */
+    --off: #fbbf24;        /* amber-400 */
+    --bad: #f87171;        /* red-400 */
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.5 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 22px 18px 56px; }
+  button, input, select { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  .head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 16px; }
+  h1 { margin: 0; font: 600 1.9rem/1.1 'Oswald', sans-serif; letter-spacing: 0.02em; }
+  .head .spacer { flex: 1; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px;
+    border: 1px solid var(--border); border-radius: 99px; background: var(--well);
+    color: var(--muted); font-size: 0.82rem; cursor: pointer;
+  }
+  .chip strong { color: var(--text); font-weight: 500; }
+  .chip .chg { color: var(--lime); }
+  .chip:hover { border-color: var(--lime); }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+  .card h2 { margin: 0 0 12px; font: 600 1.05rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+  .label { color: var(--dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
+  .hint { color: var(--dim); font-size: 0.82rem; line-height: 1.5; margin: 6px 0 0; }
+
+  /* ---------- setup ---------- */
+  .station { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .field label { display: block; color: var(--muted); font-size: 0.82rem; margin-bottom: 4px; }
+  input[type="text"], select {
+    width: 100%; padding: 8px 10px; background: var(--well); color: var(--text);
+    border: 1px solid var(--border); border-radius: 7px; font-size: 0.95rem;
+  }
+  input[type="text"] { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.04em; }
+  input[type="text"].bad { border-color: var(--bad); }
+  .choices { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end; margin-bottom: 14px; }
+  .seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--well); border: 1px solid var(--border); border-radius: 9px; }
+  .seg button { border: 0; border-radius: 6px; padding: 7px 14px; background: transparent; color: var(--muted); font: 500 0.88rem/1 'Inter', sans-serif; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--lime); color: var(--lime-ink); }
+  .group .label { display: block; margin-bottom: 5px; }
+  .check { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 0.88rem; cursor: pointer; }
+  .check input { width: 16px; height: 16px; margin: 0; accent-color: var(--lime); }
+  .checks { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-bottom: 14px; }
+  .speed select { width: auto; }
+  .desc { color: var(--muted); font-size: 0.88rem; margin: 0 0 14px; }
+
+  .btn { border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; background: var(--well); color: var(--text); font: 500 0.9rem/1 'Inter', sans-serif; cursor: pointer; }
+  .btn:hover { border-color: var(--lime); }
+  .btn.primary { background: var(--lime); border-color: var(--lime); color: var(--lime-ink); }
+  .btn.big { padding: 11px 22px; font-size: 1rem; }
+  .btn kbd { font: 0.75rem 'JetBrains Mono', monospace; color: var(--dim); margin-left: 6px; }
+  .btn.primary kbd { color: var(--lime-ink); opacity: 0.7; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+  /* ---------- the contact ---------- */
+  .log { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; max-height: 46vh; overflow-y: auto; padding-right: 4px; }
+  .over { display: grid; grid-template-columns: 54px 1fr; gap: 10px; align-items: baseline; }
+  .who { font: 600 0.78rem 'Oswald', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
+  .over.dx .who { color: var(--them); } .over.me .who { color: var(--lime); }
+  .msg { font: 500 1.02rem/1.45 'JetBrains Mono', monospace; letter-spacing: 0.04em; word-break: break-word;
+         background: var(--well); border: 1px solid var(--border); border-radius: 9px; padding: 7px 10px; }
+  .over.dx .msg { border-color: #1e3a5f; }
+  .msg .ear { font-family: 'Inter', sans-serif; letter-spacing: 0; color: var(--dim); font-size: 0.88rem; }
+  .msg.sending { border-color: var(--lime); }
+  .msg .marks { display: block; margin-top: 4px; font: 0.8rem 'Inter', sans-serif; letter-spacing: 0; }
+  .ok { color: var(--good); } .miss { color: var(--off); }
+  .status { font-size: 0.95rem; margin: 0 0 6px; }
+  .status.turn { color: var(--lime); }
+  .status.them { color: var(--them); }
+  .status.warn { color: var(--off); }
+  .suggest { font: 500 0.92rem/1.5 'JetBrains Mono', monospace; color: var(--muted); background: var(--bg);
+             border: 1px dashed var(--border); border-radius: 8px; padding: 6px 10px; margin: 0 0 12px; word-break: break-word; }
+  .suggest b { color: var(--dim); font-weight: 500; }
+
+  /* ---------- after ---------- */
+  .copygrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin-bottom: 14px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid #2f2a27; }
+  th { color: var(--dim); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  td.mono { font-family: 'JetBrains Mono', monospace; }
+  .logline { font: 500 0.95rem 'JetBrains Mono', monospace; background: var(--well); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; word-break: break-word; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .tile { background: var(--well); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .tile .val { font: 600 1.45rem/1.1 'Oswald', sans-serif; }
+  .tile .val small { font: 500 0.8rem 'Inter', sans-serif; color: var(--muted); margin-left: 3px; }
+  .tile .lbl { color: var(--muted); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; }
+  .tile .sub { color: var(--dim); font-size: 0.78rem; margin-top: 2px; }
+  .tile.good { border-color: #166534; } .tile.good .val { color: var(--good); }
+  .tile.off { border-color: #92400e; } .tile.off .val { color: var(--off); }
+  .h3 { margin: 4px 0 8px; font: 600 0.95rem 'Oswald', sans-serif; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+
+  .pads { display: flex; gap: 10px; margin-top: 12px; }
+  .pad { flex: 1; height: 72px; background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 12px;
+         font: 600 1rem/1 'Oswald', sans-serif; letter-spacing: 0.06em; touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer; }
+  .pad.down { background: var(--lime); color: var(--lime-ink); border-color: var(--lime); }
+  details.help { color: var(--dim); font-size: 0.82rem; line-height: 1.5; }
+  details.help summary { cursor: pointer; color: var(--muted); }
+  details.help p { margin: 8px 0; }
+  .audio-hint { color: var(--off); }
+
+  @media (max-width: 600px) {
+    .station { grid-template-columns: 1fr 1fr; }
+    .station .field:first-child { grid-column: 1 / -1; }
+    h1 { font-size: 1.55rem; }
+    .wrap { padding: 16px 12px 40px; }
+    .over { grid-template-columns: 1fr; gap: 2px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>QSO Practice</h1>
+    <div class="spacer"></div>
+    <button class="chip" id="setupChip" type="button" title="Open Keyer Setup"><span id="setupText"></span><span class="chg">Change</span></button>
+  </div>
+
+  <!-- ================= Before the contact ================= -->
+  <section class="card" id="setupCard" aria-labelledby="setupTitle">
+    <h2 id="setupTitle">Set up a contact</h2>
+    <div class="station">
+      <div class="field"><label for="myCall">Your call sign</label><input type="text" id="myCall" autocomplete="off" spellcheck="false" placeholder="e.g. N6WAX"></div>
+      <div class="field"><label for="myName">Your name</label><input type="text" id="myName" autocomplete="off" spellcheck="false" placeholder="e.g. TIM"></div>
+      <div class="field"><label for="myQth">Your QTH / state</label><input type="text" id="myQth" autocomplete="off" spellcheck="false" placeholder="e.g. CA"></div>
+    </div>
+    <p class="hint" id="stationHint" style="margin:-6px 0 14px">Not licensed yet? Use a practice call like <b>N0CALL</b>. Keep your name short &mdash; on the air it&rsquo;s usually one word.</p>
+
+    <div class="choices">
+      <div class="group">
+        <span class="label">Type of contact</span>
+        <div class="seg" role="group" aria-label="Type of contact">
+          <button type="button" data-style="std" aria-pressed="true">Standard QSO</button>
+          <button type="button" data-style="pota" aria-pressed="false">POTA</button>
+        </div>
+      </div>
+      <div class="group">
+        <span class="label">Who calls CQ</span>
+        <div class="seg" role="group" aria-label="Who calls CQ">
+          <button type="button" data-who="they" aria-pressed="true">They do</button>
+          <button type="button" data-who="you" aria-pressed="false">You do</button>
+        </div>
+      </div>
+      <div class="group speed">
+        <label class="label" for="fw">Their spacing</label>
+        <select id="fw">
+          <option value="0">Normal (no Farnsworth)</option>
+          <option value="15">Farnsworth 15 WPM</option>
+          <option value="12">Farnsworth 12 WPM</option>
+          <option value="10">Farnsworth 10 WPM</option>
+          <option value="8">Farnsworth 8 WPM</option>
+          <option value="5">Farnsworth 5 WPM</option>
+        </select>
+      </div>
+    </div>
+    <p class="desc" id="desc"></p>
+    <div class="checks">
+      <label class="check"><input type="checkbox" id="hints"> Show what to send</label>
+      <label class="check"><input type="checkbox" id="showText"> Show their text after each over</label>
+    </div>
+    <div class="actions">
+      <button class="btn primary big" id="startBtn" type="button">Start QSO</button>
+      <span class="hint" id="speedNote" style="margin:0"></span>
+    </div>
+  </section>
+
+  <!-- ================= The contact ================= -->
+  <section class="card" id="liveCard" hidden aria-labelledby="liveTitle">
+    <h2 id="liveTitle">On the air</h2>
+    <div class="log" id="log" aria-live="polite"></div>
+    <p class="status" id="status"></p>
+    <div class="suggest" id="suggest" hidden></div>
+    <div class="actions">
+      <button class="btn" id="repeatBtn" type="button" title="Ask them to send their last over again (like sending AGN)">Repeat theirs</button>
+      <button class="btn primary" id="overBtn" type="button" title="Finish your over now">Done <kbd>Enter</kbd></button>
+      <span style="flex:1"></span>
+      <button class="btn" id="endQsoBtn" type="button" title="Stop this contact">End QSO</button>
+    </div>
+    <div class="pads" id="pads" hidden>
+      <button class="pad" id="padDit" type="button">DIT</button>
+      <button class="pad" id="padDah" type="button">DAH</button>
+    </div>
+    <p class="hint audio-hint" id="audioHint" hidden>Click anywhere in this tab to turn on your sidetone &mdash; browsers only allow sound after a click.</p>
+  </section>
+
+  <!-- ================= After: copy check, then review ================= -->
+  <section class="card" id="copyCard" hidden aria-labelledby="copyTitle">
+    <h2 id="copyTitle">What did you copy?</h2>
+    <p class="desc">Fill in what you copied from them, then check it. (Leave a box empty if you didn&rsquo;t get it.)</p>
+    <form id="copyForm" autocomplete="off">
+      <div class="copygrid" id="copyFields"></div>
+      <div class="actions"><button class="btn primary" type="submit">Check my copy</button></div>
+    </form>
+  </section>
+
+  <section class="card" id="reviewCard" hidden aria-labelledby="reviewTitle">
+    <h2 id="reviewTitle">How the QSO went</h2>
+    <div class="logline" id="logline"></div>
+    <div class="h3">Your copy</div>
+    <table><thead><tr><th>Item</th><th>You copied</th><th>They sent</th><th></th></tr></thead><tbody id="copyResults"></tbody></table>
+    <div class="h3">Your sending</div>
+    <div class="tiles" id="tiles"></div>
+    <div class="h3">The whole contact</div>
+    <div class="log" id="reviewLog" style="max-height:none"></div>
+    <div class="actions"><button class="btn primary big" id="againBtn" type="button">New QSO</button></div>
+  </section>
+
+  <details class="help card">
+    <summary>How this works</summary>
+    <p>The other station sends at your Settings speed (the gear icon), and you answer with your key. End each of your overs the usual way &mdash; <b>K</b>, <b>KN</b>, <b>BK</b> or <b>SK</b> &mdash; then pause, or press <kbd>Enter</kbd>. If you stop without one, a few seconds&rsquo; pause ends your over.</p>
+    <p>It&rsquo;s forgiving like a real operator: order doesn&rsquo;t matter, repeats are fine, and a call sign with one letter off still gets through. If something&rsquo;s missing they&rsquo;ll ask &mdash; <b>QRZ?</b> (who&rsquo;s calling?), <b>NAME?</b>, <b>RST?</b>, <b>PSE AGN</b> &mdash; or <b>QRS</b> if they can&rsquo;t read you. You can ask them too: send <b>AGN</b> or <b>?</b> to hear their last over again, or <b>QRS</b> to have them slow down.</p>
+    <p><b>Standard QSO:</b> call signs, signal report, name and QTH, then 73. <b>POTA:</b> the quick Parks on the Air exchange &mdash; the activator calls CQ POTA with the park number, hunters send just their call, each side sends 5NN (599) and state, then TU.</p>
+  </details>
+</div>
+
+<script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-keyer.js"></script>
+<script src="../shared/hst-content.js"></script>
+<script src="../shared/hst-qso.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function r1(x) { return (Math.round(x * 10) / 10).toFixed(1); }
+
+  /* ---------------- saved choices ---------------- */
+  var PREFS_KEY = 'hct-cw-qso-v1';
+  var prefs = { call: '', name: '', qth: '', style: 'std', who: 'they', fw: 0, hints: true, showText: false };
+  try { var sv = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (sv) Object.keys(prefs).forEach(function (k) { if (k in sv) prefs[k] = sv[k]; }); } catch (e) {}
+  function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
+
+  var KEY_NAMES = { iambicB: 'Paddles (iambic B)', iambicA: 'Paddles (iambic A)', straight: 'Straight key', bug: 'Bug' };
+  var ADAPTER_NAMES = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter' };
+  function cfg() { return HST.keyerSettings.get(); }
+  function automatic() { var k = cfg().keyType; return k === 'iambicA' || k === 'iambicB'; }
+  function unitMs() { return 1200 / cfg().wpm; }
+
+  /* ---------------- the other station's speed ----------------
+     Their character speed follows the shared Settings speed; QRS from you
+     slows them 5 WPM at a time. Farnsworth (optional) stretches only the
+     gaps between letters and words, so letters keep their real rhythm. */
+  var qrsDrop = 0;
+  function theirWpm() { return Math.max(5, HST.shared.get().wpm - qrsDrop); }
+  function theirOpts() {
+    var w = theirWpm(), s = HST.shared.get(), fw = Number(prefs.fw) || 0;
+    return { wpm: w, fwpm: fw && fw < w ? fw : undefined, toneHz: s.toneHz, volume: s.volume };
+  }
+
+  /* ================= the contact ================= */
+  var q = null;              // the QSO in progress (HST.qso.create)
+  var stepIdx = 0, tries = 0;
+  var phase = 'setup';       // 'setup' | 'dx' (they're sending) | 'me' (your turn) | 'copy' | 'review'
+  var overs = [];            // [{ by: 'dx'|'me', text, el, result }]
+  var lastDx = '';           // their last transmission, for AGN / Repeat
+  var gen = 0;               // bumps when a contact ends, so stray callbacks are ignored
+  var mine = [];             // analysis of each of your overs, for the sending tiles
+  var rec = HST.history.recorder('qso');
+
+  function startQso() {
+    var call = $('myCall').value.trim().toUpperCase(), name = $('myName').value.trim().toUpperCase(), qth = $('myQth').value.trim().toUpperCase();
+    var bad = false;
+    [['myCall', /^[A-Z0-9\/]{3,10}$/.test(call)], ['myName', /^[A-Z]{1,10}$/.test(name)], ['myQth', /^[A-Z0-9 ]{2,20}$/.test(qth)]].forEach(function (f) {
+      $(f[0]).classList.toggle('bad', !f[1]); if (!f[1]) bad = true;
+    });
+    if (bad) { $('stationHint').innerHTML = '<span style="color:var(--bad)">Fill in your call sign (3–10 letters and digits), a one-word name and your QTH or state.</span>'; return; }
+    prefs.call = call; prefs.name = name; prefs.qth = qth; savePrefs();
+    HST.audio.unlock();                                 // a click: sound is allowed now
+
+    q = HST.qso.create({ style: prefs.style, who: prefs.who, me: { call: call, name: name, qth: qth } });
+    stepIdx = 0; tries = 0; overs = []; mine = []; lastDx = ''; qrsDrop = 0; gen++;
+    $('log').innerHTML = '';
+    show('live');
+    rec.start({ style: q.style, who: q.who, wpm: theirWpm(), dxCall: q.dx.call, keyType: cfg().keyType });
+    runStep();
+  }
+
+  function show(which) {
+    $('setupCard').hidden = which !== 'setup';
+    $('liveCard').hidden = which !== 'live';
+    $('copyCard').hidden = which !== 'copy';
+    $('reviewCard').hidden = which !== 'review';
+  }
+
+  function runStep() {
+    var s = q.steps[stepIdx];
+    if (!s) return finish(true);
+    if (s.by === 'dx') {
+      dxSay(s.text, function () {
+        if (s.last) return finish(true);
+        stepIdx++; tries = 0; runStep();
+      });
+    } else {
+      myTurn();
+    }
+  }
+
+  /* ---- they send ---- */
+  function dxSay(text, then) {
+    var g = gen;
+    phase = 'dx'; lastDx = text;
+    var o = addOver('dx', text);
+    setStatus('They’re sending… copy by ear.', 'them');
+    $('suggest').hidden = true;
+    HST.audio.stop();
+    var p = HST.audio.playMorse(HST.qso.tokenize(text), theirOpts());
+    p.done.then(function () {
+      if (g !== gen) return;
+      if (prefs.showText) revealOver(o);
+      then();
+    });
+  }
+
+  /* ---- your turn ---- */
+  var marks = [], downAt = null, live = '', waitTimer = null, liveOver = null;
+  function myTurn() {
+    phase = 'me';
+    marks = []; downAt = null; live = ''; decoder.reset();
+    liveOver = null;
+    var s = q.steps[stepIdx];
+    setStatus('Your turn — send your over, then end it with K / KN / BK / SK (or press Enter).', 'turn');
+    if (prefs.hints && s.hint) {
+      $('suggest').innerHTML = '<b>Send something like:</b> ' + esc(s.hint).replace(/\[([^\]]+)\]/g, '<b>[$1]</b>');
+      $('suggest').hidden = false;
+    } else $('suggest').hidden = true;
+  }
+
+  var keyer = HST.createKeyer({ key: onKey });
+  keyer.attachKeyboard(window);
+  var decoder = HST.createDecoder({
+    unitMs: unitMs,
+    adaptive: function () { return !automatic(); },
+    onChar: function (ch) { live += ch; showLiveOver(); },
+    onWord: function () { if (live && live.slice(-1) !== ' ') { live += ' '; showLiveOver(); } }
+  });
+
+  function onKey(down, t) {
+    if (down) checkAudio();
+    if (phase !== 'me') return;              // keying while they send isn't part of your over
+    if (down) {
+      clearTimeout(waitTimer);
+      downAt = t; decoder.down(t);
+    } else if (downAt != null) {
+      marks.push({ s: downAt, e: t }); downAt = null;
+      decoder.up(t);
+      afterMark();
+    }
+  }
+  function showLiveOver() {
+    if (!liveOver) liveOver = addOver('me', '');
+    liveOver.el.querySelector('.msg').textContent = live;
+    liveOver.el.querySelector('.msg').classList.add('sending');
+    scrollLog();
+  }
+
+  // Your over ends at a word space after a closing K / KN / BK / SK / AR,
+  // or after a longer pause (3.5 s, or 16 units at slow speeds) without one.
+  var ENDERS = ['K', 'KN', 'BK', 'SK', 'AR', '<KN>', '<BK>', '<SK>', '<AR>'];
+  function afterMark() {
+    var u = automatic() ? unitMs() : 1200 / decoder.speedWpm();
+    waitTimer = setTimeout(function () {
+      var a = analyze();
+      var words = a ? a.text.split(' ') : [];
+      if (ENDERS.indexOf(words[words.length - 1]) >= 0) return endOver();
+      waitTimer = setTimeout(endOver, Math.max(3500, 16 * u) - 5.5 * u);
+    }, 5.5 * u);
+  }
+  function analyze() { return HST.analyzeSending(marks, { unitMs: unitMs(), automatic: automatic() }); }
+
+  function endOver() {
+    clearTimeout(waitTimer);
+    if (phase !== 'me') return;
+    var a = marks.length ? analyze() : null;
+    var text = a ? a.text : '';
+    var s = q.steps[stepIdx];
+    var r = HST.qso.check(q, s, text);
+    var act = HST.qso.respond(q, s, r, tries);
+    if (a) {
+      mine.push(a);
+      if (!liveOver) liveOver = addOver('me', '');
+      liveOver.text = text;
+      liveOver.result = r;
+      liveOver.el.querySelector('.msg').classList.remove('sending');
+      liveOver.el.querySelector('.msg').innerHTML = esc(text) + checkMarks(r);
+      saveProgress();
+    }
+    marks = []; live = '';
+    if (act.action === 'advance') { stepIdx++; tries = 0; runStep(); }
+    else if (act.action === 'retry') { tries++; dxSay(act.text, myTurn); }
+    else if (act.action === 'repeat') { dxSay(lastDx, myTurn); }
+    else if (act.action === 'qrs') { qrsDrop += 5; dxSay(lastDx, myTurn); }
+    else if (act.action === 'silence') { tries++; myTurn(); setStatus(act.note, 'warn'); }
+  }
+
+  // Under each of your overs: which required items made it.
+  function checkMarks(r) {
+    var bits = [];
+    r.passed.forEach(function (id) { bits.push('<span class="ok">✓ ' + esc(HST.qso.LABELS[id]) + '</span>'); });
+    r.missing.forEach(function (id) { bits.push('<span class="miss">✗ ' + esc(HST.qso.LABELS[id]) + '</span>'); });
+    if (r.request === 'agn') bits.push('<span class="ok">asked them to repeat</span>');
+    if (r.request === 'qrs') bits.push('<span class="ok">asked them to slow down</span>');
+    return bits.length ? '<span class="marks">' + bits.join('   ') + '</span>' : '';
+  }
+
+  /* ---- the log of overs ---- */
+  function addOver(by, text) {
+    var el = document.createElement('div');
+    el.className = 'over ' + by;
+    el.innerHTML = '<span class="who">' + (by === 'dx' ? 'Them' : 'You') + '</span><div class="msg"></div>';
+    var o = { by: by, text: text, el: el, result: null };
+    if (by === 'dx') el.querySelector('.msg').innerHTML = '<span class="ear">♪ copy by ear</span>';
+    else el.querySelector('.msg').textContent = text;
+    $('log').appendChild(el);
+    overs.push(o);
+    scrollLog();
+    return o;
+  }
+  function revealOver(o) { o.el.querySelector('.msg').textContent = o.text; }
+  function scrollLog() { $('log').scrollTop = 1e6; }
+
+  function setStatus(text, kind) {
+    $('status').textContent = text;
+    $('status').className = 'status' + (kind ? ' ' + kind : '');
+  }
+
+  /* ================= after the contact ================= */
+  function finish(completed) {
+    gen++;
+    clearTimeout(waitTimer);
+    HST.audio.stop(); keyer.reset();
+    q.completed = completed;
+    phase = 'copy';
+    saveProgress();
+    if (!overs.some(function (o) { return o.by === 'me' && o.text; })) {   // nothing sent: nothing to review
+      rec.finish(); phase = 'setup'; show('setup'); return;
+    }
+    var fields = HST.qso.copyFields(q);
+    $('copyFields').innerHTML = fields.map(function (f) {
+      return '<div class="field"><label for="cp-' + f.id + '">' + esc(f.label) + '</label><input type="text" id="cp-' + f.id +
+             '" data-id="' + f.id + '" autocomplete="off" spellcheck="false"></div>';
+    }).join('');
+    show('copy');
+    var first = $('copyFields').querySelector('input'); if (first) first.focus();
+  }
+
+  $('copyForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var answers = {};
+    $('copyFields').querySelectorAll('input').forEach(function (i) { answers[i.dataset.id] = i.value; });
+    review(HST.qso.scoreCopy(q, answers));
+  });
+
+  function review(copy) {
+    phase = 'review';
+    var right = copy.filter(function (c) { return c.ok; }).length;
+    rec.set({ copyRight: right, copyTotal: copy.length });
+    rec.finish();
+
+    var D = q.dx;
+    var sentRst = '';
+    overs.forEach(function (o) { if (o.by === 'me' && o.text) { var m = o.text.match(/\b[1-5][1-9NT]{2}\b/); if (m && !sentRst) sentRst = m[0]; } });
+    $('logline').textContent = new Date().toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) +
+      '  ·  ' + D.call + (q.style === 'std' ? '  ·  ' + D.name + '  ·  ' + D.city + ' ' + D.state : '  ·  ' + D.state + (q.who === 'they' ? '  ·  ' + D.park : '')) +
+      '  ·  RST sent ' + (sentRst || '—') + ' / rcvd ' + D.rst + (q.completed ? '' : '  ·  (ended early)');
+
+    $('copyResults').innerHTML = copy.map(function (c) {
+      return '<tr><td>' + esc(c.label) + '</td><td class="mono">' + esc(c.given || '—') + '</td><td class="mono">' + esc(c.truth) +
+             '</td><td class="' + (c.ok ? 'ok">✓' : 'miss">✗') + '</td></tr>';
+    }).join('');
+
+    renderTiles();
+
+    // The whole contact, with their text revealed.
+    $('reviewLog').innerHTML = '';
+    overs.forEach(function (o) {
+      var el = o.el.cloneNode(true);
+      if (o.by === 'dx') el.querySelector('.msg').textContent = o.text;
+      $('reviewLog').appendChild(el);
+    });
+    show('review');
+  }
+
+  // Your sending across all your overs, weighted by letters sent.
+  function renderTiles() {
+    var n = 0, cw = 0, ow = 0, cgS = 0, cgN = 0, wgS = 0, wgN = 0, rS = 0, rN = 0;
+    mine.forEach(function (a) {
+      var k = a.chars.length; n += k; cw += a.charWpm * k; ow += a.overallWpm * k;
+      cgS += a.charGap.mean * a.charGap.n; cgN += a.charGap.n; wgS += a.wordGap.mean * a.wordGap.n; wgN += a.wordGap.n;
+      if (a.ratio) { rS += a.ratio * k; rN += k; }
+    });
+    if (!n) { $('tiles').innerHTML = '<p class="desc">No sending to measure.</p>'; return; }
+    var t = [];
+    function tile(v, u, l, sub, cls) { return '<div class="tile ' + (cls || '') + '"><div class="val">' + v + '<small>' + u + '</small></div><div class="lbl">' + l + '</div><div class="sub">' + sub + '</div></div>'; }
+    t.push(tile(Math.round(cw / n), 'WPM', 'Character speed', automatic() ? 'set by your keyer' : 'your dits and dahs'));
+    t.push(tile(Math.round(ow / n), 'WPM', 'Overall speed', 'including your spacing'));
+    if (cgN) { var g = cgS / cgN; t.push(tile(r1(g), 'dits', 'Letter spacing', 'perfect is 3', g >= 2.4 && g <= 3.8 ? 'good' : 'off')); }
+    if (wgN) { var w = wgS / wgN; t.push(tile(r1(w), 'dits', 'Word spacing', 'perfect is 7', w >= 5.8 && w <= 9 ? 'good' : 'off')); }
+    if (rN) { var r = rS / rN; t.push(tile(r1(r), ': 1', 'Dah to dit', 'perfect is 3 : 1', r >= 2.6 && r <= 3.6 ? 'good' : 'off')); }
+    $('tiles').innerHTML = t.join('');
+  }
+
+  // Keep the session's numbers in the saved draft as the contact goes, so
+  // nothing is lost if the app closes mid-QSO.
+  function saveProgress() {
+    var n = 0, cw = 0, ow = 0, cgS = 0, cgN = 0, wgS = 0, wgN = 0;
+    mine.forEach(function (a) {
+      var k = a.chars.length; n += k; cw += a.charWpm * k; ow += a.overallWpm * k;
+      cgS += a.charGap.mean * a.charGap.n; cgN += a.charGap.n; wgS += a.wordGap.mean * a.wordGap.n; wgN += a.wordGap.n;
+    });
+    rec.set({
+      sentChars: n, overs: overs.filter(function (o) { return o.by === 'me' && o.text; }).length,
+      charGapSum: cgS, charGapN: cgN, wordGapSum: wgS, wordGapN: wgN,
+      wpm: n ? Math.round(cw / n) : cfg().wpm, overallWpm: n ? Math.round(ow / n) : null,
+      completed: !!(q && q.completed), theirWpm: theirWpm()
+    });
+  }
+
+  /* ================= controls ================= */
+  function renderSetup() {
+    $('myCall').value = prefs.call; $('myName').value = prefs.name; $('myQth').value = prefs.qth;
+    document.querySelectorAll('[data-style]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.style === prefs.style)); });
+    document.querySelectorAll('[data-who]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.who === prefs.who)); });
+    $('fw').value = String(prefs.fw);
+    $('hints').checked = prefs.hints; $('showText').checked = prefs.showText;
+    var D = {
+      'std-they': 'They call CQ and you answer. You’ll exchange signal reports, names and QTHs, then 73.',
+      'std-you': 'You call CQ and they answer. Then the same exchange: signal reports, names and QTHs, then 73.',
+      'pota-they': 'They’re activating a park and calling CQ POTA. You’re the hunter: send your call, then trade 5NN and states.',
+      'pota-you': 'You’re the activator: call CQ POTA with your park reference (shown in the hints). A hunter answers with their call.'
+    };
+    $('desc').textContent = D[prefs.style + '-' + prefs.who];
+    $('speedNote').textContent = 'They’ll send at ' + HST.shared.get().wpm + ' WPM (your Settings speed).';
+  }
+  document.querySelectorAll('[data-style]').forEach(function (b) { b.addEventListener('click', function () { prefs.style = b.dataset.style; savePrefs(); renderSetup(); }); });
+  document.querySelectorAll('[data-who]').forEach(function (b) { b.addEventListener('click', function () { prefs.who = b.dataset.who; savePrefs(); renderSetup(); }); });
+  $('fw').addEventListener('change', function (e) { prefs.fw = Number(e.target.value); savePrefs(); });
+  $('hints').addEventListener('change', function (e) { prefs.hints = e.target.checked; savePrefs(); });
+  $('showText').addEventListener('change', function (e) { prefs.showText = e.target.checked; savePrefs(); });
+  ['myCall', 'myName', 'myQth'].forEach(function (id) { $(id).addEventListener('input', function () { $(id).classList.remove('bad'); }); });
+  HST.shared.onChange(renderSetup);
+
+  $('startBtn').addEventListener('click', startQso);
+  $('overBtn').addEventListener('click', function () { if (phase === 'me') endOver(); });
+  $('repeatBtn').addEventListener('click', function () { if (phase === 'me' && lastDx) { clearTimeout(waitTimer); marks = []; live = ''; if (liveOver && !liveOver.text) { liveOver.el.remove(); overs.pop(); } liveOver = null; dxSay(lastDx, myTurn); } });
+  $('endQsoBtn').addEventListener('click', function () { if (q && (phase === 'me' || phase === 'dx')) finish(false); });
+  $('againBtn').addEventListener('click', function () { phase = 'setup'; renderSetup(); show('setup'); });
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && phase === 'me' && e.target.tagName !== 'INPUT') { e.preventDefault(); endOver(); }
+  });
+  window.addEventListener('pagehide', function () { if (q && phase !== 'setup') rec.finish(); });
+
+  // Key setup chip -> the app's Keyer Setup panel.
+  function renderKey() {
+    var s = cfg();
+    $('setupText').innerHTML = '<strong>' + esc(ADAPTER_NAMES[s.adapter]) + '</strong> · ' + esc(KEY_NAMES[s.keyType]) + (s.keyType === 'straight' ? '' : ' · ' + s.wpm + ' WPM');
+    var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    $('pads').hidden = !(touch || s.adapter === 'keyboard');
+    $('padDit').textContent = s.keyType === 'straight' ? 'KEY' : (s.reversed ? 'DAH' : 'DIT');
+    $('padDah').textContent = s.reversed ? 'DIT' : 'DAH';
+    $('padDah').hidden = s.keyType === 'straight';
+  }
+  HST.keyerSettings.onChange(function () { keyer.reset(); decoder.reset(); renderKey(); });
+  $('setupChip').addEventListener('click', function () { try { window.parent.HCT.openKeyerSetup(); } catch (e) {} });
+  [['padDit', 'dit'], ['padDah', 'dah']].forEach(function (p) {
+    var el = $(p[0]);
+    function down(e) { e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('down'); keyer.touch(p[1], true); }
+    function up() { if (!el.classList.contains('down')) return; el.classList.remove('down'); keyer.touch(p[1], false); }
+    el.addEventListener('pointerdown', down); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  });
+  function checkAudio() {
+    var ctx = HST.audio.unlock();
+    $('audioHint').hidden = !cfg().sidetone || ctx.state === 'running';
+  }
+  document.addEventListener('pointerdown', function () {
+    var ctx = HST.audio.unlock();
+    if (ctx.resume) ctx.resume().then(function () { $('audioHint').hidden = true; }).catch(function () {});
+  });
+
+  renderSetup(); renderKey(); show('setup');
+
+  // The app shell clicks End QSO when you leave this tab.
+  window.HSTQso = { phase: function () { return phase; }, q: function () { return q; } };
+})();
+</script>
+</body>
+</html>
