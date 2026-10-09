@@ -728,7 +728,19 @@
     var s = HST.keyerSettings.get();
     if (!keyer) return;
     if (s.adapter === 'vail' && s.input === 'midi') {
+      // The browser answers a MIDI request only after the person allows it.
+      // If no answer comes, a permission prompt is probably waiting out of
+      // sight (in an installed app it hides behind a title-bar icon).
+      var answered = false;
+      var waitTimer = setTimeout(function () {
+        if (answered) return;
+        var status = $('kStatus');
+        status.textContent = 'Waiting for permission to use MIDI. Look for a prompt, or click the icon at the left of the address/title bar → Site settings → MIDI devices → Allow.';
+        status.classList.add('warn');
+      }, 5000);
       keyer.attachMidi().then(function (r) {
+        answered = true;
+        clearTimeout(waitTimer);
         var status = $('kStatus');
         status.textContent = r.msg;
         status.classList.toggle('warn', !r.ok);

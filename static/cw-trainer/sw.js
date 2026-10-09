@@ -17,7 +17,7 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = '92f574c05247';
+const VERSION = 'edbc79abc01c';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline.
@@ -61,12 +61,25 @@ const PRECACHE = [
 
 // Install: download and save every file. If any one fails, the install fails
 // and the previous version keeps working -- never a half-updated app.
+//
+// Each file is requested as "<url>?v=<VERSION>". Right after a deploy,
+// Cloudflare's servers can keep handing out the previous copy of a file for
+// a minute or so; an install during that window once saved a mix of new and
+// old files (a new page with an old script), which broke the app until the
+// next update. A URL with the new version in it has never been requested
+// before, so no server has a stale copy of it -- every file comes fresh.
+// It's saved under the plain URL, which is what the app asks for.
+// cache: 'reload' also skips the browser's own HTTP cache.
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) =>
-      // cache: 'reload' skips the browser's normal HTTP cache, so we always
-      // store the files actually on the server right now.
-      cache.addAll(PRECACHE.map((url) => new Request(url, { cache: 'reload' })))
+      Promise.all(PRECACHE.map((url) => {
+        const fresh = url + (url.includes('?') ? '&' : '?') + 'v=' + VERSION;
+        return fetch(new Request(fresh, { cache: 'reload' })).then((res) => {
+          if (!res.ok) throw new Error('Could not download ' + url + ' (' + res.status + ')');
+          return cache.put(url, res);
+        });
+      }))
     )
   );
 });
