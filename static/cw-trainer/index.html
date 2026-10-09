@@ -422,6 +422,8 @@
     <label class="check"><input type="checkbox" id="kSidetone"> Sidetone</label>
   </div>
   <p class="kstatus" id="kStatus"></p>
+  <!-- Shown for the Vail adapter only (see renderKeyer). -->
+  <p class="hint" id="kVailTip"><strong>Vail adapter tip:</strong> if you&rsquo;ve used vailmorse.com since plugging the adapter in, unplug it and plug it back in. The Vail site switches the adapter to a mode where it stops sending key presses, and it stays that way until it&rsquo;s replugged.</p>
 
   <section class="ktest" aria-labelledby="kTestTitle">
     <h3 id="kTestTitle">Test your key</h3>
@@ -446,9 +448,10 @@
       <dl>
         <dt>Last input</dt><dd id="dLast">&mdash;</dd>
         <dt>Audio delay</dt><dd id="dAudio">&mdash;</dd>
-        <dt>MIDI ports</dt><dd id="dPorts">MIDI not in use.</dd>
-        <dt>MIDI log</dt><dd><pre id="dMidiLog" class="midilog">Messages to and from the adapter appear here when MIDI is the input method.</pre><button class="linkish" id="dCopyLog" type="button">Copy log</button></dd>
-        <dt>Keyboard vs MIDI</dt><dd id="dCompare">Shown only if one press arrives by both routes. A Vail adapter in MIDI mode stops sending keyboard presses, so compare the two by recording key clicks and sidetone with a microphone instead.</dd>
+        <!-- MIDI rows: hidden while MIDI input is switched off (see the script). -->
+        <dt class="midi-only">MIDI ports</dt><dd class="midi-only" id="dPorts">MIDI not in use.</dd>
+        <dt class="midi-only">MIDI log</dt><dd class="midi-only"><pre id="dMidiLog" class="midilog">Messages to and from the adapter appear here when MIDI is the input method.</pre><button class="linkish" id="dCopyLog" type="button">Copy log</button></dd>
+        <dt class="midi-only">Keyboard vs MIDI</dt><dd class="midi-only" id="dCompare">Shown only if one press arrives by both routes. A Vail adapter in MIDI mode stops sending keyboard presses, so compare the two by recording key clicks and sidetone with a microphone instead.</dd>
       </dl>
     </details>
   </section>
@@ -697,7 +700,9 @@
     $('kReversed').checked = s.reversed;
     $('kSidetone').checked = s.sidetone;
     var straight = s.keyType === 'straight';
-    $('kInputField').hidden = s.adapter !== 'vail';          // MIDI is a Vail-adapter option
+    // MIDI is a Vail-adapter option, and switched off for now (HST.MIDI_ENABLED).
+    $('kInputField').hidden = !HST.MIDI_ENABLED || s.adapter !== 'vail';
+    $('kVailTip').hidden = s.adapter !== 'vail';
     $('kWeightField').hidden = straight;                     // a straight key sets its own dah length
     $('kReversed').parentNode.style.display = straight ? 'none' : '';
     // For a straight key the speed slider is only the decoder's first guess;
@@ -726,7 +731,7 @@
   // permission the first time).
   function syncMidi() {
     var s = HST.keyerSettings.get();
-    if (!keyer) return;
+    if (!keyer || !HST.MIDI_ENABLED) return;     // MIDI switched off: never connect
     if (s.adapter === 'vail' && s.input === 'midi') {
       // The browser answers a MIDI request only after the person allows it.
       // If no answer comes, a permission prompt is probably waiting out of
@@ -835,6 +840,11 @@
   }
 
   $('keyerSetupBtn').addEventListener('click', openKeyer);
+
+  // MIDI switched off: hide its Diagnostics rows too.
+  if (!HST.MIDI_ENABLED) {
+    Array.prototype.forEach.call(document.querySelectorAll('.midi-only'), function (el) { el.hidden = true; });
+  }
 
   // Setting controls -> HST.keyerSettings. A change mid-element resets the
   // keyer so nothing is left half-sent at the old setting.

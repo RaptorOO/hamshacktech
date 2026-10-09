@@ -66,11 +66,22 @@
        weight    dah length in dits (3.0 is standard)
        sidetone  play a tone while the key is down
      ===================================================================== */
+  /* MIDI input is switched OFF for now (2026-10-09). In testing with a
+     Vail adapter, the app's MIDI connection left the adapter unresponsive
+     -- to keyboard as well -- until it was unplugged, and Edge's MIDI
+     request sometimes never answered. The keyboard route (Left/Right Ctrl)
+     works reliably, and it's what VBand and Morse Code World use too.
+     While this is false: the Input method choice is hidden, a saved
+     "midi" setting is treated as "keyboard", and the app never opens a
+     MIDI connection or sends the adapter anything. The MIDI code below is
+     kept for a later investigation; set this to true to bring it back. */
+  HST.MIDI_ENABLED = false;
+
   HST.keyerSettings = makeStore('hct-cw-keyer-v1', function (o) {
     var startWpm = (HST.shared && HST.shared.get().wpm) || 20;
     return {
       adapter: pick(o.adapter, ['vail', 'vband', 'keyboard'], 'vail'),
-      input: pick(o.input, ['keyboard', 'midi'], 'keyboard'),
+      input: HST.MIDI_ENABLED ? pick(o.input, ['keyboard', 'midi'], 'keyboard') : 'keyboard',
       keyType: pick(o.keyType, ['iambicB', 'iambicA', 'straight', 'bug'], 'iambicB'),
       reversed: !!o.reversed,
       wpm: Math.round(num(o.wpm, 5, 40, startWpm)),
@@ -382,6 +393,8 @@
       else if (h.raw) h.raw({ src: 'midi', which: null, down: on, t: t, detail: 'message ' + hex, accepted: false });
     }
     function attachMidi() {
+      // Belt and braces: with MIDI switched off, never touch the MIDI system.
+      if (!HST.MIDI_ENABLED) return Promise.resolve({ ok: false, msg: 'MIDI input is turned off.' });
       if (!navigator.requestMIDIAccess) {
         return Promise.resolve({ ok: false, msg: 'This browser can’t read MIDI devices. Chrome and Edge can; Safari and Firefox can’t. Use the Keyboard input method instead.' });
       }
