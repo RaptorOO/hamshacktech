@@ -250,7 +250,9 @@
 
   /* ---------------- saved choices ---------------- */
   var PREFS_KEY = 'hct-cw-qso-v1';
-  var prefs = { call: '', name: '', qth: '', style: 'std', who: 'they', fw: 0, hints: true, showText: false };
+  // stationUpdated: when call/name/QTH last changed here, so account sync
+  // (shared/hst-account.js) can tell which device has the newer details.
+  var prefs = { call: '', name: '', qth: '', stationUpdated: 0, style: 'std', who: 'they', fw: 0, hints: true, showText: false };
   try { var sv = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (sv) Object.keys(prefs).forEach(function (k) { if (k in sv) prefs[k] = sv[k]; }); } catch (e) {}
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
 
@@ -288,6 +290,7 @@
       $(f[0]).classList.toggle('bad', !f[1]); if (!f[1]) bad = true;
     });
     if (bad) { $('stationHint').innerHTML = '<span style="color:var(--bad)">Fill in your call sign (3–10 letters and digits), a one-word name and your QTH or state.</span>'; return; }
+    if (call !== prefs.call || name !== prefs.name || qth !== prefs.qth) prefs.stationUpdated = Date.now();
     prefs.call = call; prefs.name = name; prefs.qth = qth; savePrefs();
     HST.audio.unlock();                                 // a click: sound is allowed now
 
@@ -562,6 +565,13 @@
   $('showText').addEventListener('change', function (e) { prefs.showText = e.target.checked; savePrefs(); });
   ['myCall', 'myName', 'myQth'].forEach(function (id) { $(id).addEventListener('input', function () { $(id).classList.remove('bad'); }); });
   HST.shared.onChange(renderSetup);
+  // Station details synced in from another device (by the app shell's
+  // account sync): show them, unless a contact is in progress.
+  window.addEventListener('storage', function (e) {
+    if (e.key !== PREFS_KEY || !e.newValue) return;
+    try { var nv = JSON.parse(e.newValue); ['call', 'name', 'qth', 'stationUpdated'].forEach(function (k) { if (k in nv) prefs[k] = nv[k]; }); } catch (err) { return; }
+    if (phase === 'setup') renderSetup();
+  });
 
   $('startBtn').addEventListener('click', startQso);
   $('overBtn').addEventListener('click', function () { if (phase === 'me') endOver(); });

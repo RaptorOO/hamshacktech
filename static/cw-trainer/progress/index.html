@@ -207,7 +207,7 @@
   </div>
 
   <div class="foot">
-    <span>Your history is saved only on this device.</span>
+    <span id="footNote">Your history is saved only on this device.</span>
     <button type="button" class="linkbtn" id="clearBtn">Clear history</button>
   </div>
 </div>
@@ -573,9 +573,30 @@
     });
   });
 
+  // Signed in (Milestone 8)? Then clearing means clearing on every device,
+  // or the next sync would bring the history back. The account lives in
+  // the app shell (this tab is a frame inside it).
+  function account() { try { return window.parent !== window && window.parent.HST && window.parent.HST.account; } catch (e) { return null; } }
   $('clearBtn').addEventListener('click', function () {
+    var acct = account();
+    if (acct && acct.state().signedIn) {
+      if (!confirm('Delete all saved practice history on every device signed in to ' + acct.state().email + '? This can\'t be undone.')) return;
+      acct.clearEverywhere().catch(function (err) { alert('Couldn\u2019t clear history: ' + err.message); });
+      return;
+    }
     if (confirm('Delete all saved practice history on this device? This can\'t be undone.')) HST.history.clear();
   });
+
+  // Footer: where the history lives.
+  (function () {
+    var acct = account();
+    function note() {
+      var a = acct && acct.state();
+      $('footNote').textContent = a && a.signedIn ? 'Synced with your account (' + a.email + ') across your devices.' : 'Your history is saved only on this device.';
+    }
+    note();
+    if (acct) acct.onChange(note);
+  })();
 
   // Redraw whenever a trainer saves a session (or history is cleared).
   HST.history.onChange(refresh);

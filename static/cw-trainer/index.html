@@ -273,6 +273,33 @@
   }
   @media (max-width: 480px) { .kgrid { grid-template-columns: 1fr; } }
 
+  /* ---------- Account (Milestone 8) ---------- */
+  .acct-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .acct-line .who { flex: 1; min-width: 12em; font-size: 0.9rem; }
+  .acct-line .who small { display: block; color: var(--muted); font-size: 0.8rem; }
+  .acct-line .who small.err { color: #fca5a5; }
+  .account .field { margin-bottom: 12px; }
+  .account .field label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 5px; }
+  .account input[type="email"], .account input[type="text"] {
+    width: 100%; padding: 9px 10px; background: var(--well); color: var(--text);
+    border: 1px solid var(--border); border-radius: 7px; font: 0.95rem 'Inter', sans-serif;
+  }
+  .account input.code { font: 600 1.5rem 'JetBrains Mono', monospace; letter-spacing: 0.35em; text-align: center; }
+  .account .err { color: #fca5a5; font-size: 0.85rem; min-height: 1.2em; margin: 4px 0 8px; }
+  .account .ok { color: var(--lime); font-size: 0.85rem; margin: 4px 0 8px; }
+  .account .fine { color: var(--muted); font-size: 0.78rem; line-height: 1.45; margin: 10px 0 0; }
+  .account .fine a, .account .linkish { color: var(--lime); }
+  .account h3 { margin: 16px 0 6px; font: 600 0.95rem/1.2 'Oswald', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+  .devices { list-style: none; margin: 0; padding: 0; }
+  .devices li { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+  .devices li span { flex: 1; }
+  .devices li small { display: block; color: var(--muted); font-size: 0.78rem; }
+  .btn.danger { border-color: #7f1d1d; color: #fca5a5; }
+  .btn.danger:hover { background: #7f1d1d; color: #fff; }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .acct-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  #tsBox { margin: 4px 0 8px; min-height: 0; }
+
   /* ---------- What's new ---------- */
   .whatsnew ul { margin: 0 0 4px; padding-left: 1.2em; line-height: 1.5; }
   .whatsnew li { margin-bottom: 8px; }
@@ -396,6 +423,14 @@
     <button class="btn" id="keyerSetupBtn" type="button">Keyer Setup&hellip;</button>
     <p class="hint">Your key or paddles, the adapter they&rsquo;re plugged into, and a place to test them. Used by the Keyer tab.</p>
   </div>
+  <!-- Account (Milestone 8). Hidden until the site's account service is
+       set up (GET /api/config says accounts: true). -->
+  <div class="experimental" id="accountSection" hidden>
+    <div class="acct-line">
+      <div class="who" id="acctSummary"></div>
+      <button class="btn" id="acctBtn" type="button"></button>
+    </div>
+  </div>
   <div class="actions">
     <button class="linkish" id="whatsNewLink" type="button" style="margin-right:auto">What's new</button>
     <button class="btn" id="sampleBtn" type="button">Play sample</button>
@@ -487,6 +522,67 @@
   </div>
 </dialog>
 
+<!-- Sign in (Milestone 8): email -> 6-digit code. -->
+<dialog class="settings account" id="signinDialog" aria-labelledby="signinTitle">
+  <h2 id="signinTitle">Sign in</h2>
+  <p class="lede">Sign in to keep your practice history the same on all your devices. Practicing never needs an account &mdash; without one, everything stays on this device.</p>
+  <form id="signinStep1">
+    <div class="field">
+      <label for="siEmail">Email address</label>
+      <input type="email" id="siEmail" autocomplete="email" required>
+    </div>
+    <div id="tsBox"></div>
+    <p class="err" id="si1Err" role="alert"></p>
+    <div class="actions" style="margin-top:6px">
+      <button class="btn" id="siCancel" type="button">Cancel</button>
+      <button class="btn primary" id="siSend" type="submit">Email me a code</button>
+    </div>
+  </form>
+  <form id="signinStep2" hidden>
+    <p class="ok" id="si2Sent"></p>
+    <div class="field">
+      <label for="siCode">6-digit code</label>
+      <input type="text" class="code" id="siCode" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required>
+    </div>
+    <p class="err" id="si2Err" role="alert"></p>
+    <div class="actions" style="margin-top:6px">
+      <button class="linkish" id="siBack" type="button" style="margin-right:auto">Use a different email</button>
+      <button class="btn primary" id="siVerify" type="submit">Sign in</button>
+    </div>
+  </form>
+  <p class="fine">We email a one-time code instead of using a password. By signing in you agree to the <a href="/terms/" target="_blank" rel="noopener">Terms of Use</a>; see the <a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a> for what&rsquo;s stored.</p>
+</dialog>
+
+<!-- Account (Milestone 8): sync status, devices, download, delete. -->
+<dialog class="settings account" id="accountDialog" aria-labelledby="accountTitle">
+  <h2 id="accountTitle">Account</h2>
+  <p class="lede" id="acEmail"></p>
+  <div class="acct-line">
+    <div class="who" id="acSync"></div>
+    <button class="btn" id="acSyncNow" type="button">Sync now</button>
+  </div>
+  <h3>Signed-in devices</h3>
+  <ul class="devices" id="acDevices"><li><span>Loading&hellip;</span></li></ul>
+  <h3>Your data</h3>
+  <div class="acct-actions">
+    <button class="btn" id="acDownload" type="button">Download my data</button>
+    <button class="btn" id="acSignOut" type="button">Sign out of this device</button>
+    <button class="btn danger" id="acDelete" type="button">Delete account&hellip;</button>
+  </div>
+  <div id="acDeleteBox" hidden>
+    <p class="fine" style="color:var(--text)">This permanently deletes your account and the practice history stored with it, and signs out every device. Practice already saved on your devices stays there. Type <strong>DELETE</strong> to confirm.</p>
+    <div class="acct-line" style="margin-top:8px">
+      <input type="text" id="acDeleteWord" autocomplete="off" style="flex:1;min-width:8em">
+      <button class="btn danger" id="acDeleteGo" type="button" disabled>Delete my account</button>
+    </div>
+  </div>
+  <p class="err" id="acErr" role="alert"></p>
+  <p class="fine"><a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a> &middot; <a href="/terms/" target="_blank" rel="noopener">Terms of Use</a></p>
+  <div class="actions">
+    <button class="btn primary" id="acDone" type="button">Done</button>
+  </div>
+</dialog>
+
 <!-- "What's new": shown once after an update brings a new release, and any
      time from the Settings panel. Edit RELEASE and its notes in the script
      below for each release. -->
@@ -548,6 +644,7 @@
 </script>
 <script src="shared/hst-engine.js"></script>
 <script src="shared/hst-keyer.js"></script>
+<script src="shared/hst-account.js"></script>
 <script>
 (function () {
   'use strict';
@@ -986,6 +1083,163 @@
       }
     });
   }
+
+  // ------------------------------------------------------------------
+  // Account (Milestone 8): sign in with an emailed code, then practice
+  // history syncs in the background (shared/hst-account.js). The Settings
+  // section only appears once the site's account service is set up.
+  // ------------------------------------------------------------------
+  var acctAvailable = false, turnstileKey = '';
+  var siDlg = $('signinDialog'), acDlg = $('accountDialog');
+
+  function ago(t) {
+    if (!t) return 'not yet';
+    var s = Math.round((Date.now() - t) / 1000);
+    if (s < 60) return 'just now';
+    if (s < 3600) return Math.round(s / 60) + ' min ago';
+    if (s < 86400) return Math.round(s / 3600) + ' h ago';
+    return new Date(t).toLocaleDateString();
+  }
+  function renderAccount() {
+    var a = HST.account.state();
+    $('accountSection').hidden = !acctAvailable && !a.signedIn;
+    if (a.signedIn) {
+      $('acctSummary').innerHTML = 'Signed in as <strong>' + escHtml(a.email) + '</strong>' +
+        (a.error ? '<small class="err">' + escHtml(a.error) + '</small>'
+                 : '<small>' + (a.syncing ? 'Syncing\u2026' : 'Progress synced ' + ago(a.lastSync)) + '</small>');
+      $('acctBtn').textContent = 'Account\u2026';
+    } else {
+      $('acctSummary').innerHTML = 'Keep your progress in sync on all your devices.<small>Optional &mdash; practicing never needs an account.</small>';
+      $('acctBtn').textContent = 'Sign in\u2026';
+    }
+    if (acDlg.open) renderAccountDialog();
+  }
+  function escHtml(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  HST.account.onChange(renderAccount);
+  HST.account.config().then(function (c) {
+    acctAvailable = !!c.accounts; turnstileKey = c.turnstileSiteKey || '';
+    renderAccount();
+  });
+  renderAccount();
+
+  $('acctBtn').addEventListener('click', function () {
+    if (dlg.open) dlg.close();
+    if (HST.account.state().signedIn) openAccount(); else openSignIn();
+  });
+
+  /* ---- sign in ---- */
+  var siEmail = '', tsToken = '', tsWidget = null;
+  function openSignIn() {
+    $('signinStep1').hidden = false; $('signinStep2').hidden = true;
+    $('si1Err').textContent = ''; $('si2Err').textContent = '';
+    siDlg.showModal();
+    $('siEmail').focus();
+    loadTurnstile();
+  }
+  // Cloudflare Turnstile: the "are you human?" check, usually invisible.
+  // Loaded only when the sign-in form opens (needs internet anyway).
+  function loadTurnstile() {
+    if (!turnstileKey) return;                   // local testing: no check
+    function render() {
+      if (tsWidget !== null) { try { window.turnstile.reset(tsWidget); } catch (e) {} return; }
+      tsWidget = window.turnstile.render('#tsBox', {
+        sitekey: turnstileKey, theme: 'dark', appearance: 'interaction-only',
+        callback: function (t) { tsToken = t; },
+        'expired-callback': function () { tsToken = ''; },
+        'error-callback': function () { tsToken = ''; }
+      });
+    }
+    if (window.turnstile) return render();
+    var sc = document.createElement('script');
+    sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    sc.async = true; sc.onload = render;
+    sc.onerror = function () { $('si1Err').textContent = 'Couldn\u2019t load the sign-in check. Are you online?'; };
+    document.head.appendChild(sc);
+  }
+  $('siCancel').addEventListener('click', function () { siDlg.close(); });
+  $('signinStep1').addEventListener('submit', function (e) {
+    e.preventDefault();
+    siEmail = $('siEmail').value.trim();
+    if (turnstileKey && !tsToken) { $('si1Err').textContent = 'One moment \u2014 the \u201cI\u2019m human\u201d check is still running. Try again in a few seconds.'; return; }
+    $('siSend').disabled = true; $('si1Err').textContent = '';
+    HST.account.start(siEmail, tsToken).then(function (j) {
+      $('signinStep1').hidden = true; $('signinStep2').hidden = false;
+      $('si2Sent').textContent = 'We sent a code to ' + siEmail + '. It may take a minute; check your spam folder too.';
+      if (j.devCode) $('siCode').value = j.devCode;        // local testing only
+      $('siCode').focus();
+    }, function (err) {
+      $('si1Err').textContent = err.message;
+    }).then(function () {
+      $('siSend').disabled = false; tsToken = '';
+      if (tsWidget !== null) { try { window.turnstile.reset(tsWidget); } catch (e) {} }
+    });
+  });
+  $('siBack').addEventListener('click', function () { $('signinStep2').hidden = true; $('signinStep1').hidden = false; $('siEmail').focus(); });
+  $('signinStep2').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var code = $('siCode').value.replace(/\D/g, '');
+    $('siVerify').disabled = true; $('si2Err').textContent = '';
+    HST.account.verify(siEmail, code).then(function () {
+      siDlg.close(); $('siCode').value = '';
+      openAccount();
+    }, function (err) {
+      $('si2Err').textContent = err.message;
+    }).then(function () { $('siVerify').disabled = false; });
+  });
+
+  /* ---- account panel ---- */
+  function openAccount() {
+    $('acErr').textContent = ''; $('acDeleteBox').hidden = true; $('acDeleteWord').value = ''; $('acDeleteGo').disabled = true;
+    renderAccountDialog();
+    acDlg.showModal();
+    loadDevices();
+  }
+  function renderAccountDialog() {
+    var a = HST.account.state();
+    $('acEmail').textContent = a.signedIn ? 'Signed in as ' + a.email : 'Signed out.';
+    $('acSync').innerHTML = a.syncing ? 'Syncing\u2026' : 'Progress synced ' + ago(a.lastSync) +
+      (a.error ? '<small class="err">' + escHtml(a.error) + '</small>' : '');
+    $('acSyncNow').disabled = a.syncing || !a.signedIn;
+  }
+  function loadDevices() {
+    HST.account.me().then(function (j) {
+      $('acDevices').innerHTML = j.devices.map(function (d) {
+        return '<li><span>' + escHtml(d.label) + (d.current ? ' <strong>(this device)</strong>' : '') +
+               '<small>Signed in ' + new Date(d.created).toLocaleDateString() + ' \u00b7 last used ' + ago(d.lastSeen) + '</small></span>' +
+               (d.current ? '' : '<button class="btn" data-dev="' + escHtml(d.id) + '" type="button">Sign out</button>') + '</li>';
+      }).join('');
+    }, function (err) { $('acDevices').innerHTML = '<li><span>' + escHtml(err.message) + '</span></li>'; });
+  }
+  $('acDevices').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-dev]');
+    if (!b) return;
+    b.disabled = true;
+    HST.account.signOutDevice(b.dataset.dev).then(loadDevices, function (err) { $('acErr').textContent = err.message; b.disabled = false; });
+  });
+  $('acSyncNow').addEventListener('click', function () { HST.account.sync(); });
+  $('acDownload').addEventListener('click', function () {
+    $('acErr').textContent = '';
+    HST.account.download().catch(function (err) { $('acErr').textContent = err.message; });
+  });
+  $('acSignOut').addEventListener('click', function () {
+    HST.account.signOut(false).then(function () { acDlg.close(); });
+  });
+  $('acDelete').addEventListener('click', function () { $('acDeleteBox').hidden = false; $('acDeleteWord').focus(); });
+  $('acDeleteWord').addEventListener('input', function (e) { $('acDeleteGo').disabled = e.target.value.trim().toUpperCase() !== 'DELETE'; });
+  $('acDeleteGo').addEventListener('click', function () {
+    $('acDeleteGo').disabled = true;
+    HST.account.deleteAccount().then(function () { acDlg.close(); }, function (err) { $('acErr').textContent = err.message; $('acDeleteGo').disabled = false; });
+  });
+  $('acDone').addEventListener('click', function () { acDlg.close(); });
+  [siDlg, acDlg].forEach(function (d) {
+    d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
+    d.addEventListener('close', function () {
+      var active = document.getElementById('frame-' + current);
+      try { active.contentWindow.focus(); } catch (e) {}
+    });
+  });
+  // "Synced 5 min ago" stays current while Settings is open.
+  setInterval(function () { if (dlg.open || acDlg.open) renderAccount(); }, 30000);
 
   // ------------------------------------------------------------------
   // What's new. Shown once on the first launch of a new release (not to
