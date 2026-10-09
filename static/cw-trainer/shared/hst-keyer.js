@@ -365,6 +365,16 @@
         return Promise.resolve({ ok: false, msg: 'This browser can’t read MIDI devices. Chrome and Edge can; Safari and Firefox can’t. Use the Keyboard input method instead.' });
       }
       return navigator.requestMIDIAccess().then(function (access) {
+        try { return connected(access); }
+        catch (e) {                            // never leave the panel saying "Connecting..."
+          console.error(e);
+          return { ok: false, msg: 'MIDI connected, but setting up the adapter failed (' + (e && e.message || e) + ').' };
+        }
+      }, function (err) {
+        return { ok: false, msg: 'MIDI access was blocked (' + (err && err.message || err) + '). Allow MIDI for this site in the browser’s settings, or use the Keyboard input method.' };
+      });
+    }
+    function connected(access) {
         midiAccess = access;
         var names = [];
         function hook() {
@@ -390,9 +400,6 @@
           : 'MIDI devices found: ' + names.join(', ') +
             (sent ? '. Adapter switched to MIDI mode.' : '. No Vail adapter output found to switch to MIDI mode.');
         return { ok: names.length > 0 && sent, names: names, msg: msg };
-      }, function (err) {
-        return { ok: false, msg: 'MIDI access was blocked (' + (err && err.message || err) + '). Allow MIDI for this site in the browser’s settings, or use the Keyboard input method.' };
-      });
     }
     function detachMidi() {
       if (!midiAccess) return;
