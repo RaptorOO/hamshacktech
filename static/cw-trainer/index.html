@@ -441,7 +441,7 @@
       <dl>
         <dt>Last input</dt><dd id="dLast">&mdash;</dd>
         <dt>Audio delay</dt><dd id="dAudio">&mdash;</dd>
-        <dt>Keyboard vs MIDI</dt><dd id="dCompare">Needs both input routes active at once (Vail adapter, MIDI selected).</dd>
+        <dt>Keyboard vs MIDI</dt><dd id="dCompare">Shown only if one press arrives by both routes. A Vail adapter in MIDI mode stops sending keyboard presses, so compare the two by recording key clicks and sidetone with a microphone instead.</dd>
       </dl>
     </details>
   </section>
@@ -741,7 +741,9 @@
   }
 
   function onRaw(info) {                    // every physical input
-    if (info.which) {
+    // Lights show only the input actually in use. (A Vail adapter can send
+    // keyboard presses that the MIDI setting ignores; those shouldn't light up.)
+    if (info.which && info.accepted) {
       rawDown[info.src + ':' + info.which] = info.down;
       var any = function (w) { return Object.keys(rawDown).some(function (k) { return rawDown[k] && k.split(':')[1] === w; }); };
       $('lDit').classList.toggle('on', any('dit') || any('straight'));
