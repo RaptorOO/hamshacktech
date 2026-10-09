@@ -359,7 +359,7 @@
      and survives restarts). Nothing leaves the device.
 
      A session record looks like:
-       { trainer: 'icr' | 'code-groups',
+       { trainer: 'icr' | 'code-groups' | 'keyer',
          start, end, durationMs,            // wall-clock times (ms)
          group, wpm, fwpm, groupSize,       // what was practiced, at what speed
          rounds, roundsCorrect, timeouts,   // ICR: 1 character per round
@@ -367,6 +367,10 @@
          chars: { A: [correct, total], ... },
          timeSum, timeCount }               // ICR reaction / Code Groups answer
                                             // times (ms), timeouts excluded
+     Keyer Practice records also carry: mode ('copy' | 'free'), source,
+     keyType, sentChars, charGapSum/charGapN, wordGapSum/wordGapN (units),
+     overallWpm. There, charsTotal/charsCorrect count only Copy this
+     letters, and wpm is the measured character speed.
 
        HST.history.all()      -> Promise of every record, oldest first
        HST.history.add(rec)   -> Promise
@@ -451,7 +455,9 @@
       }
       function commit(r) {
         try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
-        if (!r || !r.charsTotal) return Promise.resolve();   // nothing practiced: don't record
+        // Nothing practiced: don't record. (Keyer Practice's Free send has
+        // no right answers, so it counts characters sent instead.)
+        if (!r || !(r.charsTotal || r.sentChars)) return Promise.resolve();
         r.end = r.end || Date.now();
         r.durationMs = Math.max(0, r.end - r.start);
         return HST.history.add(r);
@@ -485,6 +491,14 @@
           if (correct) run.roundsCorrect++;
           if (timedOut) run.timeouts++;
           else if (ms != null && isFinite(ms)) { run.timeSum += ms; run.timeCount++; }
+          run.end = Date.now();
+          saveDraft();
+        },
+        // set({ sentChars: 12, ... }) -- add or update fields on the session
+        // in progress (Keyer Practice keeps its sending statistics this way).
+        set: function (patch) {
+          if (!run) return;
+          Object.keys(patch).forEach(function (k) { run[k] = patch[k]; });
           run.end = Date.now();
           saveDraft();
         },

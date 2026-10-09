@@ -18,6 +18,8 @@
     --dim: #78716c;        /* stone-500 */
     --icr: #a3e635;        /* lime-400: ICR everywhere on this page */
     --cg: #34d399;         /* emerald-400: Code Groups everywhere on this page */
+    --key: #fbbf24;        /* amber-400: Keyer Practice (sending) everywhere on this page */
+    --key2: #93c5fd;       /* blue-300: second sending series (overall speed) */
     --bad: #f87171;        /* red-400 */
     --lime-ink: #1a2e05;
     color-scheme: dark;
@@ -60,7 +62,10 @@
   .legend { display: flex; gap: 14px; font-size: 0.8rem; color: var(--muted); margin: 0 0 6px; }
   .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: currentColor; }
   .legend .icr { color: var(--icr); } .legend .cg { color: var(--cg); }
-  .legend .icr, .legend .cg { font-weight: 500; }
+  .legend .key { color: var(--key); } .legend .key2 { color: var(--key2); }
+  .legend .icr, .legend .cg, .legend .key, .legend .key2 { font-weight: 500; }
+  .section-title { grid-column: 1 / -1; margin: 10px 0 -4px; font: 600 1.25rem/1.2 'Oswald', sans-serif; letter-spacing: 0.03em; }
+  .section-title small { font: 400 0.82rem 'Inter', sans-serif; color: var(--dim); margin-left: 8px; letter-spacing: 0; }
   svg.chart { display: block; max-width: 100%; overflow: visible; }
   svg.chart text { fill: var(--dim); font: 11px 'Inter', sans-serif; }
   .nodata { color: var(--dim); font-size: 0.85rem; padding: 26px 0; text-align: center; }
@@ -82,7 +87,7 @@
   th { color: var(--dim); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
   td.num, th.num { text-align: right; font-family: 'JetBrains Mono', monospace; }
   .tag { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: var(--lime-ink); }
-  .tag.icr { background: var(--icr); } .tag.cg { background: var(--cg); }
+  .tag.icr { background: var(--icr); } .tag.cg { background: var(--cg); } .tag.key { background: var(--key); }
 
   /* ---------- empty state + footer ---------- */
   .empty { text-align: center; padding: 70px 20px; color: var(--muted); }
@@ -113,7 +118,7 @@
 
   <div id="empty" class="empty" hidden>
     <h2>No practice recorded yet</h2>
-    <p>Run a session in the ICR or Code Groups tab. When you stop (or the Practice Timer rings), it shows up here.</p>
+    <p>Run a session in the ICR, Code Groups or Keyer tab. When you stop (or the Practice Timer rings, or you leave the Keyer tab), it shows up here.</p>
   </div>
 
   <div id="content" hidden>
@@ -128,7 +133,7 @@
       <section class="card wide">
         <h2>Practice time</h2>
         <p class="note" id="timeNote">Minutes per day.</p>
-        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span></div>
+        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span><span class="key" id="timeKeyLegend">Keyer</span></div>
         <div id="chTime"></div>
       </section>
 
@@ -160,8 +165,32 @@
 
       <section class="card wide">
         <h2>Trouble characters</h2>
-        <p class="note">Lowest accuracy across both trainers (at least 5 tries each).</p>
+        <p class="note">Copying: lowest accuracy across ICR and Code Groups (at least 5 tries each).</p>
         <div id="trouble"></div>
+      </section>
+
+      <!-- Sending (Keyer Practice). Shown once there's any Keyer history. -->
+      <h2 class="section-title sending">Sending <small>Keyer tab</small></h2>
+      <section class="card sending">
+        <h2>Sending accuracy</h2>
+        <p class="note">Letters sent correctly in Copy this, %. Higher is better.</p>
+        <div id="chSendAcc"></div>
+      </section>
+      <section class="card sending">
+        <h2>Sending speed</h2>
+        <p class="note">WPM. Overall includes your spacing; the closer it is to character speed, the better.</p>
+        <div class="legend"><span class="key">Character</span><span class="key2">Overall</span></div>
+        <div id="chSendWpm"></div>
+      </section>
+      <section class="card sending">
+        <h2>Letter spacing</h2>
+        <p class="note">Average gap between letters, in dits. 3 is perfect.</p>
+        <div id="chSendGap"></div>
+      </section>
+      <section class="card sending">
+        <h2>Letters you send wrong</h2>
+        <p class="note">Lowest sending accuracy in Copy this (at least 5 tries each).</p>
+        <div id="sendTrouble"></div>
       </section>
 
       <section class="card wide">
@@ -189,11 +218,13 @@
 
   var DAY = 86400000;
   var RANGE_KEY = 'hct-cw-progress-range';
-  var COLORS = { icr: 'var(--icr)', 'code-groups': 'var(--cg)' };
+  var COLORS = { icr: 'var(--icr)', 'code-groups': 'var(--cg)', keyer: 'var(--key)' };
+  var TRAINER_NAMES = { icr: 'ICR', 'code-groups': 'Code Groups', keyer: 'Keyer' };
   var GROUP_NAMES = {
     letters: 'Letters', numbers: 'Numbers', mixed: 'Mixed', punctuation: 'Punctuation',
     all: 'All', custom: 'Custom', qso: 'QSO Elements', words: 'Common Words', calls: 'Call Signs'
   };
+  var SEND_SOURCES = { letter: 'Letters & numbers', word: 'Words', call: 'Call signs', phrase: 'QSO phrases' };
   var $ = function (id) { return document.getElementById(id); };
   var rangeDays = 30;
   try { var r = Number(localStorage.getItem(RANGE_KEY)); if ([7, 30, 90, 0].indexOf(r) >= 0 && localStorage.getItem(RANGE_KEY) !== null) rangeDays = r; } catch (e) {}
@@ -241,7 +272,7 @@
     var buckets = [];
     for (var t = from; t <= today; t = addDays(t, step)) {
       buckets.push({ start: t, end: addDays(t, step), step: step,
-        icr: blank(), 'code-groups': blank() });
+        icr: blank(), 'code-groups': blank(), keyer: blank() });
     }
     rows.forEach(function (s) {
       for (var i = buckets.length - 1; i >= 0; i--) {
@@ -250,6 +281,12 @@
           if (!b) return;
           b.ms += s.durationMs || 0;
           b.chars += s.charsTotal; b.correct += s.charsCorrect;
+          if (s.trainer === 'keyer') {                        // sending: weight by letters sent
+            var n = s.sentChars || 0;
+            b.sent += n; b.wpmW += (s.wpm || 0) * n; b.overallW += (s.overallWpm || s.wpm || 0) * n;
+            b.gapSum += s.charGapSum || 0; b.gapN += s.charGapN || 0;
+            return;
+          }
           b.wpmW += s.wpm * s.charsTotal;                     // speed averaged by characters sent
           b.timeSum += s.timeSum || 0; b.timeCount += s.timeCount || 0;
           return;
@@ -258,7 +295,7 @@
     });
     return buckets;
   }
-  function blank() { return { ms: 0, chars: 0, correct: 0, wpmW: 0, timeSum: 0, timeCount: 0 }; }
+  function blank() { return { ms: 0, chars: 0, correct: 0, wpmW: 0, timeSum: 0, timeCount: 0, sent: 0, overallW: 0, gapSum: 0, gapN: 0 }; }
   function bucketLabel(b) { return b.step === 1 ? shortDate(b.start) : 'Wk of ' + shortDate(b.start); }
 
   /* ---------------- SVG charts ----------------
@@ -304,24 +341,24 @@
     return c;
   }
 
-  // Stacked bars: ICR on the bottom, Code Groups on top.
+  // Stacked bars: ICR on the bottom, then Code Groups, then Keyer.
   function barChart(el, buckets, label) {
     var maxMin = 0;
-    buckets.forEach(function (b) { maxMin = Math.max(maxMin, (b.icr.ms + b['code-groups'].ms) / 60000); });
+    buckets.forEach(function (b) { maxMin = Math.max(maxMin, (b.icr.ms + b['code-groups'].ms + b.keyer.ms) / 60000); });
     if (!maxMin) { el.innerHTML = '<div class="nodata">No practice in this range.</div>'; return; }
     var ax = axis(0, maxMin);
     var c = makeChart(el, buckets, ax, function (v) { return Math.round(v); });
     var bw = Math.max(2, Math.min(28, (c.W - L - R) / c.n * 0.7));
     buckets.forEach(function (b, i) {
       var top = c.y(0), sum = 0;
-      ['icr', 'code-groups'].forEach(function (k) {
+      ['icr', 'code-groups', 'keyer'].forEach(function (k) {
         var m = b[k].ms / 60000;
         if (!m) return;
         sum += m;
         var y = c.y(sum);
         c.svg += '<rect x="' + (c.x(i) - bw / 2).toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) +
                  '" height="' + (top - y).toFixed(1) + '" rx="2" fill="' + COLORS[k] + '"><title>' + esc(bucketLabel(b)) +
-                 ' · ' + (k === 'icr' ? 'ICR' : 'Code Groups') + ': ' + Math.round(m) + ' min</title></rect>';
+                 ' · ' + TRAINER_NAMES[k] + ': ' + Math.round(m) + ' min</title></rect>';
         top = y;
       });
     });
@@ -373,7 +410,20 @@
     lineChart($('chAns'), buckets, [{ name: 'Code Groups', color: COLORS['code-groups'],
       value: function (b) { var x = b['code-groups']; return x.timeCount ? Math.round(x.timeSum / x.timeCount / 100) / 10 : null; } }],
       { yFmt: function (v) { return (Math.round(v * 10) / 10).toString(); }, tip: function (v) { return v.toFixed(1) + ' s'; }, label: 'Code Groups answer time' });
+    if (hasSending) {
+      lineChart($('chSendAcc'), buckets, [{ name: 'Sending', color: COLORS.keyer,
+        value: function (b) { return pct(b.keyer.correct, b.keyer.chars); } }],
+        { ceil: 100, yFmt: function (v) { return Math.round(v); }, tip: function (v) { return v + '%'; }, label: 'Sending accuracy' });
+      lineChart($('chSendWpm'), buckets, [
+        { name: 'Character', color: 'var(--key)', value: function (b) { return b.keyer.sent ? Math.round(b.keyer.wpmW / b.keyer.sent) : null; } },
+        { name: 'Overall', color: 'var(--key2)', value: function (b) { return b.keyer.sent ? Math.round(b.keyer.overallW / b.keyer.sent) : null; } }
+      ], { yFmt: function (v) { return Math.round(v); }, tip: function (v) { return v + ' WPM'; }, label: 'Sending speed' });
+      lineChart($('chSendGap'), buckets, [{ name: 'Letter spacing', color: COLORS.keyer,
+        value: function (b) { return b.keyer.gapN ? Math.round(10 * b.keyer.gapSum / b.keyer.gapN) / 10 : null; } }],
+        { yFmt: function (v) { return (Math.round(v * 10) / 10).toString(); }, tip: function (v) { return v.toFixed(1) + ' dits'; }, label: 'Letter spacing' });
+    }
   }
+  var hasSending = false;
   // Redraw at the new width after the window is resized (debounced).
   var resizeTimer = null;
   window.addEventListener('resize', function () {
@@ -398,8 +448,18 @@
     var rangeText = rangeDays ? 'last ' + rangeDays + ' days' : 'all time';
 
     // Tiles
-    var ms = 0, chars = 0, correct = 0, byTrainer = { icr: 0, 'code-groups': 0 };
-    rows.forEach(function (s) { ms += s.durationMs || 0; chars += s.charsTotal; correct += s.charsCorrect; byTrainer[s.trainer]++; });
+    // Practice time, streak and sessions count every tab; "Characters copied"
+    // and the copying charts count only ICR and Code Groups (receiving).
+    var ms = 0, chars = 0, correct = 0, byTrainer = { icr: 0, 'code-groups': 0, keyer: 0 };
+    rows.forEach(function (s) {
+      ms += s.durationMs || 0; byTrainer[s.trainer] = (byTrainer[s.trainer] || 0) + 1;
+      if (s.trainer !== 'keyer') { chars += s.charsTotal; correct += s.charsCorrect; }
+    });
+    var copyRows = rows.filter(function (s) { return s.trainer !== 'keyer'; });
+    var sendRows = rows.filter(function (s) { return s.trainer === 'keyer'; });
+    hasSending = allRows.some(function (s) { return s.trainer === 'keyer'; });
+    document.querySelectorAll('.sending').forEach(function (el) { el.hidden = !hasSending; });
+    $('timeKeyLegend').hidden = !hasSending;
     var st = streaks(allRows);
     $('tTime').textContent = fmtMinutes(ms);
     $('tTimeSub').textContent = rangeText;
@@ -408,7 +468,8 @@
     $('tChars').textContent = chars.toLocaleString();
     $('tCharsSub').textContent = chars ? pct(correct, chars) + '% correct · ' + rangeText : rangeText;
     $('tSessions').textContent = rows.length;
-    $('tSessionsSub').textContent = byTrainer.icr + ' ICR · ' + byTrainer['code-groups'] + ' Code Groups';
+    $('tSessionsSub').textContent = byTrainer.icr + ' ICR · ' + byTrainer['code-groups'] + ' Code Groups' +
+      (hasSending ? ' · ' + byTrainer.keyer + ' Keyer' : '');
 
     // Charts
     var buckets = buildBuckets(rows, from);
@@ -416,9 +477,9 @@
     lastBuckets = buckets;
     drawCharts(buckets);
 
-    // Trouble characters: combine both trainers' per-character tallies.
+    // Trouble characters: combine the copying trainers' per-character tallies.
     var tally = {};
-    rows.forEach(function (s) {
+    copyRows.forEach(function (s) {
       Object.keys(s.chars || {}).forEach(function (ch) {
         var t = tally[ch] || (tally[ch] = [0, 0]);
         t[0] += s.chars[ch][0]; t[1] += s.chars[ch][1];
@@ -444,9 +505,39 @@
       '</code> in Custom Characters in either trainer. The red bar is the share missed.</p>';
     }
 
+    // Letters you send wrong (Keyer Practice, Copy this).
+    if (hasSending) {
+      var sTally = {};
+      sendRows.forEach(function (s) {
+        Object.keys(s.chars || {}).forEach(function (ch) {
+          var t = sTally[ch] || (sTally[ch] = [0, 0]);
+          t[0] += s.chars[ch][0]; t[1] += s.chars[ch][1];
+        });
+      });
+      var sWorst = Object.keys(sTally)
+        .filter(function (ch) { return sTally[ch][1] >= 5 && sTally[ch][0] < sTally[ch][1]; })
+        .sort(function (a, b) { return sTally[a][0] / sTally[a][1] - sTally[b][0] / sTally[b][1] || sTally[b][1] - sTally[a][1]; })
+        .slice(0, 8);
+      $('sendTrouble').innerHTML = !sWorst.length
+        ? '<div class="nodata">' + (Object.keys(sTally).length ? 'Every letter with 5+ tries is at 100%. Nice fist!'
+            : 'Practice Copy this in the Keyer tab and letters you send wrong will show up here.') + '</div>'
+        : '<div class="trouble">' + sWorst.map(function (ch) {
+            var t = sTally[ch], p = pct(t[0], t[1]);
+            return '<div class="trow"><span class="ch">' + esc(ch) + '</span><span class="bar"><i style="width:' + (100 - p) +
+                   '%"></i></span><span class="num">' + p + '% · ' + t[0] + '/' + t[1] + '</span></div>';
+          }).join('') + '</div>';
+    }
+
     // Recent sessions (newest first, last 10 in the range)
     $('recent').innerHTML = rows.slice(-10).reverse().map(function (s) {
       var when = new Date(s.start).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      if (s.trainer === 'keyer') {
+        var kw = s.mode === 'free' ? 'Free send' : 'Copy this · ' + (SEND_SOURCES[s.source] || s.source || '');
+        return '<tr><td>' + esc(when) + '</td><td><span class="tag key">Keyer</span></td><td>' + esc(kw) +
+               '</td><td class="num">' + esc(s.wpm || '') + '</td><td class="num">' + HST.fmtClock(s.durationMs || 0) +
+               '</td><td class="num">' + (s.sentChars || 0) + '</td><td class="num">' +
+               (s.charsTotal ? pct(s.charsCorrect, s.charsTotal) + '%' : '—') + '</td></tr>';
+      }
       var icr = s.trainer === 'icr';
       var what = GROUP_NAMES[s.group] || s.group || '';
       if (!icr && s.groupSize && ['qso', 'calls'].indexOf(s.group) < 0) what += s.group === 'words' ? ' · ' + s.groupSize + '-letter' : ' · ' + s.groupSize + '/group';
