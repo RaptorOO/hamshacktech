@@ -92,6 +92,12 @@
     cursor: pointer;
   }
   .tab:hover { color: var(--text); }
+  .tab { flex: none; white-space: nowrap; }
+  .tab .narrow { display: none; }      /* "Stats" replaces "Progress" on phones */
+  /* Five tabs: if a very small screen still can't fit them, the tab row
+     scrolls sideways rather than pushing the gear off the screen. */
+  .tabs { min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
   .tab[aria-selected="true"] { background: var(--lime); color: var(--lime-ink); }
   .tab:focus-visible, .install:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 
@@ -205,9 +211,9 @@
     white-space: nowrap;
   }
   .hint { margin: 6px 0 0; color: var(--muted); font-size: 0.8rem; line-height: 1.45; }
-  #keyerSetupBtn { margin-top: 12px; }
+  #keyerSetupBtn { margin-bottom: 6px; }
 
-  /* ---------- Keyer Setup panel (Milestone 5, experimental) ---------- */
+  /* ---------- Keyer Setup panel (Milestone 5) ---------- */
   .keyer { width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 32px); overflow-y: auto; }
   .keyer h2 .badge { margin-left: 6px; }
   .kgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; margin-bottom: 14px; }
@@ -302,13 +308,18 @@
     .install svg { width: 18px; height: 18px; }
     .tab { padding: 7px 8px; font-size: 0.88rem; }
     .tab .long { display: none; }        /* "Code Groups" -> "Groups" */
+    .tab .wide { display: none; }        /* "Progress" -> "Stats" */
+    .tab .narrow { display: inline; }
+  }
+  @media (max-width: 440px) {
+    .brand { display: none; }            /* five tabs need the room */
   }
   @media (max-width: 400px) {
-    .brand { display: none; }            /* four tabs need the room */
+    .tab { padding: 7px 6px; font-size: 0.84rem; }
   }
   @media (max-width: 360px) {            /* smallest phones (e.g. iPhone SE 1st gen) */
     .bar { gap: 6px; padding-left: 6px; padding-right: 6px; }
-    .tab { padding: 7px 6px; font-size: 0.82rem; }
+    .tab { padding: 6px 5px; font-size: 0.8rem; }
   }
 </style>
 </head>
@@ -327,8 +338,10 @@
             aria-controls="frame-icr" aria-selected="true">ICR</button>
     <button class="tab" role="tab" id="tab-code-groups" data-tab="code-groups"
             aria-controls="frame-code-groups" aria-selected="false"><span class="long">Code </span>Groups</button>
+    <button class="tab" role="tab" id="tab-keyer" data-tab="keyer"
+            aria-controls="frame-keyer" aria-selected="false">Keyer</button>
     <button class="tab" role="tab" id="tab-progress" data-tab="progress"
-            aria-controls="frame-progress" aria-selected="false">Progress</button>
+            aria-controls="frame-progress" aria-selected="false"><span class="wide">Progress</span><span class="narrow">Stats</span></button>
     <button class="tab" role="tab" id="tab-jeopardy" data-tab="jeopardy"
             aria-controls="frame-jeopardy" aria-selected="false">Jeopardy</button>
   </nav>
@@ -363,12 +376,13 @@
     <label for="setVol">Volume <output id="setVolVal"></output></label>
     <input type="range" id="setVol" min="0" max="100" step="5">
   </div>
-  <!-- Experimental features: tools still being built stay hidden until
-       this is switched on. Milestone 5's Keyer Setup is the first. -->
+  <!-- Key or paddles (Milestone 5/6): the adapter and key type used by the
+       Keyer tab. (It started out behind an "Experimental features" switch;
+       that switch is gone now that Keyer Practice is ready -- the
+       HST.experimental store in hst-keyer.js is kept for future tools.) -->
   <div class="experimental">
-    <label class="check"><input type="checkbox" id="expToggle"> Experimental features <span class="badge">Under development</span></label>
-    <p class="hint">Early versions of tools that are still being built. They may change or not work fully yet &mdash; most people can leave this off.</p>
-    <button class="btn" id="keyerSetupBtn" type="button" hidden>Keyer Setup&hellip;</button>
+    <button class="btn" id="keyerSetupBtn" type="button">Keyer Setup&hellip;</button>
+    <p class="hint">Your key or paddles, the adapter they&rsquo;re plugged into, and a place to test them. Used by the Keyer tab.</p>
   </div>
   <div class="actions">
     <button class="linkish" id="whatsNewLink" type="button" style="margin-right:auto">What's new</button>
@@ -377,10 +391,10 @@
   </div>
 </dialog>
 
-<!-- Keyer Setup (experimental): choose the adapter and key type, then try
+<!-- Keyer Setup: choose the adapter and key type, then try
      the key in "Test your key". Wired up in the script (see "Keyer Setup"). -->
 <dialog class="settings keyer" id="keyerDialog" aria-labelledby="keyerTitle">
-  <h2 id="keyerTitle">Keyer Setup <span class="badge">Under development</span></h2>
+  <h2 id="keyerTitle">Keyer Setup</h2>
   <p class="lede">Plug your key or paddles into a Vail or VBand adapter, plug the adapter into this device, and choose your setup below. No adapter? Use the <kbd>[</kbd> and <kbd>]</kbd> keys or the on-screen pads.</p>
 
   <div class="kgrid">
@@ -501,6 +515,8 @@
           title="ICR Trainer" src="icr/"></iframe>
   <iframe id="frame-code-groups" role="tabpanel" aria-labelledby="tab-code-groups"
           title="Code Groups Trainer" data-src="code-groups/" hidden></iframe>
+  <iframe id="frame-keyer" role="tabpanel" aria-labelledby="tab-keyer"
+          title="Keyer Practice" data-src="keyer/" hidden></iframe>
   <iframe id="frame-progress" role="tabpanel" aria-labelledby="tab-progress"
           title="Progress" data-src="progress/" hidden></iframe>
   <iframe id="frame-jeopardy" role="tabpanel" aria-labelledby="tab-jeopardy"
@@ -556,6 +572,8 @@
     } else if (slug === 'code-groups') {
       clickIfStop('drillBtn');           // Code Groups relabels these buttons
       clickIfStop('sessionBtn');         // to "Stop ..." while running
+    } else if (slug === 'keyer') {
+      clickIfVisible('endBtn');          // Keyer Practice: save the session to Progress
     } else if (slug === 'jeopardy') {
       var stop = doc.getElementById('stopAudio');   // Jeopardy's own Stop Audio
       if (stop) stop.click();
@@ -606,7 +624,7 @@
   // Which tab to open: a ?tab=icr / code-groups / progress / jeopardy link (the CW
   // Tools page and the old trainer addresses use these) wins; otherwise
   // the tab used last time; ICR the very first time.
-  var TABS = ['icr', 'code-groups', 'progress', 'jeopardy'];
+  var TABS = ['icr', 'code-groups', 'keyer', 'progress', 'jeopardy'];
   var params = new URLSearchParams(location.search);
   var wanted = params.get('tab');
   // Jeopardy's host mode (the Content editor) is turned on with host=1;
@@ -665,19 +683,7 @@
     HST.audio.playMorse(['C', 'Q'], { wpm: s.wpm, toneHz: s.toneHz, volume: s.volume });
   });
 
-  // ------------------------------------------------------------------
-  // Experimental features switch. When it's on, Settings shows the
-  // Keyer Setup button; when off, nothing experimental is visible.
-  // ------------------------------------------------------------------
   function $(id) { return document.getElementById(id); }
-  var expToggle = $('expToggle');
-  function renderExperimental(e) {
-    expToggle.checked = e.on;
-    $('keyerSetupBtn').hidden = !e.on;
-  }
-  renderExperimental(HST.experimental.get());
-  HST.experimental.onChange(renderExperimental);
-  expToggle.addEventListener('change', function () { HST.experimental.set({ on: expToggle.checked }); });
 
   // ------------------------------------------------------------------
   // Keyer Setup (Milestone 5). The settings live in HST.keyerSettings
@@ -840,6 +846,10 @@
   }
 
   $('keyerSetupBtn').addEventListener('click', openKeyer);
+  // The Keyer tab's "Change" chip opens this panel too (the tab lives in
+  // its own frame, so it asks the app shell through this hook).
+  window.HCT = window.HCT || {};
+  window.HCT.openKeyerSetup = function () { stopTrainer(current); openKeyer(); };
 
   // MIDI switched off: hide its Diagnostics rows too.
   if (!HST.MIDI_ENABLED) {
@@ -962,10 +972,11 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-08';
+  var RELEASE = '2026-10-09';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
-    'Settings (the gear icon) has a new <strong>Experimental features</strong> switch. It holds early versions of tools still being built \u2014 first up, sending with a real key or paddles through a Vail or VBand adapter. It\u2019s a work in progress, so most people can leave it off for now.',
+    'New <strong>Keyer</strong> tab: practice <em>sending</em>. Plug your key or paddles into a Vail or VBand adapter, send what\u2019s shown, and see your speed, your spacing between letters and words, and which letters came out wrong \u2014 with your timing drawn over perfect timing. No adapter? The [ and ] keys or the on-screen paddles work too.',
+    'Set up your key under Settings (the gear icon) \u2192 <strong>Keyer Setup</strong>. Your sending sessions now show up in <strong>Progress</strong>.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
   var SEEN_KEY = 'hct-cw-seen-release';

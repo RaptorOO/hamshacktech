@@ -572,4 +572,174 @@
       reset: function () { clearTimers(); code = ''; downT = null; ditEst = dahEst = null; }
     };
   };
+  /* =====================================================================
+     SENDING ANALYZER  (Milestone 6; the QSO tab reuses it)
+       var a = HST.analyzeSending(marks, { unitMs: 60, automatic: true });
+     marks = the key-down periods of one attempt, in order:
+             [{ s: downTime, e: upTime }, ...]   (ms, performance.now clock)
+     unitMs    = expected dit length (1200 / keyer WPM)
+     automatic = true when an electronic keyer formed the dits and dahs
+                 (iambic paddles), so their lengths are exact and only the
+                 spacing is the operator's own.
+     expectWords (optional) = how many words were meant to be sent. When
+                 known (Copy this), the biggest gaps of 5+ units -- that
+                 many minus one -- are the word breaks, and every other gap
+                 is between letters however long. Without it, a learner's
+                 extra-wide (Farnsworth) letter gaps would read as word gaps.
+
+     THE TIMING RULES IT GRADES AGAINST. Everything is measured in "units",
+     the length of one dit:
+       dit = 1   dah = 3   gap inside a letter = 1
+       gap between letters = 3   gap between words = 7
+     A silence shorter than 2 units is therefore inside a letter, 2-5 units
+     separates letters, and over 5 separates words (the midpoints).
+
+     FINDING THE UNIT. With paddles the keyer sets it. With a straight key
+     or a bug the operator's own dits and dahs set it, so the marks are
+     split into two groups -- short (dits) and long (dahs) -- by repeatedly
+     moving the dividing line to halfway between the two groups' averages.
+     The dit average is the unit; dah average / dit average is the
+     "weighting" ratio, ideally 3.
+
+     Returns {
+       unit, charWpm, overallWpm, ratio, ditMean, dahMean,
+       chars: [{ text, code, first, last, start, end }],   // first/last = mark indexes
+       words: [[charIndex, ...], ...],  text: 'CQ DE',
+       gaps:  [{ after: charIndex, kind: 'char'|'word', units }],
+       intra:   { mean, n },          // average gap inside letters, units (ideal 1)
+       charGap: { mean, sd, n, tight, loose },   // between letters (ideal 3)
+       wordGap: { mean, n }           // between words (ideal 7)
+     } -- or null when there's nothing to analyze.
+     ===================================================================== */
+  HST.analyzeSending = function (marks, o) {
+    if (!marks || !marks.length) return null;
+    var durs = marks.map(function (m) { return Math.max(0, m.e - m.s); });
+
+    // ---- the unit, and which marks are dahs ----
+    var u, th, dits = [], dahs = [];
+    function split(threshold) {
+      dits = []; dahs = [];
+      durs.forEach(function (d) { (d > threshold ? dahs : dits).push(d); });
+    }
+    function mean(a) { return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : 0; }
+    if (o.automatic) {
+      u = o.unitMs;
+      split(2 * u);
+    } else {
+      th = 2 * o.unitMs;
+      for (var it = 0; it < 4; it++) {
+        split(th);
+        if (dits.length && dahs.length) th = (mean(dits) + mean(dahs)) / 2;
+      }
+      u = dits.length ? mean(dits) : mean(dahs) / 3;
+    }
+    u = Math.max(u, 15);                       // guard: never shorter than 80 WPM
+    var ditMean = mean(dits), dahMean = mean(dahs);
+
+    // ---- group marks into letters and words by the silences between them ----
+    var chars = [], gaps = [], intraGaps = [];
+    var cur = { code: '', first: 0 };
+    function isDah(i) { return o.automatic ? durs[i] > 2 * u : durs[i] > (th || 2 * u); }
+    for (var i = 0; i < marks.length; i++) {
+      cur.code += isDah(i) ? '-' : '.';
+      var last = i === marks.length - 1;
+      var gapMs = last ? Infinity : marks[i + 1].s - marks[i].e;
+      var gapU = gapMs / u;
+      if (gapU < 2) { intraGaps.push(gapU); continue; }
+      chars.push({ code: cur.code, text: HST.decodeSymbol(cur.code), first: cur.first, last: i,
+                   start: marks[cur.first].s, end: marks[i].e });
+      if (!last) gaps.push({ after: chars.length - 1, kind: gapU < 5 ? 'char' : 'word', units: gapU });
+      cur = { code: '', first: i + 1 };
+    }
+
+    if (o.expectWords) {
+      var byLength = gaps.slice().sort(function (a, b) { return b.units - a.units; });
+      gaps.forEach(function (g) { g.kind = 'char'; });
+      byLength.slice(0, o.expectWords - 1).forEach(function (g) { if (g.units >= 5) g.kind = 'word'; });
+    }
+
+    var words = [[]];
+    chars.forEach(function (c, k) {
+      words[words.length - 1].push(k);
+      var g = gaps[k];
+      if (g && g.kind === 'word') words.push([]);
+    });
+    var text = words.map(function (w) { return w.map(function (k) { return chars[k].text; }).join(''); }).join(' ');
+
+    // ---- spacing statistics ----
+    // A letter gap over 10 units is a pause to think, not spacing -- left out too.
+    var cg = gaps.filter(function (g) { return g.kind === 'char' && g.units <= 10; }).map(function (g) { return g.units; });
+    // A word gap over 14 units is a pause to think, not spacing -- left out of the average.
+    var wg = gaps.filter(function (g) { return g.kind === 'word' && g.units <= 14; }).map(function (g) { return g.units; });
+    var cgMean = mean(cg);
+    var cgSd = cg.length > 1 ? Math.sqrt(cg.reduce(function (a, x) { return a + (x - cgMean) * (x - cgMean); }, 0) / (cg.length - 1)) : 0;
+
+    // ---- speeds ----
+    // Character speed: how fast the dits and dahs themselves go.
+    // Overall speed: the same text with the operator's own spacing -- what a
+    // listener experiences. Thinking pauses are capped (10 units inside a
+    // word, 14 between words) so one long pause doesn't swamp the number.
+    var idealUnits = 0, actualMs = 0;
+    chars.forEach(function (c, k) {
+      for (var m = c.first; m <= c.last; m++) {
+        idealUnits += c.code[m - c.first] === '-' ? 3 : 1;
+        actualMs += durs[m];
+        if (m < c.last) { idealUnits += 1; actualMs += marks[m + 1].s - marks[m].e; }
+      }
+      var g = gaps[k];
+      if (g) {
+        idealUnits += g.kind === 'word' ? 7 : 3;
+        actualMs += Math.min(g.units, g.kind === 'word' ? 14 : 10) * u;
+      }
+    });
+
+    return {
+      unit: u,
+      charWpm: 1200 / u,
+      overallWpm: actualMs > 0 ? 1200 * idealUnits / actualMs : 1200 / u,
+      ratio: (!o.automatic && dits.length && dahs.length) ? dahMean / ditMean : null,
+      ditMean: ditMean, dahMean: dahMean,
+      chars: chars, words: words, text: text, gaps: gaps,
+      intra: { mean: mean(intraGaps), n: intraGaps.length },
+      charGap: { mean: cgMean, sd: cgSd, n: cg.length,
+                 tight: cg.filter(function (x) { return x < 2.5; }).length,
+                 loose: cg.filter(function (x) { return x > 4.5; }).length },
+      wordGap: { mean: mean(wg), n: wg.length }
+    };
+  };
+
+  /* Compare what was sent with what was asked for, letter by letter.
+     Uses the same "edit distance" idea as a spelling checker: the fewest
+     changes (a wrong letter, a missing one, an extra one) that turn the
+     sent text into the target. Spaces are ignored here -- word spacing is
+     judged separately -- so "CQDE" for "CQ DE" still scores its letters.
+       HST.gradeSending('CQ DE', 'CQ DR')
+       -> { correct: 4, total: 5, items: [{ want: 'C', got: 'C', ok: true }, ...,
+                                          { want: 'E', got: 'R', ok: false }],
+            extra: 0 }                                                       */
+  function tokens(str) {
+    var out = [], re = /<[A-Z]+>|[^\s]/g, m;
+    while ((m = re.exec(str))) out.push(m[0]);
+    return out;
+  }
+  HST.gradeSending = function (target, sent) {
+    var T = tokens(target), S = tokens(sent), n = T.length, m = S.length;
+    var d = [];
+    for (var i = 0; i <= n; i++) { d.push([i]); for (var j = 1; j <= m; j++) d[i].push(i ? 0 : j); }
+    for (i = 1; i <= n; i++) for (j = 1; j <= m; j++) {
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (T[i - 1] === S[j - 1] ? 0 : 1));
+    }
+    // Walk back from the end to see which change produced each step.
+    var items = [], extra = 0;
+    i = n; j = m;
+    while (i > 0 || j > 0) {
+      if (i > 0 && j > 0 && d[i][j] === d[i - 1][j - 1] + (T[i - 1] === S[j - 1] ? 0 : 1)) {
+        items.unshift({ want: T[i - 1], got: S[j - 1], ok: T[i - 1] === S[j - 1] }); i--; j--;
+      } else if (i > 0 && d[i][j] === d[i - 1][j] + 1) {
+        items.unshift({ want: T[i - 1], got: '', ok: false }); i--;       // missed
+      } else { extra++; j--; }                                           // sent something extra
+    }
+    var correct = items.filter(function (x) { return x.ok; }).length;
+    return { correct: correct, total: n, items: items, extra: extra };
+  };
 })();

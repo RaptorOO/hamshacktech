@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keyer Practice — HamShackTech CW Trainer</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+  /* Same avocado palette as the app shell, Progress and the trainers. */
+  :root {
+    --bg: #100e0c;
+    --panel: #1c1917;      /* stone-900 */
+    --well: #292524;       /* stone-800 */
+    --border: #44403c;     /* stone-700 */
+    --grid: #2f2a27;
+    --text: #fafaf9;       /* stone-50 */
+    --muted: #a8a29e;      /* stone-400 */
+    --dim: #78716c;        /* stone-500 */
+    --lime: #a3e635;       /* lime-400: the app's accent; "your sending" */
+    --lime-ink: #1a2e05;
+    --good: #4ade80;       /* green-400: on target */
+    --off: #fbbf24;        /* amber-400: worth working on */
+    --bad: #f87171;        /* red-400: wrong letter */
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 22px 18px 56px; }
+  button { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+
+  /* ---------- header ---------- */
+  .head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 16px; }
+  h1 { margin: 0; font: 600 1.9rem/1.1 'Oswald', sans-serif; letter-spacing: 0.02em; }
+  .head .spacer { flex: 1; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border: 1px solid var(--border); border-radius: 99px;
+    background: var(--well); color: var(--muted); font-size: 0.82rem; cursor: pointer;
+  }
+  .chip strong { color: var(--text); font-weight: 500; }
+  .chip .chg { color: var(--lime); }
+  .chip:hover { border-color: var(--lime); }
+
+  /* ---------- controls row ---------- */
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 14px; }
+  .seg { display: flex; padding: 3px; gap: 3px; background: var(--well); border: 1px solid var(--border); border-radius: 9px; }
+  .seg button {
+    border: 0; border-radius: 6px; padding: 7px 14px; background: transparent; color: var(--muted);
+    font: 500 0.88rem/1 'Inter', sans-serif; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--lime); color: var(--lime-ink); }
+  label.inline { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.88rem; }
+  select {
+    padding: 7px 8px; background: var(--well); color: var(--text);
+    border: 1px solid var(--border); border-radius: 7px; font: 0.88rem 'Inter', sans-serif;
+  }
+  .check { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 0.88rem; cursor: pointer; }
+  .check input { width: 16px; height: 16px; margin: 0; accent-color: var(--lime); }
+  [hidden] { display: none !important; }
+
+  /* ---------- cards ---------- */
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+  .card h2 { margin: 0 0 8px; font: 600 1.05rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+  .label { color: var(--dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* The thing to send, big. In "Show Morse" mode each letter gets its
+     pattern underneath. */
+  .target { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 6px; margin: 6px 0 12px; min-height: 64px; }
+  .tch { display: flex; flex-direction: column; align-items: center; min-width: 0.9em; }
+  .tch b { font: 600 3rem/1.1 'JetBrains Mono', monospace; letter-spacing: 0.02em; }
+  .tch i { font: 600 1.15rem/1 'JetBrains Mono', monospace; font-style: normal; color: var(--muted); letter-spacing: 0.08em; margin-top: 6px; }
+  .tsp { width: 0.8em; }
+  .next-label { text-align: center; }
+
+  .sent {
+    min-height: 2.6em; padding: 10px 12px; text-align: center;
+    background: var(--well); border: 1px solid var(--border); border-radius: 9px;
+    font: 500 1.5rem/1.3 'JetBrains Mono', monospace; letter-spacing: 0.06em; word-break: break-word;
+  }
+  .sent:empty::before { content: attr(data-empty); color: var(--dim); font: 0.92rem 'Inter', sans-serif; letter-spacing: 0; }
+  .transcript { min-height: 7.5em; max-height: 14em; overflow-y: auto; text-align: left; font-size: 1.2rem; white-space: pre-wrap; }
+  .status { margin: 10px 0 0; color: var(--muted); font-size: 0.88rem; text-align: center; min-height: 1.4em; }
+  .status.warn { color: var(--off); }
+  .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 12px; }
+  .btn {
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px;
+    background: var(--well); color: var(--text); font: 500 0.9rem/1 'Inter', sans-serif; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--lime); }
+  .btn.primary { background: var(--lime); border-color: var(--lime); color: var(--lime-ink); }
+  .btn kbd { font: 0.75rem 'JetBrains Mono', monospace; color: var(--dim); margin-left: 6px; }
+  .btn.primary kbd { color: var(--lime-ink); opacity: 0.7; }
+
+  /* ---------- result ---------- */
+  .compare { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 4px 0 14px; }
+  .cmp { display: flex; flex-direction: column; align-items: center; min-width: 2.2em; padding: 6px 6px 4px;
+         border: 1px solid var(--border); border-radius: 8px; background: var(--well); }
+  .cmp .w { font: 600 1.5rem/1.1 'JetBrains Mono', monospace; }
+  .cmp .g { font: 500 0.95rem/1.2 'JetBrains Mono', monospace; color: var(--good); min-height: 1.2em; }
+  .cmp.bad { border-color: var(--bad); }
+  .cmp.bad .g { color: var(--bad); }
+  .score { text-align: center; font: 600 1.1rem 'Oswald', sans-serif; letter-spacing: 0.04em; margin-bottom: 12px; }
+  .score.good { color: var(--good); } .score.bad { color: var(--bad); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .tile { background: var(--well); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .tile .val { font: 600 1.45rem/1.1 'Oswald', sans-serif; }
+  .tile .val small { font: 500 0.8rem 'Inter', sans-serif; color: var(--muted); margin-left: 3px; }
+  .tile .lbl { color: var(--muted); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; }
+  .tile .sub { color: var(--dim); font-size: 0.78rem; margin-top: 2px; }
+  .tile.good { border-color: #166534; } .tile.good .val { color: var(--good); }
+  .tile.off  { border-color: #92400e; } .tile.off .val  { color: var(--off); }
+
+  .tips { margin: 0 0 14px; padding-left: 1.2em; line-height: 1.55; }
+  .tips li { margin-bottom: 6px; }
+  .tips code { font: 0.95em 'JetBrains Mono', monospace; background: var(--well); padding: 1px 6px; border-radius: 4px; }
+
+  .timeline-wrap { overflow-x: auto; padding-bottom: 4px; }
+  svg.timeline { display: block; }
+  svg.timeline text { font: 11px 'Inter', sans-serif; fill: var(--dim); }
+  svg.timeline text.ch { font: 600 13px 'JetBrains Mono', monospace; fill: var(--muted); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: 0.78rem; margin: 6px 0 0; }
+  .legend span::before { content: ""; display: inline-block; width: 12px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
+  .legend .you::before { background: var(--lime); }
+  .legend .ideal::before { border: 1.5px solid var(--dim); }
+  .legend .gapok::before { background: var(--dim); height: 2px; vertical-align: 3px; }
+  .legend .gapoff::before { background: var(--off); height: 2px; vertical-align: 3px; }
+
+  /* ---------- session bar, pads, help ---------- */
+  .session { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; color: var(--muted); font-size: 0.86rem; }
+  .session b { color: var(--text); font-weight: 600; }
+  .session .spacer { flex: 1; }
+  .pads { display: flex; gap: 10px; margin-top: 14px; }
+  .pad {
+    flex: 1; height: 72px; background: var(--well); color: var(--text);
+    border: 1px solid var(--border); border-radius: 12px;
+    font: 600 1rem/1 'Oswald', sans-serif; letter-spacing: 0.06em;
+    touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer;
+  }
+  .pad.down { background: var(--lime); color: var(--lime-ink); border-color: var(--lime); }
+  .help { color: var(--dim); font-size: 0.82rem; line-height: 1.5; }
+  .help summary { cursor: pointer; color: var(--muted); }
+  .help p { margin: 8px 0; }
+  .audio-hint { color: var(--off); }
+
+  @media (max-width: 560px) {
+    h1 { font-size: 1.55rem; }
+    .tch b { font-size: 2.3rem; }
+    .wrap { padding: 16px 12px 40px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>Keyer Practice</h1>
+    <div class="spacer"></div>
+    <!-- Current key setup; opens the app's Keyer Setup panel. -->
+    <button class="chip" id="setupChip" type="button" title="Open Keyer Setup"><span id="setupText"></span><span class="chg">Change</span></button>
+  </div>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Practice mode">
+      <button type="button" data-mode="copy" aria-pressed="true">Copy this</button>
+      <button type="button" data-mode="free" aria-pressed="false">Free send</button>
+    </div>
+    <label class="inline copy-only">Send
+      <select id="source">
+        <option value="letter">Letters &amp; numbers</option>
+        <option value="word">Words</option>
+        <option value="call">Call signs</option>
+        <option value="phrase">QSO phrases</option>
+      </select>
+    </label>
+    <label class="check copy-only"><input type="checkbox" id="showCode"> Show Morse patterns</label>
+  </div>
+
+  <!-- ===== What to send, and what was heard ===== -->
+  <section class="card" aria-labelledby="stageTitle">
+    <h2 id="stageTitle" class="sr" hidden>Practice</h2>
+    <div class="copy-only">
+      <div class="label next-label" id="targetLabel">Send this</div>
+      <div class="target" id="target" aria-live="polite"></div>
+      <div class="label">You sent</div>
+      <div class="sent" id="sent" data-empty="Waiting for your key…" aria-live="polite"></div>
+    </div>
+    <div class="free-only">
+      <div class="label">You sent</div>
+      <div class="sent transcript" id="transcript" data-empty="Send anything. Pause for a few seconds to start a new line."></div>
+    </div>
+    <p class="status" id="status"></p>
+    <div class="actions">
+      <button class="btn copy-only" id="againBtn" type="button" title="Send the same thing again">Again <kbd>Esc</kbd></button>
+      <button class="btn copy-only" id="skipBtn" type="button" title="Something new to send">Skip</button>
+      <button class="btn primary copy-only" id="doneBtn" type="button" title="Grade what I've sent now">Done <kbd>Enter</kbd></button>
+      <button class="btn free-only" id="clearBtn" type="button">Clear</button>
+    </div>
+    <!-- On-screen paddles: always on touch screens, and when no adapter is set. -->
+    <div class="pads" id="pads" hidden>
+      <button class="pad" id="padDit" type="button">DIT</button>
+      <button class="pad" id="padDah" type="button">DAH</button>
+    </div>
+  </section>
+
+  <!-- ===== How it went ===== -->
+  <section class="card" id="result" hidden aria-labelledby="resultTitle">
+    <h2 id="resultTitle">How you sent it</h2>
+    <div id="compare" class="compare"></div>
+    <div id="score" class="score"></div>
+    <div class="tiles" id="tiles"></div>
+    <ul class="tips" id="tips"></ul>
+    <div class="label">Timing</div>
+    <div class="timeline-wrap" id="timeline"></div>
+    <div class="legend"><span class="you">You</span><span class="ideal">Perfect timing</span><span class="gapok">Gap on target</span><span class="gapoff">Gap off target (dits shown)</span></div>
+  </section>
+
+  <section class="card">
+    <div class="session">
+      <span>This session: <b id="sTries">0</b> <span id="sTriesLbl">tries</span></span>
+      <span class="copy-only">Accuracy <b id="sAcc">—</b></span>
+      <span>Letters sent <b id="sSent">0</b></span>
+      <span>Time <b id="sTime">0:00</b></span>
+      <span class="spacer"></span>
+      <button class="btn" id="endBtn" type="button" hidden title="Save this session to Progress">End session</button>
+    </div>
+    <p class="help audio-hint" id="audioHint" hidden>Click anywhere in this tab to turn on sidetone &mdash; browsers only allow sound after a click.</p>
+    <details class="help">
+      <summary>How this works</summary>
+      <p><strong>Copy this:</strong> send what&rsquo;s shown, then pause. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
+      <p><strong>The timing rules:</strong> a dah is 3 dits long; the gap inside a letter is 1 dit; between letters 3 dits; between words 7 dits. &ldquo;Character speed&rdquo; is how fast your dits and dahs go. &ldquo;Overall speed&rdquo; includes your spacing &mdash; what someone copying you actually hears. Extra space between letters (Farnsworth spacing) is fine while learning, but the closer you get to 3 and 7, the easier you are to copy.</p>
+      <p><strong>With paddles</strong> the keyer makes perfect dits and dahs, so the useful feedback is spacing and which letters came out wrong. <strong>With a straight key or bug</strong> you form the elements yourself, so you&rsquo;ll also see your dah-to-dit ratio (ideally 3:1).</p>
+      <p>Sessions are saved to Progress when you click End session or switch tabs.</p>
+    </details>
+  </section>
+</div>
+
+<script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-keyer.js"></script>
+<script src="../shared/hst-content.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function r1(x) { return (Math.round(x * 10) / 10).toFixed(1); }
+  // Morse pattern drawn with a middle dot and a real dash, easier to read than . and -
+  function pretty(code) { return String(code || '').replace(/\./g, '·').replace(/-/g, '−'); }
+
+  /* ---------------- this tab's own saved choices ---------------- */
+  var PREFS_KEY = 'hct-cw-keyer-practice-v1';
+  var prefs = { mode: 'copy', source: 'word', showCode: false };
+  try { var saved = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (saved) Object.keys(prefs).forEach(function (k) { if (k in saved) prefs[k] = saved[k]; }); } catch (e) {}
+  function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
+
+  var KEY_NAMES = { iambicB: 'Paddles (iambic B)', iambicA: 'Paddles (iambic A)', straight: 'Straight key', bug: 'Bug' };
+  var ADAPTER_NAMES = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter' };
+  function cfg() { return HST.keyerSettings.get(); }
+  function automatic() { var k = cfg().keyType; return k === 'iambicA' || k === 'iambicB'; }
+  function unitMs() { return 1200 / cfg().wpm; }
+
+  /* ---------------- the key ----------------
+     The keyer (shared/hst-keyer.js) turns the adapter's paddle presses
+     into keyed signal with sidetone; key() below gets each key-down and
+     key-up with its exact time. The live decoder shows letters as they
+     arrive; the grading uses the full analysis afterwards. */
+  var keyer = HST.createKeyer({ key: onKey });
+  keyer.attachKeyboard(window);
+  var decoder = HST.createDecoder({
+    unitMs: unitMs,
+    adaptive: function () { return !automatic(); },
+    onChar: function (ch) { live += ch; showLive(); },
+    onWord: function () { if (live && live.slice(-1) !== ' ') { live += ' '; showLive(); } }
+  });
+
+  var marks = [];          // key-down periods of the attempt (Copy) or line (Free) in progress
+  var downAt = null;
+  var live = '';           // what the live decoder has heard so far
+  var waitTimer = null;    // fires when a pause means "finished"
+  var state = 'ready';     // Copy: 'ready' -> 'sending' -> 'graded'
+
+  function onKey(down, t) {
+    if (down) {
+      checkAudio();
+      clearTimeout(waitTimer);
+      if (prefs.mode === 'copy' && state !== 'sending') beginAttempt();
+      if (prefs.mode === 'free' && !marks.length) beginLine();
+      downAt = t;
+      decoder.down(t);
+      touchSession();
+    } else if (downAt != null) {
+      marks.push({ s: downAt, e: t });
+      downAt = null;
+      decoder.up(t);
+      afterMark(t);
+    }
+  }
+
+  /* ---------------- Copy this ---------------- */
+  var target = '', prevTarget = '';
+
+  function newTarget(same) {
+    if (!same) {
+      var src = prefs.source;
+      target = src === 'letter' ? HST.content.letter() : src === 'call' ? HST.content.callSign()
+             : src === 'phrase' ? HST.content.phrase() : HST.content.word();
+    }
+    var html = '';
+    target.split('').forEach(function (ch) {
+      if (ch === ' ') { html += '<span class="tsp"></span>'; return; }
+      html += '<span class="tch"><b>' + esc(ch) + '</b>' + (prefs.showCode ? '<i>' + pretty(HST.MORSE[ch]) + '</i>' : '') + '</span>';
+    });
+    $('target').innerHTML = html;
+  }
+
+  function beginAttempt() {
+    state = 'sending';
+    analyzedTarget = target;
+    marks = []; live = ''; showLive();
+    decoder.reset();
+    $('targetLabel').textContent = 'Send this';
+    setStatus('Listening… pause when you’re done.');
+  }
+
+  function afterMark(t) {
+    if (prefs.mode === 'free') return freeAfterMark(t);
+    // Finished = a word space (5+ units of silence) once as many letters as
+    // the target has are in -- or a long pause (3 s, or 14 units at slow
+    // speeds) no matter what, so a short or partial attempt still gets
+    // graded. Counting letters, not words, means wide (Farnsworth) letter
+    // gaps never cut an attempt off early.
+    var u = automatic() ? unitMs() : 1200 / decoder.speedWpm();
+    var lettersWanted = target.replace(/ /g, '').length;
+    waitTimer = setTimeout(function () {
+      var a = analyze();
+      if (a && a.chars.length >= lettersWanted) return finishAttempt();
+      waitTimer = setTimeout(finishAttempt, Math.max(3000, 14 * u) - 5.5 * u);
+    }, 5.5 * u);
+  }
+
+  // In Copy this the number of words is known, so word breaks are found
+  // from it (see HST.analyzeSending); Free send goes by gap length alone.
+  function analyze(list) {
+    return HST.analyzeSending(list || marks, { unitMs: unitMs(), automatic: automatic(),
+      expectWords: prefs.mode === 'copy' && analyzedTarget ? analyzedTarget.split(' ').length : 0 });
+  }
+  var analyzedTarget = '';   // the target the marks being analyzed were meant to be
+
+  function finishAttempt() {
+    clearTimeout(waitTimer);
+    if (state !== 'sending' || !marks.length) return;
+    state = 'graded';
+    var a = analyze();
+    var g = HST.gradeSending(target, a.text);   // analyzedTarget === target here
+    live = a.text; showLive();
+    showResult(a, g, target);
+    recordAttempt(a, g);
+    prevTarget = target;
+    newTarget(false);
+    $('targetLabel').textContent = 'Next — send when ready';
+    setStatus(g.correct === g.total && !g.extra ? 'Nice! Send the next one whenever you’re ready.' : 'Have another go with Again, or send the next one.');
+  }
+
+  /* ---------------- Free send ----------------
+     Text flows into a transcript; a pause of 4 seconds ends the line.
+     The result card shows the analysis of the current line. */
+  var transcript = [];       // finished lines
+  function beginLine() { marks = []; live = ''; decoder.reset(); }
+  function freeAfterMark(t) {
+    var u = automatic() ? unitMs() : 1200 / decoder.speedWpm();
+    waitTimer = setTimeout(function () {
+      var a = analyze();
+      if (a) showResult(a, null, null);
+      waitTimer = setTimeout(endLine, Math.max(4000, 14 * u) - 5.5 * u);
+    }, 5.5 * u);
+  }
+  function endLine() {
+    if (!marks.length) return;
+    var a = analyze();
+    if (a) { transcript.push(a.text); showResult(a, null, null); recordAttempt(a, null); }
+    marks = []; live = ''; decoder.reset();
+    showLive();
+  }
+
+  function showLive() {
+    if (prefs.mode === 'copy') { $('sent').textContent = live; return; }
+    var lines = transcript.slice(-30);
+    if (live) lines = lines.concat(live);
+    $('transcript').textContent = lines.join('\n');
+    $('transcript').scrollTop = 1e6;
+  }
+
+  function setStatus(text, warn) {
+    $('status').textContent = text || '';
+    $('status').classList.toggle('warn', !!warn);
+  }
+
+  /* ---------------- results ---------------- */
+  // Ranges counted as "on target" -- loose enough for real sending, which
+  // is never machine-perfect (USB and the browser add a few ms of wobble too).
+  var OK = { charGap: [2.4, 3.8], wordGap: [5.8, 9], ratio: [2.6, 3.6], spread: 25 };
+  function within(x, r) { return x >= r[0] && x <= r[1]; }
+
+  function tile(val, unit, lbl, sub, cls) {
+    return '<div class="tile ' + (cls || '') + '"><div class="val">' + val + (unit ? '<small>' + unit + '</small>' : '') +
+           '</div><div class="lbl">' + lbl + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+  }
+
+  // The result card's timeline needs the marks it was drawn from even
+  // after a new attempt starts, so it keeps its own copy.
+  var marks0 = [];
+  function showResult(a, g, want) {
+    marks0 = marks.slice();
+    $('result').hidden = false;
+
+    // Letter-by-letter comparison (Copy this only)
+    if (g) {
+      $('compare').innerHTML = g.items.map(function (it) {
+        return '<div class="cmp' + (it.ok ? '' : ' bad') + '"><span class="w">' + esc(it.want) + '</span><span class="g">' +
+               (it.ok ? '✓' : esc(it.got || '–')) + '</span></div>';
+      }).join('');
+      var perfect = g.correct === g.total && !g.extra;
+      $('score').className = 'score ' + (perfect ? 'good' : 'bad');
+      $('score').textContent = perfect ? 'All ' + g.total + ' letters right' :
+        g.correct + ' of ' + g.total + ' letters right' + (g.extra ? ' · ' + g.extra + ' extra' : '');
+    } else {
+      $('compare').innerHTML = ''; $('score').textContent = '';
+    }
+
+    // Measurements
+    var t = [];
+    t.push(tile(Math.round(a.charWpm), 'WPM', 'Character speed', automatic() ? 'set by your keyer' : 'your dits and dahs'));
+    t.push(tile(Math.round(a.overallWpm), 'WPM', 'Overall speed', 'including your spacing'));
+    if (a.charGap.n) t.push(tile(r1(a.charGap.mean), 'dits', 'Letter spacing', 'perfect is 3', within(a.charGap.mean, OK.charGap) ? 'good' : 'off'));
+    if (a.wordGap.n) t.push(tile(r1(a.wordGap.mean), 'dits', 'Word spacing', 'perfect is 7', within(a.wordGap.mean, OK.wordGap) ? 'good' : 'off'));
+    if (a.ratio) t.push(tile(r1(a.ratio), ': 1', 'Dah to dit', 'perfect is 3 : 1', within(a.ratio, OK.ratio) ? 'good' : 'off'));
+    if (a.charGap.n >= 3) {
+      var spread = Math.round(100 * a.charGap.sd / a.charGap.mean);
+      t.push(tile('±' + spread, '%', 'Spacing steadiness', 'how much letter gaps vary', spread <= OK.spread ? 'good' : 'off'));
+    }
+    $('tiles').innerHTML = t.join('');
+
+    // Tips in plain words
+    var tips = tipsFor(a, g, want);
+    $('tips').innerHTML = tips.map(function (x) { return '<li>' + x + '</li>'; }).join('');
+    $('tips').hidden = !tips.length;
+
+    drawTimeline(a);
+  }
+
+  function tipsFor(a, g, want) {
+    var tips = [];
+    // Wrong letters: show the right pattern next to what was sent.
+    if (g) {
+      var wrong = g.items.filter(function (it) { return !it.ok; });
+      runTogether(want, a).forEach(function (x) { tips.push(x); });
+      wrong.slice(0, 4).forEach(function (it) {
+        var right = HST.MORSE[it.want];
+        if (!it.got) tips.push('<b>' + esc(it.want) + '</b> was missing. It’s <code>' + pretty(right) + '</code>.');
+        else {
+          var sentCode = codeOf(a, it.got);
+          tips.push('<b>' + esc(it.want) + '</b> is <code>' + pretty(right) + '</code>; you sent <code>' + pretty(sentCode) +
+                    '</code>' + (it.got === '*' ? ' (not a letter)' : ' (' + esc(it.got) + ')') + '.');
+        }
+      });
+    }
+    // Spacing
+    if (a.charGap.n) {
+      if (a.charGap.mean < OK.charGap[0]) tips.push('Your letters are close together (' + r1(a.charGap.mean) + ' dits). Leave a full 3-dit gap so they don’t run into each other.');
+      else if (a.charGap.mean > OK.charGap[1]) tips.push('There’s extra space between letters (' + r1(a.charGap.mean) + ' dits; 3 is standard). That’s fine while learning — it’s Farnsworth spacing — but tightening it brings your overall speed up toward your character speed.');
+    }
+    if (a.wordGap.n) {
+      if (a.wordGap.mean < OK.wordGap[0]) tips.push('Words are a little close (' + r1(a.wordGap.mean) + ' dits). A 7-dit pause makes the break between words obvious.');
+      else if (a.wordGap.mean > OK.wordGap[1]) tips.push('Long pauses between words (' + r1(a.wordGap.mean) + ' dits; 7 is standard).');
+    }
+    if (g && want && a.words.length < want.split(' ').length && a.chars.length >= g.total - 1) {
+      tips.push('Some words ran together — leave a full word space (7 dits) between them.');
+    }
+    if (a.ratio) {
+      if (a.ratio < OK.ratio[0]) tips.push('Your dahs are short compared with your dits (' + r1(a.ratio) + ' : 1). Hold dahs for three dits’ worth.');
+      else if (a.ratio > OK.ratio[1]) tips.push('Your dahs are long compared with your dits (' + r1(a.ratio) + ' : 1). Aim for three dits’ worth.');
+    }
+    if (a.charGap.n >= 3 && 100 * a.charGap.sd / a.charGap.mean > OK.spread) tips.push('Your letter gaps vary quite a bit. Steady spacing is a big part of a good “fist” — try counting the 3 dits in your head.');
+    if (!tips.length) tips.push(g ? 'Clean sending — nice fist!' : 'Spacing looks good.');
+    return tips;
+  }
+
+  // The Morse code actually sent for a decoded letter, from the analysis.
+  function codeOf(a, ch) {
+    for (var i = 0; i < a.chars.length; i++) if (a.chars[i].text === ch) return a.chars[i].code;
+    return '';
+  }
+
+  // Two letters sent with too small a gap become one wrong letter (E + T = A).
+  // Spot that, and the opposite (one letter split in two by a long gap).
+  function runTogether(want, a) {
+    var out = [], seen = {};
+    if (!want) return out;
+    var W = want.replace(/ /g, '').split('');
+    a.chars.forEach(function (c) {
+      for (var i = 0; i < W.length - 1; i++) {
+        if (HST.MORSE[W[i]] + HST.MORSE[W[i + 1]] === c.code && !seen[c.code]) {
+          seen[c.code] = 1;
+          out.push('<b>' + W[i] + '</b> and <b>' + W[i + 1] + '</b> ran together into <code>' + pretty(c.code) + '</code>' +
+                   (c.text !== '*' ? ' (' + esc(c.text) + ')' : '') + '. Leave a 3-dit gap between letters.');
+        }
+      }
+    });
+    for (var k = 0; k < a.chars.length - 1; k++) {
+      var joined = a.chars[k].code + a.chars[k + 1].code;
+      W.forEach(function (L) {
+        if (HST.MORSE[L] === joined && !seen['s' + L]) {
+          seen['s' + L] = 1;
+          out.push('<b>' + L + '</b> came out as two letters (<code>' + pretty(a.chars[k].code) + '</code> + <code>' +
+                   pretty(a.chars[k + 1].code) + '</code>). Keep the gaps inside a letter short — 1 dit.');
+        }
+      });
+    }
+    return out;
+  }
+
+  /* Timeline: your key-down periods (top row) above the same letters in
+     perfect timing (bottom row), each letter lined up where you started
+     it, so you can see exactly which element or gap was off. Between
+     letters, the gap you left is labeled in dits when it's off target. */
+  function drawTimeline(a) {
+    var el = $('timeline');
+    var first = a.chars[0].start, lastEnd = a.chars[a.chars.length - 1].end;
+    // The perfect version of the last letter may run past your last mark.
+    var lastIdealEnd = a.chars[a.chars.length - 1].start + idealLen(a.chars[a.chars.length - 1].code) * a.unit;
+    var span = Math.max(lastEnd, lastIdealEnd) - first;
+    var width = Math.max(320, el.clientWidth || 600);
+    var L = 46, R = 10;
+    var px = (width - L - R) / span;
+    if (px * a.unit < 4) { px = 4 / a.unit; width = Math.ceil(span * px) + L + R; }   // too squeezed: scroll instead
+    function X(t) { return L + (t - first) * px; }
+    var yYou = 22, yIdeal = 50, bar = 14, svg = '';
+    svg += '<text x="0" y="' + (yYou + 11) + '">You</text><text x="0" y="' + (yIdeal + 11) + '">Perfect</text>';
+
+    a.chars.forEach(function (c, k) {
+      // your marks
+      for (var m = c.first; m <= c.last; m++) {
+        var mk = marks0[m];
+        svg += '<rect x="' + X(mk.s).toFixed(1) + '" y="' + yYou + '" width="' + Math.max(1, (mk.e - mk.s) * px).toFixed(1) +
+               '" height="' + bar + '" rx="2" fill="var(--lime)"/>';
+      }
+      // perfect timing for the same letter, starting where you started it
+      var t0 = c.start;
+      for (var i = 0; i < c.code.length; i++) {
+        var len = (c.code[i] === '-' ? 3 : 1) * a.unit;
+        svg += '<rect x="' + X(t0).toFixed(1) + '" y="' + yIdeal + '" width="' + (len * px).toFixed(1) +
+               '" height="' + bar + '" rx="2" fill="none" stroke="var(--dim)" stroke-width="1.5"/>';
+        t0 += len + a.unit;
+      }
+      svg += '<text class="ch" x="' + X((c.start + c.end) / 2).toFixed(1) + '" y="' + (yIdeal + bar + 16) + '" text-anchor="middle">' + esc(c.text) + '</text>';
+      // the gap after this letter
+      var gp = a.gaps[k];
+      if (gp) {
+        var okR = gp.kind === 'word' ? OK.wordGap : OK.charGap;
+        var good = within(gp.units, okR);
+        var gx0 = X(c.end), gx1 = X(a.chars[k + 1].start);
+        var col = good ? 'var(--dim)' : 'var(--off)';
+        svg += '<line x1="' + gx0.toFixed(1) + '" x2="' + gx1.toFixed(1) + '" y1="' + (yYou + bar / 2) + '" y2="' + (yYou + bar / 2) +
+               '" stroke="' + col + '" stroke-width="2"/>';
+        if (!good) svg += '<text x="' + ((gx0 + gx1) / 2).toFixed(1) + '" y="' + (yYou - 6) + '" text-anchor="middle" fill="var(--off)" style="fill:var(--off)">' +
+                          (gp.units > 99 ? '99+' : r1(gp.units)) + '</text>';
+      }
+    });
+    var H = yIdeal + bar + 24;
+    el.innerHTML = '<svg class="timeline" width="' + width + '" height="' + H + '" viewBox="0 0 ' + width + ' ' + H +
+                   '" role="img" aria-label="Your timing compared with perfect timing">' + svg + '</svg>';
+  }
+  function idealLen(code) {
+    var n = 0;
+    for (var i = 0; i < code.length; i++) n += (code[i] === '-' ? 3 : 1) + (i ? 1 : 0);
+    return n;
+  }
+
+  /* ---------------- session + Progress ----------------
+     A session runs from the first key press until End session, a tab
+     switch (the app clicks End session), a mode or content change, or
+     10 minutes without keying. It's saved like the other trainers'. */
+  var rec = HST.history.recorder('keyer');
+  var sess = null, idleTimer = null, clockTimer = null;
+
+  function touchSession() {
+    if (!sess) {
+      sess = { start: Date.now(), tries: 0, right: 0, total: 0, sent: 0,
+               cgSum: 0, cgN: 0, wgSum: 0, wgN: 0, wpmW: 0, overallW: 0 };
+      rec.start({ mode: prefs.mode, source: prefs.mode === 'copy' ? prefs.source : 'free', keyType: cfg().keyType, wpm: cfg().wpm });
+      $('endBtn').hidden = false;
+      clockTimer = setInterval(renderSession, 1000);
+    }
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(endSession, 10 * 60000);
+    renderSession();
+  }
+
+  function recordAttempt(a, g) {
+    if (!sess) touchSession();
+    sess.tries++;
+    sess.sent += a.chars.length;
+    sess.cgSum += a.charGap.mean * a.charGap.n; sess.cgN += a.charGap.n;
+    sess.wgSum += a.wordGap.mean * a.wordGap.n; sess.wgN += a.wordGap.n;
+    sess.wpmW += a.charWpm * a.chars.length; sess.overallW += a.overallWpm * a.chars.length;
+    if (g) {
+      sess.right += g.correct; sess.total += g.total;
+      g.items.forEach(function (it) { rec.char(it.want, it.ok); });
+      var span = marks.length ? marks[marks.length - 1].e - marks[0].s : 0;
+      rec.round(g.correct === g.total && !g.extra, span, false);
+    }
+    rec.set({
+      sentChars: sess.sent,
+      charGapSum: sess.cgSum, charGapN: sess.cgN, wordGapSum: sess.wgSum, wordGapN: sess.wgN,
+      wpm: sess.sent ? Math.round(sess.wpmW / sess.sent) : cfg().wpm,
+      overallWpm: sess.sent ? Math.round(sess.overallW / sess.sent) : null
+    });
+    renderSession();
+  }
+
+  function renderSession() {
+    var s = sess || { tries: 0, right: 0, total: 0, sent: 0, start: Date.now() };
+    $('sTries').textContent = s.tries;
+    $('sTriesLbl').textContent = prefs.mode === 'copy' ? (s.tries === 1 ? 'try' : 'tries') : (s.tries === 1 ? 'line' : 'lines');
+    $('sAcc').textContent = s.total ? Math.round(100 * s.right / s.total) + '%' : '—';
+    $('sSent').textContent = s.sent;
+    $('sTime').textContent = HST.fmtClock(Date.now() - s.start);
+  }
+
+  function endSession() {
+    clearTimeout(waitTimer);
+    if (prefs.mode === 'free' && marks.length) endLine();
+    else if (prefs.mode === 'copy' && state === 'sending' && marks.length) finishAttempt();
+    clearTimeout(idleTimer); clearInterval(clockTimer);
+    keyer.reset();
+    if (sess) rec.finish();
+    sess = null;
+    $('endBtn').hidden = true;
+    renderSession();
+  }
+  $('endBtn').addEventListener('click', endSession);
+  window.addEventListener('pagehide', function () { if (sess) rec.finish(); });
+
+  /* ---------------- controls ---------------- */
+  function applyMode() {
+    document.querySelectorAll('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === prefs.mode)); });
+    document.querySelectorAll('.copy-only').forEach(function (el) { el.hidden = prefs.mode !== 'copy'; });
+    document.querySelectorAll('.free-only').forEach(function (el) { el.hidden = prefs.mode !== 'free'; });
+    $('result').hidden = true;
+    marks = []; live = ''; state = 'ready'; decoder.reset();
+    showLive();
+    if (prefs.mode === 'copy') { newTarget(false); setStatus('Send what’s shown, then pause.'); }
+    else setStatus('Send anything you like.');
+    renderSession();
+  }
+  document.querySelectorAll('.seg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (prefs.mode === b.dataset.mode) return;
+      endSession();
+      prefs.mode = b.dataset.mode; savePrefs(); applyMode();
+    });
+  });
+  $('source').addEventListener('change', function (e) {
+    endSession();
+    prefs.source = e.target.value; savePrefs();
+    state = 'ready'; marks = []; live = ''; showLive(); $('result').hidden = true;
+    newTarget(false);
+  });
+  $('showCode').addEventListener('change', function (e) { prefs.showCode = e.target.checked; savePrefs(); newTarget(true); });
+
+  function again() {
+    clearTimeout(waitTimer);
+    if (state === 'graded' && prevTarget) target = prevTarget;
+    newTarget(true);
+    state = 'ready'; marks = []; live = ''; decoder.reset(); keyer.reset(); showLive();
+    $('targetLabel').textContent = 'Send this';
+    setStatus('Send it again, then pause.');
+  }
+  function skip() {
+    clearTimeout(waitTimer);
+    state = 'ready'; marks = []; live = ''; decoder.reset(); keyer.reset(); showLive();
+    newTarget(false);
+    $('targetLabel').textContent = 'Send this';
+    setStatus('Send what’s shown, then pause.');
+  }
+  $('againBtn').addEventListener('click', again);
+  $('skipBtn').addEventListener('click', skip);
+  $('doneBtn').addEventListener('click', function () { if (state === 'sending') finishAttempt(); });
+  $('clearBtn').addEventListener('click', function () {
+    clearTimeout(waitTimer);
+    if (marks.length) endLine();
+    transcript = []; marks = []; live = ''; decoder.reset(); showLive(); $('result').hidden = true;
+  });
+  // Enter = grade now, Esc = start over (Copy this).
+  window.addEventListener('keydown', function (e) {
+    if (prefs.mode !== 'copy' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'Enter') { e.preventDefault(); if (state === 'sending') finishAttempt(); }
+    if (e.key === 'Escape') { e.preventDefault(); again(); }
+  });
+
+  // Key setup chip; opens the app's Keyer Setup panel (in the app shell).
+  function renderSetup() {
+    var s = cfg();
+    $('setupText').innerHTML = '<strong>' + esc(ADAPTER_NAMES[s.adapter]) + '</strong> · ' + esc(KEY_NAMES[s.keyType]) +
+      (s.keyType === 'straight' ? '' : ' · ' + s.wpm + ' WPM');
+    var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    $('pads').hidden = !(touch || s.adapter === 'keyboard');
+    $('padDit').textContent = s.keyType === 'straight' ? 'KEY' : (s.reversed ? 'DAH' : 'DIT');
+    $('padDah').textContent = s.reversed ? 'DIT' : 'DAH';
+    $('padDah').hidden = s.keyType === 'straight';
+  }
+  HST.keyerSettings.onChange(function () { keyer.reset(); decoder.reset(); renderSetup(); });
+  $('setupChip').addEventListener('click', function () {
+    try { window.parent.HCT.openKeyerSetup(); } catch (e) { setStatus('Open Settings (the gear icon) → Keyer Setup.', true); }
+  });
+
+  // On-screen paddles (pointer capture keeps a pad held if the finger slides off).
+  [['padDit', 'dit'], ['padDah', 'dah']].forEach(function (p) {
+    var el = $(p[0]);
+    function down(e) { e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('down'); keyer.touch(p[1], true); }
+    function up() { if (!el.classList.contains('down')) return; el.classList.remove('down'); keyer.touch(p[1], false); }
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  });
+
+  // Sidetone needs the browser's permission to play sound, which it gives
+  // after a click or tap. If keying starts before that, say so.
+  function checkAudio() {
+    var ctx = HST.audio.unlock();
+    $('audioHint').hidden = !cfg().sidetone || ctx.state === 'running';
+  }
+  document.addEventListener('pointerdown', function () {
+    var ctx = HST.audio.unlock();
+    if (ctx.resume) ctx.resume().then(function () { $('audioHint').hidden = true; }).catch(function () {});
+  });
+
+  // A redraw at the new width keeps the timeline readable after a resize.
+  var rz = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(rz);
+    rz = setTimeout(function () { if (!$('result').hidden && marks0.length) { var a = analyze(marks0); if (a) drawTimeline(a); } }, 150);
+  });
+
+  $('source').value = prefs.source;
+  $('showCode').checked = prefs.showCode;
+  renderSetup();
+  applyMode();
+
+  // The app shell clicks End session when you leave this tab; tests and the
+  // QSO tab can reach the pieces here.
+  window.HSTKeyerPractice = { end: endSession };
+})();
+</script>
+</body>
+</html>
