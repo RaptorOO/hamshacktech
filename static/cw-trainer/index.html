@@ -189,6 +189,79 @@
   .update .msg::before { content: "\2B06\FE0E  "; color: var(--lime); }
   .update .btn { padding: 6px 12px; font-size: 0.85rem; }
 
+  /* ---------- Experimental features switch (in Settings) ---------- */
+  .experimental { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; }
+  .check input { width: 16px; height: 16px; accent-color: var(--lime); margin: 0; }
+  .badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border: 1px solid #ca8a04;           /* amber-600: "not finished" */
+    border-radius: 999px;
+    color: #facc15;                      /* amber-400 */
+    font: 500 0.7rem/1.3 'Inter', sans-serif;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .hint { margin: 6px 0 0; color: var(--muted); font-size: 0.8rem; line-height: 1.45; }
+  #keyerSetupBtn { margin-top: 12px; }
+
+  /* ---------- Keyer Setup panel (Milestone 5, experimental) ---------- */
+  .keyer { width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 32px); overflow-y: auto; }
+  .keyer h2 .badge { margin-left: 6px; }
+  .kgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; margin-bottom: 14px; }
+  .kfield label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; }
+  .kfield output { font-family: 'Oswald', sans-serif; font-weight: 500; color: var(--lime); }
+  .kfield select {
+    width: 100%; padding: 7px 8px;
+    background: var(--well); color: var(--text);
+    border: 1px solid var(--border); border-radius: 7px;
+    font: 0.9rem 'Inter', sans-serif;
+  }
+  .kfield input[type="range"] { width: 100%; accent-color: var(--lime); }
+  .kfield[hidden] { display: none; }
+  .kchecks { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-bottom: 4px; }
+  .kstatus { margin: 8px 0 0; font-size: 0.8rem; color: var(--muted); line-height: 1.45; }
+  .kstatus.warn { color: #facc15; }
+
+  .ktest { margin-top: 16px; padding: 14px; background: var(--chassis); border: 1px solid var(--border); border-radius: 10px; }
+  .ktest h3 { margin: 0 0 4px; font: 600 1.05rem/1.2 'Oswald', sans-serif; letter-spacing: 0.02em; }
+  .ktest .hint { margin: 0 0 12px; }
+  .lights { display: flex; gap: 8px; margin-bottom: 10px; }
+  .light {
+    flex: 1; padding: 6px 0; text-align: center;
+    border: 1px solid var(--border); border-radius: 7px;
+    color: var(--muted); font: 600 0.8rem/1 'JetBrains Mono', monospace; letter-spacing: 0.08em;
+  }
+  .light.on { background: var(--lime); border-color: var(--lime); color: var(--lime-ink); }
+  .decoded {
+    min-height: 3.2em; padding: 10px 12px;
+    background: var(--well); border: 1px solid var(--border); border-radius: 8px;
+    font: 500 1.15rem/1.4 'JetBrains Mono', monospace; letter-spacing: 0.06em;
+    word-break: break-all; color: var(--text);
+  }
+  .decoded:empty::before { content: 'Send something\2026'; color: var(--muted); font-family: 'Inter', sans-serif; font-size: 0.9rem; letter-spacing: 0; }
+  .decoded .cur { color: var(--lime); }
+  .krow { display: flex; align-items: center; gap: 12px; margin-top: 10px; font-size: 0.85rem; color: var(--muted); }
+  .krow output { color: var(--lime); font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 1rem; }
+  .krow .grow { flex: 1; }
+  .pads { display: flex; gap: 10px; margin-top: 12px; }
+  .pad {
+    flex: 1; height: 64px;
+    background: var(--well); color: var(--text);
+    border: 1px solid var(--border); border-radius: 10px;
+    font: 600 0.95rem/1 'Oswald', sans-serif; letter-spacing: 0.06em;
+    touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer;
+  }
+  .pad.down { background: var(--lime); color: var(--lime-ink); border-color: var(--lime); }
+  .diag { margin-top: 12px; font-size: 0.8rem; color: var(--muted); }
+  .diag summary { cursor: pointer; color: var(--lime); }
+  .diag dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 8px 0 0; }
+  .diag dt { color: var(--muted); }
+  .diag dd { margin: 0; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; word-break: break-word; }
+  @media (max-width: 480px) { .kgrid { grid-template-columns: 1fr; } }
+
   /* ---------- What's new ---------- */
   .whatsnew ul { margin: 0 0 4px; padding-left: 1.2em; line-height: 1.5; }
   .whatsnew li { margin-bottom: 8px; }
@@ -285,10 +358,96 @@
     <label for="setVol">Volume <output id="setVolVal"></output></label>
     <input type="range" id="setVol" min="0" max="100" step="5">
   </div>
+  <!-- Experimental features: tools still being built stay hidden until
+       this is switched on. Milestone 5's Keyer Setup is the first. -->
+  <div class="experimental">
+    <label class="check"><input type="checkbox" id="expToggle"> Experimental features <span class="badge">Under development</span></label>
+    <p class="hint">Early versions of tools that are still being built. They may change or not work fully yet &mdash; most people can leave this off.</p>
+    <button class="btn" id="keyerSetupBtn" type="button" hidden>Keyer Setup&hellip;</button>
+  </div>
   <div class="actions">
     <button class="linkish" id="whatsNewLink" type="button" style="margin-right:auto">What's new</button>
     <button class="btn" id="sampleBtn" type="button">Play sample</button>
     <button class="btn primary" id="settingsDone" type="button">Done</button>
+  </div>
+</dialog>
+
+<!-- Keyer Setup (experimental): choose the adapter and key type, then try
+     the key in "Test your key". Wired up in the script (see "Keyer Setup"). -->
+<dialog class="settings keyer" id="keyerDialog" aria-labelledby="keyerTitle">
+  <h2 id="keyerTitle">Keyer Setup <span class="badge">Under development</span></h2>
+  <p class="lede">Plug your key or paddles into a Vail or VBand adapter, plug the adapter into this device, and choose your setup below. No adapter? Use the <kbd>[</kbd> and <kbd>]</kbd> keys or the on-screen pads.</p>
+
+  <div class="kgrid">
+    <div class="kfield">
+      <label for="kAdapter">Adapter</label>
+      <select id="kAdapter">
+        <option value="vail">Vail adapter</option>
+        <option value="vband">VBand adapter</option>
+        <option value="keyboard">No adapter (keyboard / screen)</option>
+      </select>
+    </div>
+    <div class="kfield" id="kInputField">
+      <label for="kInput">Input method</label>
+      <select id="kInput">
+        <option value="keyboard">Keyboard (Ctrl keys)</option>
+        <option value="midi">MIDI (Chrome / Edge)</option>
+      </select>
+    </div>
+    <div class="kfield">
+      <label for="kType">Key type</label>
+      <select id="kType">
+        <option value="iambicB">Paddles &mdash; iambic B</option>
+        <option value="iambicA">Paddles &mdash; iambic A</option>
+        <option value="straight">Straight key</option>
+        <option value="bug">Bug (semi-automatic)</option>
+      </select>
+    </div>
+    <div class="kfield" id="kWpmField">
+      <label for="kWpm"><span id="kWpmLabel">Keyer speed</span> <output id="kWpmVal"></output></label>
+      <input type="range" id="kWpm" min="5" max="40" step="1">
+    </div>
+    <div class="kfield" id="kWeightField">
+      <label for="kWeight">Dah length <output id="kWeightVal"></output></label>
+      <input type="range" id="kWeight" min="2.5" max="4.5" step="0.1">
+    </div>
+  </div>
+  <div class="kchecks">
+    <label class="check"><input type="checkbox" id="kReversed"> Swap paddles (dit on the right)</label>
+    <label class="check"><input type="checkbox" id="kSidetone"> Sidetone</label>
+  </div>
+  <p class="kstatus" id="kStatus"></p>
+
+  <section class="ktest" aria-labelledby="kTestTitle">
+    <h3 id="kTestTitle">Test your key</h3>
+    <p class="hint">Send anything. The lights show each contact closing, and the decoder below shows the letters it heard.</p>
+    <div class="lights" aria-hidden="true">
+      <div class="light" id="lDit">DIT</div>
+      <div class="light" id="lDah">DAH</div>
+      <div class="light" id="lKey">KEY</div>
+    </div>
+    <div class="decoded" id="kDecoded" aria-live="polite"></div>
+    <div class="krow">
+      <span>Speed <output id="kSpeed">&mdash;</output></span>
+      <span class="grow"></span>
+      <button class="btn" id="kClear" type="button">Clear</button>
+    </div>
+    <div class="pads">
+      <button class="pad" id="padDit" type="button">DIT</button>
+      <button class="pad" id="padDah" type="button">DAH</button>
+    </div>
+    <details class="diag">
+      <summary>Diagnostics</summary>
+      <dl>
+        <dt>Last input</dt><dd id="dLast">&mdash;</dd>
+        <dt>Audio delay</dt><dd id="dAudio">&mdash;</dd>
+        <dt>Keyboard vs MIDI</dt><dd id="dCompare">Needs both input routes active at once (Vail adapter, MIDI selected).</dd>
+      </dl>
+    </details>
+  </section>
+
+  <div class="actions">
+    <button class="btn primary" id="keyerDone" type="button">Done</button>
   </div>
 </dialog>
 
@@ -348,6 +507,7 @@
   })();
 </script>
 <script src="shared/hst-engine.js"></script>
+<script src="shared/hst-keyer.js"></script>
 <script>
 (function () {
   'use strict';
@@ -482,6 +642,8 @@
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
   dlg.addEventListener('close', function () {
     HST.audio.stop();
+    // Closed to open Keyer Setup: keep focus here, where the key presses go.
+    if (document.getElementById('keyerDialog').open) return;
     var active = document.getElementById('frame-' + current);
     try { active.contentWindow.focus(); } catch (e) {}
   });
@@ -491,6 +653,187 @@
     var s = HST.shared.get();
     HST.audio.stop();
     HST.audio.playMorse(['C', 'Q'], { wpm: s.wpm, toneHz: s.toneHz, volume: s.volume });
+  });
+
+  // ------------------------------------------------------------------
+  // Experimental features switch. When it's on, Settings shows the
+  // Keyer Setup button; when off, nothing experimental is visible.
+  // ------------------------------------------------------------------
+  function $(id) { return document.getElementById(id); }
+  var expToggle = $('expToggle');
+  function renderExperimental(e) {
+    expToggle.checked = e.on;
+    $('keyerSetupBtn').hidden = !e.on;
+  }
+  renderExperimental(HST.experimental.get());
+  HST.experimental.onChange(renderExperimental);
+  expToggle.addEventListener('change', function () { HST.experimental.set({ on: expToggle.checked }); });
+
+  // ------------------------------------------------------------------
+  // Keyer Setup (Milestone 5). The settings live in HST.keyerSettings
+  // (shared/hst-keyer.js) so the coming Keyer Practice and QSO tabs can
+  // use them too. While this panel is open it listens to the key: the
+  // keyer turns paddle presses into dits and dahs (with sidetone), and
+  // the decoder turns those back into letters.
+  // ------------------------------------------------------------------
+  var kDlg = $('keyerDialog');
+  var keyer = null, decoder = null, detachKeyboard = null;
+  var decoded = '';
+  var rawDown = {};                       // which physical contacts are closed, for the lights
+
+  function renderKeyer(s) {
+    $('kAdapter').value = s.adapter;
+    $('kInput').value = s.input;
+    $('kType').value = s.keyType;
+    $('kWpm').value = s.wpm;
+    $('kWeight').value = s.weight;
+    $('kReversed').checked = s.reversed;
+    $('kSidetone').checked = s.sidetone;
+    var straight = s.keyType === 'straight';
+    $('kInputField').hidden = s.adapter !== 'vail';          // MIDI is a Vail-adapter option
+    $('kWeightField').hidden = straight;                     // a straight key sets its own dah length
+    $('kReversed').parentNode.style.display = straight ? 'none' : '';
+    // For a straight key the speed slider is only the decoder's first guess;
+    // it learns the actual speed from the sending.
+    $('kWpmLabel').textContent = straight ? 'Starting speed guess' : 'Keyer speed';
+    $('kWpmVal').textContent = s.wpm + ' WPM';
+    $('kWeightVal').textContent = s.weight.toFixed(1) + ' dits';
+    // On-screen pads: one KEY pad for a straight key, else two paddles.
+    $('padDit').textContent = straight ? 'KEY' : (s.reversed ? 'DAH' : 'DIT');
+    $('padDah').textContent = s.reversed ? 'DIT' : 'DAH';
+    $('padDah').style.display = straight ? 'none' : '';
+    if (!kDlg.open) return;
+    var status = $('kStatus');
+    status.classList.remove('warn');
+    if (s.adapter === 'keyboard') {
+      status.textContent = straight ? 'Hold [ or ] as the key, or use the KEY pad.'
+                                    : 'The [ key is the dit paddle and ] the dah paddle, or use the pads.';
+    } else if (s.adapter === 'vail' && s.input === 'midi') {
+      status.textContent = 'Connecting to MIDI…';
+    } else {
+      status.textContent = 'The adapter’s dit paddle arrives as Left Ctrl and the dah paddle as Right Ctrl.';
+    }
+  }
+
+  // MIDI is switched on only while it's the chosen input (Chrome asks
+  // permission the first time).
+  function syncMidi() {
+    var s = HST.keyerSettings.get();
+    if (!keyer) return;
+    if (s.adapter === 'vail' && s.input === 'midi') {
+      keyer.attachMidi().then(function (r) {
+        var status = $('kStatus');
+        status.textContent = r.msg;
+        status.classList.toggle('warn', !r.ok);
+      });
+    } else {
+      keyer.detachMidi();
+    }
+  }
+
+  function renderDecoded() {
+    $('kDecoded').textContent = decoded;
+  }
+
+  function onKey(down, t) {                 // keyed signal (after the keyer)
+    $('lKey').classList.toggle('on', down);
+    if (down) decoder.down(t); else decoder.up(t);
+  }
+
+  function onRaw(info) {                    // every physical input
+    if (info.which) {
+      rawDown[info.src + ':' + info.which] = info.down;
+      var any = function (w) { return Object.keys(rawDown).some(function (k) { return rawDown[k] && k.split(':')[1] === w; }); };
+      $('lDit').classList.toggle('on', any('dit') || any('straight'));
+      $('lDah').classList.toggle('on', any('dah'));
+    }
+    $('dLast').textContent = info.src + ' · ' + (info.detail || info.which) + ' · ' +
+      (info.down ? 'down' : 'up') + (info.accepted ? '' : ' (ignored: not the selected input method)');
+    if (info.compare) {
+      var c = info.compare, ahead = c.kbMinusMidi >= 0 ? 'MIDI' : 'Keyboard';
+      $('dCompare').textContent = ahead + ' arrived ' + Math.abs(c.kbMinusMidi).toFixed(1) +
+        ' ms first on the last press. Average keyboard minus MIDI: ' + c.avg.toFixed(1) + ' ms over ' + c.n + ' presses.';
+    }
+  }
+
+  function showAudioDelay() {
+    var ms = HST.audioLatencyMs();
+    $('dAudio').textContent = ms ? 'about ' + Math.round(ms) + ' ms, as reported by the browser (Bluetooth headphones add more)'
+                                 : 'not reported by this browser';
+  }
+
+  function openKeyer() {
+    if (dlg.open) dlg.close();
+    HST.audio.unlock();                     // allowed here: this runs from a click
+    keyer = HST.createKeyer({ key: onKey, raw: onRaw });
+    decoder = HST.createDecoder({
+      unitMs: function () { return 1200 / HST.keyerSettings.get().wpm; },
+      // Learn the sender's own speed when a person times the elements.
+      adaptive: function () { var k = HST.keyerSettings.get().keyType; return k === 'straight' || k === 'bug'; },
+      onChar: function (ch) {
+        decoded = (decoded + ch).slice(-160);
+        renderDecoded();
+        $('kSpeed').textContent = Math.round(decoder.speedWpm()) + ' WPM';
+      },
+      onWord: function () {
+        if (decoded && decoded.slice(-1) !== ' ') { decoded += ' '; renderDecoded(); }
+      }
+    });
+    detachKeyboard = keyer.attachKeyboard(window);
+    kDlg.showModal();
+    renderKeyer(HST.keyerSettings.get());
+    syncMidi();
+    showAudioDelay();
+  }
+
+  $('keyerSetupBtn').addEventListener('click', openKeyer);
+
+  // Setting controls -> HST.keyerSettings. A change mid-element resets the
+  // keyer so nothing is left half-sent at the old setting.
+  function setKeyer(patch) {
+    if (keyer) keyer.reset();
+    if (decoder) decoder.reset();
+    HST.keyerSettings.set(patch);
+  }
+  $('kAdapter').addEventListener('change', function (e) { setKeyer({ adapter: e.target.value }); syncMidi(); });
+  $('kInput').addEventListener('change', function (e) { setKeyer({ input: e.target.value }); syncMidi(); });
+  $('kType').addEventListener('change', function (e) { setKeyer({ keyType: e.target.value }); });
+  $('kWpm').addEventListener('input', function (e) { setKeyer({ wpm: Number(e.target.value) }); });
+  $('kWeight').addEventListener('input', function (e) { setKeyer({ weight: Number(e.target.value) }); });
+  $('kReversed').addEventListener('change', function (e) { setKeyer({ reversed: e.target.checked }); });
+  $('kSidetone').addEventListener('change', function (e) { setKeyer({ sidetone: e.target.checked }); });
+  HST.keyerSettings.onChange(renderKeyer);
+  renderKeyer(HST.keyerSettings.get());
+
+  $('kClear').addEventListener('click', function () {
+    decoded = ''; renderDecoded();
+    $('kSpeed').textContent = '—';
+    if (decoder) decoder.reset();
+  });
+
+  // On-screen pads. Pointer capture keeps a pad "held" even if the finger
+  // slides off it, and the release always arrives.
+  [['padDit', 'dit'], ['padDah', 'dah']].forEach(function (p) {
+    var el = $(p[0]);
+    function down(e) { e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('down'); if (keyer) keyer.touch(p[1], true); }
+    function up() { if (!el.classList.contains('down')) return; el.classList.remove('down'); if (keyer) keyer.touch(p[1], false); }
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+    el.addEventListener('contextmenu', function (e) { e.preventDefault(); });   // no long-press menu
+  });
+
+  $('keyerDone').addEventListener('click', function () { kDlg.close(); });
+  kDlg.addEventListener('click', function (e) { if (e.target === kDlg) kDlg.close(); });
+  kDlg.addEventListener('close', function () {
+    if (keyer) { keyer.reset(); keyer.detachMidi(); }
+    if (detachKeyboard) detachKeyboard();
+    if (decoder) decoder.reset();
+    keyer = decoder = detachKeyboard = null;
+    rawDown = {};
+    ['lDit', 'lDah', 'lKey'].forEach(function (id) { $(id).classList.remove('on'); });
+    var active = document.getElementById('frame-' + current);
+    try { active.contentWindow.focus(); } catch (e) {}
   });
 
   // ------------------------------------------------------------------
@@ -561,12 +904,11 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-07';
+  var RELEASE = '2026-10-08';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
-    '<strong>Morse Code Jeopardy</strong> is now part of the app, in its own tab \u2014 and like everything else here, it works offline.',
-    'When an update is ready you\u2019ll now see a banner with a <strong>Restart now</strong> button, instead of having to close and reopen the app.',
-    'This note appears once after each update. You can find it again under Settings (the gear icon).'
+    'Settings (the gear icon) has a new <strong>Experimental features</strong> switch. It holds early versions of tools still being built \u2014 first up, sending with a real key or paddles through a Vail or VBand adapter. It\u2019s a work in progress, so most people can leave it off for now.',
+    'This note appears once after each update. You can find it again under Settings.'
   ];
   var SEEN_KEY = 'hct-cw-seen-release';
   var wnDlg = document.getElementById('whatsNewDialog');
