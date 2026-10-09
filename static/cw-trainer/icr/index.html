@@ -1359,6 +1359,13 @@ function wireEvents(){
   // valid practice character (punctuation set excludes it), so always
   // treating it as the recognize action is safe and correct on both
   // touch devices (no physical spacebar involved) and external keyboards.
+  // True for a space-bar keydown however the keyboard reports it. Physical
+  // keyboards set e.code 'Space'; some on-screen keyboards leave e.code
+  // empty but set e.key to ' ' (or the old IE/Edge name 'Spacebar').
+  // Android's Gboard usually reports neither (key 'Unidentified') — that
+  // case is caught by the beforeinput/input handlers further down.
+  const isSpaceKey = (e) => e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar';
+
   document.addEventListener('keydown', (e) => {
     // The Practice Timer popup handles its own keys (typing minutes,
     // Enter, Escape) — don't let the space-bar/Oops logic below touch them.
@@ -1369,12 +1376,12 @@ function wireEvents(){
       if(e.key === 'Enter' || e.key === 'Escape'){
         e.preventDefault();
         closeOops();
-      }else if(e.code === 'Space'){
+      }else if(isSpaceKey(e)){
         e.preventDefault();
       }
       return;
     }
-    if(e.code === 'Space'){
+    if(isSpaceKey(e)){
       e.preventDefault();
       handleRecognizePress();
       return;
@@ -1392,7 +1399,28 @@ function wireEvents(){
     if(e.key === 'Enter') submitAnswer();
   });
   // Single-character practice sets: auto-submit as soon as a character is typed.
+  // Android on-screen keyboards report every keydown as "Unidentified",
+  // so the space bar is invisible to the keydown handler above and would
+  // otherwise land in the answer box as a " " character — which the check
+  // below mistook for typing too early (the Oops! popup). beforeinput
+  // tells us the actual text about to be inserted, so a space is caught
+  // here, kept out of the box, and treated as the recognize press.
+  els.answerInput.addEventListener('beforeinput', (e) => {
+    if(typeof e.data === 'string' && e.data.length && e.data.trim() === ''){
+      e.preventDefault();          // keep the space out of the answer box
+      if(!oopsOpen) handleRecognizePress();
+    }
+  });
   els.answerInput.addEventListener('input', () => {
+    // Fallback for keyboards whose beforeinput can't be cancelled (some
+    // insert text through "composition", which ignores preventDefault):
+    // if a space still got in, strip it and treat it as the space bar.
+    const raw = els.answerInput.value;
+    if(/\s/.test(raw)){
+      els.answerInput.value = raw.replace(/\s+/g, '');
+      if(!oopsOpen) handleRecognizePress();
+      if(!els.answerInput.value) return;   // it was only a space — nothing to grade
+    }
     // Backup check for on-screen keyboards (notably Android), which often
     // report keydown as "Unidentified" so the check above can't see the
     // character — catch it here once it actually lands in the field.
