@@ -253,6 +253,13 @@
     /* ---- inputs from the keyboard (adapters in keyboard mode) ----
        Left/Right Ctrl = dit/dah from an adapter. With no adapter, the [ and ]
        keys do the same. Held keys auto-repeat keydown events; those are ignored. */
+    // An event's own timestamp is the most precise "when", but only if it's
+    // on the same clock as performance.now(); some browsers have reported
+    // MIDI timestamps on another clock. If it's more than a second off, use now.
+    function evTime(e) {
+      var now = performance.now(), t = e && e.timeStamp;
+      return (t && Math.abs(t - now) < 1000) ? t : now;
+    }
     var KEYMAP = { ControlLeft: 'dit', ControlRight: 'dah', BracketLeft: 'dit', BracketRight: 'dah' };
     var last = { keyboard: {}, midi: {} };     // last press time per source, for comparing
     var cmp = { n: 0, sum: 0 };                 // keyboard-vs-MIDI arrival comparison
@@ -287,12 +294,12 @@
         if (!w) return;
         if (e.code.indexOf('Bracket') === 0) e.preventDefault();   // don't type [ ] into fields
         if (e.repeat) return;
-        feed('keyboard', w, true, e.timeStamp || performance.now(), e.code);
+        feed('keyboard', w, true, evTime(e), e.code);
       }
       function ku(e) {
         var w = KEYMAP[e.code];
         if (!w) return;
-        feed('keyboard', w, false, e.timeStamp || performance.now(), e.code);
+        feed('keyboard', w, false, evTime(e), e.code);
       }
       // If the window loses focus with a key held, its key-up never arrives.
       function blur() { releaseAll(); }
@@ -338,14 +345,18 @@
       return named.length ? named : (all.length === 1 ? all : []);
     }
     function sendToVail(bytes) {
-      vailOutputs().forEach(function (out) { try { out.send(bytes); } catch (e) { console.warn('MIDI send failed', e); } });
+      vailOutputs().forEach(function (out) {
+        try { out.send(bytes); } catch (e) { console.warn('MIDI send failed', e); }
+        if (h.midiLog) h.midiLog('sent ' + bytes.map(function (b) { return ('0' + b.toString(16)).slice(-2); }).join(' ') + ' to ' + out.name, performance.now(), true);
+      });
     }
     function onMidi(e) {
       var d = e.data, cmd = d[0] & 0xf0, note = d[1], vel = d[2];
       var on = cmd === 0x90 && vel > 0, off = cmd === 0x80 || (cmd === 0x90 && vel === 0);
-      var t = e.timeStamp || performance.now();
+      var t = evTime(e);
       var hex = Array.prototype.map.call(d, function (b) { return ('0' + b.toString(16)).slice(-2); }).join(' ');
       var which = { 0: 'straight', 1: 'dit', 2: 'dah' }[note];
+      if (h.midiLog) h.midiLog(hex, t);      // every message, raw, for the Diagnostics log
       if ((on || off) && which) feed('midi', which, on, t, 'note ' + note + ' (' + hex + ')');
       else if (h.raw) h.raw({ src: 'midi', which: null, down: on, t: t, detail: 'message ' + hex, accepted: false });
     }
@@ -408,10 +419,22 @@
       cmp.n = 0; cmp.sum = 0;
     }
 
+    // For Diagnostics: each MIDI port the browser sees, with its state.
+    // state = connected/disconnected; connection = open/pending/closed
+    // ("pending" usually means another program has the device open).
+    function midiPorts() {
+      if (!midiAccess) return [];
+      var list = [];
+      midiAccess.inputs.forEach(function (p) { list.push('in: ' + p.name + ' (' + p.state + ', ' + p.connection + ')'); });
+      midiAccess.outputs.forEach(function (p) { list.push('out: ' + p.name + ' (' + p.state + ', ' + p.connection + ')'); });
+      return list;
+    }
+
     return {
       attachKeyboard: attachKeyboard,
       attachMidi: attachMidi,
       detachMidi: detachMidi,
+      midiPorts: midiPorts,
       touch: function (which, down) { feed('touch', which, down, performance.now(), 'on-screen pad'); },
       reset: reset
     };
