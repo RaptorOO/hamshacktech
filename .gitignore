@@ -3,3 +3,6 @@
 /public/
 /resources/_gen/
 .hugo_build.lock
+
+# Local Cloudflare dev server state (wrangler pages dev)
+.wrangler/

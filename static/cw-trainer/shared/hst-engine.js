@@ -378,6 +378,13 @@
        HST.history.all()      -> Promise of every record, oldest first
        HST.history.add(rec)   -> Promise
        HST.history.clear()    -> Promise
+     For syncing between devices (Milestone 8, shared/hst-account.js):
+       every record gets a permanent random `uid` when it's saved, so the
+       same session is recognized on every device; and
+       HST.history.update(recs)     save changes to existing records (e.g. synced: true)
+       HST.history.addMany(recs)    add sessions that came from other devices
+       HST.history.removeBefore(t)  drop sessions that started before t
+       HST.history.newUid()         a fresh uid
        HST.history.onChange(fn)  fn() runs when history changes in any tab/frame
        HST.history.recorder('icr' | 'code-groups')  -> see below
      ===================================================================== */
@@ -424,12 +431,34 @@
     historyListeners.forEach(function (fn) { try { fn(); } catch (e) { console.error(e); } });
   };
 
+  // 16 random bytes as 32 hex characters: unique for all practical purposes.
+  function newUid() {
+    var a = new Uint8Array(16);
+    (window.crypto || window.msCrypto).getRandomValues(a);
+    return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+  }
+
+  // Run several IndexedDB requests in one transaction.
+  function dbMany(makeRequests) {
+    return openDb().then(function (db) {
+      if (!db) return null;
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(STORE, 'readwrite');
+        makeRequests(tx.objectStore(STORE));
+        tx.oncomplete = function () { resolve(true); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+
   HST.history = {
+    newUid: newUid,
     all: function () {
       return dbRequest('readonly', function (s) { return s.getAll(); })
         .then(function (rows) { return (rows || memoryOnly).slice().sort(function (a, b) { return a.start - b.start; }); });
     },
     add: function (rec) {
+      if (!rec.uid) rec.uid = newUid();
       return dbRequest('readwrite', function (s) { return s.add(rec); })
         .then(function (r) { if (r == null) memoryOnly.push(rec); historyChanged(); });
     },
@@ -438,6 +467,30 @@
         .then(function () { memoryOnly = []; historyChanged(); });
     },
     onChange: function (fn) { historyListeners.push(fn); },
+
+    update: function (recs) {
+      if (!recs || !recs.length) return Promise.resolve();
+      return dbMany(function (s) { recs.forEach(function (r) { if (r.id != null) s.put(r); }); })
+        .then(function (ok) {
+          if (ok == null) recs.forEach(function (r) {           // memory-only fallback
+            var i = memoryOnly.indexOf(r); if (i < 0) memoryOnly.push(r);
+          });
+        });
+    },
+    addMany: function (recs) {
+      if (!recs || !recs.length) return Promise.resolve();
+      recs.forEach(function (r) { delete r.id; if (!r.uid) r.uid = newUid(); });
+      return dbMany(function (s) { recs.forEach(function (r) { s.add(r); }); })
+        .then(function (ok) { if (ok == null) recs.forEach(function (r) { memoryOnly.push(r); }); historyChanged(); });
+    },
+    removeBefore: function (t) {
+      return HST.history.all().then(function (rows) {
+        var old = rows.filter(function (r) { return r.start < t; });
+        if (!old.length) return;
+        return dbMany(function (s) { old.forEach(function (r) { if (r.id != null) s.delete(r.id); }); })
+          .then(function () { memoryOnly = memoryOnly.filter(function (r) { return r.start >= t; }); historyChanged(); });
+      });
+    },
 
     /* A recorder collects one practice session (Start ... Stop) and saves
        it when the session ends:
