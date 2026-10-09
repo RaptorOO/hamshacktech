@@ -460,7 +460,7 @@
     // Wrong letters: show the right pattern next to what was sent.
     if (g) {
       var wrong = g.items.filter(function (it) { return !it.ok; });
-      runTogether(want, a).forEach(function (x) { tips.push(x); });
+      runTogether(want, a, g).forEach(function (x) { tips.push(x); });
       wrong.slice(0, 4).forEach(function (it) {
         var right = HST.MORSE[it.want];
         if (!it.got) tips.push('<b>' + esc(it.want) + '</b> was missing. It’s <code>' + pretty(right) + '</code>.');
@@ -500,11 +500,17 @@
 
   // Two letters sent with too small a gap become one wrong letter (E + T = A).
   // Spot that, and the opposite (one letter split in two by a long gap).
-  function runTogether(want, a) {
+  // Only letters the grading marked wrong are considered -- a correct W in
+  // "WHAT" is not "A and T run together", even though A + T = W.
+  function runTogether(want, a, g) {
     var out = [], seen = {};
     if (!want) return out;
     var W = want.replace(/ /g, '').split('');
+    var wrongGot = {}, wrongWant = {};
+    g.items.forEach(function (it) { if (!it.ok) { if (it.got) wrongGot[it.got] = 1; wrongWant[it.want] = 1; } });
+    if (g.extra) a.chars.forEach(function (c) { if (W.indexOf(c.text) < 0) wrongGot[c.text] = 1; });
     a.chars.forEach(function (c) {
+      if (!wrongGot[c.text]) return;
       for (var i = 0; i < W.length - 1; i++) {
         if (HST.MORSE[W[i]] + HST.MORSE[W[i + 1]] === c.code && !seen[c.code]) {
           seen[c.code] = 1;
@@ -516,7 +522,7 @@
     for (var k = 0; k < a.chars.length - 1; k++) {
       var joined = a.chars[k].code + a.chars[k + 1].code;
       W.forEach(function (L) {
-        if (HST.MORSE[L] === joined && !seen['s' + L]) {
+        if (wrongWant[L] && HST.MORSE[L] === joined && !seen['s' + L]) {
           seen['s' + L] = 1;
           out.push('<b>' + L + '</b> came out as two letters (<code>' + pretty(a.chars[k].code) + '</code> + <code>' +
                    pretty(a.chars[k + 1].code) + '</code>). Keep the gaps inside a letter short — 1 dit.');

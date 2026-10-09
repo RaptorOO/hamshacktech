@@ -73,10 +73,31 @@
     return pick(PHRASES).replace(/\{C\}/g, function () { return callSign(); });
   }
 
+  /* For the QSO tab's virtual stations (Milestone 7): short operator
+     names (as sent on the air -- one word, easy to copy), a QTH as city +
+     state, US state abbreviations for POTA, and a POTA park reference.
+     POTA park references are country prefix + number; US parks changed
+     from "K-" to "US-" in 2024 (e.g. US-1234). */
+  var NAMES = ['BOB', 'JIM', 'TOM', 'BILL', 'JOE', 'DAN', 'MIKE', 'STEVE', 'DAVE', 'RON', 'KEN', 'AL',
+               'ED', 'RAY', 'GARY', 'JACK', 'PAUL', 'MARK', 'RICK', 'ANN', 'SUE', 'MARY', 'KAY', 'JAN',
+               'LIZ', 'PAT', 'DON', 'HAL', 'GUS', 'WALT'];
+  var QTHS = [['DENVER', 'CO'], ['AUSTIN', 'TX'], ['OMAHA', 'NE'], ['BOISE', 'ID'], ['TAMPA', 'FL'],
+              ['RENO', 'NV'], ['MESA', 'AZ'], ['TULSA', 'OK'], ['DAYTON', 'OH'], ['SALEM', 'OR'],
+              ['BANGOR', 'ME'], ['FARGO', 'ND'], ['MACON', 'GA'], ['ERIE', 'PA'], ['TOPEKA', 'KS'],
+              ['DULUTH', 'MN'], ['MOBILE', 'AL'], ['ALBANY', 'NY'], ['BUTTE', 'MT'], ['PROVO', 'UT'],
+              ['DOVER', 'DE'], ['FLINT', 'MI'], ['AMES', 'IA'], ['KEENE', 'NH'], ['NAPA', 'CA']];
+  var STATES = ['AL', 'AZ', 'CA', 'CO', 'FL', 'GA', 'ID', 'IL', 'IN', 'KS', 'KY', 'MA', 'MI', 'MN', 'MO',
+                'NC', 'NE', 'NM', 'NV', 'NY', 'OH', 'OK', 'OR', 'PA', 'SC', 'TN', 'TX', 'UT', 'VA', 'WA', 'WI'];
+
   HST.content = {
     letter: function () { return pick((ALPHA + DIGITS).split('')); },
     word: function () { return pick(WORDS); },
     callSign: callSign,
-    phrase: phrase
+    usCallSign: usCall,      // POTA/QSO stations whose state is sent need a US call
+    phrase: phrase,
+    name: function () { return pick(NAMES); },
+    qth: function () { var q = pick(QTHS); return { city: q[0], state: q[1] }; },
+    state: function () { return pick(STATES); },
+    park: function () { return 'US-' + (1000 + Math.floor(Math.random() * 8999)); }
   };
 })();

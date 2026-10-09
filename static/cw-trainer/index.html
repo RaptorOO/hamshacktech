@@ -94,8 +94,8 @@
   .tab:hover { color: var(--text); }
   .tab { flex: none; white-space: nowrap; }
   .tab .narrow { display: none; }      /* "Stats" replaces "Progress" on phones */
-  /* Five tabs: if a very small screen still can't fit them, the tab row
-     scrolls sideways rather than pushing the gear off the screen. */
+  /* Six tabs: if a small screen can't fit them, the tab row scrolls
+     sideways rather than pushing the gear off the screen. */
   .tabs { min-width: 0; overflow-x: auto; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
   .tab[aria-selected="true"] { background: var(--lime); color: var(--lime-ink); }
@@ -293,33 +293,43 @@
   }
   main iframe[hidden] { display: none; }
 
-  /* ---------- narrow screens (phones) ---------- */
-  @media (max-width: 620px) {
-    .bar { gap: 10px; padding-left: 10px; padding-right: 10px; }
-    .brand h1 .site { display: none; }   /* "CW Trainer" is enough on a phone */
-    .tab { padding: 7px 11px; }
-    .home { display: none; }             /* room is tight; the browser's Back works */
+  /* ---------- narrower windows: six tabs need room ----------
+     Things give way in this order as the window narrows: the
+     "HamShackTech" word, then the title (mascot only), short tab labels
+     and an icon-only Install button, the Home button, the mascot, and
+     finally tighter tabs. Below that the tab row scrolls sideways. */
+  @media (max-width: 1000px) { .brand h1 .site { display: none; } }   /* "CW Trainer" */
+  @media (max-width: 840px)  {
+    .brand h1 { display: none; }         /* mascot only */
+    .tab { padding: 7px 12px; }
   }
-  @media (max-width: 480px) {
-    .brand h1 { display: none; }         /* mascot + tabs + gear only */
+  @media (max-width: 760px) {
+    .tab .long { display: none; }        /* "Code Groups" -> "Groups" */
+    .tab .wide { display: none; }        /* "Progress" -> "Stats" */
+    .tab .narrow { display: inline; }
     /* Install becomes an icon-only square, the same size as the gear. */
     .install.show { width: 34px; height: 34px; padding: 0; justify-content: center; }
     .install .label { display: none; }
     .install svg { width: 18px; height: 18px; }
+  }
+  @media (max-width: 620px) {
+    .bar { gap: 10px; padding-left: 10px; padding-right: 10px; }
+    .tab { padding: 7px 10px; }
+    .home { display: none; }             /* room is tight; the browser's Back works */
+  }
+  @media (max-width: 480px) {
     .tab { padding: 7px 8px; font-size: 0.88rem; }
-    .tab .long { display: none; }        /* "Code Groups" -> "Groups" */
-    .tab .wide { display: none; }        /* "Progress" -> "Stats" */
-    .tab .narrow { display: inline; }
   }
   @media (max-width: 440px) {
-    .brand { display: none; }            /* five tabs need the room */
+    .brand { display: none; }            /* six tabs need the room */
+    .tab { padding: 7px 6px; font-size: 0.84rem; }
   }
   @media (max-width: 400px) {
-    .tab { padding: 7px 6px; font-size: 0.84rem; }
+    .tab { padding: 6px 4px; font-size: 0.79rem; }
   }
   @media (max-width: 360px) {            /* smallest phones (e.g. iPhone SE 1st gen) */
     .bar { gap: 6px; padding-left: 6px; padding-right: 6px; }
-    .tab { padding: 6px 5px; font-size: 0.8rem; }
+    .tab { padding: 6px 4px; font-size: 0.78rem; }
   }
 </style>
 </head>
@@ -340,6 +350,8 @@
             aria-controls="frame-code-groups" aria-selected="false"><span class="long">Code </span>Groups</button>
     <button class="tab" role="tab" id="tab-keyer" data-tab="keyer"
             aria-controls="frame-keyer" aria-selected="false">Keyer</button>
+    <button class="tab" role="tab" id="tab-qso" data-tab="qso"
+            aria-controls="frame-qso" aria-selected="false">QSO</button>
     <button class="tab" role="tab" id="tab-progress" data-tab="progress"
             aria-controls="frame-progress" aria-selected="false"><span class="wide">Progress</span><span class="narrow">Stats</span></button>
     <button class="tab" role="tab" id="tab-jeopardy" data-tab="jeopardy"
@@ -517,6 +529,8 @@
           title="Code Groups Trainer" data-src="code-groups/" hidden></iframe>
   <iframe id="frame-keyer" role="tabpanel" aria-labelledby="tab-keyer"
           title="Keyer Practice" data-src="keyer/" hidden></iframe>
+  <iframe id="frame-qso" role="tabpanel" aria-labelledby="tab-qso"
+          title="QSO Practice" data-src="qso/" hidden></iframe>
   <iframe id="frame-progress" role="tabpanel" aria-labelledby="tab-progress"
           title="Progress" data-src="progress/" hidden></iframe>
   <iframe id="frame-jeopardy" role="tabpanel" aria-labelledby="tab-jeopardy"
@@ -574,6 +588,8 @@
       clickIfStop('sessionBtn');         // to "Stop ..." while running
     } else if (slug === 'keyer') {
       clickIfVisible('endBtn');          // Keyer Practice: save the session to Progress
+    } else if (slug === 'qso') {
+      clickIfVisible('endQsoBtn');       // QSO: stop the contact (it goes to the copy check)
     } else if (slug === 'jeopardy') {
       var stop = doc.getElementById('stopAudio');   // Jeopardy's own Stop Audio
       if (stop) stop.click();
@@ -598,6 +614,10 @@
     });
 
     if (remember) { try { localStorage.setItem(TAB_KEY, slug); } catch (e) {} }
+
+    // On a phone the tab row may scroll sideways; keep the chosen tab in view.
+    var tabBtn = document.getElementById('tab-' + slug);
+    if (tabBtn && tabBtn.scrollIntoView) { try { tabBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {} }
 
     // Progress redraws each time it's opened, so it includes the session
     // that was just stopped by switching here.
@@ -624,7 +644,7 @@
   // Which tab to open: a ?tab=icr / code-groups / progress / jeopardy link (the CW
   // Tools page and the old trainer addresses use these) wins; otherwise
   // the tab used last time; ICR the very first time.
-  var TABS = ['icr', 'code-groups', 'keyer', 'progress', 'jeopardy'];
+  var TABS = ['icr', 'code-groups', 'keyer', 'qso', 'progress', 'jeopardy'];
   var params = new URLSearchParams(location.search);
   var wanted = params.get('tab');
   // Jeopardy's host mode (the Content editor) is turned on with host=1;
@@ -972,9 +992,10 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-09';
+  var RELEASE = '2026-10-09-qso';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
+    'New <strong>QSO</strong> tab: work a complete contact with a virtual station, using your own key. Standard QSO or POTA, answering their CQ or calling your own. They\u2019ll ask \u201cNAME?\u201d or \u201cQRS\u201d like a real operator, and afterwards you check what you copied.',
     'New <strong>Keyer</strong> tab: practice <em>sending</em>. Plug your key or paddles into a Vail or VBand adapter, send what\u2019s shown, and see your speed, your spacing between letters and words, and which letters came out wrong \u2014 with your timing drawn over perfect timing. No adapter? The [ and ] keys or the on-screen paddles work too.',
     'Set up your key under Settings (the gear icon) \u2192 <strong>Keyer Setup</strong>. Your sending sessions now show up in <strong>Progress</strong>.',
     'This note appears once after each update. You can find it again under Settings.'
