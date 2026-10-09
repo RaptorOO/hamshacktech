@@ -540,6 +540,8 @@
   </form>
   <form id="signinStep2" hidden>
     <p class="ok" id="si2Sent"></p>
+    <!-- New sending domains often land in junk at first; say so plainly. -->
+    <p class="hint" id="si2Junk"><strong>Not in your inbox?</strong> Check your Junk or Spam folder. The email comes from signin@hamshacktech.com. Marking it &ldquo;Not junk&rdquo; helps future codes arrive normally.</p>
     <div class="field">
       <label for="siCode">6-digit code</label>
       <input type="text" class="code" id="siCode" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required>
@@ -1164,7 +1166,7 @@
     $('siSend').disabled = true; $('si1Err').textContent = '';
     HST.account.start(siEmail, tsToken).then(function (j) {
       $('signinStep1').hidden = true; $('signinStep2').hidden = false;
-      $('si2Sent').textContent = 'We sent a code to ' + siEmail + '. It may take a minute; check your spam folder too.';
+      $('si2Sent').textContent = 'We sent a code to ' + siEmail + '. It may take a minute.';
       if (j.devCode) $('siCode').value = j.devCode;        // local testing only
       $('siCode').focus();
     }, function (err) {
@@ -1246,12 +1248,12 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-09-qso';
+  var RELEASE = '2026-10-09-accounts';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
-    'New <strong>QSO</strong> tab: work a complete contact with a virtual station, using your own key. Standard QSO or POTA, answering their CQ or calling your own. They\u2019ll ask \u201cNAME?\u201d or \u201cQRS\u201d like a real operator, and afterwards you check what you copied.',
-    'New <strong>Keyer</strong> tab: practice <em>sending</em>. Plug your key or paddles into a Vail or VBand adapter, send what\u2019s shown, and see your speed, your spacing between letters and words, and which letters came out wrong \u2014 with your timing drawn over perfect timing. No adapter? The [ and ] keys or the on-screen paddles work too.',
-    'Set up your key under Settings (the gear icon) \u2192 <strong>Keyer Setup</strong>. Your sending sessions now show up in <strong>Progress</strong>.',
+    'New: <strong>accounts</strong>. Sign in with your email under Settings (the gear icon) \u2192 <strong>Account</strong> and your Progress history follows you to every device \u2014 phone, tablet, laptop. Your QSO station details (call, name, QTH) come along too.',
+    'There\u2019s no password. We email you a 6-digit code. <strong>If it isn\u2019t in your inbox, check your Junk or Spam folder</strong> and mark it \u201cNot junk\u201d so the next one arrives normally.',
+    'Signing in is optional; the trainer works exactly as before without it. From the Account screen you can download your data, sign out other devices, or delete your account.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
   var SEEN_KEY = 'hct-cw-seen-release';
