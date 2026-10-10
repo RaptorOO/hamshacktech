@@ -451,6 +451,186 @@
   }
   .error { color: #ffb4b4; background: rgba(80,20,20,0.45); border: 1px solid #a44; padding: 8px 10px; border-radius: 8px; margin: 8px 0; display: none; }
   .error.show { display: block; }
+
+  /* =================== Online rooms (online.js) =================== */
+  [hidden] { display: none !important; }
+  .on-only, .on-only-b, .off-only, .online-ok-only { display: none !important; }
+  body.online .on-only { display: inline-flex !important; }
+  body.online .on-only[hidden] { display: none !important; }   /* host-only buttons stay hidden for players */
+  body.online .on-only-b { display: block !important; }
+  body.online .off-only-b { display: none; }
+  body.online-ok:not(.online) .off-only { display: inline-block !important; }
+  body.online-ok .online-ok-only { display: block !important; }
+  body.online #newGame, body.online #stopAudio, body.online #editContent { display: none !important; }
+  .room-chip {
+    align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px;
+    border: 1px solid rgba(198,240,53,0.4); color: #d5e8c4;
+    font-family: "Oswald", sans-serif; letter-spacing: 0.08em; text-transform: uppercase; font-size: 14px;
+  }
+  .room-chip b { color: var(--lime); font-size: 17px; letter-spacing: 0.14em; }
+
+  /* The board and (online) the players panel beside it. */
+  .stage-row { min-height: 0; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  body.online .stage-row { grid-template-columns: minmax(0, 1fr) 210px; }
+  .players {
+    min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px;
+    border-radius: 14px; background: linear-gradient(180deg, rgba(18,36,16,0.92), rgba(8,16,8,0.82));
+    border: 1px solid rgba(198,240,53,0.22);
+  }
+  .pl-head { font-family: "Oswald", sans-serif; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); font-size: 14px; }
+  .pl-head span { color: var(--muted); margin-left: 4px; }
+  .pl-list { list-style: none; overflow-y: auto; min-height: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .pl {
+    display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 8px;
+    font-family: "Oswald", sans-serif; letter-spacing: 0.05em; font-size: 16px; color: #e8f8d8;
+    background: rgba(255,255,255,0.03); border: 1px solid transparent;
+  }
+  .pl .n { color: var(--muted); font-size: 13px; width: 16px; text-align: right; }
+  .pl .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pl.me .nm { text-decoration: underline; text-decoration-color: rgba(198,240,53,0.5); text-underline-offset: 3px; }
+  /* Whose turn: hard to miss. */
+  .pl.turn { background: linear-gradient(180deg, #e8ff7a, var(--lime-deep)); color: #142000; box-shadow: 0 0 16px var(--lime-glow); }
+  .pl.turn .n { color: #2a4000; }
+  .pl.off { opacity: 0.45; }
+  .pl .tag { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; }
+  .pl.turn .tag { color: #3a3000; }
+  .pl .done { color: #7dff7a; font-weight: 700; }
+  .pl.turn .done { color: #0a4a00; }
+  .pl .wait { color: var(--muted); }
+  .pl .kick { border: 0; background: none; color: #ff9a9a; cursor: pointer; font-size: 13px; padding: 0 2px; }
+  .conn-note { color: #ffd27a; font-size: 13px; }
+  .board.locked .tile { cursor: default; }
+  .board.locked .tile:hover { filter: none !important; }
+  .tile .pts { font-size: 0.55em; color: var(--gold); margin-top: 4px; text-shadow: none; }
+
+  /* Lobby and turn cards sit over the board. */
+  .lobby-card, .turn-card {
+    position: absolute; z-index: 6; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: min(560px, 92%); text-align: center; padding: 22px 24px; border-radius: 16px;
+    background: linear-gradient(180deg, #152414, #0c160c); border: 2px solid var(--lime);
+    box-shadow: 0 0 40px var(--lime-glow), 0 20px 50px rgba(0,0,0,0.6);
+  }
+  .lobby-card p { color: #c5d6b4; margin: 10px 0; font-size: 16px; }
+  .lc-kicker, .tc-kicker { font-family: "Oswald", sans-serif; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); font-size: 13px; }
+  .lc-code { font-family: "Russo One", "Oswald", sans-serif; font-size: clamp(44px, 8vw, 84px); letter-spacing: 0.12em; color: var(--lime); text-shadow: 0 0 24px var(--lime-glow); }
+  .lc-wait { color: var(--muted) !important; }
+  button.btn.big { font-size: 20px; padding: 10px 26px; margin-top: 6px; }
+  .turn-card { cursor: pointer; }
+  /* Someone else's turn: a slim banner at the top, so the board stays visible. */
+  .turn-card:not(.mine) { top: auto; bottom: 14px; transform: translateX(-50%); padding: 10px 16px; border-width: 1px; width: auto; max-width: 92%; }
+  .turn-card:not(.mine) .tc-name, .turn-card:not(.mine) .tc-msg { display: inline; font-size: 22px; }
+  .turn-card:not(.mine) .tc-kicker { display: inline; margin-right: 10px; }
+  .tc-name { font-family: "Russo One", "Oswald", sans-serif; font-size: clamp(40px, 7vw, 76px); color: var(--lime); letter-spacing: 0.06em; text-shadow: 0 0 24px var(--lime-glow); }
+  .tc-msg { font-family: "Oswald", sans-serif; font-size: clamp(20px, 2.6vw, 30px); color: #f3ffd4; letter-spacing: 0.04em; margin-left: 8px; }
+  .turn-card.mine .tc-msg { display: block; margin: 6px 0 0; }
+  .turn-card.pulse { animation: tc-pulse 0.9s ease-in-out 3; }
+  @keyframes tc-pulse { 50% { box-shadow: 0 0 80px rgba(198,240,53,0.9), 0 20px 50px rgba(0,0,0,0.6); } }
+  .sound-hint {
+    position: absolute; z-index: 8; left: 50%; top: 14px; transform: translateX(-50%);
+    border: 0; border-radius: 99px; padding: 8px 18px; cursor: pointer;
+    background: var(--gold); color: #1a1400; font-family: "Oswald", sans-serif; letter-spacing: 0.06em; font-size: 16px;
+  }
+
+  /* The clue card, online: countdown ring, your answer, the reveal. */
+  .cd, .cd-note, .clue-online, .clue-result { display: none; }
+  .clue.online .clue-hint { display: none; }
+  .clue.online.answering .cd { display: grid; }
+  .clue.online.answering .cd-note { display: block; }
+  .clue.online.answering .clue-online { display: flex; }
+  .clue.online.revealed .clue-result { display: block; }
+  .clue.online.answering .clue-dollars, .clue.online.revealed .clue-dollars { font-size: clamp(30px, 5vw, 64px); }
+  /* Answering: everything has to fit on the card, Done button included. */
+  .clue.online.answering { gap: 6px; justify-content: flex-start; padding-top: 12px; }
+  .clue.online.answering .clue-cat { font-size: clamp(16px, 2.2vw, 30px); }
+  .clue.online.answering .clue-dollars { font-size: clamp(24px, 3.6vw, 44px); }
+  .clue.online.answering .clue-wpm { display: none; }
+  .clue.online.answering .clue-status { font-size: clamp(16px, 2.2vw, 28px); margin-top: 0; }
+  .clue.online.answering .clue-dot { display: none; }
+  .clue.online.revealed .clue-status, .clue.online.revealed .clue-wpm { display: none; }
+  .cd {
+    --p: 1; width: clamp(56px, 7vw, 90px); aspect-ratio: 1; border-radius: 50%; place-items: center;
+    background: conic-gradient(var(--lime) calc(var(--p) * 360deg), rgba(255,255,255,0.12) 0);
+    box-shadow: 0 0 20px var(--lime-glow);
+  }
+  .cd.low { background: conic-gradient(#ff8a5a calc(var(--p) * 360deg), rgba(255,255,255,0.12) 0); }
+  .cd span {
+    width: 80%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: #12368a;
+    font-family: "Bebas Neue", Impact, sans-serif; font-size: clamp(26px, 3.2vw, 42px); color: #fff;
+  }
+  .cd-note { font-size: 13px; color: rgba(215,231,255,0.7); min-height: 1em; }
+  .clue-online { flex-direction: column; align-items: center; gap: 6px; width: min(640px, 100%); }
+  .sent-label { font-family: "Oswald", sans-serif; letter-spacing: 0.2em; text-transform: uppercase; font-size: 13px; color: #d7e7ff; }
+  .sent {
+    min-height: 1.4em; width: 100%; padding: 6px 12px; border-radius: 10px; background: rgba(0,0,0,0.3);
+    font-family: "Oswald", sans-serif; font-weight: 700; letter-spacing: 0.12em; font-size: clamp(26px, 3.6vw, 46px); color: var(--lime);
+  }
+  .ans-note { font-size: 14px; color: rgba(215,231,255,0.8); }
+  .btn kbd { font-size: 11px; opacity: 0.7; margin-left: 4px; }
+  .opads { display: flex; gap: 10px; width: 100%; margin-top: 4px; }
+  .opad {
+    flex: 1; height: 64px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.3);
+    color: #fff; font-family: "Oswald", sans-serif; font-size: 18px; letter-spacing: 0.1em; touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  .opad.down { background: var(--lime); color: #142000; }
+  .clue-result { text-align: center; }
+  .clue-result .ans { font-family: "Russo One", "Oswald", sans-serif; font-size: clamp(36px, 6.5vw, 96px); color: var(--lime); letter-spacing: 0.06em; text-shadow: 0 0 26px var(--lime-glow); line-height: 1.05; word-break: break-word; }
+  .clue-result .grp { font-family: "Oswald", sans-serif; font-size: clamp(18px, 2.4vw, 30px); color: #f3ffd4; margin-top: 10px; }
+  .clue-result .grp b { color: var(--gold); }
+  .clue-result .ddx { color: var(--gold); font-size: 0.75em; }
+  .clue-result .mine { margin-top: 12px; font-size: clamp(15px, 1.8vw, 20px); color: #d7e7ff; }
+  .clue-result .mine b { letter-spacing: 0.08em; }
+  .clue-result .mine.ok b { color: #9dff7a; }
+  .clue-result .mine.no b { color: #ffd27a; }
+
+  /* The Online dialog. */
+  .modal .seg { display: inline-flex; padding: 3px; gap: 3px; margin: 6px 0 12px; background: #081208; border: 1px solid #3d5a22; border-radius: 10px; }
+  .modal .seg button { border: 0; border-radius: 7px; padding: 8px 16px; background: transparent; color: #c5d6b4; font-family: "Oswald", sans-serif; letter-spacing: 0.06em; font-size: 16px; cursor: pointer; }
+  .modal .seg button[aria-pressed="true"] { background: var(--lime); color: #142000; }
+  #onlineModal[data-mode="host"] .join-only, #onlineModal[data-mode="join"] .host-only-ol { display: none !important; }
+  .setting select { background: #081208; color: var(--lime); border: 1px solid #3d5a22; border-radius: 6px; padding: 7px 8px; font-family: "Oswald", sans-serif; font-size: 17px; }
+  .setting input[type="range"] { accent-color: var(--lime); padding: 0; border: 0; background: none; }
+  #olCode { text-transform: uppercase; letter-spacing: 0.2em; font-size: 22px; }
+  .modal p.small { font-size: 14px; color: var(--muted); }
+  .linkish { border: 0; background: none; color: var(--lime); text-decoration: underline; cursor: pointer; font: inherit; }
+  .ol-error { color: #ffd27a !important; min-height: 1.2em; margin-top: 8px; }
+  .online-intro { border: 1px solid rgba(198,240,53,0.35); border-radius: 12px; padding: 10px 14px 12px; margin: 6px 0 4px; background: rgba(198,240,53,0.05); }
+  .online-intro h3 { margin-top: 2px; }
+
+  /* Phones and narrow windows: smaller header, wrapping buttons, a
+     board that fits the width. (Helps the single-device game too.) */
+  @media (max-width: 760px) {
+    .app { grid-template-rows: auto auto minmax(0, 1fr) auto auto; padding: 6px 8px; gap: 6px; }
+    header.masthead { height: auto; gap: 10px; }
+    .brand-mark, .logo-kicker, .logo-sub, .halo { display: none; }
+    .logo h1 { font-size: 20px; }
+    .bank { min-width: 0; padding: 4px 12px 2px; }
+    .bank-value { font-size: 28px; }
+    .hostbar { height: auto; flex-wrap: wrap; padding: 6px; gap: 6px; }
+    button.btn { font-size: 13px; padding: 6px 9px; }
+    .room-chip { font-size: 12px; padding: 4px 9px; }
+    .room-chip b { font-size: 14px; }
+    .board { gap: 4px; --cat-h: 34px; }
+    .cat { font-size: 10px; padding: 2px; letter-spacing: 0.02em; }
+    .dollars { font-size: 17px; }
+    .wpm { font-size: 9px; letter-spacing: 0.02em; }
+    .answer { font-size: 11px; padding: 2px; }
+    .status { height: auto; font-size: 11px; }
+    .status > div:last-child { display: none; }
+    .clue { padding: 10px; }
+    .clue-hint { display: none; }
+    .turn-card.mine { padding: 14px; }
+    .lobby-card { padding: 14px; }
+    .lobby-card p { font-size: 14px; }
+  }
+  /* Phones: the players list becomes a strip above the board. */
+  @media (max-width: 760px) {
+    body.online .stage-row { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+    body.online .players { order: -1; flex-direction: row; align-items: center; padding: 6px 8px; }
+    body.online .pl-head, body.online #panelInvite { display: none; }
+    body.online .pl-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; }
+    body.online .pl { white-space: nowrap; font-size: 14px; padding: 4px 8px; }
+    body.online .pl .kick { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -494,10 +674,34 @@
     <button class="btn" id="newGame">New Game</button>
     <button class="btn ghost" id="stopAudio">Stop Audio</button>
     <button class="btn ghost host-only" id="editContent">Content</button>
+    <!-- Online play (shown only when the site has online rooms set up) -->
+    <button class="btn ghost off-only" id="barOnline">Play Online</button>
+    <span class="room-chip on-only">Room <b id="roomCode"></b></span>
+    <button class="btn ghost on-only" id="hostSkip" hidden>Skip turn</button>
+    <button class="btn ghost on-only" id="hostEnd" hidden>End game</button>
+    <button class="btn ghost on-only" id="leaveRoom">Leave room</button>
   </div>
+  <div class="stage-row">
   <div class="stage-frame">
     <div class="waves"></div>
     <div class="board" id="board"></div>
+    <!-- Online: waiting for the host to start -->
+    <div class="lobby-card" id="lobbyCard" hidden>
+      <div class="lc-kicker">Online room</div>
+      <div class="lc-code" id="lobbyCode"></div>
+      <p>Share this code so others can join. Everyone hears the clues on their own device and answers with their key.</p>
+      <button class="btn" id="lobbyInvite" type="button">Copy invitation</button>
+      <p class="lc-who" id="lobbyWho"></p>
+      <button class="btn big" id="lobbyStart" type="button" hidden>Start game</button>
+      <p class="lc-wait" id="lobbyWait" hidden>Waiting for the host to start the game…</p>
+    </div>
+    <!-- Online: whose turn it is -->
+    <div class="turn-card" id="turnCard" hidden role="status" aria-live="assertive">
+      <div class="tc-kicker" id="turnKicker"></div>
+      <div class="tc-name" id="turnName"></div>
+      <div class="tc-msg" id="turnMsg"></div>
+    </div>
+    <button class="sound-hint" id="soundHint" type="button" hidden>Tap here to turn on sound</button>
     <!-- Clue card that zooms out of the chosen tile (see .clue CSS / openClue JS) -->
     <div class="clue" id="clue" hidden role="status" aria-live="polite" title="Click to hide this card">
       <div class="clue-cat" id="clueCat"></div>
@@ -506,10 +710,33 @@
       <div class="clue-wpm" id="clueWpm"></div>
       <div class="clue-status"><span class="clue-dot"></span><span id="clueText"></span></div>
       <div class="clue-hint">Host: click to hide · Stop Audio to cancel</div>
+      <!-- Online: the 60-second countdown and your keyed answer -->
+      <div class="cd" id="cd"><span id="cdNum">60</span></div>
+      <div class="cd-note" id="cdNote"></div>
+      <div class="clue-online" id="clueOnline" hidden>
+        <div class="sent-label" id="sentLabel">Your answer</div>
+        <div class="sent" id="sentText"></div>
+        <div class="ans-note" id="ansNote"></div>
+        <button class="btn" id="ansDone" type="button">Done <kbd>Enter</kbd></button>
+        <div class="opads" id="opads" hidden>
+          <button class="opad" id="opDit" type="button">DIT</button>
+          <button class="opad" id="opDah" type="button">DAH</button>
+        </div>
+      </div>
+      <div class="clue-result" id="clueResult"></div>
     </div>
   </div>
+  <!-- Online: who's in the room, in turn order -->
+  <aside class="players" id="playersPanel" hidden aria-label="Players">
+    <div class="pl-head">Players <span id="playersCount"></span></div>
+    <ol class="pl-list" id="playersList"></ol>
+    <button class="btn ghost" id="panelInvite" type="button">Invite</button>
+    <div class="conn-note" id="connNote" hidden></div>
+  </aside>
+  </div>
   <div class="status">
-    <div>Zoom: Share screen + Share sound · group solves together · Daily Double = send CW live</div>
+    <div class="off-only-b">Zoom: Share screen + Share sound · group solves together · Daily Double = send CW live</div>
+    <div class="on-only-b">Online room · everyone hears clues on their own device and answers with their key · Daily Double = double points</div>
     <div>Now: <code id="nowPlaying">idle</code></div>
   </div>
   <footer class="brand-foot">
@@ -521,6 +748,14 @@
 <div class="modal-back show" id="launchModal">
   <div class="modal">
     <h2>Host Instructions</h2>
+    <div class="online-intro online-ok-only">
+      <h3>New: play online</h3>
+      <p>Everyone joins from their own CW Trainer, hears each clue on their own device at their own speed, and answers with their key. No Zoom needed.</p>
+      <div class="modal-actions">
+        <button class="btn" id="openHost" type="button">Host Online Game</button>
+        <button class="btn" id="openJoin" type="button">Join Online Game</button>
+      </div>
+    </div>
     <h3>To share the game on Zoom</h3>
     <ul>
       <li>Open Morse Code Jeopardy in a browser window</li>
@@ -575,7 +810,67 @@
     <p>Post your score on your group's WhatsApp and/or Groups.io account!</p>
     <div class="modal-actions">
       <button class="btn" id="playAgain">New Game</button>
+      <button class="btn ghost on-only" id="goLeave">Leave room</button>
     </div>
+  </div>
+</div>
+
+<div class="modal-back" id="onlineModal" data-mode="join">
+  <div class="modal online">
+    <h2>Online Jeopardy</h2>
+    <div class="seg" role="group" aria-label="Host or join">
+      <button type="button" id="olTabJoin" aria-pressed="true">Join a game</button>
+      <button type="button" id="olTabHost" aria-pressed="false">Host a game</button>
+    </div>
+    <div class="settings-grid">
+      <div class="setting join-only">
+        <label for="olCode">Room code</label>
+        <input id="olCode" type="text" maxlength="6" autocomplete="off" spellcheck="false" placeholder="e.g. QRX472" />
+      </div>
+      <div class="setting">
+        <label for="olName">Your name or call sign</label>
+        <input id="olName" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="e.g. N6WAX" />
+      </div>
+    </div>
+    <h3>Your copy speed</h3>
+    <p class="small">Only you hear it at this speed; everyone else picks their own.</p>
+    <div class="settings-grid">
+      <div class="setting">
+        <label for="olChar">Character speed <span id="olCharVal"></span></label>
+        <input id="olChar" type="range" min="5" max="40" step="1" />
+      </div>
+      <div class="setting">
+        <label for="olFw">Farnsworth (overall speed)</label>
+        <select id="olFw"></select>
+      </div>
+      <div class="setting host-only-ol">
+        <label for="olStep">Each dollar row is faster by</label>
+        <select id="olStep">
+          <option value="0">0 WPM (all rows the same)</option>
+          <option value="1">1 WPM</option>
+          <option value="2">2 WPM</option>
+          <option value="3">3 WPM</option>
+          <option value="4">4 WPM</option>
+          <option value="5">5 WPM</option>
+        </select>
+      </div>
+    </div>
+    <h3>Your key</h3>
+    <p class="small"><span id="olKey"></span> &nbsp;<button class="linkish" id="olKeySetup" type="button">Change</button></p>
+    <p class="ol-error" id="olError" role="alert"></p>
+    <div class="modal-actions">
+      <button class="btn join-only" id="olJoinBtn" type="button">Join</button>
+      <button class="btn host-only-ol" id="olHostBtn" type="button">Create room</button>
+      <button class="btn ghost" id="olCancel" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="noticeModal">
+  <div class="modal" style="width:min(520px,96%)">
+    <h2>Online Jeopardy</h2>
+    <p id="noticeText"></p>
+    <div class="modal-actions"><button class="btn" id="noticeOk" type="button">OK</button></div>
   </div>
 </div>
 
@@ -593,6 +888,9 @@
   </div>
 </div>
 
+<!-- Shared CW Trainer code: Morse audio, the keyer and decoder (online answers) -->
+<script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-keyer.js"></script>
 <script>
 // Reuse the site's existing square alien-mascot icon (same artwork, already served at the site root)
 const LOGO_SRC = "../icons/apple-touch-icon.png";
@@ -1325,6 +1623,19 @@ function renderTile(cell) {
   const slower = el.querySelector("[data-act=slower]");
   if (slower && cell.slowUsed >= parseSlowSteps().length) slower.disabled = true;
 
+  // Online rooms (online.js): the room decides what a click does.
+  if (window.Online && Online.active) {
+    if (cell.onlineUsed) {
+      el.querySelector(".answer").innerHTML = "";
+      el.querySelector(".answer").append(cell.answer.toUpperCase());
+      const pts = document.createElement("div");
+      pts.className = "pts";
+      pts.textContent = "+" + money(cell.onlinePoints || 0) + (cell.onlineDd ? " · DD" : "");
+      el.querySelector(".answer").appendChild(pts);
+    }
+    el.addEventListener("click", () => Online.tileClicked(cell));
+    return el;
+  }
   el.addEventListener("click", (e) => {
     const act = e.target.getAttribute && e.target.getAttribute("data-act");
     if (act === "slower") { e.stopPropagation(); playSlower(cell); return; }
@@ -1476,13 +1787,14 @@ $("letsPlay").addEventListener("click", launchGame);
 $("newGame").addEventListener("click", openLaunch);
 $("playAgain").addEventListener("click", openLaunch);
 $("stopAudio").addEventListener("click", () => {
+  if (window.Online && Online.active) return;   // an online clue is run by the room
   cancelScheduledPlay();
   state.audio.stop();
   $("nowPlaying").textContent = "idle";
   closeClue();
 });
 // Clicking the clue card hides it early (the Morse keeps playing).
-$("clue").addEventListener("click", closeClue);
+$("clue").addEventListener("click", () => { if (!(window.Online && Online.active)) closeClue(); });
 // Keep the card filling the board if the window is resized while it's up.
 window.addEventListener("resize", () => { if (state.clueCell) placeClue(fullRect()); });
 $("editContent").addEventListener("click", openContent);
@@ -1497,5 +1809,6 @@ $("contentModal").addEventListener("click", (e) => {
   if (e.target.id === "contentModal") $("contentModal").classList.remove("show");
 });
 </script>
+<script src="online.js"></script>
 </body>
 </html>

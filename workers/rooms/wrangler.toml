@@ -1,0 +1,23 @@
+# HamShackTech CW Trainer -- Jeopardy rooms (Milestone 9a).
+# A small Worker whose only job is to hold the "Room" Durable Object class.
+# The Pages site (hamshacktech.com) reaches it through a Durable Object
+# binding named ROOMS on the Pages project; see functions/rooms/[[path]].js.
+#
+# Deployed by Cloudflare Workers Builds from this folder (root directory
+# "workers/rooms", deploy command "npx wrangler deploy") on every merge to main.
+name = "hamshacktech-rooms"
+main = "src/index.js"
+compatibility_date = "2026-08-18"
+
+# No public address of its own: the site talks to rooms through Pages.
+workers_dev = false
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+# Durable Object classes are declared once with a "migration".
+# SQLite-backed storage is the kind Cloudflare recommends for new classes.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]
