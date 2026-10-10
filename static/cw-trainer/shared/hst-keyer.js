@@ -63,7 +63,8 @@
        keyType   'iambicB' (default) | 'iambicA' | 'straight' | 'bug'
        reversed  swap dit and dah (e.g. left-handed operators)
        wpm       keyer speed; for a straight key, the decoder's starting guess
-       weight    dah length in dits (3.0 is standard)
+       weight    dah length in dits: always the standard 3.0 (the
+                 adjustable "Dah length" setting was removed 2026-10-10)
        sidetone  play a tone while the key is down
      ===================================================================== */
   /* MIDI input is switched OFF for now (2026-10-09). In testing with a
@@ -85,7 +86,7 @@
       keyType: pick(o.keyType, ['iambicB', 'iambicA', 'straight', 'bug'], 'iambicB'),
       reversed: !!o.reversed,
       wpm: Math.round(num(o.wpm, 5, 40, startWpm)),
-      weight: Math.round(num(o.weight, 2.5, 4.5, 3) * 10) / 10,
+      weight: 3,   // standard dah = 3 dits; an older saved custom value is ignored
       sidetone: o.sidetone !== false
     };
   });

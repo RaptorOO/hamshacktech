@@ -5,7 +5,7 @@
  * so they can be tested on their own. Loaded after hst-engine.js,
  * hst-keyer.js and hst-content.js.
  *
- *   var q = HST.qso.create({ style: 'std' | 'pota', who: 'they' | 'you',
+ *   var q = HST.qso.create({ style: 'std' | 'pota' | 'sota' | 'cwt', who: 'they' | 'you',
  *                            me: { call, name, qth } });
  *   q.steps                    the script: [{ by: 'dx', text } | { by: 'me', need, want, hint }]
  *   HST.qso.check(q, step, sentText)   which required items an over contained
@@ -16,7 +16,7 @@
  * alternate between the virtual station (dx) and you (me) -- not AI chat,
  * so it's predictable and works offline.
  *
- * THE TWO STYLES
+ * THE FOUR STYLES
  *   Standard: the classic first contact. Call signs, signal report (RST),
  *     name and QTH (location), then 73 (best regards) and goodbye.
  *   POTA (Parks on the Air): a quick contest-style exchange. The
@@ -24,6 +24,18 @@
  *     reference; hunters answer with just their call; each side gives a
  *     report (usually "5NN" = 599) and state; then TU (thank you) and on
  *     to the next caller.
+ *   SOTA (Summits on the Air): like POTA, but the activator is portable on
+ *     a mountain top. They call "CQ SOTA" signing /P (portable) with the
+ *     summit reference (e.g. W6/CT-123); chasers send their call; real
+ *     signal reports are traded (559, 579...), the chaser often adds a
+ *     state, then TU 73.
+ *   CWT (the CWops Test): CW Operators' Club's weekly one-hour, high-speed
+ *     mini-contest. The exchange is just NAME and MEMBER NUMBER, with no
+ *     signal report. Without a number you send CWA (CW Academy) instead;
+ *     some non-members send a state:
+ *     "CQ CWT N6WAX" / "K1ABC" / "K1ABC TIM 1234" / "TU MARK CWA" / "TU N6WAX".
+ *     Pass o.me.cwops (your member number) to create(); blank = you send CWA.
+ *     It's run fast; set the copy speed high to make it feel real.
  *
  * PROSIGNS appear in the scripts as <KN> (go ahead, only you), <SK> (end
  * of contact), <BK> (back to you) and <AR> (end of message); each is sent
@@ -51,20 +63,42 @@
   }
   function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
 
+  // A SOTA summit reference: association/region, then a 3-digit number,
+  // e.g. W6/CT-123 (California, Central Coast region). A sample of real
+  // US association/region codes.
+  var SOTA_REGIONS = ['W6/CT', 'W6/NC', 'W6/SC', 'W6/SN', 'W7A/AW', 'W7A/MN', 'W7O/CS', 'W7W/LC', 'W7U/WS',
+                      'W0C/FR', 'W0C/SP', 'W5N/SI', 'W4C/WM', 'W4G/NG', 'W1/HA', 'W2/GC', 'W8V/SR', 'W7I/SR'];
+  function summit() {
+    var n = String(1 + Math.floor(Math.random() * 199));
+    while (n.length < 3) n = '0' + n;
+    return pick(SOTA_REGIONS) + '-' + n;
+  }
+  // A CWops member number (they run from 1 into the 4000s); about one
+  // station in seven sends CWA (no number) and one in seven a state.
+  function cwtExchange() {
+    var r = Math.random();
+    return r < 0.15 ? 'CWA' : r < 0.3 ? HST.content.state() : String(1 + Math.floor(Math.random() * 4100));
+  }
+
   /* ------------------------------------------------------------------
      A new QSO: the virtual station's details and the script.
      ------------------------------------------------------------------ */
   function create(o) {
     var me = { call: up(o.me.call), name: up(o.me.name), qth: up(o.me.qth) };
+    me.exch = /^\d{1,5}$/.test(String(o.me.cwops || '').trim()) ? String(Number(o.me.cwops)) : 'CWA';   // your CWT exchange
     var qth = HST.content.qth();
+    var us = o.style !== 'std';   // POTA, SOTA and CWT stations here are US calls with a state
     var dx = {
-      call: o.style === 'pota' ? HST.content.usCallSign() : HST.content.callSign(),
+      call: us ? HST.content.usCallSign() : HST.content.callSign(),
       name: HST.content.name(),
-      city: qth.city, state: o.style === 'pota' ? HST.content.state() : qth.state,
-      rst: o.style === 'pota' ? '5NN' : pick(['599', '579', '589', '569', '559', '449']),
-      park: HST.content.park()
+      city: qth.city, state: us ? HST.content.state() : qth.state,
+      rst: o.style === 'pota' ? '5NN' : o.style === 'sota' ? pick(['559', '569', '579', '589', '599']) :
+           o.style === 'cwt' ? '' : pick(['599', '579', '589', '569', '559', '449']),
+      park: HST.content.park(),
+      summit: summit(),
+      exch: cwtExchange()          // CWT: their member number (or state)
     };
-    var q = { style: o.style, who: o.who, me: me, dx: dx, myPark: HST.content.park(), gm: greeting() };
+    var q = { style: o.style, who: o.who, me: me, dx: dx, myPark: HST.content.park(), mySummit: summit(), gm: greeting() };
     q.steps = script(q);
     return q;
   }
@@ -103,6 +137,47 @@
         hint: 'R TNX [their name] 73 GL [their call] DE ' + M.call + ' SK' },
       { by: 'dx', text: 'TU ' + M.name + ' 73 E E', last: true }
     ];
+    if (q.style === 'sota' && q.who === 'they') return [   // SOTA: they activate, you chase
+      { by: 'dx', text: 'CQ SOTA CQ SOTA DE ' + D.call + '/P ' + D.call + '/P ' + D.summit + ' K' },
+      { by: 'me', need: ['mycall'], want: [],
+        hint: M.call + '   (chasers just send their call)' },
+      { by: 'dx', text: M.call + ' ' + G + ' UR ' + D.rst + ' ' + D.rst + ' BK' },
+      { by: 'me', need: ['rst'], want: ['myqth', 'bye'],
+        hint: 'BK TU UR 579 579 ' + M.qth + ' ' + M.qth + ' 73 BK' },
+      { by: 'dx', text: 'TU 73 E E', last: true }
+    ];
+    if (q.style === 'sota') return [                        // SOTA: you activate, they chase
+      { by: 'me', need: ['cq', 'sota', 'mycall', 'summit'], want: [],
+        hint: 'CQ SOTA CQ SOTA DE ' + M.call + '/P ' + M.call + '/P ' + q.mySummit + ' K' },
+      { by: 'dx', text: D.call + ' ' + D.call },
+      { by: 'me', need: ['dxcall', 'rst'], want: [],
+        hint: '[their call] ' + G + ' UR 579 579 BK' },
+      { by: 'dx', text: 'BK R TU UR ' + D.rst + ' ' + D.rst + ' ' + D.state + ' ' + D.state + ' 73 BK' },
+      { by: 'me', need: [], want: ['bye'],
+        hint: 'TU 73 E E' },
+      { by: 'dx', text: 'E E', last: true }
+    ];
+    // CWT: no signal report; the exchange is name and member number
+    // (CWA if you don't have a number).
+    if (q.style === 'cwt' && q.who === 'they') return [    // they run, you search and pounce
+      { by: 'dx', text: 'CQ CWT ' + D.call },
+      { by: 'me', need: ['mycall'], want: [],
+        hint: M.call + '   (just your call)' },
+      { by: 'dx', text: M.call + ' ' + D.name + ' ' + D.exch },
+      { by: 'me', need: ['myname', 'myexch'], want: [],
+        hint: 'TU ' + M.name + ' ' + M.exch + '   (name, then your CWops number, or CWA if you don’t have one)' },
+      { by: 'dx', text: 'TU ' + D.call, last: true }
+    ];
+    if (q.style === 'cwt') return [                         // you run, they call you
+      { by: 'me', need: ['cq', 'cwt', 'mycall'], want: [],
+        hint: 'CQ CWT ' + M.call },
+      { by: 'dx', text: D.call },
+      { by: 'me', need: ['dxcall', 'myname', 'myexch'], want: [],
+        hint: '[their call] ' + M.name + ' ' + M.exch },
+      { by: 'dx', text: 'TU ' + D.name + ' ' + D.exch },
+      { by: 'me', need: [], want: ['bye'],
+        hint: 'TU ' + M.call + '   (thanks, and your call for the next station)' }
+    ];
     if (q.who === 'they') return [   // POTA: they activate, you hunt
       { by: 'dx', text: 'CQ POTA CQ POTA DE ' + D.call + ' ' + D.call + ' ' + D.park + ' K' },
       { by: 'me', need: ['mycall'], want: [],
@@ -134,8 +209,8 @@
      usual "cut numbers" N = 9 and T = 0 allowed (5NN = 599).
      ------------------------------------------------------------------ */
   var LABELS = {
-    cq: 'CQ', pota: 'POTA', mycall: 'your call', dxcall: 'their call', rst: 'a signal report (RST)',
-    myname: 'your name', myqth: 'your QTH', dxname: 'their name', park: 'your park reference', bye: '73 or TU'
+    cq: 'CQ', pota: 'POTA', sota: 'SOTA', cwt: 'CWT', summit: 'your summit reference', mycall: 'your call', dxcall: 'their call', rst: 'a signal report (RST)',
+    myname: 'your name', myqth: 'your QTH', myexch: 'your CWops number (or CWA)', dxname: 'their name', park: 'your park reference', bye: '73 or TU'
   };
 
   // Smallest number of single-letter changes turning a into b.
@@ -179,9 +254,13 @@
       switch (id) {
         case 'cq': return /CQ/.test(flat);
         case 'pota': return /POTA/.test(flat);
+        case 'sota': return /SOTA/.test(flat);
+        case 'cwt': return /CWT/.test(flat);
+        case 'summit': return contains(words, flat, q.mySummit);
         case 'mycall': return contains(words, flat, q.me.call);
         case 'dxcall': return contains(words, flat, q.dx.call);
         case 'myname': return contains(words, flat, q.me.name);
+        case 'myexch': return contains(words, flat, q.me.exch);   // CWT number, or CWA
         case 'dxname': return contains(words, flat, q.dx.name);
         case 'myqth': return q.me.qth.split(/\s+/).some(function (w) { return contains(words, flat, w); });
         case 'park': return contains(words, flat, q.myPark);
@@ -234,8 +313,10 @@
     var ask = {
       mycall: 'QRZ?',                                // "who is calling me?"
       dxcall: 'DE ' + D.call + ' ' + D.call,         // they repeat their call for you
-      rst: 'RST?', myname: 'NAME?', myqth: q.style === 'pota' ? 'STATE?' : 'QTH?',
-      park: 'REF?', cq: 'PSE AGN', pota: 'PSE AGN'
+      rst: 'RST?', myname: 'NAME?',
+      myexch: 'NR?',
+      myqth: q.style === 'cwt' ? 'NR?' : (q.style === 'pota' || q.style === 'sota') ? 'STATE?' : 'QTH?',
+      park: 'REF?', summit: 'REF?', cq: 'PSE AGN', pota: 'PSE AGN', sota: 'PSE AGN', cwt: 'PSE AGN'
     }[r.missing[0]];
     return { action: 'retry', text: ask || 'PSE AGN' };
   }
@@ -245,9 +326,17 @@
      ------------------------------------------------------------------ */
   function copyFields(q) {
     var D = q.dx, f = [{ id: 'call', label: 'Their call', truth: D.call }];
+    if (q.style === 'cwt') {
+      f.push({ id: 'name', label: 'Their name', truth: D.name });
+      f.push({ id: 'exch', label: 'Their number (or CWA / state)', truth: D.exch });
+      return f;   // CWT has no signal report
+    }
     if (q.style === 'std') {
       f.push({ id: 'name', label: 'Their name', truth: D.name });
       f.push({ id: 'qth', label: 'Their QTH', truth: D.city + ' ' + D.state });
+    } else if (q.style === 'sota') {
+      if (q.who === 'they') f.push({ id: 'summit', label: 'Their summit', truth: D.summit });
+      else f.push({ id: 'state', label: 'Their state', truth: D.state });
     } else {
       if (q.who === 'they') f.push({ id: 'park', label: 'Their park', truth: D.park });
       f.push({ id: 'state', label: 'Their state', truth: D.state });
@@ -261,6 +350,7 @@
     return copyFields(q).map(function (f) {
       var given = up(answers[f.id]), ok;
       if (f.id === 'rst') ok = rstNorm(given) === rstNorm(f.truth);
+      else if (f.id === 'call') ok = norm(given).replace(/\/P$/, '') === norm(f.truth);   // "/P" (portable) is fine
       else if (f.id === 'qth') ok = given.split(/[\s,]+/).filter(Boolean).some(function (w) { return w === q.dx.city || w === q.dx.state; });
       else ok = norm(given) === norm(f.truth);
       return { id: f.id, label: f.label, truth: f.truth, given: given, ok: ok };

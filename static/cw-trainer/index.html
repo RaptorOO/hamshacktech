@@ -99,6 +99,13 @@
   .tabs { min-width: 0; overflow-x: auto; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
   .tab[aria-selected="true"] { background: var(--lime); color: var(--lime-ink); }
+  /* The selected tab takes that trainer's color from the Progress tab, so
+     each trainer has one color everywhere: ICR lime, Code Groups emerald,
+     Keyer amber, QSO pink. (Progress and Jeopardy stay lime.) */
+  #tab-icr[aria-selected="true"]         { background: #a3e635; }   /* lime-400 */
+  #tab-code-groups[aria-selected="true"] { background: #34d399; }   /* emerald-400 */
+  #tab-keyer[aria-selected="true"]       { background: #fbbf24; }   /* amber-400 */
+  #tab-qso[aria-selected="true"]         { background: #f472b6; }   /* pink-400 */
   .tab:focus-visible, .install:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 
   .spacer { flex: 1; }
@@ -473,10 +480,6 @@
       <label for="kWpm"><span id="kWpmLabel">Keyer speed</span> <output id="kWpmVal"></output></label>
       <input type="range" id="kWpm" min="5" max="40" step="1">
     </div>
-    <div class="kfield" id="kWeightField">
-      <label for="kWeight">Dah length <output id="kWeightVal"></output></label>
-      <input type="range" id="kWeight" min="2.5" max="4.5" step="0.1">
-    </div>
   </div>
   <div class="kchecks">
     <label class="check"><input type="checkbox" id="kReversed"> Swap paddles (dit on the right)</label>
@@ -828,20 +831,17 @@
     $('kInput').value = s.input;
     $('kType').value = s.keyType;
     $('kWpm').value = s.wpm;
-    $('kWeight').value = s.weight;
     $('kReversed').checked = s.reversed;
     $('kSidetone').checked = s.sidetone;
     var straight = s.keyType === 'straight';
     // MIDI is a Vail-adapter option, and switched off for now (HST.MIDI_ENABLED).
     $('kInputField').hidden = !HST.MIDI_ENABLED || s.adapter !== 'vail';
     $('kVailTip').hidden = s.adapter !== 'vail';
-    $('kWeightField').hidden = straight;                     // a straight key sets its own dah length
     $('kReversed').parentNode.style.display = straight ? 'none' : '';
     // For a straight key the speed slider is only the decoder's first guess;
     // it learns the actual speed from the sending.
     $('kWpmLabel').textContent = straight ? 'Starting speed guess' : 'Keyer speed';
     $('kWpmVal').textContent = s.wpm + ' WPM';
-    $('kWeightVal').textContent = s.weight.toFixed(1) + ' dits';
     // On-screen pads: one KEY pad for a straight key, else two paddles.
     $('padDit').textContent = straight ? 'KEY' : (s.reversed ? 'DAH' : 'DIT');
     $('padDah').textContent = s.reversed ? 'DIT' : 'DAH';
@@ -993,7 +993,6 @@
   $('kInput').addEventListener('change', function (e) { setKeyer({ input: e.target.value }); syncMidi(); });
   $('kType').addEventListener('change', function (e) { setKeyer({ keyType: e.target.value }); });
   $('kWpm').addEventListener('input', function (e) { setKeyer({ wpm: Number(e.target.value) }); });
-  $('kWeight').addEventListener('input', function (e) { setKeyer({ weight: Number(e.target.value) }); });
   $('kReversed').addEventListener('change', function (e) { setKeyer({ reversed: e.target.checked }); });
   $('kSidetone').addEventListener('change', function (e) { setKeyer({ sidetone: e.target.checked }); });
   HST.keyerSettings.onChange(renderKeyer);

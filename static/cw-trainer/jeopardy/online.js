@@ -116,11 +116,30 @@
     el('olTabHost').setAttribute('aria-pressed', String(mode === 'host'));
     el('olTabJoin').setAttribute('aria-pressed', String(mode === 'join'));
   }
-  function fillFarnsworth(charWpm, fw) {
+  // Fill a Farnsworth dropdown with overall speeds below the character
+  // speed. "sel" is the select's id: olFw (entry dialog) or spFw (My speed).
+  function fillFarnsworth(charWpm, fw, sel) {
+    sel = sel || 'olFw';
     const opts = ['<option value="0">Off</option>'];
     for (let w = 5; w < charWpm; w++) opts.push('<option value="' + w + '">' + w + ' WPM overall</option>');
-    el('olFw').innerHTML = opts.join('');
-    el('olFw').value = fw && fw < charWpm ? String(fw) : '0';
+    el(sel).innerHTML = opts.join('');
+    el(sel).value = fw && fw < charWpm ? String(fw) : '0';
+  }
+  /* My speed (in a room): change character / Farnsworth speed mid-game.
+     rowSpeeds() reads the saved prefs fresh for every clue, so saving
+     here is all it takes; the next clue plays at the new speed. */
+  function openSpeedDialog() {
+    const p = prefs();
+    el('spChar').value = p.charWpm; el('spCharVal').textContent = p.charWpm + ' WPM';
+    fillFarnsworth(p.charWpm, p.fwpm, 'spFw');
+    el('speedModal').classList.add('show');
+  }
+  function saveSpeedDialog() {
+    const p = load(PREFS_KEY, {});            // keep name and step as they are
+    p.charWpm = Number(el('spChar').value);
+    p.fwpm = Number(el('spFw').value);
+    save(PREFS_KEY, p);
+    el('speedModal').classList.remove('show');
   }
   function readDialog() {
     const name = el('olName').value.trim().toUpperCase().replace(/[^A-Z0-9 ./-]/g, '').slice(0, 16);
@@ -625,6 +644,14 @@
       el('olCharVal').textContent = v + ' WPM';
       fillFarnsworth(v, Number(el('olFw').value));
     });
+    el('spChar').addEventListener('input', () => {
+      const v = Number(el('spChar').value);
+      el('spCharVal').textContent = v + ' WPM';
+      fillFarnsworth(v, Number(el('spFw').value), 'spFw');
+    });
+    el('mySpeed').addEventListener('click', openSpeedDialog);
+    el('spSave').addEventListener('click', saveSpeedDialog);
+    el('spCancel').addEventListener('click', () => el('speedModal').classList.remove('show'));
     el('olHostBtn').addEventListener('click', hostRoom);
     el('olJoinBtn').addEventListener('click', () => joinRoom());
     el('olCode').addEventListener('keydown', (e) => { if (e.key === 'Enter') joinRoom(); });

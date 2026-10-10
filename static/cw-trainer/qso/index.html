@@ -49,6 +49,11 @@
   .hint { color: var(--dim); font-size: 0.82rem; line-height: 1.5; margin: 6px 0 0; }
 
   /* ---------- setup ---------- */
+  .cwops { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -4px 0 14px; }
+  .cwops[hidden] { display: none; }
+  #cwopsRow label { display: inline; margin: 0; }
+  #cwopsRow input { width: 8em; }
+  .cwops .hint { margin: 0; }
   .station { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
   .field label { display: block; color: var(--muted); font-size: 0.82rem; margin-bottom: 4px; }
   input[type="text"], select {
@@ -165,6 +170,8 @@
         <div class="seg" role="group" aria-label="Type of contact">
           <button type="button" data-style="std" aria-pressed="true">Standard QSO</button>
           <button type="button" data-style="pota" aria-pressed="false">POTA</button>
+          <button type="button" data-style="sota" aria-pressed="false">SOTA</button>
+          <button type="button" data-style="cwt" aria-pressed="false">CWT</button>
         </div>
       </div>
       <div class="group">
@@ -176,6 +183,12 @@
       </div>
     </div>
     <p class="desc" id="desc"></p>
+    <!-- CWT only: your CWops member number. Blank = you send CWA. -->
+    <div class="field cwops" id="cwopsRow" hidden>
+      <label for="myCwops">Your CWops number</label>
+      <input type="text" id="myCwops" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="e.g. 1234">
+      <span class="hint">No number? Leave it blank and you’ll send <b>CWA</b> after your name.</span>
+    </div>
 
     <!-- Speeds for this tab only: how fast they send (what you copy) and
          how fast your keyer sends can differ, e.g. copy 25 WPM with
@@ -254,7 +267,7 @@
     <summary>How this works</summary>
     <p>The other station sends at your <b>copy speed</b> and you answer with your key at your <b>sending speed</b> &mdash; set both under Speeds before you start. They can be different: copy 25 WPM with Farnsworth 12 and send at 15, for example. End each of your overs the usual way &mdash; <b>K</b>, <b>KN</b>, <b>BK</b> or <b>SK</b> &mdash; then pause, or press <kbd>Enter</kbd>. If you stop without one, a few seconds&rsquo; pause ends your over.</p>
     <p>It&rsquo;s forgiving like a real operator: order doesn&rsquo;t matter, repeats are fine, and a call sign with one letter off still gets through. If something&rsquo;s missing they&rsquo;ll ask &mdash; <b>QRZ?</b> (who&rsquo;s calling?), <b>NAME?</b>, <b>RST?</b>, <b>PSE AGN</b> &mdash; or <b>QRS</b> if they can&rsquo;t read you. You can ask them too: send <b>AGN</b> or <b>?</b> to hear their last over again, or <b>QRS</b> to have them slow down.</p>
-    <p><b>Standard QSO:</b> call signs, signal report, name and QTH, then 73. <b>POTA:</b> the quick Parks on the Air exchange &mdash; the activator calls CQ POTA with the park number, hunters send just their call, each side sends 5NN (599) and state, then TU.</p>
+    <p><b>Standard QSO:</b> call signs, signal report, name and QTH, then 73. <b>POTA:</b> the quick Parks on the Air exchange &mdash; the activator calls CQ POTA with the park number, hunters send just their call, each side sends 5NN (599) and state, then TU. <b>SOTA:</b> the same idea from a mountain top &mdash; the activator signs /P and gives the summit reference; real signal reports are traded. <b>CWT:</b> the CWops Test, a fast weekly mini-contest &mdash; the exchange is just name and CWops member number (CWA if you don&rsquo;t have one), with no signal report. Enter your number in the box that appears when you pick CWT.</p>
   </details>
 </div>
 
@@ -276,7 +289,7 @@
   // (shared/hst-account.js) can tell which device has the newer details.
   // copyWpm / sendWpm: this tab's own speeds (0 = not chosen yet). fw: their
   // Farnsworth (overall) speed, 0 = off.
-  var prefs = { call: '', name: '', qth: '', stationUpdated: 0, style: 'std', who: 'they', fw: 0, copyWpm: 0, sendWpm: 0, hints: true, showText: false };
+  var prefs = { call: '', name: '', qth: '', cwops: '', stationUpdated: 0, style: 'std', who: 'they', fw: 0, copyWpm: 0, sendWpm: 0, hints: true, showText: false };
   try { var sv = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (sv) Object.keys(prefs).forEach(function (k) { if (k in sv) prefs[k] = sv[k]; }); } catch (e) {}
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
 
@@ -326,12 +339,16 @@
     [['myCall', /^[A-Z0-9\/]{3,10}$/.test(call)], ['myName', /^[A-Z]{1,10}$/.test(name)], ['myQth', /^[A-Z0-9 ]{2,20}$/.test(qth)]].forEach(function (f) {
       $(f[0]).classList.toggle('bad', !f[1]); if (!f[1]) bad = true;
     });
+    var cwops = $('myCwops').value.trim();
+    var cwOk = cwops === '' || /^\d{1,5}$/.test(cwops);
+    $('myCwops').classList.toggle('bad', !cwOk);
+    if (!cwOk && prefs.style === 'cwt') { $('stationHint').innerHTML = '<span style="color:var(--bad)">Your CWops number is just digits &mdash; or leave it blank to send CWA.</span>'; return; }
     if (bad) { $('stationHint').innerHTML = '<span style="color:var(--bad)">Fill in your call sign (3–10 letters and digits), a one-word name and your QTH or state.</span>'; return; }
     if (call !== prefs.call || name !== prefs.name || qth !== prefs.qth) prefs.stationUpdated = Date.now();
-    prefs.call = call; prefs.name = name; prefs.qth = qth; savePrefs();
+    prefs.call = call; prefs.name = name; prefs.qth = qth; if (cwOk) prefs.cwops = cwops; savePrefs();
     HST.audio.unlock();                                 // a click: sound is allowed now
 
-    q = HST.qso.create({ style: prefs.style, who: prefs.who, me: { call: call, name: name, qth: qth } });
+    q = HST.qso.create({ style: prefs.style, who: prefs.who, me: { call: call, name: name, qth: qth, cwops: prefs.cwops } });
     stepIdx = 0; tries = 0; overs = []; mine = []; lastDx = ''; qrsDrop = 0; gen++;
     $('log').innerHTML = '';
     show('live');
@@ -420,12 +437,19 @@
   // Your over ends at a word space after a closing K / KN / BK / SK / AR,
   // or after a longer pause (3.5 s, or 16 units at slow speeds) without one.
   var ENDERS = ['K', 'KN', 'BK', 'SK', 'AR', '<KN>', '<BK>', '<SK>', '<AR>'];
+  // A "K" is also the first letter of many call signs (KI7ZMO, K1ABC), and
+  // a slow sender's pause after it can look like the end of a word. So an
+  // ender only ends your over when (1) something came before it -- a lone
+  // "K" at the start is far more likely the beginning of a call -- and
+  // (2) you then stay quiet a moment longer (about a second). Keep keying
+  // and the over simply continues.
   function afterMark() {
     var u = automatic() ? unitMs() : 1200 / decoder.speedWpm();
     waitTimer = setTimeout(function () {
       var a = analyze();
-      var words = a ? a.text.split(' ') : [];
-      if (ENDERS.indexOf(words[words.length - 1]) >= 0) return endOver();
+      var words = a ? a.text.split(' ').filter(Boolean) : [];
+      var ender = ENDERS.indexOf(words[words.length - 1]) >= 0 && words.length > 1;
+      if (ender) { waitTimer = setTimeout(endOver, Math.max(1000, 6 * u)); return; }
       waitTimer = setTimeout(endOver, Math.max(3500, 16 * u) - 5.5 * u);
     }, 5.5 * u);
   }
@@ -524,7 +548,10 @@
     var sentRst = '';
     overs.forEach(function (o) { if (o.by === 'me' && o.text) { var m = o.text.match(/\b[1-5][1-9NT]{2}\b/); if (m && !sentRst) sentRst = m[0]; } });
     $('logline').textContent = new Date().toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) +
-      '  ·  ' + D.call + (q.style === 'std' ? '  ·  ' + D.name + '  ·  ' + D.city + ' ' + D.state : '  ·  ' + D.state + (q.who === 'they' ? '  ·  ' + D.park : '')) +
+      '  ·  ' + D.call + (q.style === 'std' ? '  ·  ' + D.name + '  ·  ' + D.city + ' ' + D.state
+                         : q.style === 'cwt' ? '  ·  ' + D.name + '  ·  ' + D.exch
+                         : q.style === 'sota' ? (q.who === 'they' ? '  ·  ' + D.summit : '  ·  ' + D.state)
+                         : '  ·  ' + D.state + (q.who === 'they' ? '  ·  ' + D.park : '')) +
       '  ·  RST sent ' + (sentRst || '—') + ' / rcvd ' + D.rst + (q.completed ? '' : '  ·  (ended early)');
 
     $('copyResults').innerHTML = copy.map(function (c) {
@@ -581,7 +608,14 @@
 
   /* ================= controls ================= */
   function renderSetup() {
-    $('myCall').value = prefs.call; $('myName').value = prefs.name; $('myQth').value = prefs.qth;
+    // Fill the station fields from saved prefs only on the first render;
+    // later re-renders (e.g. picking a contact type) must not wipe what
+    // you've typed but not yet saved by starting a QSO.
+    if (!renderSetup.done) {
+      $('myCall').value = prefs.call; $('myName').value = prefs.name; $('myQth').value = prefs.qth;
+      $('myCwops').value = prefs.cwops || '';
+      renderSetup.done = true;
+    }
     document.querySelectorAll('[data-style]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.style === prefs.style)); });
     document.querySelectorAll('[data-who]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.who === prefs.who)); });
     renderSpeeds();
@@ -590,9 +624,14 @@
       'std-they': 'They call CQ and you answer. You’ll exchange signal reports, names and QTHs, then 73.',
       'std-you': 'You call CQ and they answer. Then the same exchange: signal reports, names and QTHs, then 73.',
       'pota-they': 'They’re activating a park and calling CQ POTA. You’re the hunter: send your call, then trade 5NN and states.',
-      'pota-you': 'You’re the activator: call CQ POTA with your park reference (shown in the hints). A hunter answers with their call.'
+      'pota-you': 'You’re the activator: call CQ POTA with your park reference (shown in the hints). A hunter answers with their call.',
+      'sota-they': 'They’re on a summit, signing /P and calling CQ SOTA with the summit reference. You’re the chaser: send your call, then trade signal reports.',
+      'sota-you': 'You’re the activator on a summit: call CQ SOTA as /P with your summit reference (shown in the hints). A chaser answers with their call.',
+      'cwt-they': 'The CWops Test: they’re running and calling CQ CWT. Send your call, copy their name and number, then send your name and CWops number (or CWA if you don’t have one). It’s fast; try a high copy speed.',
+      'cwt-you': 'The CWops Test: you call CQ CWT. Send their call with your name and number (or CWA), copy theirs, then TU and your call. It’s fast; try a high copy speed.'
     };
     $('desc').textContent = D[prefs.style + '-' + prefs.who];
+    $('cwopsRow').hidden = prefs.style !== 'cwt';
     $('speedNote').textContent = 'They’ll send at ' + prefs.copyWpm + ' WPM' +
       (fwOn() ? ' with Farnsworth spacing (' + prefs.fw + ' WPM overall)' : '') + '; you’ll send at ' + prefs.sendWpm + ' WPM.';
   }
@@ -637,7 +676,7 @@
   window.addEventListener('storage', function (e) {
     if (e.key !== PREFS_KEY || !e.newValue) return;
     try { var nv = JSON.parse(e.newValue); ['call', 'name', 'qth', 'stationUpdated'].forEach(function (k) { if (k in nv) prefs[k] = nv[k]; }); } catch (err) { return; }
-    if (phase === 'setup') renderSetup();
+    if (phase === 'setup') { renderSetup.done = false; renderSetup(); }   // refill the fields too
   });
 
   $('startBtn').addEventListener('click', startQso);
