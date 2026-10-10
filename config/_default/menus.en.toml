@@ -16,7 +16,7 @@
   weight = 30
 
 [[main]]
-  name = "CW Tools"
+  name = "CW Trainer"
   pageRef = "cw-tools"
   weight = 35
 
