@@ -65,7 +65,15 @@
   .check { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 0.88rem; cursor: pointer; }
   .check input { width: 16px; height: 16px; margin: 0; accent-color: var(--lime); }
   .checks { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-bottom: 14px; }
-  .speed select { width: auto; }
+  /* Speeds panel: label | slider (or dropdown) | value, one row each. */
+  .speeds { border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px 12px; margin: 0 0 14px; }
+  .speeds legend { padding: 0 6px; }
+  .speed-row { display: grid; grid-template-columns: 210px 1fr 70px; gap: 12px; align-items: center; padding: 5px 0; }
+  .speed-row label { color: var(--text); font-size: 0.9rem; }
+  .speed-row label span { color: var(--dim); font-size: 0.82rem; }
+  .speed-row input[type="range"] { width: 100%; accent-color: var(--lime); }
+  .speed-row output { font: 500 0.92rem 'JetBrains Mono', monospace; color: var(--lime); text-align: right; }
+  .speeds .hint { margin-top: 4px; }
   .desc { color: var(--muted); font-size: 0.88rem; margin: 0 0 14px; }
 
   .btn { border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; background: var(--well); color: var(--text); font: 500 0.9rem/1 'Inter', sans-serif; cursor: pointer; }
@@ -128,6 +136,8 @@
     h1 { font-size: 1.55rem; }
     .wrap { padding: 16px 12px 40px; }
     .over { grid-template-columns: 1fr; gap: 2px; }
+    .speed-row { grid-template-columns: 1fr 64px; gap: 4px 10px; }
+    .speed-row label { grid-column: 1 / -1; }
   }
 </style>
 </head>
@@ -164,19 +174,31 @@
           <button type="button" data-who="you" aria-pressed="false">You do</button>
         </div>
       </div>
-      <div class="group speed">
-        <label class="label" for="fw">Their spacing</label>
-        <select id="fw">
-          <option value="0">Normal (no Farnsworth)</option>
-          <option value="15">Farnsworth 15 WPM</option>
-          <option value="12">Farnsworth 12 WPM</option>
-          <option value="10">Farnsworth 10 WPM</option>
-          <option value="8">Farnsworth 8 WPM</option>
-          <option value="5">Farnsworth 5 WPM</option>
-        </select>
-      </div>
     </div>
     <p class="desc" id="desc"></p>
+
+    <!-- Speeds for this tab only: how fast they send (what you copy) and
+         how fast your keyer sends can differ, e.g. copy 25 WPM with
+         Farnsworth 12, send 15 WPM. -->
+    <fieldset class="speeds">
+      <legend class="label">Speeds</legend>
+      <div class="speed-row">
+        <label for="copyWpm">Copy speed <span>(they send)</span></label>
+        <input type="range" id="copyWpm" min="5" max="40" step="1">
+        <output id="copyWpmVal" for="copyWpm"></output>
+      </div>
+      <div class="speed-row">
+        <label for="fw">Farnsworth <span>(their spacing)</span></label>
+        <select id="fw"></select>
+        <output></output>
+      </div>
+      <div class="speed-row">
+        <label for="sendWpm">Sending speed <span>(your keyer)</span></label>
+        <input type="range" id="sendWpm" min="5" max="40" step="1">
+        <output id="sendWpmVal" for="sendWpm"></output>
+      </div>
+      <p class="hint" id="speedHint"></p>
+    </fieldset>
     <div class="checks">
       <label class="check"><input type="checkbox" id="hints"> Show what to send</label>
       <label class="check"><input type="checkbox" id="showText"> Show their text after each over</label>
@@ -230,7 +252,7 @@
 
   <details class="help card">
     <summary>How this works</summary>
-    <p>The other station sends at your Settings speed (the gear icon), and you answer with your key. End each of your overs the usual way &mdash; <b>K</b>, <b>KN</b>, <b>BK</b> or <b>SK</b> &mdash; then pause, or press <kbd>Enter</kbd>. If you stop without one, a few seconds&rsquo; pause ends your over.</p>
+    <p>The other station sends at your <b>copy speed</b> and you answer with your key at your <b>sending speed</b> &mdash; set both under Speeds before you start. They can be different: copy 25 WPM with Farnsworth 12 and send at 15, for example. End each of your overs the usual way &mdash; <b>K</b>, <b>KN</b>, <b>BK</b> or <b>SK</b> &mdash; then pause, or press <kbd>Enter</kbd>. If you stop without one, a few seconds&rsquo; pause ends your over.</p>
     <p>It&rsquo;s forgiving like a real operator: order doesn&rsquo;t matter, repeats are fine, and a call sign with one letter off still gets through. If something&rsquo;s missing they&rsquo;ll ask &mdash; <b>QRZ?</b> (who&rsquo;s calling?), <b>NAME?</b>, <b>RST?</b>, <b>PSE AGN</b> &mdash; or <b>QRS</b> if they can&rsquo;t read you. You can ask them too: send <b>AGN</b> or <b>?</b> to hear their last over again, or <b>QRS</b> to have them slow down.</p>
     <p><b>Standard QSO:</b> call signs, signal report, name and QTH, then 73. <b>POTA:</b> the quick Parks on the Air exchange &mdash; the activator calls CQ POTA with the park number, hunters send just their call, each side sends 5NN (599) and state, then TU.</p>
   </details>
@@ -252,7 +274,9 @@
   var PREFS_KEY = 'hct-cw-qso-v1';
   // stationUpdated: when call/name/QTH last changed here, so account sync
   // (shared/hst-account.js) can tell which device has the newer details.
-  var prefs = { call: '', name: '', qth: '', stationUpdated: 0, style: 'std', who: 'they', fw: 0, hints: true, showText: false };
+  // copyWpm / sendWpm: this tab's own speeds (0 = not chosen yet). fw: their
+  // Farnsworth (overall) speed, 0 = off.
+  var prefs = { call: '', name: '', qth: '', stationUpdated: 0, style: 'std', who: 'they', fw: 0, copyWpm: 0, sendWpm: 0, hints: true, showText: false };
   try { var sv = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (sv) Object.keys(prefs).forEach(function (k) { if (k in sv) prefs[k] = sv[k]; }); } catch (e) {}
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
 
@@ -260,14 +284,27 @@
   var ADAPTER_NAMES = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter' };
   function cfg() { return HST.keyerSettings.get(); }
   function automatic() { var k = cfg().keyType; return k === 'iambicA' || k === 'iambicB'; }
-  function unitMs() { return 1200 / cfg().wpm; }
 
-  /* ---------------- the other station's speed ----------------
-     Their character speed follows the shared Settings speed; QRS from you
-     slows them 5 WPM at a time. Farnsworth (optional) stretches only the
-     gaps between letters and words, so letters keep their real rhythm. */
+  /* ---------------- speeds ----------------
+     The QSO tab keeps its own two speeds, so copying and sending can
+     differ (copy 25 WPM with Farnsworth 12, send 15 WPM, say). The first
+     time, they start from the app's Settings speed and Keyer Setup speed.
+     Neither change the other tabs. */
+  function clampWpm(v, dflt) { v = Math.round(Number(v)); return v >= 5 && v <= 40 ? v : dflt; }
+  prefs.copyWpm = clampWpm(prefs.copyWpm, HST.shared.get().wpm);
+  prefs.sendWpm = clampWpm(prefs.sendWpm, cfg().wpm);
+  function sendWpm() { return prefs.sendWpm; }
+  // One dit at your sending speed. For paddles and bug dits the keyer
+  // runs at exactly this speed; for a straight key it's the decoder's
+  // starting guess, which then follows your hand.
+  function unitMs() { return 1200 / sendWpm(); }
+
+  /* The other station's speed: their letters go at your copy speed; QRS
+     from you slows them 5 WPM at a time. Farnsworth (optional) stretches
+     only the gaps between letters and words, so letters keep their real
+     rhythm while the overall pace drops to the Farnsworth speed. */
   var qrsDrop = 0;
-  function theirWpm() { return Math.max(5, HST.shared.get().wpm - qrsDrop); }
+  function theirWpm() { return Math.max(5, prefs.copyWpm - qrsDrop); }
   function theirOpts() {
     var w = theirWpm(), s = HST.shared.get(), fw = Number(prefs.fw) || 0;
     return { wpm: w, fwpm: fw && fw < w ? fw : undefined, toneHz: s.toneHz, volume: s.volume };
@@ -352,7 +389,7 @@
     } else $('suggest').hidden = true;
   }
 
-  var keyer = HST.createKeyer({ key: onKey });
+  var keyer = HST.createKeyer({ key: onKey, wpm: sendWpm });
   keyer.attachKeyboard(window);
   var decoder = HST.createDecoder({
     unitMs: unitMs,
@@ -537,7 +574,7 @@
     rec.set({
       sentChars: n, overs: overs.filter(function (o) { return o.by === 'me' && o.text; }).length,
       charGapSum: cgS, charGapN: cgN, wordGapSum: wgS, wordGapN: wgN,
-      wpm: n ? Math.round(cw / n) : cfg().wpm, overallWpm: n ? Math.round(ow / n) : null,
+      wpm: n ? Math.round(cw / n) : sendWpm(), overallWpm: n ? Math.round(ow / n) : null,
       completed: !!(q && q.completed), theirWpm: theirWpm()
     });
   }
@@ -547,7 +584,7 @@
     $('myCall').value = prefs.call; $('myName').value = prefs.name; $('myQth').value = prefs.qth;
     document.querySelectorAll('[data-style]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.style === prefs.style)); });
     document.querySelectorAll('[data-who]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.who === prefs.who)); });
-    $('fw').value = String(prefs.fw);
+    renderSpeeds();
     $('hints').checked = prefs.hints; $('showText').checked = prefs.showText;
     var D = {
       'std-they': 'They call CQ and you answer. You’ll exchange signal reports, names and QTHs, then 73.',
@@ -556,11 +593,41 @@
       'pota-you': 'You’re the activator: call CQ POTA with your park reference (shown in the hints). A hunter answers with their call.'
     };
     $('desc').textContent = D[prefs.style + '-' + prefs.who];
-    $('speedNote').textContent = 'They’ll send at ' + HST.shared.get().wpm + ' WPM (your Settings speed).';
+    $('speedNote').textContent = 'They’ll send at ' + prefs.copyWpm + ' WPM' +
+      (fwOn() ? ' with Farnsworth spacing (' + prefs.fw + ' WPM overall)' : '') + '; you’ll send at ' + prefs.sendWpm + ' WPM.';
+  }
+
+  /* ---- the Speeds panel ---- */
+  // Farnsworth only means something below the character speed.
+  function fwOn() { return prefs.fw > 0 && prefs.fw < prefs.copyWpm; }
+  function renderSpeeds() {
+    $('copyWpm').value = prefs.copyWpm; $('copyWpmVal').textContent = prefs.copyWpm + ' WPM';
+    $('sendWpm').value = prefs.sendWpm; $('sendWpmVal').textContent = prefs.sendWpm + ' WPM';
+    // Farnsworth choices: Off, then every speed from 5 up to one below the copy speed.
+    var opts = ['<option value="0">Off</option>'];
+    for (var w = 5; w < prefs.copyWpm; w++) opts.push('<option value="' + w + '">' + w + ' WPM overall</option>');
+    $('fw').innerHTML = opts.join('');
+    $('fw').value = fwOn() ? String(prefs.fw) : '0';
+    var k = cfg().keyType;
+    $('speedHint').textContent = (fwOn()
+        ? 'Farnsworth: their letters at ' + prefs.copyWpm + ' WPM, with longer gaps between letters and words so the overall pace is ' + prefs.fw + ' WPM. '
+        : '') +
+      (k === 'straight' ? 'With a straight key you set your own speed; the sending speed is where the decoder starts.'
+       : k === 'bug' ? 'Your bug’s automatic dits run at the sending speed.'
+       : 'Your paddles key at the sending speed while you’re in this tab. Keyer Setup’s speed is unchanged.');
+  }
+  function setSpeed(key, v) {
+    prefs[key] = clampWpm(v, prefs[key]);
+    savePrefs(); renderSetup(); renderKey();
   }
   document.querySelectorAll('[data-style]').forEach(function (b) { b.addEventListener('click', function () { prefs.style = b.dataset.style; savePrefs(); renderSetup(); }); });
   document.querySelectorAll('[data-who]').forEach(function (b) { b.addEventListener('click', function () { prefs.who = b.dataset.who; savePrefs(); renderSetup(); }); });
-  $('fw').addEventListener('change', function (e) { prefs.fw = Number(e.target.value); savePrefs(); });
+  $('fw').addEventListener('change', function (e) { prefs.fw = Number(e.target.value); savePrefs(); renderSetup(); });
+  // Sliders: show the number while dragging, save when let go.
+  ['copyWpm', 'sendWpm'].forEach(function (id) {
+    $(id).addEventListener('input', function (e) { $(id + 'Val').textContent = e.target.value + ' WPM'; });
+    $(id).addEventListener('change', function (e) { setSpeed(id, e.target.value); });
+  });
   $('hints').addEventListener('change', function (e) { prefs.hints = e.target.checked; savePrefs(); });
   $('showText').addEventListener('change', function (e) { prefs.showText = e.target.checked; savePrefs(); });
   ['myCall', 'myName', 'myQth'].forEach(function (id) { $(id).addEventListener('input', function () { $(id).classList.remove('bad'); }); });
@@ -586,14 +653,14 @@
   // Key setup chip -> the app's Keyer Setup panel.
   function renderKey() {
     var s = cfg();
-    $('setupText').innerHTML = '<strong>' + esc(ADAPTER_NAMES[s.adapter]) + '</strong> · ' + esc(KEY_NAMES[s.keyType]) + (s.keyType === 'straight' ? '' : ' · ' + s.wpm + ' WPM');
+    $('setupText').innerHTML = '<strong>' + esc(ADAPTER_NAMES[s.adapter]) + '</strong> · ' + esc(KEY_NAMES[s.keyType]) + (s.keyType === 'straight' ? '' : ' · ' + sendWpm() + ' WPM');
     var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     $('pads').hidden = !(touch || s.adapter === 'keyboard');
     $('padDit').textContent = s.keyType === 'straight' ? 'KEY' : (s.reversed ? 'DAH' : 'DIT');
     $('padDah').textContent = s.reversed ? 'DIT' : 'DAH';
     $('padDah').hidden = s.keyType === 'straight';
   }
-  HST.keyerSettings.onChange(function () { keyer.reset(); decoder.reset(); renderKey(); });
+  HST.keyerSettings.onChange(function () { keyer.reset(); decoder.reset(); renderKey(); if (phase === 'setup') renderSpeeds(); });
   $('setupChip').addEventListener('click', function () { try { window.parent.HCT.openKeyerSetup(); } catch (e) {} });
   [['padDit', 'dit'], ['padDah', 'dah']].forEach(function (p) {
     var el = $(p[0]);

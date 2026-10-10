@@ -158,7 +158,8 @@
      KEYER
        var k = HST.createKeyer({
          key: function (down, t) {...},    // keyed signal: key down/up at time t (ms, performance.now clock)
-         raw: function (info) {...}        // every physical input, for the test panel
+         raw: function (info) {...},       // every physical input, for the test panel
+         wpm: function () {...}            // optional: keyer speed to use instead of Keyer Setup's
        });
        k.attachKeyboard(window)  -> detach function
        k.attachMidi()            -> Promise of { ok, msg, names }
@@ -214,7 +215,10 @@
 
     // ---- automatic elements (iambic, bug dits) ----
     function startElement(el, t0) {
-      var c = cfg(), u = 1200 / c.wpm;
+      // h.wpm (optional): a page can supply its own keyer speed, as the QSO
+      // tab does with its "Your sending speed" setting. Otherwise the speed
+      // from Keyer Setup is used.
+      var c = cfg(), u = 1200 / ((h.wpm && h.wpm()) || c.wpm);
       var dur = el === 'dit' ? u : u * c.weight;
       st.busy = true; st.cur = el; st.last = el;
       st[el + 'Mem'] = false;
