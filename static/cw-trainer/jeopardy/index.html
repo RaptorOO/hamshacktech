@@ -677,6 +677,8 @@
     <!-- Online play (shown only when the site has online rooms set up) -->
     <button class="btn ghost off-only" id="barOnline">Play Online</button>
     <span class="room-chip on-only">Room <b id="roomCode"></b></span>
+    <!-- Change your own copy speed mid-game (only you hear it) -->
+    <button class="btn ghost on-only" id="mySpeed">My speed</button>
     <button class="btn ghost on-only" id="hostSkip" hidden>Skip turn</button>
     <button class="btn ghost on-only" id="hostEnd" hidden>End game</button>
     <button class="btn ghost on-only" id="leaveRoom">Leave room</button>
@@ -811,6 +813,30 @@
     <div class="modal-actions">
       <button class="btn" id="playAgain">New Game</button>
       <button class="btn ghost on-only" id="goLeave">Leave room</button>
+    </div>
+  </div>
+</div>
+
+<!-- My speed: change your copy speed after you've joined. Only affects
+     what YOU hear; it applies from the next clue. -->
+<div class="modal-back" id="speedModal">
+  <div class="modal online">
+    <h2>Your copy speed</h2>
+    <p class="small">Only you hear clues at this speed. The change starts with the next clue.</p>
+    <div class="settings-grid">
+      <div class="setting">
+        <label for="spChar">Character speed <span id="spCharVal"></span></label>
+        <input id="spChar" type="range" min="5" max="40" step="1" />
+      </div>
+      <div class="setting">
+        <label for="spFw">Farnsworth (overall speed)</label>
+        <select id="spFw"></select>
+      </div>
+    </div>
+    <p class="small">Farnsworth sends each letter at the character speed but adds extra space between letters and words, so the overall speed is slower. Lower overall = more thinking time.</p>
+    <div class="modal-actions">
+      <button class="btn" id="spSave" type="button">Save</button>
+      <button class="btn ghost" id="spCancel" type="button">Cancel</button>
     </div>
   </div>
 </div>

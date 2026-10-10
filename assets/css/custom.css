@@ -96,18 +96,19 @@
 /* Same --color-primary-* approach as the contact form button above. */
 /* "Free · Installable App" is a key selling point, so it's a solid,
    bold pill on the right of the card header rather than a faint tag. */
+/* Plain label text, deliberately NOT a button: no background, border,
+   pill shape or shadow, so nobody tries to click it to install. */
 .tool-card-badge {
   margin-left: auto;
   font-size: 0.95rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
-  background-color: rgb(var(--color-primary-600));
-  color: #fff;
-  box-shadow: 0 0 0 3px rgba(var(--color-primary-500), 0.25);
+  color: rgb(var(--color-primary-700));
   white-space: nowrap;
+}
+.dark .tool-card-badge {
+  color: rgb(var(--color-primary-400));   /* lighter shade reads better on dark */
 }
 
 .tool-card h4 {

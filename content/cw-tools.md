@@ -20,7 +20,7 @@ Everything for CW practice now lives in one free app: the **HamShackTech CW Trai
     <li><strong>ICR</strong>: Instant Character Recognition drills. Hear a character, press the space bar the moment you know it, then type it. Tracks your weakest characters and drills them.</li>
     <li><strong>Code Groups</strong>: head copy of character groups, common words, QSO elements and call signs, with Farnsworth spacing and a replay after each miss.</li>
     <li><strong>Keyer</strong>: sending practice with your own key through a Vail or VBand adapter (or the on-screen paddles), with your speed, spacing and timing measured.</li>
-    <li><strong>QSO</strong>: work a complete contact, standard or POTA, with a virtual station, using your key. Set separate copy and sending speeds.</li>
+    <li><strong>QSO</strong>: work a complete contact (standard, POTA, SOTA or a CWops CWT) with a virtual station, using your key. Set separate copy and sending speeds.</li>
     <li><strong>Progress</strong>: your practice time, day streaks, accuracy and speed trends, and the characters you miss most.</li>
     <li><strong>Jeopardy</strong>: Morse Code Jeopardy for CW groups. Play online with up to 20 people, each hearing the clues at their own speed and answering with their key, or screen-share it over Zoom. Everyone builds one group score together.</li>
   </ul>
