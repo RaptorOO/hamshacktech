@@ -22,7 +22,7 @@ Everything for CW practice now lives in one free app: the **HamShackTech CW Trai
     <li><strong>Keyer</strong>: sending practice with your own key through a Vail or VBand adapter (or the on-screen paddles), with your speed, spacing and timing measured.</li>
     <li><strong>QSO</strong>: work a complete contact, standard or POTA, with a virtual station, using your key. Set separate copy and sending speeds.</li>
     <li><strong>Progress</strong>: your practice time, day streaks, accuracy and speed trends, and the characters you miss most.</li>
-    <li><strong>Jeopardy</strong>: Morse Code Jeopardy for groups (see below).</li>
+    <li><strong>Jeopardy</strong>: Morse Code Jeopardy for CW groups. Play online with up to 20 people, each hearing the clues at their own speed and answering with their key, or screen-share it over Zoom. Everyone builds one group score together.</li>
   </ul>
   <p>Speed, tone and volume are set once in Settings and shared by every tab. Sign in with your email (optional, no password) and your practice history follows you to all your devices.</p>
 
@@ -35,26 +35,6 @@ Everything for CW practice now lives in one free app: the **HamShackTech CW Trai
   </ol>
 
   <a class="tool-card-button" href="/cw-trainer/">Open the CW Trainer App →</a>
-</div>
-
-<div class="tool-card">
-  <div class="tool-card-header">
-    <h3>Morse Code Jeopardy</h3>
-    <span class="tool-card-badge">Free · Group Game</span>
-  </div>
-
-  <p>A Jeopardy-style board game built for CW study groups. Play it <strong>online</strong>, with up to 20 people each on their own device, hearing every clue at their own speed and answering with their key; or have one host screen-share it over Zoom. Six categories — Numbers, Callsigns, Names, QTHs, Q-Signals, and Ham Talk — each with five tiles that step up in speed from 6 to 20 WPM. Pick a tile and the hidden answer plays in Morse; if the group can't copy it, replay it up to two more times at slower speeds for partial credit. Each column hides a Daily Double: worth double points online, and on Zoom a player sends a fitting answer live on their own key for the group to copy. It's deliberately non-competitive: nobody is scored individually — the whole group builds one shared score together, so slower copiers are never penalized.</p>
-
-  <h4>How to use it</h4>
-  <ol>
-    <li><strong>Online:</strong> in the app's Jeopardy tab, tap <strong>Host Online Game</strong>, then <strong>Copy invitation</strong> and send it to your group. Players tap the link (or tap <strong>Join Online Game</strong> and enter the code), set their copy speed, and the host starts the game. No Zoom needed.</li>
-    <li><strong>On Zoom:</strong> open the game in a desktop browser window to screen-share it as the host.</li>
-    <li>In Zoom, <strong>Share Screen</strong>, pick just that browser window, and turn on <strong>Share Sound</strong> — without it, players won't hear the code.</li>
-    <li>Adjust character speed, tone, volume, and the five WPM tiers in the Host Instructions panel if you like, then click <strong>Let's Play</strong>.</li>
-    <li>Players take turns calling a category and dollar amount. Click the tile, wait for the 3-second countdown, and listen. Use <strong>Play Slower</strong>, <strong>Got it</strong>, or <strong>Reveal</strong> as the group works it out.</li>
-  </ol>
-
-  <a class="tool-card-button" href="/cw-trainer/?tab=jeopardy">Launch Morse Code Jeopardy →</a>
 </div>
 
 </div>
