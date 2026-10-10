@@ -15,7 +15,7 @@ Everything for CW practice now lives in one free app: the **HamShackTech CW Trai
     <span class="tool-card-badge">Free · Installable App</span>
   </div>
 
-  <p>One app you install on your computer or phone. It gets its own icon and its own window, and it works with no internet connection: handy on a shack PC that's rarely online, a laptop in the field, or anywhere coverage is spotty. Updates arrive automatically whenever you open it while you're online. Inside, one tab each:</p>
+  <p>One app you use online, or install on your computer, phone or tablet. Installed, it gets its own icon and its own window, and it works with no internet connection. Updates arrive automatically whenever you open it while you're online. Inside, one tab each:</p>
   <ul>
     <li><strong>ICR</strong>: Instant Character Recognition drills. Hear a character, press the space bar the moment you know it, then type it. Tracks your weakest characters and drills them.</li>
     <li><strong>Code Groups</strong>: head copy of character groups, common words, QSO elements and call signs, with Farnsworth spacing and a replay after each miss.</li>
@@ -31,7 +31,7 @@ Everything for CW practice now lives in one free app: the **HamShackTech CW Trai
     <li>Open the app in <strong>Microsoft Edge</strong> or <strong>Google Chrome</strong> (Windows, Mac, ChromeOS, or Android) and click <strong>Install app</strong> in its title bar — or the install icon at the right end of the browser's address bar.</li>
     <li>On an iPhone or iPad, open it in Safari, tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</li>
     <li>On a Mac with Safari (macOS Sonoma or later), open it and choose <strong>File → Add to Dock</strong>.</li>
-    <li>Launch it from your Start menu, dock, or home screen like any other app. If you've used the web trainers in the same browser, your settings come along automatically.</li>
+    <li>Launch it from your Start menu, dock, or home screen like any other app.</li>
   </ol>
 
   <a class="tool-card-button" href="/cw-trainer/">Open the CW Trainer App →</a>
