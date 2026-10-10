@@ -7,7 +7,7 @@ showWordCount: false
 showAuthor: false
 ---
 
-*Last updated: October 9, 2026*
+*Last updated: October 10, 2026*
 
 This policy explains what information the **HamShackTech CW Trainer** app (at hamshacktech.com/cw-trainer) collects and how it's used. The app is provided by Ham Shack Tech LLC ("we", "us").
 
@@ -15,6 +15,7 @@ This policy explains what information the **HamShackTech CW Trainer** app (at ha
 
 - **You don't need an account.** Without one, everything you do in the CW Trainer stays on your device. Nothing about your practice is sent to us.
 - **If you choose to sign in,** we store your email address and your practice history so it can appear on all your devices. That's all it's used for.
+- **Online Jeopardy rooms** pass the name or call sign you type, and the answers you send, through our server only while the game is on. A room and everything in it is deleted about two hours after it's last used.
 - **No ads, no tracking, and we never sell or share your information.**
 - **You can download or delete your data at any time** from Settings → Account.
 
@@ -26,7 +27,17 @@ This policy explains what information the **HamShackTech CW Trainer** app (at ha
 - **A list of the devices you've signed in on,** described in general terms (for example, "Windows · Edge"), with the date each signed in and when it was last used.
 - **Short-lived security records.** To prevent abuse of the sign-in form, we briefly keep a record of sign-in requests, including the network (IP) address they came from. These are deleted within about a day. Sign-in codes expire after 10 minutes.
 
-We don't collect your name, location or anything else unless you type it into the QSO station details yourself.
+We don't collect your name, location or anything else unless you type it into the QSO station details (or an online Jeopardy room) yourself.
+
+## Online Jeopardy rooms
+
+You don't need an account to host or join an online Jeopardy game. While you're in a room, our server keeps:
+
+- **The name or call sign you enter,** shown to the other players in that room.
+- **The game itself:** the board, whose turn it is, the group score, and the answers players send (what the app decoded from each player's keying). Other players see only the group result; each player's own answer is shown only to that player.
+- **Short-lived security records:** to prevent abuse, we briefly keep a record of new rooms being created, including the network (IP) address they came from. These are deleted within about a day.
+
+A room is deleted, with everything in it, about two hours after anyone last used it. Rooms aren't linked to accounts, and nothing from a room is added to your practice history.
 
 ## How we use it
 

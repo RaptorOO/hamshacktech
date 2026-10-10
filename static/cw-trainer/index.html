@@ -749,6 +749,13 @@
   // Jeopardy's host mode (the Content editor) is turned on with host=1;
   // pass it through to the Jeopardy frame.
   if (params.get('host') === '1') document.getElementById('frame-jeopardy').dataset.src = 'jeopardy/?host=1';
+  // An online Jeopardy invitation (?room=QRX472): open Jeopardy with the
+  // code filled in, ready to join.
+  var room = (params.get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  if (room) {
+    document.getElementById('frame-jeopardy').dataset.src = 'jeopardy/?room=' + room;
+    wanted = 'jeopardy';
+  }
   var saved = null;
   try { saved = localStorage.getItem(TAB_KEY); } catch (e) {}
   if (TABS.indexOf(wanted) >= 0) showTab(wanted, true);
@@ -1267,7 +1274,7 @@
   ['keydown', 'keyup'].forEach(function (type) {
     window.addEventListener(type, function (e) {
       if (!ADAPTER_KEYS[e.code]) return;
-      if (current !== 'keyer' && current !== 'qso') return;
+      if (current !== 'keyer' && current !== 'qso' && current !== 'jeopardy') return;   // Jeopardy: online answers
       if (document.querySelector('dialog[open]')) return;
       var t = e.target;
       if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
