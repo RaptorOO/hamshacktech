@@ -1240,6 +1240,46 @@
       try { active.contentWindow.focus(); } catch (e) {}
     });
   });
+  // ------------------------------------------------------------------
+  // Keep the key adapter connected to the open tab.
+  // A Vail or VBand adapter is a USB keyboard that sends Left/Right Ctrl,
+  // and key presses go to whatever has keyboard focus. Each tab is its own
+  // page inside this one, so if focus is left out here on the app's frame
+  // (after closing What's new, say, or clicking the header) the Keyer and
+  // QSO tabs never hear the key.
+  // ------------------------------------------------------------------
+  function focusActiveTab() {
+    var f = document.getElementById('frame-' + current);
+    try { f.contentWindow.focus(); } catch (e) {}
+  }
+  // 1) Whenever a dialog closes and no other dialog is still open, hand
+  //    focus back to the tab. (What's new and How to use didn't before.)
+  document.querySelectorAll('dialog').forEach(function (d) {
+    d.addEventListener('close', function () {
+      setTimeout(function () { if (!document.querySelector('dialog[open]')) focusActiveTab(); }, 0);
+    });
+  });
+  // 2) Safety net: adapter keys that still arrive out here are passed on
+  //    to the Keyer or QSO tab, and focus moves there so the rest of the
+  //    keying goes straight in. Keyer Setup listens out here itself, so
+  //    nothing is passed on while any dialog is open.
+  var ADAPTER_KEYS = { ControlLeft: 1, ControlRight: 1, BracketLeft: 1, BracketRight: 1 };
+  ['keydown', 'keyup'].forEach(function (type) {
+    window.addEventListener(type, function (e) {
+      if (!ADAPTER_KEYS[e.code]) return;
+      if (current !== 'keyer' && current !== 'qso') return;
+      if (document.querySelector('dialog[open]')) return;
+      var t = e.target;
+      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      var f = document.getElementById('frame-' + current), w = f && f.contentWindow;
+      if (!w || !w.KeyboardEvent) return;
+      try {
+        w.dispatchEvent(new w.KeyboardEvent(type, { code: e.code, key: e.key, ctrlKey: e.ctrlKey, repeat: e.repeat, bubbles: true, cancelable: true }));
+      } catch (err) {}
+      if (type === 'keydown') focusActiveTab();
+    });
+  });
+
   // "Synced 5 min ago" stays current while Settings is open.
   setInterval(function () { if (dlg.open || acDlg.open) renderAccount(); }, 30000);
 
