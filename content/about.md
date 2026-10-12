@@ -14,4 +14,6 @@ The tutorials for classmates are still here. The mission just got bigger. If the
 
 If you’ve got a better way to do any of this, please say so. Comments and ideas are welcome.
 
+Cheers!
+
 73 Tim N6WAX
