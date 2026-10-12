@@ -718,7 +718,7 @@
 <div class="oops-overlay" id="oopsOverlay" hidden>
   <div class="oops-card" role="alertdialog" aria-modal="true" aria-labelledby="oopsTitle" aria-describedby="oopsMsg">
     <h2 id="oopsTitle">Oops!</h2>
-    <p id="oopsMsg">When a character plays, press the space bar the instant you recognize it, then type the character you heard.</p>
+    <p id="oopsMsg">When a character plays, press the space bar the instant you recognize it, then type the character you heard. (Practicing numbers on a phone? Just type the number &mdash; no space bar needed.)</p>
     <button class="btn primary" id="oopsCloseBtn">Got It</button>
   </div>
 </div>
@@ -961,8 +961,32 @@ function computeActiveSet(){
   }
 }
 
+/* Number-pad mode (phones and tablets, numbers-only sets).
+   On an iPhone, pressing space on the number keys always flips the
+   keyboard back to letters, so every character meant tapping "123"
+   again. When every character in the set is a digit and this is a touch
+   device, the answer field asks for the number pad instead, which has no
+   space bar: typing the digit itself counts as "I know it" AND as the
+   answer, so reaction time runs until the digit is typed. Computers with
+   a real keyboard keep the usual space-bar flow. */
+function numberPadMode(){
+  const digitsOnly = activeSet.length > 0 && activeSet.every(c => /[0-9]/.test(c));
+  const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  return digitsOnly && touch;
+}
+// Ask for the right on-screen keyboard. If the field is already focused,
+// blur and refocus so the phone actually swaps keyboards.
+function applyKeyboardMode(){
+  if(!els.answerInput) return;
+  const want = numberPadMode() ? 'numeric' : 'text';
+  if(els.answerInput.getAttribute('inputmode') === want) return;
+  els.answerInput.setAttribute('inputmode', want);
+  if(document.activeElement === els.answerInput){ els.answerInput.blur(); els.answerInput.focus(); }
+}
+
 function applyGroupChange(){
   activeSet = computeActiveSet();
+  applyKeyboardMode();
   // Reset weighting for the new set — no stale scores from a different group.
   charStats = {};
   lastChar = null;
@@ -1010,7 +1034,8 @@ function setKeyState(mode){
   if(mode === 'playing'){
     els.keyStatus.textContent = 'Listening…';
   }else if(mode === 'armed'){
-    els.keyStatus.textContent = 'Press space bar if you know the answer';
+    els.keyStatus.textContent = numberPadMode() ? 'Type the number as soon as you know it'
+                                                : 'Press space bar if you know the answer';
   }else if(mode === 'answering'){
     els.keyStatus.textContent = 'Type the character you heard';
   }else{
@@ -1051,6 +1076,7 @@ function startTrial(){
 function openAnswerFieldForSession(){
   els.answerRow.style.display = 'flex';
   els.answerInput.classList.add('waiting');
+  applyKeyboardMode();   // number pad for numbers-only sets on phones
   els.answerInput.focus();
   setTimeout(() => {
     els.answerRow.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -1183,6 +1209,9 @@ function finishTrial(isCorrect){
 // still playing or after it finished but before the space bar was pressed.
 // Typing during the answer phase or the feedback pause is left alone.
 function isPrematureTyping(){
+  // Number-pad mode: a digit typed after the character finished IS the
+  // recognize press, not typing too early.
+  if(numberPadMode() && keyMode === 'armed' && awaitingRecognition) return false;
   return sessionRunning && !drillActive && !oopsOpen &&
          !answerPhaseActive && (keyMode === 'playing' || keyMode === 'armed');
 }
@@ -1348,7 +1377,12 @@ function wireEvents(){
     els.stopRow.style.display = 'block';
     startClocks();
     openAnswerFieldForSession();
-    startTrial();
+    // A one-second pause before the first character, so you're settled
+    // (and the phone keyboard has finished opening) before it plays.
+    setKeyState('idle');
+    els.keyStatus.textContent = 'Get ready…';
+    clearTimeout(nextTrialTimer);
+    nextTrialTimer = setTimeout(() => { if(sessionRunning && !drillActive) startTrial(); }, 1000);
   });
 
   els.stopSessionBtn.addEventListener('click', stopSession);
@@ -1420,6 +1454,15 @@ function wireEvents(){
       els.answerInput.value = raw.replace(/\s+/g, '');
       if(!oopsOpen) handleRecognizePress();
       if(!els.answerInput.value) return;   // it was only a space — nothing to grade
+    }
+    // Number-pad mode: the digit is both the recognize press and the
+    // answer. (handleRecognizePress clears the field, so keep the digit.)
+    if(numberPadMode() && awaitingRecognition && els.answerInput.value){
+      const typed = els.answerInput.value;
+      handleRecognizePress();
+      els.answerInput.value = typed;
+      submitAnswer();
+      return;
     }
     // Backup check for on-screen keyboards (notably Android), which often
     // report keydown as "Unidentified" so the check above can't see the
