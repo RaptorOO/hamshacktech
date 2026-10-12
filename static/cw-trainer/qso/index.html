@@ -194,7 +194,7 @@
          how fast your keyer sends can differ, e.g. copy 25 WPM with
          Farnsworth 12, send 15 WPM. -->
     <fieldset class="speeds">
-      <legend class="label">Speeds</legend>
+      <legend class="label">Speed, tone and volume</legend>
       <div class="speed-row">
         <label for="copyWpm">Copy speed <span>(they send)</span></label>
         <input type="range" id="copyWpm" min="5" max="40" step="1">
@@ -209,6 +209,17 @@
         <label for="sendWpm">Sending speed <span>(your keyer)</span></label>
         <input type="range" id="sendWpm" min="5" max="40" step="1">
         <output id="sendWpmVal" for="sendWpm"></output>
+      </div>
+      <!-- Tone and volume for this tab only (their signal and your sidetone). -->
+      <div class="speed-row">
+        <label for="qTone">Tone</label>
+        <input type="range" id="qTone" min="300" max="1000" step="10">
+        <output id="qToneVal" for="qTone"></output>
+      </div>
+      <div class="speed-row">
+        <label for="qVol">Volume</label>
+        <input type="range" id="qVol" min="0" max="100" step="5">
+        <output id="qVolVal" for="qVol"></output>
       </div>
       <p class="hint" id="speedHint"></p>
     </fieldset>
@@ -642,6 +653,9 @@
   function renderSpeeds() {
     $('copyWpm').value = prefs.copyWpm; $('copyWpmVal').textContent = prefs.copyWpm + ' WPM';
     $('sendWpm').value = prefs.sendWpm; $('sendWpmVal').textContent = prefs.sendWpm + ' WPM';
+    var sh = HST.shared.get();   // this tab's own tone and volume
+    $('qTone').value = sh.toneHz; $('qToneVal').textContent = sh.toneHz + ' Hz';
+    $('qVol').value = sh.volume; $('qVolVal').textContent = sh.volume + '%';
     // Farnsworth choices: Off, then every speed from 5 up to one below the copy speed.
     var opts = ['<option value="0">Off</option>'];
     for (var w = 5; w < prefs.copyWpm; w++) opts.push('<option value="' + w + '">' + w + ' WPM overall</option>');
@@ -661,6 +675,8 @@
   }
   document.querySelectorAll('[data-style]').forEach(function (b) { b.addEventListener('click', function () { prefs.style = b.dataset.style; savePrefs(); renderSetup(); }); });
   document.querySelectorAll('[data-who]').forEach(function (b) { b.addEventListener('click', function () { prefs.who = b.dataset.who; savePrefs(); renderSetup(); }); });
+  $('qTone').addEventListener('input', function (e) { HST.shared.set({ toneHz: Number(e.target.value) }); });
+  $('qVol').addEventListener('input', function (e) { HST.shared.set({ volume: Number(e.target.value) }); });
   $('fw').addEventListener('change', function (e) { prefs.fw = Number(e.target.value); savePrefs(); renderSetup(); });
   // Sliders: show the number while dragging, save when let go.
   ['copyWpm', 'sendWpm'].forEach(function (id) {

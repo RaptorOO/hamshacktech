@@ -65,14 +65,24 @@
   };
 
   /* =====================================================================
-     SHARED SETTINGS -- character speed, tone pitch and volume
-     Stored once in localStorage, so a change in either trainer (or in the
-     app's Settings panel) applies to both. Browsers fire a "storage" event
-     in every OTHER open page of the same site when localStorage changes;
-     that's how the second trainer's tab hears about a change made in the
-     first, with no extra plumbing.
+     TOOL SETTINGS -- character speed, tone pitch and volume
+     Each practice tool keeps its OWN copy (October 2026; users found one
+     speed shared by every tool confusing). The tool is worked out from the
+     page's address -- /cw-trainer/icr/ is "icr", /cw-trainer/qso/ is "qso",
+     and the app shell itself is "app" -- and its settings live under
+     "hct-cw-shared-v1:<tool>". The first time a tool runs after this
+     change it starts from the old single shared setting, so nobody's
+     speed jumps. (The name HST.shared is kept so the tools' code didn't
+     need to change.) Browsers fire a "storage" event in every OTHER open
+     page of the same site when localStorage changes; that keeps two
+     windows of the same tool in step.
      ===================================================================== */
-  var SHARED_KEY = 'hct-cw-shared-v1';
+  var OLD_SHARED_KEY = 'hct-cw-shared-v1';
+  HST.TOOL = HST.TOOL || (function () {
+    var m = /\/cw-trainer\/([a-z0-9-]+)\//.exec(location.pathname);
+    return m ? m[1] : 'app';
+  })();
+  var SHARED_KEY = OLD_SHARED_KEY + ':' + HST.TOOL;
   var DEFAULTS = { wpm: 20, toneHz: 600, volume: 70 };
   var LIMITS = { wpm: [5, 40], toneHz: [300, 1000], volume: [0, 100] };
   var listeners = [];
@@ -106,7 +116,7 @@
   }
 
   var current = (function () {
-    var saved = readJSON(SHARED_KEY);
+    var saved = readJSON(SHARED_KEY) || readJSON(OLD_SHARED_KEY);   // a new tool starts from today's setting
     var start = saved ? clampAll(saved) : migrate();
     if (!saved) { try { localStorage.setItem(SHARED_KEY, JSON.stringify(start)); } catch (e) {} }
     return start;

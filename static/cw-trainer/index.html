@@ -407,23 +407,11 @@
   <button class="btn" id="updateLater" type="button">Later</button>
 </div>
 
-<!-- Settings shared by both trainers. The same three sliders also appear
-     in each trainer's own settings; all of them stay in sync. -->
+<!-- App-wide settings. Speed, tone and volume are NOT here any more
+     (October 2026): each tool sets its own, on its own page. -->
 <dialog class="settings" id="settingsDialog" aria-labelledby="settingsTitle">
   <h2 id="settingsTitle">Settings</h2>
-  <p class="lede">Speed, tone and volume apply to both trainers. (Jeopardy keeps its own, set when you start a game.)</p>
-  <div class="setting">
-    <label for="setWpm">Character speed <output id="setWpmVal"></output></label>
-    <input type="range" id="setWpm" min="5" max="40" step="1">
-  </div>
-  <div class="setting">
-    <label for="setTone">Tone <output id="setToneVal"></output></label>
-    <input type="range" id="setTone" min="300" max="1000" step="10">
-  </div>
-  <div class="setting">
-    <label for="setVol">Volume <output id="setVolVal"></output></label>
-    <input type="range" id="setVol" min="0" max="100" step="5">
-  </div>
+  <p class="lede">Speed, tone and volume are set in each tool, and each tool remembers its own.</p>
   <!-- Key or paddles (Milestone 5/6): the adapter and key type used by the
        Keyer tab. (It started out behind an "Experimental features" switch;
        that switch is gone now that Keyer Practice is ready -- the
@@ -442,7 +430,6 @@
   </div>
   <div class="actions">
     <button class="linkish" id="whatsNewLink" type="button" style="margin-right:auto">What's new</button>
-    <button class="btn" id="sampleBtn" type="button">Play sample</button>
     <button class="btn primary" id="settingsDone" type="button">Done</button>
   </div>
   <!-- Which version this device is running, so two devices can be compared. -->
@@ -481,7 +468,7 @@
       </select>
     </div>
     <div class="kfield" id="kWpmField">
-      <label for="kWpm"><span id="kWpmLabel">Keyer speed</span> <output id="kWpmVal"></output></label>
+      <label for="kWpm"><span id="kWpmLabel">Keyer speed (for this testing panel only)</span> <output id="kWpmVal"></output></label>
       <input type="range" id="kWpm" min="5" max="40" step="1">
     </div>
   </div>
@@ -650,7 +637,7 @@
   // loads, because the engine creates its settings the first time it runs.
   // (Used by "What's new": first-time visitors don't need release notes.)
   window.HCT_RETURNING = (function () {
-    try { return !!(localStorage.getItem('hct-cw-shared-v1') || localStorage.getItem('hct-cw-app-tab')); }
+    try { return !!(localStorage.getItem('hct-cw-shared-v1') || localStorage.getItem('hct-cw-shared-v1:app') || localStorage.getItem('hct-cw-app-tab')); }
     catch (e) { return false; }
   })();
 </script>
@@ -692,6 +679,7 @@
     if (slug === 'icr') {
       clickIfVisible('stopDrillBtn');    // a drill first (it may resume the session)...
       clickIfVisible('stopSessionBtn');  // ...then the session itself
+      clickIfVisible('carStopBtn');      // Car Mode, if it's playing
     } else if (slug === 'code-groups') {
       clickIfStop('drillBtn');           // Code Groups relabels these buttons
       clickIfStop('sessionBtn');         // to "Stop ..." while running
@@ -772,33 +760,12 @@
   else showTab(TABS.indexOf(saved) >= 0 ? saved : 'icr', false);
 
   // ------------------------------------------------------------------
-  // Settings panel. The sliders write to HST.shared (see
-  // shared/hst-engine.js); both trainers listen for that change and
-  // update themselves, so nothing here talks to the trainers directly.
+  // Settings panel: Keyer Setup, account, What's new and the app version.
   // ------------------------------------------------------------------
   var dlg = document.getElementById('settingsDialog');
-  var fields = [
-    { key: 'wpm',    input: 'setWpm',  out: 'setWpmVal',  fmt: function (v) { return v + ' WPM'; } },
-    { key: 'toneHz', input: 'setTone', out: 'setToneVal', fmt: function (v) { return v + ' Hz'; } },
-    { key: 'volume', input: 'setVol',  out: 'setVolVal',  fmt: function (v) { return v + '%'; } }
-  ];
-  function renderSettings(shared) {
-    fields.forEach(function (f) {
-      document.getElementById(f.input).value = shared[f.key];
-      document.getElementById(f.out).textContent = f.fmt(shared[f.key]);
-    });
-  }
-  fields.forEach(function (f) {
-    document.getElementById(f.input).addEventListener('input', function (e) {
-      var patch = {}; patch[f.key] = Number(e.target.value);
-      HST.shared.set(patch);
-    });
-  });
-  HST.shared.onChange(renderSettings);
 
   document.getElementById('settingsBtn').addEventListener('click', function () {
     stopTrainer(current);          // settings change between sessions, never mid-session
-    renderSettings(HST.shared.get());
     showAppVersion();
     dlg.showModal();
   });
@@ -823,12 +790,6 @@
     try { active.contentWindow.focus(); } catch (e) {}
   });
 
-  // "Play sample": sends CQ with the current settings so you can hear them.
-  document.getElementById('sampleBtn').addEventListener('click', function () {
-    var s = HST.shared.get();
-    HST.audio.stop();
-    HST.audio.playMorse(['C', 'Q'], { wpm: s.wpm, toneHz: s.toneHz, volume: s.volume });
-  });
 
   function $(id) { return document.getElementById(id); }
 
@@ -858,7 +819,7 @@
     $('kReversed').parentNode.style.display = straight ? 'none' : '';
     // For a straight key the speed slider is only the decoder's first guess;
     // it learns the actual speed from the sending.
-    $('kWpmLabel').textContent = straight ? 'Starting speed guess' : 'Keyer speed';
+    $('kWpmLabel').textContent = straight ? 'Starting speed guess (for this testing panel only)' : 'Keyer speed (for this testing panel only)';
     $('kWpmVal').textContent = s.wpm + ' WPM';
     // On-screen pads: one KEY pad for a straight key, else two paddles.
     $('padDit').textContent = straight ? 'KEY' : (s.reversed ? 'DAH' : 'DIT');
@@ -1331,12 +1292,13 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-09-accounts';
+  var RELEASE = '2026-10-12-tool-settings';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
-    'New: <strong>accounts</strong>. Sign in with your email under Settings (the gear icon) \u2192 <strong>Account</strong> and your Progress history follows you to every device \u2014 phone, tablet, laptop. Your QSO station details (call, name, QTH) come along too.',
-    'There\u2019s no password. We email you a 6-digit code. <strong>If it isn\u2019t in your inbox, check your Junk or Spam folder</strong> and mark it \u201cNot junk\u201d so the next one arrives normally.',
-    'Signing in is optional; the trainer works exactly as before without it. From the Account screen you can download your data, sign out other devices, or delete your account.',
+    '<strong>Each tool now has its own speed, tone and volume.</strong> Set them on the ICR, Code Groups, Keyer, QSO and Jeopardy pages; each tool remembers its own, and changing one no longer changes the others. (They\u2019re no longer in this Settings panel.)',
+    '<strong>Keyer</strong> has a new <strong>Console Settings</strong> box for its keying speed and sidetone.',
+    '<strong>ICR and Code Groups buzz</strong> when you miss. Tap the <strong>Buzzer</strong> button next to the timer to turn it off.',
+    'New in ICR: <strong>Car Mode</strong>. Pick a time and Letters, Numbers or Both; each character plays five times with a pause to say it out loud. Listen only, nothing to type.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
   var SEEN_KEY = 'hct-cw-seen-release';
