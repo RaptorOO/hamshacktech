@@ -224,6 +224,18 @@
     opacity: 0.45;
   }
 
+  /* On-screen 0-9 pad (phones, numbers-only sets), laid out like a phone keypad. */
+  .digit-pad{ display:grid; grid-template-columns: repeat(3, 72px); gap: 10px; justify-content:center; margin: 8px 0 4px; }
+  .digit-pad[hidden]{ display:none; }
+  .digit-pad button{
+    height: 60px; font-family: var(--font-mono); font-size: 26px; font-weight: 700;
+    background: #140f0d; color: var(--text); border: 2px solid var(--border-light); border-radius: 10px;
+    touch-action: manipulation;           /* no double-tap zoom delay */
+    -webkit-tap-highlight-color: transparent;
+  }
+  .digit-pad button:active{ border-color: var(--amber); background: var(--amber-soft); }
+  .digit-pad .zero{ grid-column: 2; }
+
   .feedback{
     text-align:center;
     font-family: var(--font-mono);
@@ -624,6 +636,14 @@
         <input type="text" maxlength="1" class="answer-input waiting" id="answerInput" autocomplete="off" autocapitalize="characters" spellcheck="false">
       </div>
 
+      <!-- Phones practicing numbers: tap the digit (see numberPadMode). -->
+      <div class="digit-pad" id="digitPad" hidden>
+        <button type="button" data-d="1">1</button><button type="button" data-d="2">2</button><button type="button" data-d="3">3</button>
+        <button type="button" data-d="4">4</button><button type="button" data-d="5">5</button><button type="button" data-d="6">6</button>
+        <button type="button" data-d="7">7</button><button type="button" data-d="8">8</button><button type="button" data-d="9">9</button>
+        <button type="button" data-d="0" class="zero">0</button>
+      </div>
+
       <div class="feedback" id="feedback"></div>
 
       <div class="start-row" id="startRow">
@@ -718,7 +738,7 @@
 <div class="oops-overlay" id="oopsOverlay" hidden>
   <div class="oops-card" role="alertdialog" aria-modal="true" aria-labelledby="oopsTitle" aria-describedby="oopsMsg">
     <h2 id="oopsTitle">Oops!</h2>
-    <p id="oopsMsg">When a character plays, press the space bar the instant you recognize it, then type the character you heard. (Practicing numbers on a phone? Just type the number &mdash; no space bar needed.)</p>
+    <p id="oopsMsg">When a character plays, press the space bar the instant you recognize it, then type the character you heard. (Practicing numbers on a phone? Just tap the number on the pad &mdash; no space bar needed.)</p>
     <button class="btn primary" id="oopsCloseBtn">Got It</button>
   </div>
 </div>
@@ -964,24 +984,34 @@ function computeActiveSet(){
 /* Number-pad mode (phones and tablets, numbers-only sets).
    On an iPhone, pressing space on the number keys always flips the
    keyboard back to letters, so every character meant tapping "123"
-   again. When every character in the set is a digit and this is a touch
-   device, the answer field asks for the number pad instead, which has no
-   space bar: typing the digit itself counts as "I know it" AND as the
-   answer, so reaction time runs until the digit is typed. Computers with
-   a real keyboard keep the usual space-bar flow. */
+   again (and the iPhone's own number pad has no space bar). So when every
+   character in the set is a digit and this is a touch device, ICR shows
+   its OWN on-screen 0-9 pad and keeps the phone keyboard closed. Tapping
+   the digit counts as "I know it" AND as the answer, so reaction time runs
+   until the tap. Computers keep the usual space-bar flow. */
 function numberPadMode(){
   const digitsOnly = activeSet.length > 0 && activeSet.every(c => /[0-9]/.test(c));
   const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
   return digitsOnly && touch;
 }
-// Ask for the right on-screen keyboard. If the field is already focused,
-// blur and refocus so the phone actually swaps keyboards.
+// Swap between the digit pad and the typing field when the set changes
+// during a session.
 function applyKeyboardMode(){
-  if(!els.answerInput) return;
-  const want = numberPadMode() ? 'numeric' : 'text';
-  if(els.answerInput.getAttribute('inputmode') === want) return;
-  els.answerInput.setAttribute('inputmode', want);
-  if(document.activeElement === els.answerInput){ els.answerInput.blur(); els.answerInput.focus(); }
+  if(!els.answerInput || !sessionRunning || drillActive) return;
+  const pad = numberPadMode();
+  els.digitPad.hidden = !pad;
+  els.answerRow.style.display = pad ? 'none' : 'flex';
+  if(pad){ if(document.activeElement === els.answerInput) els.answerInput.blur(); }
+  else els.answerInput.focus();
+}
+// A tap on the digit pad (or a digit typed on a keyboard in pad mode).
+function padPress(d){
+  if(oopsOpen || !sessionRunning || drillActive) return;
+  if(keyMode === 'playing' && !answerPhaseActive){ showOops(); return; }   // too early
+  if(awaitingRecognition) handleRecognizePress();   // the tap is the "I know it"
+  if(!answerPhaseActive) return;
+  els.answerInput.value = d;
+  submitAnswer();
 }
 
 function applyGroupChange(){
@@ -1034,7 +1064,7 @@ function setKeyState(mode){
   if(mode === 'playing'){
     els.keyStatus.textContent = 'Listening…';
   }else if(mode === 'armed'){
-    els.keyStatus.textContent = numberPadMode() ? 'Type the number as soon as you know it'
+    els.keyStatus.textContent = numberPadMode() ? 'Tap the number as soon as you know it'
                                                 : 'Press space bar if you know the answer';
   }else if(mode === 'answering'){
     els.keyStatus.textContent = 'Type the character you heard';
@@ -1074,9 +1104,16 @@ function startTrial(){
 // out every trial. This is also the only thing that brings the on-screen
 // keyboard up, since there's no button to tap anymore.
 function openAnswerFieldForSession(){
-  els.answerRow.style.display = 'flex';
   els.answerInput.classList.add('waiting');
-  applyKeyboardMode();   // number pad for numbers-only sets on phones
+  if(numberPadMode()){
+    // Phones practicing numbers: ICR's own digit pad, no phone keyboard.
+    els.answerRow.style.display = 'none';
+    els.digitPad.hidden = false;
+    setTimeout(() => { els.digitPad.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 300);
+    return;
+  }
+  els.digitPad.hidden = true;
+  els.answerRow.style.display = 'flex';
   els.answerInput.focus();
   setTimeout(() => {
     els.answerRow.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -1097,6 +1134,7 @@ function stopSession(){
   setKeyState('idle');
   els.keyStatus.textContent = 'Tap Start Session to begin';
   els.answerRow.style.display = 'none';
+  els.digitPad.hidden = true;
   els.feedback.textContent = '';
   els.reactionReadout.textContent = '— ms';
   els.reactionReadout.classList.remove('lit');
@@ -1209,9 +1247,6 @@ function finishTrial(isCorrect){
 // still playing or after it finished but before the space bar was pressed.
 // Typing during the answer phase or the feedback pause is left alone.
 function isPrematureTyping(){
-  // Number-pad mode: a digit typed after the character finished IS the
-  // recognize press, not typing too early.
-  if(numberPadMode() && keyMode === 'armed' && awaitingRecognition) return false;
   return sessionRunning && !drillActive && !oopsOpen &&
          !answerPhaseActive && (keyMode === 'playing' || keyMode === 'armed');
 }
@@ -1243,7 +1278,7 @@ function closeOops(){
   if(sessionRunning && !drillActive){
     // Put focus back in the answer field (moving it to the button can close
     // the on-screen keyboard on phones/tablets — this brings it back).
-    els.answerInput.focus();
+    if(!numberPadMode()) els.answerInput.focus();   // pad mode: no phone keyboard
     clearTimeout(nextTrialTimer);
     nextTrialTimer = setTimeout(startTrial, 800);
   }
@@ -1271,6 +1306,7 @@ function startDrill(){
   els.startRow.style.display = 'none';
   els.stopRow.style.display = 'none';
   els.answerRow.style.display = 'none';
+  els.digitPad.hidden = true;
   els.feedback.textContent = '';
   awaitingRecognition = false;
   answerPhaseActive = false;
@@ -1420,6 +1456,13 @@ function wireEvents(){
       handleRecognizePress();
       return;
     }
+    // Pad mode with a hardware keyboard (an iPad keyboard, say): a typed
+    // digit works like a tap on the pad.
+    if(!els.digitPad.hidden && /^[0-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey){
+      e.preventDefault();
+      padPress(e.key);
+      return;
+    }
     // A printable character (single-character e.key, no Ctrl/Cmd/Alt combo)
     // typed before the space bar → explain the flow instead of letting it
     // land in the answer box.
@@ -1427,6 +1470,16 @@ function wireEvents(){
       e.preventDefault();
       showOops();
     }
+  });
+
+  // Digit pad: react on pointerdown (when the finger lands) so reaction
+  // time isn't padded by the tap delay; preventDefault keeps focus (and
+  // the phone keyboard) away.
+  els.digitPad.addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('[data-d]');
+    if(!b) return;
+    e.preventDefault();
+    padPress(b.dataset.d);
   });
 
   els.answerInput.addEventListener('keydown', (e) => {
@@ -1454,15 +1507,6 @@ function wireEvents(){
       els.answerInput.value = raw.replace(/\s+/g, '');
       if(!oopsOpen) handleRecognizePress();
       if(!els.answerInput.value) return;   // it was only a space — nothing to grade
-    }
-    // Number-pad mode: the digit is both the recognize press and the
-    // answer. (handleRecognizePress clears the field, so keep the digit.)
-    if(numberPadMode() && awaitingRecognition && els.answerInput.value){
-      const typed = els.answerInput.value;
-      handleRecognizePress();
-      els.answerInput.value = typed;
-      submitAnswer();
-      return;
     }
     // Backup check for on-screen keyboards (notably Android), which often
     // report keydown as "Unidentified" so the check above can't see the
@@ -1545,7 +1589,7 @@ function wireEvents(){
 function init(){
   // Grab all DOM refs once.
   ['mStreak','mBest','mPct','mCount','mAvg','mTimeouts',
-   'keyStatus','reactionReadout','answerRow','answerInput',
+   'keyStatus','reactionReadout','answerRow','answerInput','digitPad',
    'feedback','startRow','startBtn','stopRow','stopSessionBtn',
    'weakList','drillBtn','stopDrillBtn','drillStatus',
    'groupSelect','customRow','customInput','wpmSlider','wpmVal',

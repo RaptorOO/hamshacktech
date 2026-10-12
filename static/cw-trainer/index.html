@@ -307,6 +307,8 @@
   .acct-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
   #tsBox { margin: 4px 0 8px; min-height: 0; }
 
+  .app-version { margin: 10px 0 0; font-size: 0.72rem; color: var(--muted, #8a8a8a); text-align: right; }
+
   /* ---------- What's new ---------- */
   .whatsnew ul { margin: 0 0 4px; padding-left: 1.2em; line-height: 1.5; }
   .whatsnew li { margin-bottom: 8px; }
@@ -443,6 +445,8 @@
     <button class="btn" id="sampleBtn" type="button">Play sample</button>
     <button class="btn primary" id="settingsDone" type="button">Done</button>
   </div>
+  <!-- Which version this device is running, so two devices can be compared. -->
+  <p class="app-version" id="appVersion"></p>
 </dialog>
 
 <!-- Keyer Setup: choose the adapter and key type, then try
@@ -795,8 +799,19 @@
   document.getElementById('settingsBtn').addEventListener('click', function () {
     stopTrainer(current);          // settings change between sessions, never mid-session
     renderSettings(HST.shared.get());
+    showAppVersion();
     dlg.showModal();
   });
+  // App version = the saved copy this device runs (the service worker's
+  // cache name ends in the build's version code, e.g. cw-trainer-374005b133a4).
+  function showAppVersion() {
+    var el = document.getElementById('appVersion');
+    if (!window.caches) { el.textContent = ''; return; }
+    caches.keys().then(function (keys) {
+      var v = keys.filter(function (k) { return k.indexOf('cw-trainer-') === 0; }).map(function (k) { return k.slice(11); });
+      el.textContent = v.length ? 'App version ' + v.join(', ') : 'App version: web (not saved for offline yet)';
+    }).catch(function () { el.textContent = ''; });
+  }
   document.getElementById('settingsDone').addEventListener('click', function () { dlg.close(); });
   // Clicking the dimmed area outside the panel closes it too.
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
