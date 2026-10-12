@@ -304,17 +304,30 @@
       if (info.accepted) input(which, down, t, src + ':' + which);
     }
 
+    // h.keyLog (optional): told about EVERY key event, mapped or not, so
+    // Keyer Setup's Diagnostics can show exactly what a device sends.
+    function logKey(e) {
+      if (h.keyLog) h.keyLog({ type: e.type, code: e.code, key: e.key, ctrl: e.ctrlKey, repeat: e.repeat, t: evTime(e) });
+    }
     function attachKeyboard(win) {
       function kd(e) {
+        logKey(e);
         var w = KEYMAP[e.code];
         if (!w) return;
-        if (e.code.indexOf('Bracket') === 0) e.preventDefault();   // don't type [ ] into fields
+        // Tell the browser we've handled the key. For [ ] that stops them
+        // being typed into fields. For the adapters' Left/Right Ctrl it
+        // matters on iPhone/iPad: iOS treats Ctrl pressed with the other
+        // Ctrl as an unknown keyboard shortcut and plays its "can't do
+        // that" sound unless the page says it handled the key.
+        e.preventDefault();
         if (e.repeat) return;
         feed('keyboard', w, true, evTime(e), e.code);
       }
       function ku(e) {
+        logKey(e);
         var w = KEYMAP[e.code];
         if (!w) return;
+        e.preventDefault();
         feed('keyboard', w, false, evTime(e), e.code);
       }
       // If the window loses focus with a key held, its key-up never arrives.
