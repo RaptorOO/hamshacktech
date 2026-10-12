@@ -17,14 +17,14 @@ Everything for CW practice now lives in one free app: the **HamShackTech CW Trai
 
   <p>One app you use online, or install on your computer, phone or tablet. Installed, it gets its own icon and its own window, and it works with no internet connection. Updates arrive automatically whenever you open it while you're online. Inside, one tab each:</p>
   <ul>
-    <li><strong>ICR</strong>: Instant Character Recognition drills. Hear a character, press the space bar the moment you know it, then type it. Tracks your weakest characters and drills them.</li>
+    <li><strong>ICR</strong>: Instant Character Recognition drills. Hear a character, press the space bar the moment you know it, then type it. Tracks your weakest characters and drills them, and Car Mode plays characters for hands-free listening.</li>
     <li><strong>Code Groups</strong>: head copy of character groups, common words, QSO elements and call signs, with Farnsworth spacing and a replay after each miss.</li>
     <li><strong>Keyer</strong>: sending practice with your own key through a Vail or VBand adapter (or the on-screen paddles), with your speed, spacing and timing measured.</li>
     <li><strong>QSO</strong>: work a complete contact (standard, POTA, SOTA or a CWops CWT) with a virtual station, using your key. Set separate copy and sending speeds.</li>
     <li><strong>Progress</strong>: your practice time, day streaks, accuracy and speed trends, and the characters you miss most.</li>
     <li><strong>Jeopardy</strong>: Morse Code Jeopardy for CW groups. Play online with up to 20 people, each hearing the clues at their own speed and answering with their key, or screen-share it over Zoom. Everyone builds one group score together.</li>
   </ul>
-  <p>Speed, tone and volume are set once in Settings and shared by every tab. Sign in with your email (optional, no password) and your practice history follows you to all your devices.</p>
+  <p>Each tool keeps its own speed, tone and volume, so your ICR speed doesn&rsquo;t change your QSO speed. Sign in with your email (optional, no password) and your practice history follows you to all your devices.</p>
 
   <h4>How to install it</h4>
   <ol>

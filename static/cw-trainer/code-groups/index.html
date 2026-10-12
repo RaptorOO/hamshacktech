@@ -207,6 +207,11 @@
   .clock-chip.armed { border-color: var(--accent); }     /* a timer is set */
   .clock-chip.armed .clock-val { color: var(--accent); }
   .clock-chip.low .clock-val { color: var(--bad); }      /* final minute */
+  button#buzzBtn { cursor: pointer; }
+  #buzzBtn .mute { display: none; }
+  #buzzBtn[aria-pressed="false"] .mute { display: inline; }
+  #buzzBtn[aria-pressed="false"] .wave { display: none; }
+  #buzzBtn[aria-pressed="false"] .clock-val { opacity: 0.6; }
   /* Brief flash when the timer runs out and the bell rings. */
   .clock-chip.expired { animation: clock-flash 0.5s ease-in-out 6; border-color: var(--bad); }
   .clock-chip.expired .clock-val { color: var(--bad); }
@@ -846,6 +851,12 @@
         <span>Timer</span>
         <span class="clock-val" id="timerVal" role="timer" aria-live="off">Off</span>
       </button>
+      <!-- Mutes the missed-group / timeout buzzer. Saved. -->
+      <button type="button" class="clock-chip" id="buzzBtn" aria-pressed="true" title="Buzz on a missed group — click to mute or unmute">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="mute" d="m22 9-6 6M16 9l6 6"/></svg>
+        <span>Buzzer</span>
+        <span class="clock-val" id="buzzVal">On</span>
+      </button>
     </div>
 
     <div class="status-row">
@@ -1417,7 +1428,8 @@
       callMix: "mixed",  // Call Signs group only: "mixed" | "us" | "intl"
       wordPool: 500,     // Common Words group only: how many of GENERAL_WORDS to draw from (100/500/1000/2000)
       headCopy: false,   // Head Copy Mode: no typing allowed while code is playing
-      timerMin: 0        // Practice Timer length in minutes; 0 = off
+      timerMin: 0,       // Practice Timer length in minutes; 0 = off
+      buzzer: true       // buzz on a missed group or timeout (the Buzzer chip mutes it)
     },
     running: false,
     drilling: false,
@@ -1477,6 +1489,7 @@
     replayBtn: $("replayBtn"), nextBtn: $("nextBtn"),
     elapsedChip: $("elapsedChip"), elapsedVal: $("elapsedVal"),
     timerBtn: $("timerBtn"), timerVal: $("timerVal"),
+    buzzBtn: $("buzzBtn"), buzzVal: $("buzzVal"),
     timerDialog: $("timerDialog"), timerPresets: $("timerPresets"), timerInput: $("timerInput"),
     timerSetBtn: $("timerSetBtn"), timerOffBtn: $("timerOffBtn"), timerCancelBtn: $("timerCancelBtn"),
 
@@ -1575,7 +1588,7 @@
   function playMorseSequence(chars, settings) {
     return HST.audio.playMorse(chars, settings).done;
   }
-  function playBuzzer() { HST.audio.buzzer(state.settings.volume); }
+  function playBuzzer() { if (state.settings.buzzer) HST.audio.buzzer(state.settings.volume); }
   function playBell() { HST.audio.bell(state.settings.volume); }
 
   // Created in INIT below, once the clock chips are known.
@@ -2047,7 +2060,7 @@
       if (state.roundToken !== myToken) return null; // abandoned \u2014 e.g. Drill started a fresh round instead
       if (!state.running) return null;
       var outcome = evaluateGroup(timedOut);
-      if (timedOut) playBuzzer();
+      if (timedOut || !outcome.allCorrect) playBuzzer();   // missed group or timeout (unless muted)
       setStatus(timedOut ? "timeout" : (outcome.allCorrect ? "correct" : "miss"),
         timedOut ? "\u23f1 Time's up" : (outcome.allCorrect ? "\u2713 Correct" : "\u2717 Missed"));
       renderBlanksReveal(outcome.results);
@@ -2464,6 +2477,14 @@
     if (state.settings.fwpm > shared.wpm) state.settings.fwpm = shared.wpm;
   }
   loadSettings();
+  // Buzzer chip: mute/unmute the missed-group buzzer (saved with settings).
+  function renderBuzz() {
+    els.buzzBtn.setAttribute("aria-pressed", String(state.settings.buzzer));
+    els.buzzVal.textContent = state.settings.buzzer ? "On" : "Off";
+  }
+  els.buzzBtn.addEventListener("click", function () { state.settings.buzzer = !state.settings.buzzer; saveSettings(); renderBuzz(); });
+  renderBuzz();
+
   applyShared(HST.shared.get());
   HST.shared.onChange(function (shared) {
     applyShared(shared);

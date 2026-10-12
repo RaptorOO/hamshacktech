@@ -48,6 +48,16 @@
   .chip .chg { color: var(--lime); }
   .chip:hover { border-color: var(--lime); }
 
+  /* ---------- Console Settings ---------- */
+  .console h2 { margin: 0 0 12px; font: 600 1.05rem/1.2 'Oswald', sans-serif; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .cgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 22px; }
+  .cset label { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.88rem; margin-bottom: 6px; }
+  .cset output { color: var(--lime); font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .cset input[type="range"] { width: 100%; accent-color: var(--lime); }
+  .ckey { margin: 12px 0 0; color: var(--muted); font-size: 0.85rem; }
+  .ckey strong { color: var(--text); font-weight: 500; }
+  .linkish { background: none; border: 0; padding: 0; color: var(--lime); cursor: pointer; font: inherit; }
+
   /* ---------- controls row ---------- */
   .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 14px; }
   .seg { display: flex; padding: 3px; gap: 3px; background: var(--well); border: 1px solid var(--border); border-radius: 9px; }
@@ -161,9 +171,6 @@
 <div class="wrap">
   <div class="head">
     <h1>Keyer Practice</h1>
-    <div class="spacer"></div>
-    <!-- Current key setup; opens the app's Keyer Setup panel. -->
-    <button class="chip" id="setupChip" type="button" title="Open Keyer Setup"><span id="setupText"></span><span class="chg">Change</span></button>
   </div>
 
   <div class="controls">
@@ -221,6 +228,27 @@
     <div class="legend"><span class="you">You</span><span class="ideal">Perfect timing</span><span class="gapok">Gap on target</span><span class="gapoff">Gap off target (dits shown)</span></div>
   </section>
 
+  <!-- ===== Console Settings: Keyer Practice's own speed, tone and volume.
+       Saved for this tab only; nothing here changes the other tools. ===== -->
+  <section class="card console" aria-labelledby="consoleTitle">
+    <h2 id="consoleTitle">Console Settings</h2>
+    <div class="cgrid">
+      <div class="cset">
+        <label for="cWpm"><span id="cWpmLabel">Keyer speed</span> <output id="cWpmVal"></output></label>
+        <input type="range" id="cWpm" min="5" max="40" step="1">
+      </div>
+      <div class="cset">
+        <label for="cTone">Sidetone pitch <output id="cToneVal"></output></label>
+        <input type="range" id="cTone" min="300" max="1000" step="10">
+      </div>
+      <div class="cset">
+        <label for="cVol">Sidetone volume <output id="cVolVal"></output></label>
+        <input type="range" id="cVol" min="0" max="100" step="5">
+      </div>
+    </div>
+    <p class="help ckey">Your key: <span id="setupText"></span> &middot; <button class="linkish" id="setupLink" type="button">Keyer Setup&hellip;</button></p>
+  </section>
+
   <section class="card">
     <div class="session">
       <span>This session: <b id="sTries">0</b> <span id="sTriesLbl">tries</span></span>
@@ -256,7 +284,7 @@
 
   /* ---------------- this tab's own saved choices ---------------- */
   var PREFS_KEY = 'hct-cw-keyer-practice-v1';
-  var prefs = { mode: 'copy', source: 'word', showCode: false };
+  var prefs = { mode: 'copy', source: 'word', showCode: false, wpm: 0 };   // wpm 0 = not set yet
   try { var saved = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (saved) Object.keys(prefs).forEach(function (k) { if (k in saved) prefs[k] = saved[k]; }); } catch (e) {}
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
 
@@ -264,14 +292,18 @@
   var ADAPTER_NAMES = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter' };
   function cfg() { return HST.keyerSettings.get(); }
   function automatic() { var k = cfg().keyType; return k === 'iambicA' || k === 'iambicB'; }
-  function unitMs() { return 1200 / cfg().wpm; }
+  // Keyer Practice's own sending speed (Console Settings), saved with its
+  // other choices. It starts from the Keyer Setup speed the first time.
+  if (!prefs.wpm) { prefs.wpm = cfg().wpm || 20; savePrefs(); }
+  function keyWpm() { return Math.min(40, Math.max(5, Number(prefs.wpm) || 20)); }
+  function unitMs() { return 1200 / keyWpm(); }
 
   /* ---------------- the key ----------------
      The keyer (shared/hst-keyer.js) turns the adapter's paddle presses
      into keyed signal with sidetone; key() below gets each key-down and
      key-up with its exact time. The live decoder shows letters as they
      arrive; the grading uses the full analysis afterwards. */
-  var keyer = HST.createKeyer({ key: onKey });
+  var keyer = HST.createKeyer({ key: onKey, wpm: keyWpm });   // paddles key at this tab's own speed
   keyer.attachKeyboard(window);
   var decoder = HST.createDecoder({
     unitMs: unitMs,
@@ -600,7 +632,7 @@
     if (!sess) {
       sess = { start: Date.now(), tries: 0, right: 0, total: 0, sent: 0,
                cgSum: 0, cgN: 0, wgSum: 0, wgN: 0, wpmW: 0, overallW: 0 };
-      rec.start({ mode: prefs.mode, source: prefs.mode === 'copy' ? prefs.source : 'free', keyType: cfg().keyType, wpm: cfg().wpm });
+      rec.start({ mode: prefs.mode, source: prefs.mode === 'copy' ? prefs.source : 'free', keyType: cfg().keyType, wpm: keyWpm() });
       $('endBtn').hidden = false;
       clockTimer = setInterval(renderSession, 1000);
     }
@@ -625,7 +657,7 @@
     rec.set({
       sentChars: sess.sent,
       charGapSum: sess.cgSum, charGapN: sess.cgN, wordGapSum: sess.wgSum, wordGapN: sess.wgN,
-      wpm: sess.sent ? Math.round(sess.wpmW / sess.sent) : cfg().wpm,
+      wpm: sess.sent ? Math.round(sess.wpmW / sess.sent) : keyWpm(),
       overallWpm: sess.sent ? Math.round(sess.overallW / sess.sent) : null
     });
     renderSession();
@@ -714,8 +746,8 @@
   // Key setup chip; opens the app's Keyer Setup panel (in the app shell).
   function renderSetup() {
     var s = cfg();
-    $('setupText').innerHTML = '<strong>' + esc(ADAPTER_NAMES[s.adapter]) + '</strong> · ' + esc(KEY_NAMES[s.keyType]) +
-      (s.keyType === 'straight' ? '' : ' · ' + s.wpm + ' WPM');
+    $('setupText').innerHTML = '<strong>' + esc(ADAPTER_NAMES[s.adapter]) + '</strong> · ' + esc(KEY_NAMES[s.keyType]);
+    renderConsole();
     var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     $('pads').hidden = !(touch || s.adapter === 'keyboard');
     $('padDit').textContent = s.keyType === 'straight' ? 'KEY' : (s.reversed ? 'DAH' : 'DIT');
@@ -723,7 +755,21 @@
     $('padDah').hidden = s.keyType === 'straight';
   }
   HST.keyerSettings.onChange(function () { keyer.reset(); decoder.reset(); renderSetup(); });
-  $('setupChip').addEventListener('click', function () {
+  // Console Settings. Speed lives in this tab's prefs; pitch and volume in
+  // this tab's own HST.shared copy (the sidetone reads it from there).
+  function renderConsole() {
+    var sh = HST.shared.get(), straight = cfg().keyType === 'straight';
+    $('cWpmLabel').textContent = straight ? 'Starting speed guess' : 'Keyer speed';
+    $('cWpm').value = keyWpm(); $('cWpmVal').textContent = keyWpm() + ' WPM';
+    $('cTone').value = sh.toneHz; $('cToneVal').textContent = sh.toneHz + ' Hz';
+    $('cVol').value = sh.volume; $('cVolVal').textContent = sh.volume + '%';
+  }
+  $('cWpm').addEventListener('input', function (e) { prefs.wpm = Number(e.target.value); savePrefs(); keyer.reset(); renderConsole(); });
+  $('cTone').addEventListener('input', function (e) { HST.shared.set({ toneHz: Number(e.target.value) }); });
+  $('cVol').addEventListener('input', function (e) { HST.shared.set({ volume: Number(e.target.value) }); });
+  HST.shared.onChange(renderConsole);
+
+  $('setupLink').addEventListener('click', function () {
     try { window.parent.HCT.openKeyerSetup(); } catch (e) { setStatus('Open Settings (the gear icon) → Keyer Setup.', true); }
   });
 

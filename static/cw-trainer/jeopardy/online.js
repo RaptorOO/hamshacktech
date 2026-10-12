@@ -61,8 +61,13 @@
       name: p.name || call || '',
       charWpm: Math.min(40, Math.max(5, Number(p.charWpm) || shared || 18)),
       fwpm: Math.max(0, Number(p.fwpm) || 0),
-      step: p.step == null ? 2 : Math.max(0, Math.min(5, Number(p.step)))
+      step: p.step == null ? 2 : Math.max(0, Math.min(5, Number(p.step))),
+      // Your paddles' keying speed for answers -- Jeopardy's own; starts
+      // from the Keyer Setup speed the first time.
+      sendWpm: Math.min(40, Math.max(5, Number(p.sendWpm) || keyerWpm()))
     };
+  }
+  function keyerWpm() { try { return HST.keyerSettings.get().wpm; } catch (e) { return 20; }
   }
   // Character and Farnsworth (overall) speed for a dollar row (0 = top row).
   function rowSpeeds(row) {
@@ -103,6 +108,7 @@
     el('olChar').value = p.charWpm; el('olCharVal').textContent = p.charWpm + ' WPM';
     fillFarnsworth(p.charWpm, p.fwpm);
     el('olStep').value = String(p.step);
+    el('olSend').value = p.sendWpm; el('olSendVal').textContent = p.sendWpm + ' WPM';
     el('olCode').value = code || '';
     el('olError').textContent = '';
     setMode(mode || 'join');
@@ -132,18 +138,20 @@
     const p = prefs();
     el('spChar').value = p.charWpm; el('spCharVal').textContent = p.charWpm + ' WPM';
     fillFarnsworth(p.charWpm, p.fwpm, 'spFw');
+    el('spSend').value = p.sendWpm; el('spSendVal').textContent = p.sendWpm + ' WPM';
     el('speedModal').classList.add('show');
   }
   function saveSpeedDialog() {
     const p = load(PREFS_KEY, {});            // keep name and step as they are
     p.charWpm = Number(el('spChar').value);
     p.fwpm = Number(el('spFw').value);
+    p.sendWpm = Number(el('spSend').value);
     save(PREFS_KEY, p);
     el('speedModal').classList.remove('show');
   }
   function readDialog() {
     const name = el('olName').value.trim().toUpperCase().replace(/[^A-Z0-9 ./-]/g, '').slice(0, 16);
-    const p = { name, charWpm: Number(el('olChar').value), fwpm: Number(el('olFw').value), step: Number(el('olStep').value) };
+    const p = { name, charWpm: Number(el('olChar').value), fwpm: Number(el('olFw').value), step: Number(el('olStep').value), sendWpm: Number(el('olSend').value) };
     save(PREFS_KEY, p);
     return p;
   }
@@ -153,7 +161,7 @@
       const k = HST.keyerSettings.get();
       const names = { iambicB: 'Paddles (iambic B)', iambicA: 'Paddles (iambic A)', straight: 'Straight key', bug: 'Bug' };
       const ad = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter: [ and ] keys or on-screen paddles' };
-      el('olKey').textContent = ad[k.adapter] + ' · ' + names[k.keyType] + (k.keyType === 'straight' ? '' : ' · ' + k.wpm + ' WPM');
+      el('olKey').textContent = ad[k.adapter] + ' · ' + names[k.keyType];
     } catch (e) { el('olKey').textContent = ''; }
   }
 
@@ -538,7 +546,7 @@
   function unitMs() { return 1200 / kcfg().wpm; }
   function startKeyer() {
     O.keyerOn = true;
-    keyer = HST.createKeyer({ key: onKey });
+    keyer = HST.createKeyer({ key: onKey, wpm: () => prefs().sendWpm });   // Jeopardy's own keying speed
     keyer.attachKeyboard(window);
     decoder = HST.createDecoder({
       unitMs: unitMs,
@@ -650,6 +658,8 @@
       fillFarnsworth(v, Number(el('spFw').value), 'spFw');
     });
     el('mySpeed').addEventListener('click', openSpeedDialog);
+    el('olSend').addEventListener('input', () => { el('olSendVal').textContent = el('olSend').value + ' WPM'; });
+    el('spSend').addEventListener('input', () => { el('spSendVal').textContent = el('spSend').value + ' WPM'; });
     el('spSave').addEventListener('click', saveSpeedDialog);
     el('spCancel').addEventListener('click', () => el('speedModal').classList.remove('show'));
     el('olHostBtn').addEventListener('click', hostRoom);

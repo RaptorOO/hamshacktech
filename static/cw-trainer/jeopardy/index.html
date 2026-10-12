@@ -821,8 +821,8 @@
      what YOU hear; it applies from the next clue. -->
 <div class="modal-back" id="speedModal">
   <div class="modal online">
-    <h2>Your copy speed</h2>
-    <p class="small">Only you hear clues at this speed. The change starts with the next clue.</p>
+    <h2>Your speeds</h2>
+    <p class="small">Only you hear clues at this speed. The change starts with the next clue. Your sending speed is how fast your paddles key your answers.</p>
     <div class="settings-grid">
       <div class="setting">
         <label for="spChar">Character speed <span id="spCharVal"></span></label>
@@ -831,6 +831,10 @@
       <div class="setting">
         <label for="spFw">Farnsworth (overall speed)</label>
         <select id="spFw"></select>
+      </div>
+      <div class="setting">
+        <label for="spSend">Your sending speed <span id="spSendVal"></span></label>
+        <input id="spSend" type="range" min="5" max="40" step="1" />
       </div>
     </div>
     <p class="small">Farnsworth sends each letter at the character speed but adds extra space between letters and words, so the overall speed is slower. Lower overall = more thinking time.</p>
@@ -858,7 +862,7 @@
         <input id="olName" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="e.g. N6WAX" />
       </div>
     </div>
-    <h3>Your copy speed</h3>
+    <h3>Your speeds</h3>
     <p class="small">Only you hear it at this speed; everyone else picks their own.</p>
     <div class="settings-grid">
       <div class="setting">
@@ -868,6 +872,10 @@
       <div class="setting">
         <label for="olFw">Farnsworth (overall speed)</label>
         <select id="olFw"></select>
+      </div>
+      <div class="setting">
+        <label for="olSend">Your sending speed <span id="olSendVal"></span></label>
+        <input id="olSend" type="range" min="5" max="40" step="1" />
       </div>
       <div class="setting host-only-ol">
         <label for="olStep">Each dollar row is faster by</label>
@@ -1794,15 +1802,21 @@ tryUnlockHost();
 loadSettings();
 loadPools();
 
+// Your key's sidetone (online answers) uses this game's tone and volume too.
+// (HST.shared here is Jeopardy's own copy; the other tools aren't touched.)
+function syncSidetone() {
+  try { HST.shared.set({ toneHz: Number($("tone").value) || 600, volume: Number($("volume").value) }); } catch (e) {}
+}
+syncSidetone();
 $("tone").addEventListener("change", () => {
   state.audio.setTone(clampInput($("tone"), 400, 900));
-  saveSettings();
+  saveSettings(); syncSidetone();
 });
 $("volume").addEventListener("change", () => {
   clampInput($("volume"), 0, 100);
   state.audio.ensure();
   state.audio.setVolume(volumeLevel());
-  saveSettings();
+  saveSettings(); syncSidetone();
 });
 $("charWpm").addEventListener("change", () => {
   clampInput($("charWpm"), 10, 40);

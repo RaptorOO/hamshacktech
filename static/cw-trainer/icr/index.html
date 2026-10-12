@@ -528,6 +528,10 @@
   .clock-chip.armed{ border-color: var(--amber-dim); }            /* a timer is set */
   .clock-chip.armed .clock-val{ color: var(--amber); }
   .clock-chip.low .clock-val{ color: var(--red); }                /* final minute */
+  #buzzBtn .mute{ display:none; }
+  #buzzBtn[aria-pressed="false"] .mute{ display:inline; }
+  #buzzBtn[aria-pressed="false"] .wave{ display:none; }
+  #buzzBtn[aria-pressed="false"] .clock-val{ color: var(--text-dim); }
   /* Brief flash when the timer runs out and the bell rings. */
   .clock-chip.expired{ animation: clock-flash 0.5s ease-in-out 6; border-color: var(--red); }
   .clock-chip.expired .clock-val{ color: var(--red); }
@@ -590,6 +594,19 @@
     font-size: 15px;
   }
   .timer-actions{ display:flex; flex-wrap:wrap; gap: 10px; }
+  /* Car Mode dialog */
+  #startRow{ display:flex; gap: 10px; justify-content:center; flex-wrap:wrap; }
+  .car-label{ font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 8px; }
+  .timer-presets button[aria-pressed="true"]{ border-color: var(--amber); color: var(--amber); }
+  .car-seg{ display:flex; gap: 6px; margin: 0 0 18px; }
+  .car-seg button{
+    flex:1; padding: 9px 0; border-radius: 8px; cursor:pointer;
+    background: var(--panel-raised); border: 1px solid var(--border-light); color: var(--text);
+    font-family: var(--font-mono); font-size: 13px;
+  }
+  .car-seg button[aria-pressed="true"]{ background: var(--amber); border-color: var(--amber); color: #14200a; font-weight: 700; }
+  .car-char{ font-family: var(--font-mono); font-size: 96px; font-weight: 700; line-height: 1.1; text-align:center; color: var(--amber); margin: 6px 0; min-height: 106px; }
+  .car-meta{ text-align:center; font-family: var(--font-mono); font-size: 13px; color: var(--text-dim); margin: 0 0 18px; }
 
   @media (prefers-reduced-motion: reduce){
     *{ transition: none !important; }
@@ -625,6 +642,12 @@
         <span>Timer</span>
         <span class="clock-val" id="timerVal" role="timer" aria-live="off">Off</span>
       </button>
+      <!-- Mutes the wrong-answer buzzer and the timeout beep. Saved. -->
+      <button type="button" class="clock-chip" id="buzzBtn" aria-pressed="true" title="Buzz on a wrong answer — click to mute or unmute">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="mute" d="m22 9-6 6M16 9l6 6"/></svg>
+        <span>Buzzer</span>
+        <span class="clock-val" id="buzzVal">On</span>
+      </button>
     </div>
 
     <div class="key-stage">
@@ -648,6 +671,8 @@
 
       <div class="start-row" id="startRow">
         <button class="btn primary" id="startBtn">Start Session</button>
+        <!-- Car Mode: listen-only practice (see CAR MODE in the script). -->
+        <button class="btn ghost" id="carBtn" type="button" title="Listen-only practice for the car">Car Mode</button>
       </div>
       <div class="start-row" id="stopRow" style="display:none;">
         <button class="btn danger" id="stopSessionBtn">Stop Session</button>
@@ -745,6 +770,45 @@
 
 <!-- PRACTICE TIMER POPUP. The countdown doesn't start here — it starts when
      Start Session is pressed, and the choice is remembered for next time. -->
+<!-- Car Mode: hands-free listening. Each character plays five times, with
+     two seconds of quiet after each play, until the time runs out. -->
+<dialog class="timer-dialog car-dialog" id="carDialog" aria-labelledby="carTitle">
+  <h2 id="carTitle">Car Mode</h2>
+  <div id="carSetup">
+    <p>Listen only &mdash; nothing to type. Each character plays <strong>five times</strong>, with
+       two seconds after each play to say it out loud, then the next one. Uses this page&rsquo;s speed, tone and volume.</p>
+    <div class="car-label">How long</div>
+    <div class="timer-presets" id="carPresets">
+      <button type="button" data-min="5">5 min</button>
+      <button type="button" data-min="10">10 min</button>
+      <button type="button" data-min="15">15 min</button>
+      <button type="button" data-min="20">20 min</button>
+      <button type="button" data-min="30">30 min</button>
+      <button type="button" data-min="60">60 min</button>
+    </div>
+    <label class="timer-entry">
+      Or enter
+      <input type="number" id="carMinInput" min="1" max="180" step="1" inputmode="numeric">
+      minutes
+    </label>
+    <div class="car-label">Characters</div>
+    <div class="car-seg" role="group" aria-label="Characters to play">
+      <button type="button" data-car="letters">Letters</button>
+      <button type="button" data-car="numbers">Numbers</button>
+      <button type="button" data-car="both">Both</button>
+    </div>
+  </div>
+  <div id="carPlaying" hidden>
+    <div class="car-char" id="carChar" aria-live="off"></div>
+    <div class="car-meta"><span id="carPlayCount"></span> &middot; <span id="carLeft"></span> left</div>
+  </div>
+  <div class="timer-actions">
+    <button type="button" class="btn primary" id="carPlayBtn">Play</button>
+    <button type="button" class="btn danger" id="carStopBtn" hidden>Stop</button>
+    <button type="button" class="btn ghost" id="carCloseBtn">Close</button>
+  </div>
+</dialog>
+
 <dialog class="timer-dialog" id="timerDialog" aria-labelledby="timerDialogTitle">
   <h2 id="timerDialogTitle">Practice Timer</h2>
   <p>Pick how long to practice. The countdown starts with <strong>Start Session</strong>;
@@ -799,7 +863,10 @@ let settings = {
                      // Groups Trainer -- see HST.shared in ../shared/hst-engine.js
   ttaMs: 1500,
   ttaEnabled: true,
-  timerMin: 0        // Practice Timer length in minutes; 0 = off
+  timerMin: 0,       // Practice Timer length in minutes; 0 = off
+  buzzer: true,      // buzz on a wrong answer or timeout (the Buzzer chip mutes it)
+  carMin: 15,        // Car Mode: how long to play, in minutes
+  carSet: 'letters'  // Car Mode: 'letters' | 'numbers' | 'both'
 };
 
 // Per-character adaptive weighting data. Keyed by character.
@@ -863,7 +930,9 @@ function playCharacterAudio(char){
 }
 
 // Timeout: a falling two-note chirp, deliberately unlike any Morse character.
-function playTimeoutBeep(){ HST.audio.beep(settings.volume); }
+function playTimeoutBeep(){ if(settings.buzzer) HST.audio.beep(settings.volume); }
+// Wrong answer: the low double buzz (unless muted with the Buzzer chip).
+function playWrongBuzzer(){ if(settings.buzzer) HST.audio.buzzer(settings.volume); }
 
 // Practice Timer bell (see HST.audio.bell for how the bell sound is built).
 function playBell(){ HST.audio.bell(settings.volume); }
@@ -1206,6 +1275,7 @@ function submitAnswer(){
     session.correct += 1;
   }else{
     session.streak = 0;
+    playWrongBuzzer();
   }
 
   setKeyState('idle');
@@ -1239,6 +1309,111 @@ function finishTrial(isCorrect){
   const delay = isCorrect ? 700 : 2600;
   clearTimeout(nextTrialTimer);
   nextTrialTimer = setTimeout(() => { if(sessionRunning && !drillActive) startTrial(); }, delay);
+}
+
+/* ------------------------------- CAR MODE -------------------------------- */
+// Hands-free listening for the car. A random character (Letters, Numbers
+// or Both) plays five times; after EACH play there are two seconds of
+// quiet to say it out loud. Then the next character, until the chosen
+// minutes are up and the bell rings. Uses this page's speed, tone and
+// volume. Nothing is typed or scored, so it isn't saved to Progress.
+const CAR_REPEATS = 5;      // plays per character
+const CAR_GAP_MS = 2000;    // quiet after each play
+let car = { running: false, endAt: 0, timer: null, tick: null, char: null, plays: 0, last: null, wake: null };
+
+function carSetChars(){
+  return settings.carSet === 'numbers' ? NUMBERS.slice()
+       : settings.carSet === 'both' ? [...LETTERS, ...NUMBERS]
+       : LETTERS.slice();
+}
+function renderCarSetup(){
+  els.carMinInput.value = settings.carMin;
+  els.carPresets.querySelectorAll('[data-min]').forEach(b =>
+    b.setAttribute('aria-pressed', String(Number(b.dataset.min) === settings.carMin)));
+  els.carDialog.querySelectorAll('[data-car]').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.car === settings.carSet)));
+}
+function carShowPlaying(on){
+  els.carSetup.hidden = on;
+  els.carPlaying.hidden = !on;
+  els.carPlayBtn.hidden = on;
+  els.carStopBtn.hidden = !on;
+}
+function carUpdateLeft(){
+  els.carLeft.textContent = HST.fmtClock(Math.max(0, car.endAt - performance.now()));
+}
+// Keep the screen awake while playing (a locked phone can silence the
+// sound). Supported by most current browsers; harmless where it isn't.
+async function carWake(on){
+  try{
+    if(on && navigator.wakeLock && !car.wake) car.wake = await navigator.wakeLock.request('screen');
+    if(!on && car.wake){ car.wake.release(); car.wake = null; }
+  }catch(e){ car.wake = null; }
+}
+function carStart(){
+  const min = Math.round(Number(els.carMinInput.value));
+  if(!(min >= 1 && min <= 180)){ els.carMinInput.focus(); els.carMinInput.select(); return; }
+  settings.carMin = min; saveState();
+  initAudio();                                   // a click: sound is allowed now
+  car.running = true; car.plays = 0; car.char = null;
+  car.endAt = performance.now() + min * 60000;
+  carShowPlaying(true);
+  carUpdateLeft();
+  car.tick = setInterval(carUpdateLeft, 1000);
+  carWake(true);
+  carStep();
+}
+function carStep(){
+  if(!car.running) return;
+  if(car.plays === 0){
+    // Time's up: finish cleanly between characters, never mid-set.
+    if(performance.now() >= car.endAt){ carStop(true); return; }
+    const pool = carSetChars().filter(c => c !== car.last);
+    car.char = pool[Math.floor(Math.random() * pool.length)];
+    car.last = car.char;
+    els.carChar.textContent = car.char;
+  }
+  car.plays++;
+  els.carPlayCount.textContent = 'Play ' + car.plays + ' of ' + CAR_REPEATS;
+  const ms = playCharacterAudio(car.char);
+  car.timer = setTimeout(() => {
+    if(car.plays >= CAR_REPEATS) car.plays = 0;   // next time: a new character
+    carStep();
+  }, ms + CAR_GAP_MS);
+}
+function carStop(finished){
+  const wasRunning = car.running;
+  car.running = false;
+  clearTimeout(car.timer); clearInterval(car.tick);
+  stopAudioImmediate();
+  carWake(false);
+  carShowPlaying(false);
+  if(finished && wasRunning) HST.audio.bell(settings.volume);   // time's up
+}
+// Coming back to the app (the screen was locked, say): ask for the wake lock again.
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && car.running) carWake(true);
+});
+function wireCarMode(){
+  els.carBtn.addEventListener('click', () => {
+    renderCarSetup(); carShowPlaying(false); els.carChar.textContent = '';
+    els.carDialog.showModal();
+  });
+  els.carPresets.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-min]'); if(!b) return;
+    settings.carMin = Number(b.dataset.min); saveState(); renderCarSetup();
+  });
+  els.carMinInput.addEventListener('input', () => {
+    els.carPresets.querySelectorAll('[data-min]').forEach(b =>
+      b.setAttribute('aria-pressed', String(Number(b.dataset.min) === Number(els.carMinInput.value))));
+  });
+  els.carDialog.querySelectorAll('[data-car]').forEach(b => b.addEventListener('click', () => {
+    settings.carSet = b.dataset.car; saveState(); renderCarSetup();
+  }));
+  els.carPlayBtn.addEventListener('click', carStart);
+  els.carStopBtn.addEventListener('click', () => carStop(false));
+  els.carCloseBtn.addEventListener('click', () => els.carDialog.close());
+  els.carDialog.addEventListener('close', () => carStop(false));   // Close or Esc stops playback
 }
 
 /* ----------------------------- OOPS POPUP ------------------------------- */
@@ -1537,6 +1712,15 @@ function wireEvents(){
 
   // WPM, tone and volume are shared with the Code Groups Trainer: write them
   // to HST.shared, whose onChange handler (in init) updates this page.
+  // Buzzer chip: mute/unmute the wrong-answer buzzer (saved with settings).
+  function renderBuzz(){
+    els.buzzBtn.setAttribute('aria-pressed', String(settings.buzzer));
+    els.buzzVal.textContent = settings.buzzer ? 'On' : 'Off';
+  }
+  els.buzzBtn.addEventListener('click', () => { settings.buzzer = !settings.buzzer; saveState(); renderBuzz(); });
+  renderBuzz();
+  wireCarMode();
+
   els.wpmSlider.addEventListener('input', () => HST.shared.set({ wpm: Number(els.wpmSlider.value) }));
   els.toneSlider.addEventListener('input', () => HST.shared.set({ toneHz: Number(els.toneSlider.value) }));
   els.volSlider.addEventListener('input', () => HST.shared.set({ volume: Number(els.volSlider.value) }));
@@ -1595,9 +1779,11 @@ function init(){
    'groupSelect','customRow','customInput','wpmSlider','wpmVal',
    'toneSlider','toneVal','volSlider','volVal',
    'ttaSlider','ttaVal','ttaOffToggle','resetSessionBtn',
-   'oopsOverlay','oopsCloseBtn',
+   'oopsOverlay','oopsCloseBtn','buzzBtn','buzzVal',
    'elapsedChip','elapsedVal','timerBtn','timerVal',
-   'timerDialog','timerPresets','timerInput','timerSetBtn','timerOffBtn','timerCancelBtn'
+   'timerDialog','timerPresets','timerInput','timerSetBtn','timerOffBtn','timerCancelBtn',
+   'carBtn','carDialog','carSetup','carPlaying','carPresets','carMinInput','carChar','carPlayCount','carLeft',
+   'carPlayBtn','carStopBtn','carCloseBtn'
   ].forEach(id => els[id] = document.getElementById(id));
 
   loadState();
