@@ -48,8 +48,8 @@
   .chip .chg { color: var(--lime); }
   .chip:hover { border-color: var(--lime); }
 
-  /* ---------- Console Settings ---------- */
-  .console h2 { margin: 0 0 12px; font: 600 1.05rem/1.2 'Oswald', sans-serif; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  /* ---------- Tool Settings ---------- */
+  .card.console h2 { margin: 0 0 12px; font: 700 1.05rem/1.2 'Oswald', sans-serif; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text); }   /* same as Code Groups */
   .cgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 22px; }
   .cset label { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.88rem; margin-bottom: 6px; }
   .cset output { color: var(--lime); font-family: 'JetBrains Mono', ui-monospace, monospace; }
@@ -228,10 +228,10 @@
     <div class="legend"><span class="you">You</span><span class="ideal">Perfect timing</span><span class="gapok">Gap on target</span><span class="gapoff">Gap off target (dits shown)</span></div>
   </section>
 
-  <!-- ===== Console Settings: Keyer Practice's own speed, tone and volume.
+  <!-- ===== Tool Settings: Keyer Practice's own speed, tone and volume.
        Saved for this tab only; nothing here changes the other tools. ===== -->
   <section class="card console" aria-labelledby="consoleTitle">
-    <h2 id="consoleTitle">Console Settings</h2>
+    <h2 id="consoleTitle">Tool Settings</h2>
     <div class="cgrid">
       <div class="cset">
         <label for="cWpm"><span id="cWpmLabel">Keyer speed</span> <output id="cWpmVal"></output></label>
@@ -292,7 +292,7 @@
   var ADAPTER_NAMES = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter' };
   function cfg() { return HST.keyerSettings.get(); }
   function automatic() { var k = cfg().keyType; return k === 'iambicA' || k === 'iambicB'; }
-  // Keyer Practice's own sending speed (Console Settings), saved with its
+  // Keyer Practice's own sending speed (Tool Settings), saved with its
   // other choices. It starts from the Keyer Setup speed the first time.
   if (!prefs.wpm) { prefs.wpm = cfg().wpm || 20; savePrefs(); }
   function keyWpm() { return Math.min(40, Math.max(5, Number(prefs.wpm) || 20)); }
@@ -755,7 +755,7 @@
     $('padDah').hidden = s.keyType === 'straight';
   }
   HST.keyerSettings.onChange(function () { keyer.reset(); decoder.reset(); renderSetup(); });
-  // Console Settings. Speed lives in this tab's prefs; pitch and volume in
+  // Tool Settings. Speed lives in this tab's prefs; pitch and volume in
   // this tab's own HST.shared copy (the sidetone reads it from there).
   function renderConsole() {
     var sh = HST.shared.get(), straight = cfg().keyType === 'straight';
