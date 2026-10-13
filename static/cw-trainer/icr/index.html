@@ -1318,10 +1318,41 @@ function finishTrial(isCorrect){
 // or Both) plays five times; after EACH play there are two seconds of
 // quiet to say it out loud. Then the next character, until the chosen
 // minutes are up and the bell rings. Uses this page's speed, tone and
-// volume. Nothing is typed or scored, so it isn't saved to Progress.
+// volume. Nothing is typed or scored, but the time counts: each run is
+// saved to Progress as ICR practice time (mode: 'car', no characters
+// graded). Tim, 2026-10-13.
 const CAR_REPEATS = 5;      // plays per character
 const CAR_GAP_MS = 2000;    // quiet after each play
-let car = { running: false, endAt: 0, timer: null, tick: null, char: null, plays: 0, last: null, wake: null };
+// Characters picked more often (Tim's list), 1.5x as likely as the rest.
+const CAR_EMPHASIS = { X: 1.5, P: 1.5, F: 1.5, L: 1.5, Y: 1.5, Q: 1.5, U: 1.5, V: 1.5 };
+// The run in progress is also kept here, so closing the app mid-run
+// still saves its time (next time the ICR tab opens).
+const CAR_DRAFT_KEY = 'hct-cw-run-icr-car';
+let car = { running: false, endAt: 0, timer: null, tick: null, char: null, plays: 0, last: null, wake: null, run: null };
+
+// A random character, never the same one twice in a row, weighted by CAR_EMPHASIS.
+function carPick(){
+  const pool = carSetChars().filter(c => c !== car.last);
+  const total = pool.reduce((sum, c) => sum + (CAR_EMPHASIS[c] || 1), 0);
+  let r = Math.random() * total;
+  for(const c of pool){ r -= CAR_EMPHASIS[c] || 1; if(r < 0) return c; }
+  return pool[pool.length - 1];
+}
+function carSaveDraft(){
+  try{ localStorage.setItem(CAR_DRAFT_KEY, JSON.stringify(car.run)); }catch(e){}
+}
+// Save a finished (or interrupted) run to Progress as ICR practice time.
+function carCommit(run){
+  try{ localStorage.removeItem(CAR_DRAFT_KEY); }catch(e){}
+  if(!run || !run.heard) return;
+  const durationMs = Math.max(0, run.end - run.start);
+  if(durationMs < 5000) return;
+  HST.history.add({ trainer: 'icr', mode: 'car', group: run.group, wpm: run.wpm,
+                    start: run.start, end: run.end, durationMs: durationMs, heard: run.heard,
+                    rounds: 0, roundsCorrect: 0, timeouts: 0, charsTotal: 0, charsCorrect: 0, chars: {},
+                    timeSum: 0, timeCount: 0 });
+}
+try{ carCommit(JSON.parse(localStorage.getItem(CAR_DRAFT_KEY) || 'null')); }catch(e){}
 
 function carSetChars(){
   return settings.carSet === 'numbers' ? NUMBERS.slice()
@@ -1359,6 +1390,8 @@ function carStart(){
   initAudio();                                   // a click: sound is allowed now
   car.running = true; car.plays = 0; car.char = null;
   car.endAt = performance.now() + min * 60000;
+  car.run = { start: Date.now(), end: Date.now(), group: settings.carSet || 'letters', wpm: settings.wpm, heard: 0 };
+  carSaveDraft();
   carShowPlaying(true);
   carUpdateLeft();
   car.tick = setInterval(carUpdateLeft, 1000);
@@ -1370,11 +1403,13 @@ function carStep(){
   if(car.plays === 0){
     // Time's up: finish cleanly between characters, never mid-set.
     if(performance.now() >= car.endAt){ carStop(true); return; }
-    const pool = carSetChars().filter(c => c !== car.last);
-    car.char = pool[Math.floor(Math.random() * pool.length)];
+    car.char = carPick();
     car.last = car.char;
     els.carChar.textContent = car.char;
+    car.run.heard++;
   }
+  car.run.end = Date.now();
+  carSaveDraft();
   car.plays++;
   els.carPlayCount.textContent = 'Play ' + car.plays + ' of ' + CAR_REPEATS;
   const ms = playCharacterAudio(car.char);
@@ -1390,6 +1425,7 @@ function carStop(finished){
   stopAudioImmediate();
   carWake(false);
   carShowPlaying(false);
+  if(wasRunning && car.run){ car.run.end = Date.now(); carCommit(car.run); car.run = null; }
   if(finished && wasRunning) HST.audio.bell(settings.volume);   // time's up
 }
 // Coming back to the app (the screen was locked, say): ask for the wake lock again.

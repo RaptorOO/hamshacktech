@@ -95,6 +95,21 @@
     font: 500 1.5rem/1.3 'JetBrains Mono', monospace; letter-spacing: 0.06em; word-break: break-word;
   }
   .sent:empty::before { content: attr(data-empty); color: var(--dim); font: 0.92rem 'Inter', sans-serif; letter-spacing: 0; }
+  /* Warm Up */
+  .warm-intro { margin: 0 0 4px; color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+  .warm-intro strong { color: var(--text); font-weight: 600; }
+  .warm-intro kbd { font: 0.8rem 'JetBrains Mono', monospace; color: var(--text); }
+  .warm-credit { margin: 0 0 12px; color: var(--dim); font-size: 0.82rem; }
+  .warm {
+    padding: 12px 14px; background: var(--well); border: 1px solid var(--border); border-radius: 9px;
+    font: 500 1.05rem/1.7 'JetBrains Mono', monospace; white-space: pre-wrap; word-break: break-word; color: var(--muted);
+  }
+  .warm .t { border-radius: 3px; }
+  .warm .t.ok { color: var(--good); }
+  .warm .t.bad { color: var(--bad); text-decoration: underline wavy; text-underline-offset: 4px; }
+  .warm .t.next { color: var(--text); background: #3f6212; }
+  .warm-progress { margin: 10px 0 0; text-align: center; color: var(--muted); font-size: 0.9rem; min-height: 1.4em; }
+  .warm-progress b { color: var(--text); font-weight: 600; }
   .transcript { min-height: 7.5em; max-height: 14em; overflow-y: auto; text-align: left; font-size: 1.2rem; white-space: pre-wrap; }
   .status { margin: 10px 0 0; color: var(--muted); font-size: 0.88rem; text-align: center; min-height: 1.4em; }
   .status.warn { color: var(--off); }
@@ -175,10 +190,11 @@
 
   <div class="controls">
     <div class="seg" role="group" aria-label="Practice mode">
+      <button type="button" data-mode="warmup" aria-pressed="false">Warm Up</button>
       <button type="button" data-mode="copy" aria-pressed="true">Copy this</button>
       <button type="button" data-mode="free" aria-pressed="false">Free send</button>
     </div>
-    <label class="inline copy-only">Send
+    <label class="inline" data-show="copy">Send
       <select id="source">
         <option value="letter">Letters &amp; numbers</option>
         <option value="word">Words</option>
@@ -186,28 +202,40 @@
         <option value="phrase">QSO phrases</option>
       </select>
     </label>
-    <label class="check copy-only"><input type="checkbox" id="showCode"> Show Morse patterns</label>
+    <label class="check" data-show="copy"><input type="checkbox" id="showCode"> Show Morse patterns</label>
   </div>
 
   <!-- ===== What to send, and what was heard ===== -->
   <section class="card" aria-labelledby="stageTitle">
     <h2 id="stageTitle" class="sr" hidden>Practice</h2>
-    <div class="copy-only">
+    <!-- Warm Up: one fixed text that works every letter, number and
+         prosign, sent every day before anything else. List by Bob Carter,
+         WR7Q. Each character turns green or red as you send it. -->
+    <div data-show="warmup">
+      <p class="warm-intro"><strong>Do the Warm Up every day, before you send anything else.</strong>
+        Send the whole list below at your keyer speed, top to bottom; each character turns green when you send it right and red when you don&rsquo;t.
+        Pause when you&rsquo;re done, or press <kbd>Enter</kbd>.</p>
+      <p class="warm-credit">Warm-up list developed by Bob Carter, WR7Q.</p>
+      <div class="label">Warm Up</div>
+      <div class="warm" id="warm" aria-label="Warm-up text"></div>
+      <div class="warm-progress" id="warmProgress" aria-live="polite"></div>
+    </div>
+    <div data-show="copy">
       <div class="label next-label" id="targetLabel">Send this</div>
       <div class="target" id="target" aria-live="polite"></div>
       <div class="label">You sent</div>
       <div class="sent" id="sent" data-empty="Waiting for your key…" aria-live="polite"></div>
     </div>
-    <div class="free-only">
+    <div data-show="free">
       <div class="label">You sent</div>
       <div class="sent transcript" id="transcript" data-empty="Send anything. Pause for a few seconds to start a new line."></div>
     </div>
     <p class="status" id="status"></p>
     <div class="actions">
-      <button class="btn copy-only" id="againBtn" type="button" title="Send the same thing again">Again <kbd>Esc</kbd></button>
-      <button class="btn copy-only" id="skipBtn" type="button" title="Something new to send">Skip</button>
-      <button class="btn primary copy-only" id="doneBtn" type="button" title="Grade what I've sent now">Done <kbd>Enter</kbd></button>
-      <button class="btn free-only" id="clearBtn" type="button">Clear</button>
+      <button class="btn" data-show="copy warmup" id="againBtn" type="button" title="Send the same thing again">Again <kbd>Esc</kbd></button>
+      <button class="btn" data-show="copy" id="skipBtn" type="button" title="Something new to send">Skip</button>
+      <button class="btn primary" data-show="copy warmup" id="doneBtn" type="button" title="Grade what I've sent now">Done <kbd>Enter</kbd></button>
+      <button class="btn" data-show="free" id="clearBtn" type="button">Clear</button>
     </div>
     <!-- On-screen paddles: always on touch screens, and when no adapter is set. -->
     <div class="pads" id="pads" hidden>
@@ -252,7 +280,7 @@
   <section class="card">
     <div class="session">
       <span>This session: <b id="sTries">0</b> <span id="sTriesLbl">tries</span></span>
-      <span class="copy-only">Accuracy <b id="sAcc">—</b></span>
+      <span data-show="copy warmup">Accuracy <b id="sAcc">—</b></span>
       <span>Letters sent <b id="sSent">0</b></span>
       <span>Time <b id="sTime">0:00</b></span>
       <span class="spacer"></span>
@@ -261,6 +289,7 @@
     <p class="help audio-hint" id="audioHint" hidden>Click anywhere in this tab to turn on sidetone &mdash; browsers only allow sound after a click.</p>
     <details class="help">
       <summary>How this works</summary>
+      <p><strong>Warm Up:</strong> a daily routine that works every letter, number and prosign, by Bob Carter, WR7Q. Send it top to bottom; each character turns green or red as you go. When you&rsquo;ve sent the last character and pause (or press <kbd>Enter</kbd>), you get the full timing report for your keyer speed. <kbd>Esc</kbd> starts over.</p>
       <p><strong>Copy this:</strong> send what&rsquo;s shown, then pause. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
       <p><strong>The timing rules:</strong> a dah is 3 dits long; the gap inside a letter is 1 dit; between letters 3 dits; between words 7 dits. &ldquo;Character speed&rdquo; is how fast your dits and dahs go. &ldquo;Overall speed&rdquo; includes your spacing &mdash; what someone copying you actually hears. Extra space between letters (Farnsworth spacing) is fine while learning, but the closer you get to 3 and 7, the easier you are to copy.</p>
       <p><strong>With paddles</strong> the keyer makes perfect dits and dahs, so the useful feedback is spacing and which letters came out wrong. <strong>With a straight key or bug</strong> you form the elements yourself, so you&rsquo;ll also see your dah-to-dit ratio (ideally 3:1).</p>
@@ -322,7 +351,7 @@
     if (down) {
       checkAudio();
       clearTimeout(waitTimer);
-      if (prefs.mode === 'copy' && state !== 'sending') beginAttempt();
+      if ((prefs.mode === 'copy' || prefs.mode === 'warmup') && state !== 'sending') beginAttempt();
       if (prefs.mode === 'free' && !marks.length) beginLine();
       downAt = t;
       decoder.down(t);
@@ -358,11 +387,12 @@
     marks = []; live = ''; showLive();
     decoder.reset();
     $('targetLabel').textContent = 'Send this';
-    setStatus('Listening… pause when you’re done.');
+    setStatus(prefs.mode === 'warmup' ? 'Warming up… pause at the end, or press Enter.' : 'Listening… pause when you’re done.');
   }
 
   function afterMark(t) {
     if (prefs.mode === 'free') return freeAfterMark(t);
+    if (prefs.mode === 'warmup') return warmAfterMark(t);
     // Finished = a word space (5+ units of silence) once as many letters as
     // the target has are in -- or a long pause (3 s, or 14 units at slow
     // speeds) no matter what, so a short or partial attempt still gets
@@ -381,7 +411,7 @@
   // from it (see HST.analyzeSending); Free send goes by gap length alone.
   function analyze(list) {
     return HST.analyzeSending(list || marks, { unitMs: unitMs(), automatic: automatic(),
-      expectWords: prefs.mode === 'copy' && analyzedTarget ? analyzedTarget.split(' ').length : 0 });
+      expectWords: (prefs.mode === 'copy' || prefs.mode === 'warmup') && analyzedTarget ? analyzedTarget.split(' ').length : 0 });
   }
   var analyzedTarget = '';   // the target the marks being analyzed were meant to be
 
@@ -394,6 +424,7 @@
     live = a.text; showLive();
     showResult(a, g, target);
     recordAttempt(a, g);
+    if (prefs.mode === 'warmup') return warmFinished(a, g);
     prevTarget = target;
     newTarget(false);
     $('targetLabel').textContent = 'Next — send when ready';
@@ -421,8 +452,102 @@
     showLive();
   }
 
+  /* ---------------- Warm Up ----------------
+     One fixed text, sent every day before anything else (list by Bob
+     Carter, WR7Q). It's graded like Copy this, as one long attempt: each
+     character in the window turns green or red as the live decoder hears
+     it, and when the last one is sent and you pause (or press Enter) the
+     result card shows the full timing report at your keyer speed. */
+  var WARMUP_LINES = [
+    'EEEEE  TTTTT  IIIII  MMMMM  SSSSS  OOOOO  HHHHH  00000  55555',
+    'AAAAA  NNNNN  UUUUU  DDDDD  VVVVV  BBBBB  44444  66666',
+    'ABCDEF GHIJK LMNOP QRSTU VWXYZ  12345  67890   /  ,  .  ?   <SK>  <AR>  <BT>',
+    'THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS BACK   7 0 3 6 4 5 1 2 8 9'
+  ];
+  var WARMUP_TARGET = WARMUP_LINES.join(' ').replace(/\s+/g, ' ');
+  function toks(str) { return str.match(/<[A-Z]+>|\S/g) || []; }
+  var WARM_T = toks(WARMUP_TARGET);
+  var warmSpans = [];
+
+  // The window: the text exactly as written (spacing kept), one span per character.
+  function buildWarm() {
+    var k = 0, html = WARMUP_LINES.map(function (line) {
+      return line.replace(/<[A-Z]+>|\S| +/g, function (m) {
+        return m.charAt(0) === ' ' ? m : '<span class="t">' + esc(m) + '</span>';
+      });
+    }).join('\n');
+    $('warm').innerHTML = html;
+    warmSpans = Array.prototype.slice.call($('warm').querySelectorAll('.t'));
+  }
+
+  // Line up what's been sent so far with the START of the warm-up: the
+  // same edit-distance idea as HST.gradeSending, but the unsent rest of
+  // the text isn't counted as missing. Returns { items, next }.
+  function warmAlign(sentText) {
+    var T = WARM_T, S = toks(sentText), n = T.length, m = S.length, i, j, d = [];
+    for (i = 0; i <= n; i++) { d.push([i]); for (j = 1; j <= m; j++) d[i].push(i ? 0 : j); }
+    for (i = 1; i <= n; i++) for (j = 1; j <= m; j++) {
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (T[i - 1] === S[j - 1] ? 0 : 1));
+    }
+    var best = 0;
+    for (i = 0; i <= n; i++) if (d[i][m] <= d[best][m]) best = i;   // ties: the furthest along
+    var items = [];
+    i = best; j = m;
+    while (i > 0 || j > 0) {
+      if (i > 0 && j > 0 && d[i][j] === d[i - 1][j - 1] + (T[i - 1] === S[j - 1] ? 0 : 1)) { items.unshift({ ok: T[i - 1] === S[j - 1] }); i--; j--; }
+      else if (i > 0 && d[i][j] === d[i - 1][j] + 1) { items.unshift({ ok: false }); i--; }
+      else j--;
+    }
+    return { items: items, next: best };
+  }
+
+  function paintWarm(items, next) {
+    warmSpans.forEach(function (el, k) {
+      el.className = 't' + (k < items.length ? (items[k].ok ? ' ok' : ' bad') : '') + (k === next ? ' next' : '');
+    });
+  }
+
+  function warmLive() {
+    if (state !== 'sending') return;
+    var al = warmAlign(live);
+    paintWarm(al.items, al.next);
+    var right = al.items.filter(function (x) { return x.ok; }).length;
+    var a = marks.length > 4 ? analyze() : null;
+    $('warmProgress').innerHTML = 'Sent <b>' + al.next + '</b> of ' + WARM_T.length + ' · <b>' + right + '</b> right' +
+      (al.next - right ? ' · <b>' + (al.next - right) + '</b> to fix' : '') +
+      ' · keyer speed <b>' + keyWpm() + ' WPM</b>' + (a ? ', your overall <b>' + Math.round(a.overallWpm) + ' WPM</b>' : '');
+  }
+
+  function warmReady(msg) {
+    state = 'ready'; marks = []; live = ''; decoder.reset();
+    target = analyzedTarget = WARMUP_TARGET;
+    if (!warmSpans.length) buildWarm();
+    paintWarm([], 0);
+    $('warmProgress').innerHTML = 'Your keyer speed is <b>' + keyWpm() + ' WPM</b> (Tool Settings, below). Start sending when you’re ready.';
+    setStatus(msg || 'Start with the first E.');
+  }
+
+  // Graded when the last character is in and you pause for a word space;
+  // a long pause (30 s) part-way through also grades what you've sent.
+  function warmAfterMark(t) {
+    var u = automatic() ? unitMs() : 1200 / decoder.speedWpm();
+    waitTimer = setTimeout(function () {
+      if (warmAlign(live).next >= WARM_T.length) return finishAttempt();
+      waitTimer = setTimeout(finishAttempt, 30000 - 5.5 * u);
+    }, 5.5 * u);
+  }
+
+  function warmFinished(a, g) {
+    paintWarm(g.items, -1);
+    var pctOfSet = Math.round(100 * a.overallWpm / keyWpm());
+    $('warmProgress').innerHTML = '<b>' + g.correct + ' of ' + g.total + '</b> right' + (g.extra ? ' (' + g.extra + ' extra)' : '') +
+      ' at your keyer speed of <b>' + keyWpm() + ' WPM</b> · overall speed <b>' + Math.round(a.overallWpm) + ' WPM</b> (' + pctOfSet + '% of it)';
+    setStatus(g.correct === g.total && !g.extra ? 'Clean warm-up! Your timing report is below.' : 'Your timing report is below. Again (Esc) runs it from the top.');
+  }
+
   function showLive() {
     if (prefs.mode === 'copy') { $('sent').textContent = live; return; }
+    if (prefs.mode === 'warmup') return warmLive();
     var lines = transcript.slice(-30);
     if (live) lines = lines.concat(live);
     $('transcript').textContent = lines.join('\n');
@@ -454,7 +579,7 @@
 
     // Letter-by-letter comparison (Copy this only)
     if (g) {
-      $('compare').innerHTML = g.items.map(function (it) {
+      $('compare').innerHTML = prefs.mode === 'warmup' ? '' : g.items.map(function (it) {
         return '<div class="cmp' + (it.ok ? '' : ' bad') + '"><span class="w">' + esc(it.want) + '</span><span class="g">' +
                (it.ok ? '✓' : esc(it.got || '–')) + '</span></div>';
       }).join('');
@@ -614,6 +739,10 @@
     var H = yIdeal + bar + 24;
     el.innerHTML = '<svg class="timeline" width="' + width + '" height="' + H + '" viewBox="0 0 ' + width + ' ' + H +
                    '" role="img" aria-label="Your timing compared with perfect timing">' + svg + '</svg>';
+    // Free send redraws the timeline after every pause while you keep
+    // sending; a fresh drawing starts scrolled to the left, so jump to the
+    // end to keep up with what you just sent. (Tim, 2026-10-13)
+    if (prefs.mode === 'free') el.scrollLeft = el.scrollWidth;
   }
   function idealLen(code) {
     var n = 0;
@@ -632,7 +761,7 @@
     if (!sess) {
       sess = { start: Date.now(), tries: 0, right: 0, total: 0, sent: 0,
                cgSum: 0, cgN: 0, wgSum: 0, wgN: 0, wpmW: 0, overallW: 0 };
-      rec.start({ mode: prefs.mode, source: prefs.mode === 'copy' ? prefs.source : 'free', keyType: cfg().keyType, wpm: keyWpm() });
+      rec.start({ mode: prefs.mode, source: prefs.mode === 'copy' ? prefs.source : prefs.mode, keyType: cfg().keyType, wpm: keyWpm() });
       $('endBtn').hidden = false;
       clockTimer = setInterval(renderSession, 1000);
     }
@@ -666,7 +795,8 @@
   function renderSession() {
     var s = sess || { tries: 0, right: 0, total: 0, sent: 0, start: Date.now() };
     $('sTries').textContent = s.tries;
-    $('sTriesLbl').textContent = prefs.mode === 'copy' ? (s.tries === 1 ? 'try' : 'tries') : (s.tries === 1 ? 'line' : 'lines');
+    $('sTriesLbl').textContent = prefs.mode === 'copy' ? (s.tries === 1 ? 'try' : 'tries')
+      : prefs.mode === 'warmup' ? (s.tries === 1 ? 'warm-up' : 'warm-ups') : (s.tries === 1 ? 'line' : 'lines');
     $('sAcc').textContent = s.total ? Math.round(100 * s.right / s.total) + '%' : '—';
     $('sSent').textContent = s.sent;
     $('sTime').textContent = HST.fmtClock(Date.now() - s.start);
@@ -675,7 +805,7 @@
   function endSession() {
     clearTimeout(waitTimer);
     if (prefs.mode === 'free' && marks.length) endLine();
-    else if (prefs.mode === 'copy' && state === 'sending' && marks.length) finishAttempt();
+    else if ((prefs.mode === 'copy' || prefs.mode === 'warmup') && state === 'sending' && marks.length) finishAttempt();
     clearTimeout(idleTimer); clearInterval(clockTimer);
     keyer.reset();
     if (sess) rec.finish();
@@ -689,12 +819,13 @@
   /* ---------------- controls ---------------- */
   function applyMode() {
     document.querySelectorAll('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === prefs.mode)); });
-    document.querySelectorAll('.copy-only').forEach(function (el) { el.hidden = prefs.mode !== 'copy'; });
-    document.querySelectorAll('.free-only').forEach(function (el) { el.hidden = prefs.mode !== 'free'; });
+    // data-show lists the modes an element belongs to ("copy warmup").
+    document.querySelectorAll('[data-show]').forEach(function (el) { el.hidden = el.dataset.show.split(' ').indexOf(prefs.mode) < 0; });
     $('result').hidden = true;
     marks = []; live = ''; state = 'ready'; decoder.reset();
     showLive();
     if (prefs.mode === 'copy') { newTarget(false); setStatus('Send what’s shown, then pause.'); }
+    else if (prefs.mode === 'warmup') warmReady();
     else setStatus('Send anything you like.');
     renderSession();
   }
@@ -715,6 +846,7 @@
 
   function again() {
     clearTimeout(waitTimer);
+    if (prefs.mode === 'warmup') { keyer.reset(); return warmReady('Start again from the first E.'); }
     if (state === 'graded' && prevTarget) target = prevTarget;
     newTarget(true);
     state = 'ready'; marks = []; live = ''; decoder.reset(); keyer.reset(); showLive();
@@ -738,7 +870,7 @@
   });
   // Enter = grade now, Esc = start over (Copy this).
   window.addEventListener('keydown', function (e) {
-    if (prefs.mode !== 'copy' || e.target.tagName === 'SELECT') return;
+    if ((prefs.mode !== 'copy' && prefs.mode !== 'warmup') || e.target.tagName === 'SELECT') return;
     if (e.key === 'Enter') { e.preventDefault(); if (state === 'sending') finishAttempt(); }
     if (e.key === 'Escape') { e.preventDefault(); again(); }
   });
