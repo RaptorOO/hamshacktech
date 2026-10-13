@@ -647,6 +647,7 @@
   .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
   .btn-secondary:disabled { cursor: not-allowed; opacity: 0.5; }
   .btn-secondary.danger:hover { border-color: var(--bad); color: var(--bad); }
+  #resetStatsBtn { margin-top: 14px; } /* sits under the size table */
 
   /* Stats card */
   .stat-tiles {
@@ -906,8 +907,8 @@
        =================================================================== -->
   <div class="grid">
 
-    <section class="panel card" aria-label="Console settings">
-      <h2>Console Settings</h2>
+    <section class="panel card" aria-label="Tool settings">
+      <h2>Tool Settings</h2>
       <p class="sub">Locked while a session is running — stop first to change.</p>
       <div class="lock-note" id="lockNote">Session running — stop to edit settings.</div>
 
@@ -1002,8 +1003,6 @@
           </div>
         </div>
       </fieldset>
-
-      <button class="btn-secondary danger" id="resetStatsBtn" type="button">Reset Session Stats</button>
     </section>
 
     <section class="panel card" aria-label="Session statistics">
@@ -1028,6 +1027,8 @@
           <tr><td colspan="4" class="empty-note">No groups played yet.</td></tr>
         </tbody>
       </table>
+
+      <button class="btn-secondary danger" id="resetStatsBtn" type="button">Reset Session Stats</button>
     </section>
 
     <section class="panel card" aria-label="Drill panel">

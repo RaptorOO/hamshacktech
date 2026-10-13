@@ -21,6 +21,10 @@
     --key: #fbbf24;        /* amber-400: Keyer Practice (sending) everywhere on this page */
     --key2: #93c5fd;       /* blue-300: second sending series (overall speed) */
     --qso: #f472b6;        /* pink-400: QSO practice everywhere on this page */
+    /* Practice added by hand (outside the app), one color per kind */
+    --zoom: #38bdf8;       /* sky-400 */
+    --onair: #c084fc;      /* purple-400 */
+    --other: #94a3b8;      /* slate-400 */
     --bad: #f87171;        /* red-400 */
     --lime-ink: #1a2e05;
     color-scheme: dark;
@@ -64,7 +68,17 @@
   .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: currentColor; }
   .legend .icr { color: var(--icr); } .legend .cg { color: var(--cg); }
   .legend .key { color: var(--key); } .legend .key2 { color: var(--key2); } .legend .qso { color: var(--qso); font-weight: 500; }
-  .legend .icr, .legend .cg, .legend .key, .legend .key2 { font-weight: 500; }
+  .legend .zoom { color: var(--zoom); } .legend .onair { color: var(--onair); } .legend .other { color: var(--other); }
+  .legend .icr, .legend .cg, .legend .key, .legend .key2, .legend .zoom, .legend .onair, .legend .other { font-weight: 500; }
+  .legend { flex-wrap: wrap; row-gap: 4px; }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .addbtn {
+    flex: none; border: 1px solid var(--border); background: var(--well); color: var(--text); border-radius: 8px;
+    padding: 6px 12px; font: 500 0.82rem/1 'Inter', sans-serif; cursor: pointer;
+  }
+  .addbtn:hover { border-color: var(--icr); color: var(--icr); }
+  .addbtn:focus-visible { outline: 2px solid var(--icr); outline-offset: 2px; }
+  .empty .addbtn { margin-top: 8px; padding: 9px 16px; font-size: 0.9rem; }
   .section-title { grid-column: 1 / -1; margin: 10px 0 -4px; font: 600 1.25rem/1.2 'Oswald', sans-serif; letter-spacing: 0.03em; }
   .section-title small { font: 400 0.82rem 'Inter', sans-serif; color: var(--dim); margin-left: 8px; letter-spacing: 0; }
   svg.chart { display: block; max-width: 100%; overflow: visible; }
@@ -89,6 +103,41 @@
   td.num, th.num { text-align: right; font-family: 'JetBrains Mono', monospace; }
   .tag { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: var(--lime-ink); }
   .tag.icr { background: var(--icr); } .tag.cg { background: var(--cg); } .tag.key { background: var(--key); } .tag.qso { background: var(--qso); }
+  .tag.zoom { background: var(--zoom); } .tag.onair { background: var(--onair); } .tag.other { background: var(--other); }
+
+  /* ---------- "Add practice time" dialog ---------- */
+  .addtime {
+    width: min(420px, calc(100vw - 32px)); padding: 20px 20px 16px;
+    background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 14px;
+  }
+  .addtime::backdrop { background: rgba(0, 0, 0, 0.6); }
+  .addtime h2 { margin: 0 0 4px; font: 600 1.3rem/1.2 'Oswald', sans-serif; letter-spacing: 0.02em; }
+  .addtime .lede { margin: 0 0 16px; color: var(--muted); font-size: 0.86rem; line-height: 1.45; }
+  .addtime .field { margin-bottom: 14px; border: 0; padding: 0; min-width: 0; }
+  .addtime .field > label, .addtime legend { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; padding: 0; }
+  .addtime input[type="number"], .addtime input[type="date"] {
+    width: 100%; padding: 8px 10px; background: var(--well); color: var(--text);
+    border: 1px solid var(--border); border-radius: 7px; font: 0.95rem 'Inter', sans-serif;
+  }
+  .addtime input:focus-visible { outline: 2px solid var(--icr); outline-offset: 1px; }
+  .kinds { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .kinds label {
+    display: flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 6px;
+    background: var(--well); border: 1px solid var(--border); border-radius: 8px; font-size: 0.86rem; cursor: pointer; text-align: center;
+  }
+  .kinds input { position: absolute; opacity: 0; pointer-events: none; }
+  .kinds .dot { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+  .kinds label:has(input:checked) { border-color: var(--text); background: var(--grid); }
+  .kinds label:has(input:focus-visible) { outline: 2px solid var(--icr); outline-offset: 2px; }
+  .addtime .err { color: var(--bad); font-size: 0.82rem; min-height: 1.2em; margin: 0 0 4px; }
+  .addtime .actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .addtime .btn {
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; background: var(--well); color: var(--text);
+    font: 500 0.88rem/1 'Inter', sans-serif; cursor: pointer;
+  }
+  .addtime .btn:hover { border-color: var(--icr); }
+  .addtime .btn.primary { background: var(--icr); border-color: var(--icr); color: var(--lime-ink); }
+  .addtime .btn:focus-visible { outline: 2px solid var(--icr); outline-offset: 2px; }
 
   /* ---------- empty state + footer ---------- */
   .empty { text-align: center; padding: 70px 20px; color: var(--muted); }
@@ -120,6 +169,8 @@
   <div id="empty" class="empty" hidden>
     <h2>No practice recorded yet</h2>
     <p>Run a session in the ICR, Code Groups, Keyer or QSO tab. When you stop (or the Practice Timer rings, or you leave the Keyer tab), it shows up here.</p>
+    <p>Practiced somewhere else, like a Zoom class or on the air?</p>
+    <button type="button" class="addbtn" data-addtime>+ Add practice time</button>
   </div>
 
   <div id="content" hidden>
@@ -132,9 +183,14 @@
 
     <div class="grid">
       <section class="card wide">
-        <h2>Practice time</h2>
-        <p class="note" id="timeNote">Minutes per day.</p>
-        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span><span class="key" id="timeKeyLegend">Keyer</span><span class="qso" id="timeQsoLegend">QSO</span></div>
+        <div class="card-head">
+          <div>
+            <h2>Practice time</h2>
+            <p class="note" id="timeNote">Minutes per day.</p>
+          </div>
+          <button type="button" class="addbtn" data-addtime title="Add practice you did outside the CW Trainer">+ Add time</button>
+        </div>
+        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span><span class="key" id="timeKeyLegend">Keyer</span><span class="qso" id="timeQsoLegend">QSO</span><span class="zoom" id="timeZoomLegend">Zoom Session</span><span class="onair" id="timeOnairLegend">On-Air</span><span class="other" id="timeOtherLegend">Other</span></div>
         <div id="chTime"></div>
       </section>
 
@@ -212,6 +268,36 @@
   </div>
 </div>
 
+<!-- Add practice done outside the CW Trainer (a Zoom class, on-air
+     contacts, anything else). Saved as a session with trainer 'manual'. -->
+<dialog class="addtime" id="addDialog" aria-labelledby="addTitle">
+  <form id="addForm" novalidate>
+    <h2 id="addTitle">Add practice time</h2>
+    <p class="lede">CW practice you did away from the CW Trainer. It counts toward your practice time and streak.</p>
+    <div class="field">
+      <label for="addMinutes">Minutes</label>
+      <input type="number" id="addMinutes" min="1" max="600" step="1" inputmode="numeric" placeholder="e.g. 45">
+    </div>
+    <fieldset class="field">
+      <legend>Where did you practice?</legend>
+      <div class="kinds">
+        <label><input type="radio" name="addKind" value="zoom"><span class="dot" style="background:var(--zoom)"></span>Zoom Session</label>
+        <label><input type="radio" name="addKind" value="on-air"><span class="dot" style="background:var(--onair)"></span>On-Air</label>
+        <label><input type="radio" name="addKind" value="other"><span class="dot" style="background:var(--other)"></span>Other</label>
+      </div>
+    </fieldset>
+    <div class="field">
+      <label for="addDate">Date</label>
+      <input type="date" id="addDate">
+    </div>
+    <p class="err" id="addErr" role="alert"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="addCancel">Cancel</button>
+      <button type="submit" class="btn primary">Add</button>
+    </div>
+  </form>
+</dialog>
+
 <script src="../shared/hst-engine.js"></script>
 <script>
 (function () {
@@ -219,8 +305,18 @@
 
   var DAY = 86400000;
   var RANGE_KEY = 'hct-cw-progress-range';
-  var COLORS = { icr: 'var(--icr)', 'code-groups': 'var(--cg)', keyer: 'var(--key)', qso: 'var(--qso)' };
-  var TRAINER_NAMES = { icr: 'ICR', 'code-groups': 'Code Groups', keyer: 'Keyer', qso: 'QSO' };
+  var COLORS = { icr: 'var(--icr)', 'code-groups': 'var(--cg)', keyer: 'var(--key)', qso: 'var(--qso)',
+                 zoom: 'var(--zoom)', 'on-air': 'var(--onair)', other: 'var(--other)' };
+  var TRAINER_NAMES = { icr: 'ICR', 'code-groups': 'Code Groups', keyer: 'Keyer', qso: 'QSO',
+                        zoom: 'Zoom Session', 'on-air': 'On-Air', other: 'Other' };
+  // Practice added by hand is saved as { trainer: 'manual', kind: one of
+  // these }; each kind gets its own color in the Practice time chart.
+  var MANUAL_KINDS = ['zoom', 'on-air', 'other'];
+  var MANUAL_TAGS = { zoom: 'zoom', 'on-air': 'onair', other: 'other' };
+  function manualKind(s) { return MANUAL_KINDS.indexOf(s.kind) >= 0 ? s.kind : 'other'; }
+  // The chart series a session belongs to.
+  function seriesOf(s) { return s.trainer === 'manual' ? manualKind(s) : s.trainer; }
+  var TIME_SERIES = ['icr', 'code-groups', 'keyer', 'qso'].concat(MANUAL_KINDS);
   var QSO_NAMES = { 'std-they': 'Standard QSO \u00b7 answered CQ', 'std-you': 'Standard QSO \u00b7 called CQ',
                     'pota-they': 'POTA \u00b7 hunted', 'pota-you': 'POTA \u00b7 activated',
                     'sota-they': 'SOTA \u00b7 chased', 'sota-you': 'SOTA \u00b7 activated',
@@ -276,16 +372,17 @@
     var step = spanDays > 90 ? 7 : 1;
     var buckets = [];
     for (var t = from; t <= today; t = addDays(t, step)) {
-      buckets.push({ start: t, end: addDays(t, step), step: step,
-        icr: blank(), 'code-groups': blank(), keyer: blank(), qso: blank() });
+      var bucket = { start: t, end: addDays(t, step), step: step };
+      TIME_SERIES.forEach(function (k) { bucket[k] = blank(); });
+      buckets.push(bucket);
     }
     rows.forEach(function (s) {
       for (var i = buckets.length - 1; i >= 0; i--) {
         if (s.start >= buckets[i].start) {
-          var b = buckets[i][s.trainer];
+          var b = buckets[i][seriesOf(s)];
           if (!b) return;
           b.ms += s.durationMs || 0;
-          if (s.trainer === 'qso') return;                    // QSOs count toward practice time only
+          if (s.trainer === 'qso' || s.trainer === 'manual') return;   // practice time only
           b.chars += s.charsTotal; b.correct += s.charsCorrect;
           if (s.trainer === 'keyer') {                        // sending: weight by letters sent
             var n = s.sentChars || 0;
@@ -347,17 +444,20 @@
     return c;
   }
 
-  // Stacked bars: ICR on the bottom, then Code Groups, Keyer and QSO.
+  // Stacked bars: ICR on the bottom, then Code Groups, Keyer and QSO, then
+  // practice added by hand (Zoom Session, On-Air, Other).
   function barChart(el, buckets, label) {
     var maxMin = 0;
-    buckets.forEach(function (b) { maxMin = Math.max(maxMin, (b.icr.ms + b['code-groups'].ms + b.keyer.ms + b.qso.ms) / 60000); });
+    buckets.forEach(function (b) {
+      maxMin = Math.max(maxMin, TIME_SERIES.reduce(function (sum, k) { return sum + b[k].ms; }, 0) / 60000);
+    });
     if (!maxMin) { el.innerHTML = '<div class="nodata">No practice in this range.</div>'; return; }
     var ax = axis(0, maxMin);
     var c = makeChart(el, buckets, ax, function (v) { return Math.round(v); });
     var bw = Math.max(2, Math.min(28, (c.W - L - R) / c.n * 0.7));
     buckets.forEach(function (b, i) {
       var top = c.y(0), sum = 0;
-      ['icr', 'code-groups', 'keyer', 'qso'].forEach(function (k) {
+      TIME_SERIES.forEach(function (k) {
         var m = b[k].ms / 60000;
         if (!m) return;
         sum += m;
@@ -456,7 +556,7 @@
     // Tiles
     // Practice time, streak and sessions count every tab; "Characters copied"
     // and the copying charts count only ICR and Code Groups (receiving).
-    var ms = 0, chars = 0, correct = 0, byTrainer = { icr: 0, 'code-groups': 0, keyer: 0, qso: 0 };
+    var ms = 0, chars = 0, correct = 0, byTrainer = { icr: 0, 'code-groups': 0, keyer: 0, qso: 0, manual: 0 };
     function copying(s) { return s.trainer === 'icr' || s.trainer === 'code-groups'; }
     rows.forEach(function (s) {
       ms += s.durationMs || 0; byTrainer[s.trainer] = (byTrainer[s.trainer] || 0) + 1;
@@ -469,6 +569,11 @@
     document.querySelectorAll('.sending').forEach(function (el) { el.hidden = !hasSending; });
     $('timeKeyLegend').hidden = !hasSending;
     $('timeQsoLegend').hidden = !hasQso;
+    var manualHas = {};
+    allRows.forEach(function (s) { if (s.trainer === 'manual') manualHas[manualKind(s)] = true; });
+    $('timeZoomLegend').hidden = !manualHas.zoom;
+    $('timeOnairLegend').hidden = !manualHas['on-air'];
+    $('timeOtherLegend').hidden = !manualHas.other;
     var st = streaks(allRows);
     $('tTime').textContent = fmtMinutes(ms);
     $('tTimeSub').textContent = rangeText;
@@ -478,7 +583,8 @@
     $('tCharsSub').textContent = chars ? pct(correct, chars) + '% correct · ' + rangeText : rangeText;
     $('tSessions').textContent = rows.length;
     $('tSessionsSub').textContent = byTrainer.icr + ' ICR · ' + byTrainer['code-groups'] + ' Code Groups' +
-      (hasSending ? ' · ' + byTrainer.keyer + ' Keyer' : '') + (hasQso ? ' · ' + byTrainer.qso + ' QSO' : '');
+      (hasSending ? ' · ' + byTrainer.keyer + ' Keyer' : '') + (hasQso ? ' · ' + byTrainer.qso + ' QSO' : '') +
+      (byTrainer.manual ? ' · ' + byTrainer.manual + ' added' : '');
 
     // Charts
     var buckets = buildBuckets(rows, from);
@@ -540,6 +646,12 @@
     // Recent sessions (newest first, last 10 in the range)
     $('recent').innerHTML = rows.slice(-10).reverse().map(function (s) {
       var when = new Date(s.start).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      if (s.trainer === 'manual') {
+        var k = manualKind(s);
+        return '<tr><td>' + esc(s.dateOnly ? shortDate(s.start) : when) + '</td><td><span class="tag ' + MANUAL_TAGS[k] + '">' +
+               esc(TRAINER_NAMES[k]) + '</span></td><td>Added by hand</td><td class="num"></td><td class="num">' +
+               HST.fmtClock(s.durationMs || 0) + '</td><td class="num">—</td><td class="num">—</td></tr>';
+      }
       if (s.trainer === 'qso') {
         return '<tr><td>' + esc(when) + '</td><td><span class="tag qso">QSO</span></td><td>' +
                esc((QSO_NAMES[s.style + '-' + s.who] || 'QSO') + (s.completed ? '' : ' (ended early)')) +
@@ -563,6 +675,45 @@
              '</td><td class="num">' + s.charsTotal + '</td><td class="num">' + pct(s.charsCorrect, s.charsTotal) + '%</td></tr>';
     }).join('');
   }
+
+  /* ---------------- Add practice time ----------------
+     Practice done away from the app (a Zoom class, on-air contacts...).
+     Saved like any other session, so it counts toward practice time and
+     the streak, and syncs to the user's other devices. For today, the
+     session "ended" just now; for an earlier day it's placed at noon. */
+  var addDlg = $('addDialog');
+  function isoDay(ts) {
+    var d = new Date(ts);
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+  function openAdd() {
+    $('addForm').reset();
+    $('addErr').textContent = '';
+    $('addDate').value = $('addDate').max = isoDay(Date.now());
+    addDlg.showModal();
+    $('addMinutes').focus();
+  }
+  document.querySelectorAll('[data-addtime]').forEach(function (b) { b.addEventListener('click', openAdd); });
+  $('addCancel').addEventListener('click', function () { addDlg.close(); });
+  $('addForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var min = Number($('addMinutes').value);
+    var kindEl = document.querySelector('input[name="addKind"]:checked');
+    var parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec($('addDate').value || isoDay(Date.now()));
+    var err = !(min >= 1 && min <= 600 && Math.round(min) === min) ? 'Enter whole minutes, from 1 to 600.'
+            : !kindEl ? 'Choose Zoom Session, On-Air or Other.'
+            : !parts ? 'Choose a date.' : '';
+    var day = parts && new Date(Number(parts[1]), Number(parts[2]) - 1, Number(parts[3])).getTime();
+    var today = dayStart(Date.now());
+    if (!err && day > today) err = 'That date is in the future.';
+    if (err) { $('addErr').textContent = err; return; }
+    var ms = min * 60000, start, dateOnly = day < today;
+    if (dateOnly) start = day + 12 * 3600000;              // noon that day
+    else start = Math.max(today, Date.now() - ms);          // just finished, but still today
+    HST.history.add({ trainer: 'manual', kind: kindEl.value, dateOnly: dateOnly,
+                      start: start, end: start + ms, durationMs: ms, charsTotal: 0, charsCorrect: 0 });
+    addDlg.close();
+  });
 
   var cache = [];
   function refresh() { return HST.history.all().then(function (rows) { cache = rows; render(rows); }); }
