@@ -326,6 +326,7 @@
     all: 'All', custom: 'Custom', qso: 'QSO Elements', words: 'Common Words', calls: 'Call Signs'
   };
   var SEND_SOURCES = { letter: 'Letters & numbers', word: 'Words', call: 'Call signs', phrase: 'QSO phrases' };
+  var CAR_SETS = { letters: 'Letters', numbers: 'Numbers', both: 'Letters + numbers' };
   var $ = function (id) { return document.getElementById(id); };
   var rangeDays = 30;
   try { var r = Number(localStorage.getItem(RANGE_KEY)); if ([7, 30, 90, 0].indexOf(r) >= 0 && localStorage.getItem(RANGE_KEY) !== null) rangeDays = r; } catch (e) {}
@@ -660,11 +661,18 @@
                (s.copyTotal ? pct(s.copyRight, s.copyTotal) + '%' : '\u2014') + '</td></tr>';
       }
       if (s.trainer === 'keyer') {
-        var kw = s.mode === 'free' ? 'Free send' : 'Copy this · ' + (SEND_SOURCES[s.source] || s.source || '');
+        var kw = s.mode === 'free' ? 'Free send' : s.mode === 'warmup' ? 'Warm Up' : 'Copy this · ' + (SEND_SOURCES[s.source] || s.source || '');
         return '<tr><td>' + esc(when) + '</td><td><span class="tag key">Keyer</span></td><td>' + esc(kw) +
                '</td><td class="num">' + esc(s.wpm || '') + '</td><td class="num">' + HST.fmtClock(s.durationMs || 0) +
                '</td><td class="num">' + (s.sentChars || 0) + '</td><td class="num">' +
                (s.charsTotal ? pct(s.charsCorrect, s.charsTotal) + '%' : '—') + '</td></tr>';
+      }
+      // ICR Car Mode: listening only, so time but no grading.
+      if (s.trainer === 'icr' && s.mode === 'car') {
+        return '<tr><td>' + esc(when) + '</td><td><span class="tag icr">ICR</span></td><td>' +
+               esc('Car Mode · ' + (CAR_SETS[s.group] || 'Letters') + (s.heard ? ' · ' + s.heard + ' heard' : '')) +
+               '</td><td class="num">' + esc(s.wpm || '') + '</td><td class="num">' + HST.fmtClock(s.durationMs || 0) +
+               '</td><td class="num">—</td><td class="num">—</td></tr>';
       }
       var icr = s.trainer === 'icr';
       var what = GROUP_NAMES[s.group] || s.group || '';
