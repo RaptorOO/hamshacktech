@@ -12,6 +12,8 @@
      * playing each clue AT YOUR OWN SPEED, started at the same moment
        on every device (no audio is sent over the internet)
      * keying your answer, the 60-second countdown, and the reveal
+     * Replay (hear the clue again) and Clear (+15 s to send it again)
+     * chat under the players list
 
    It reuses the single-device game's board, tiles and zoom card from
    index.html (renderBoard, openClue, closeClue...) and the CW Trainer's
@@ -23,6 +25,7 @@
   const ROOM_KEY = 'mcj-room';        // the room this device is in: { code, pid, name, key }
   const PREFS_KEY = 'mcj-online';     // this player's choices: { name, charWpm, fwpm, step }
   const PREAMBLE = 'VVV';
+  const MAX_CLEARS = 2;               // Clear adds 15 s this many times per clue (the room enforces it too)
 
   const O = window.Online = {
     active: false,     // true while this device is in an online room
@@ -111,6 +114,8 @@
     el('olSend').value = p.sendWpm; el('olSendVal').textContent = p.sendWpm + ' WPM';
     el('olCode').value = code || '';
     el('olError').textContent = '';
+    // First time online: make sure the speeds get looked at.
+    el('olSpeedBox').classList.toggle('first', load(PREFS_KEY, null) === null);
     setMode(mode || 'join');
     renderKeyLine();
     el('launchModal').classList.remove('show');
@@ -263,7 +268,9 @@
       case 'pong': gotPong(m); break;
       case 'state': gotState(m); break;
       case 'clue': gotClue(m); break;
-      case 'deadline': if (O.clue) O.clue.deadline = m.at; break;
+      case 'deadline': gotDeadline(m); break;
+      case 'chat': addChat(m); break;
+      case 'chatlog': el('chatLog').innerHTML = ''; (m.chat || []).forEach(addChat); renderChatEmpty(); break;
       case 'reveal': gotReveal(m); break;
       case 'nudge': showTurnCard(true); break;
       case 'kicked': leave('The host removed you from the room.'); break;
@@ -298,6 +305,7 @@
     document.body.classList.remove('online');
     el('playersPanel').hidden = true;
     el('turnCard').hidden = true; el('lobbyCard').hidden = true;
+    el('chatLog').innerHTML = ''; el('chatInput').value = '';
     el('gameOverModal').classList.remove('show');
     loadPools();
     newGame();
@@ -416,8 +424,9 @@
     const sp = rowSpeeds(m.r);
     const text = PREAMBLE + ' ' + m.text;
     const len = morseMs(text, sp.wpm, sp.fwpm);
-    O.clue = { c: m.c, r: m.r, dd: m.dd, text: m.text, startAt: m.startAt, deadline: m.deadline, sp, len,
-               playEnd: m.startAt + len, sent: null, marks: [], live: '' };
+    O.clue = { c: m.c, r: m.r, dd: m.dd, text: m.text, startAt: m.startAt, deadline: m.deadline, ext: m.ext || 0, sp, len,
+               playEnd: m.startAt + len, sent: null, marks: [], live: '',
+               clears: m.clears || 0, replayEnd: 0, extNote: '', extNoteUntil: 0 };
     send({ t: 'len', ms: Math.round(len) });   // the room waits for the slowest player's playback
 
     const cell = state.board.find((t) => t.cat === m.c && t.row === m.r) || { cat: m.c, row: m.r, dollars: 0 };
@@ -449,6 +458,8 @@
       setClueStatus('Listen', true);
     });
     later(O.clue.playEnd - serverNow() + 150, () => {
+      // Your key goes to the answer, not the chat box.
+      if (document.activeElement === el('chatInput')) el('chatInput').blur();
       setClueStatus('Send your answer', false);
       el('clue').classList.add('answering');
       renderAnswerArea();
@@ -456,18 +467,30 @@
     clueTimers.push(setInterval(renderCountdown, 250));
   }
 
+  // The room moved the deadline: first set, or someone cleared (+15 s).
+  function gotDeadline(m) {
+    const cl = O.clue;
+    if (!cl) return;
+    cl.deadline = m.at;
+    cl.ext = m.ext || 0;
+    if (m.by) { cl.extNote = '+15 s · ' + m.by + ' is sending again'; cl.extNoteUntil = Date.now() + 5000; }
+  }
+
   // The countdown ring on the tile. The 60 seconds only start dropping
-  // once the slowest player's clue has finished, so it reads "60" until then.
+  // once the slowest player's clue has finished, so it reads "60" until
+  // then. Each Clear adds 15 s to the window.
   function renderCountdown() {
     const cl = O.clue;
     if (!cl) return;
     if (!cl.deadline) { el('cdNum').textContent = '60'; el('cd').style.setProperty('--p', 1); return; }
+    const total = 60000 + (cl.ext || 0);
     const left = cl.deadline - serverNow();
-    const secs = Math.max(0, Math.min(60, Math.ceil(left / 1000)));
+    const secs = Math.max(0, Math.min(total / 1000, Math.ceil(left / 1000)));
     el('cdNum').textContent = secs;
-    el('cd').style.setProperty('--p', Math.max(0, Math.min(1, left / 60000)));
+    el('cd').style.setProperty('--p', Math.max(0, Math.min(1, left / total)));
     el('cd').classList.toggle('low', secs <= 10);
-    el('cdNote').textContent = left > 60500 ? 'waiting for everyone’s clue to finish' : '';
+    el('cdNote').textContent = left > total + 500 ? 'waiting for everyone’s clue to finish'
+      : (Date.now() < cl.extNoteUntil ? cl.extNote : '');
   }
 
   function canKey() {
@@ -487,14 +510,48 @@
       el('sentLabel').textContent = 'You sent';
       el('ansNote').textContent = 'Waiting for the others…';
       el('ansDone').hidden = true;
+      el('ansReplay').hidden = true;
+      el('ansClear').hidden = true;
       el('opads').hidden = true;
     } else {
       el('sentText').textContent = cl.live || '';
       el('sentLabel').textContent = 'Your answer';
       el('ansNote').textContent = cl.live ? 'Tap Done, press Enter or send AR when you’re finished.' : 'Send your answer with your key.';
       el('ansDone').hidden = false;
+      const replaying = Date.now() < cl.replayEnd;
+      el('ansReplay').hidden = false;
+      el('ansReplay').disabled = replaying;
+      el('ansReplay').textContent = replaying ? 'Replaying…' : 'Replay';
+      el('ansClear').hidden = false;
+      el('ansClear').textContent = cl.clears < MAX_CLEARS ? 'Clear +15 s' : 'Clear';
+      el('ansClear').title = cl.clears < MAX_CLEARS
+        ? 'Wipe your answer and send it again. Everyone gets 15 more seconds (' + (MAX_CLEARS - cl.clears) + ' left on this clue).'
+        : 'Wipe your answer and send it again (no more extra time on this clue).';
       el('opads').hidden = !showPads();
     }
+  }
+
+  // Replay: hear the clue again at your own speed. Only you hear it,
+  // it's free, and it doesn't stop the clock.
+  function replayClue() {
+    const cl = O.clue;
+    if (!cl || cl.sent != null || Date.now() < cl.replayEnd) return;
+    unlockAudio();
+    try { HST.audio.playMorse(cl.text, audioOpts(cl.sp)); } catch (e) { return; }
+    cl.replayEnd = Date.now() + morseMs(cl.text, cl.sp.wpm, cl.sp.fwpm);
+    renderAnswerArea();
+    later(cl.replayEnd - Date.now() + 50, renderAnswerArea);
+  }
+
+  // Clear: wipe what you've keyed so far and start again. The first
+  // MAX_CLEARS times on a clue, the room adds 15 s to everyone's clock.
+  function clearAnswer() {
+    const cl = O.clue;
+    if (!cl || cl.sent != null) return;
+    stopKeyingForClue();
+    cl.marks = []; cl.live = '';
+    if (cl.clears < MAX_CLEARS && cl.deadline) { cl.clears++; send({ t: 'clear' }); }
+    renderAnswerArea();
   }
   function showPads() {
     try {
@@ -519,7 +576,9 @@
       : '<div class="mine no">You didn’t send an answer this time.</div>';
     el('clueResult').innerHTML =
       '<div class="ans">' + esc(m.answer) + '</div>' +
-      '<div class="grp">' + m.correct + ' of ' + m.total + ' copied it · <b>+' + money(m.points) + '</b> for the group' +
+      // Points are shared by how many copied it, so say so plainly.
+      '<div class="grp"><span class="cnt">' + m.correct + ' of ' + m.total + ' correct</span> · <b>+' + money(m.points) + '</b>' +
+      (m.points < m.value ? ' of ' + money(m.value) : '') + ' for the group' +
       (m.dd ? ' <span class="ddx">(Daily Double, worth ' + money(m.value) + ')</span>' : '') + '</div>' + yours;
     try { state.audio.revealSting(); } catch (e) {}
   }
@@ -588,6 +647,41 @@
     stopKeyingForClue();
     send({ t: 'answer', text });
     renderAnswerArea();
+  }
+
+  /* =====================================================================
+     CHAT: under the players list. The room keeps the last 50 messages
+     while it exists; you get them when you join or reload.
+     ===================================================================== */
+  let lastChat = 0;
+  function addChat(m) {
+    const log = el('chatLog');
+    const atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 20;
+    const empty = log.querySelector('.empty');
+    if (empty) empty.remove();
+    const li = document.createElement('li');
+    const mine = !!(O.room && m.from === O.room.name);
+    if (mine) li.className = 'mine';
+    li.innerHTML = '<b>' + esc(m.from) + '</b>' + esc(m.text);
+    try { li.title = new Date(m.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); } catch (e) {}
+    log.appendChild(li);
+    while (log.children.length > 50) log.removeChild(log.firstChild);
+    if (atEnd || mine) log.scrollTop = log.scrollHeight;
+  }
+  function renderChatEmpty() {
+    const log = el('chatLog');
+    if (!log.children.length) log.innerHTML = '<li class="empty">No messages yet.</li>';
+    log.scrollTop = log.scrollHeight;
+  }
+  function sendChat() {
+    const input = el('chatInput'), text = input.value.replace(/\s+/g, ' ').trim();
+    if (!text || !O.ws || O.ws.readyState !== 1) return;
+    // The room takes one message a second; keep the text so Enter can try again.
+    if (Date.now() - lastChat < 1000) return;
+    lastChat = Date.now();
+    send({ t: 'chat', text: text.slice(0, 200) });
+    input.value = '';
+    input.blur();   // so your key goes back to answering
   }
 
   /* =====================================================================
@@ -694,6 +788,20 @@
     });
     el('turnCard').addEventListener('click', () => { el('turnCard').hidden = true; });
     el('ansDone').addEventListener('click', submitAnswer);
+    el('ansReplay').addEventListener('click', replayClue);
+    el('ansClear').addEventListener('click', clearAnswer);
+    // Chat. Typing in the box mustn't key an answer (the keyer listens for
+    // [ ] and Ctrl on the whole window) or trigger Enter-to-submit. This is
+    // registered before the keyer, so it runs first and stops the key there.
+    const chatKeys = (e) => {
+      if (e.target !== el('chatInput')) return;
+      e.stopImmediatePropagation();
+      if (e.type === 'keydown' && e.key === 'Enter') { e.preventDefault(); sendChat(); }
+      if (e.type === 'keydown' && e.key === 'Escape') el('chatInput').blur();
+    };
+    window.addEventListener('keydown', chatKeys, true);
+    window.addEventListener('keyup', chatKeys, true);
+    el('chatForm').addEventListener('submit', (e) => { e.preventDefault(); sendChat(); });
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && O.active && canKey() && e.target.tagName !== 'INPUT') { e.preventDefault(); submitAnswer(); }
     });
