@@ -14,8 +14,8 @@
    (functions/rooms/[[path]].js) that holds a binding to this class.
 
    Messages are small JSON objects with a "t" (type) field:
-     app -> room   ping, start, pick, len, answer, skip, kick, end
-     room -> app   pong, state, clue, deadline, reveal, nudge, kicked, error
+     app -> room   ping, start, pick, len, answer, clear, chat, skip, kick, end
+     room -> app   pong, state, clue, deadline, reveal, chat, nudge, kicked, error
    ===================================================================== */
 
 const MAX_PLAYERS = 20;
@@ -26,6 +26,10 @@ const LEN_WAIT_MS = 2000;       // how long to wait for every device's playback 
 const DEFAULT_LEN_MS = 20000;   // playback length assumed for a device that didn't say
 const REVEAL_MS = 6000;         // how long the answer stays up before the next turn
 const NUDGE_MS = 30000;         // no pick for this long: remind (or skip someone who left)
+const CLEAR_MS = 15000;         // a player who clears their answer to re-send gets this much more time...
+const MAX_CLEARS = 2;           // ...this many times per clue (so one person can't hold the game forever)
+const CHAT_KEEP = 50;           // chat messages a room keeps (new joiners see these)
+const CHAT_GAP_MS = 1000;       // at most one chat message a second from each player
 const IDLE_DELETE_MS = 2 * 60 * 60 * 1000;   // a room forgets everything 2 hours after the last activity
 
 export default {
@@ -35,10 +39,10 @@ export default {
 };
 
 /* ---------------------------------------------------------------------
-   Answer checking. Forgiving, like the QSO tab: case and extra spaces
-   don't matter, a prosign such as <AR> at the end is ignored, and in a
-   word of four or more letters one letter wrong, missing or extra still
-   counts.
+   Answer checking. Case, extra spaces and the spaces between words
+   don't matter, and a prosign such as <AR> at the end is ignored. The
+   letters themselves must be exact: a near miss (TEXA for TEXAS, WIRE
+   for FIRE) is wrong. An empty answer is never right.
    --------------------------------------------------------------------- */
 function normalize(s) {
   return String(s || '').toUpperCase()
@@ -46,26 +50,12 @@ function normalize(s) {
     .replace(/[^A-Z0-9/?.,= ]/g, ' ')     // '*' = a character the decoder couldn't read
     .replace(/\s+/g, ' ').trim();
 }
-// Levenshtein distance: how many single-letter edits turn a into b.
-function editDistance(a, b) {
-  const prev = Array.from({ length: b.length + 1 }, (_, j) => j);
-  for (let i = 1; i <= a.length; i++) {
-    let diag = prev[0]; prev[0] = i;
-    for (let j = 1; j <= b.length; j++) {
-      const keep = prev[j];
-      prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1));
-      diag = keep;
-    }
-  }
-  return prev[b.length];
-}
 export function answerMatches(sent, truth) {
   const a = normalize(sent), b = normalize(truth);
   if (!a) return false;
   if (a === b) return true;
   const A = a.replace(/ /g, ''), B = b.replace(/ /g, '');   // word spacing is the hardest part; don't fail on it
-  if (A === B) return true;
-  return B.length >= 4 && editDistance(A, B) <= 1;
+  return A === B;
 }
 
 /* Clean up anything typed by a person before keeping or sending it. */
@@ -85,6 +75,7 @@ export class Room {
     this.ready = ctx.blockConcurrencyWhile(async () => {
       this.s = (await ctx.storage.get('s')) || null;
       if (this.s) {
+        if (!this.s.chat) this.s.chat = [];   // saved before rooms had chat
         this.s.players.forEach((p) => { p.on = false; });   // nobody is connected after a restart
         // A clue or reveal in progress can't be resumed exactly; move on to the next pick.
         if (this.s.phase === 'clue' || this.s.phase === 'reveal') { this.s.clue = null; this.s.phase = 'pick'; }
@@ -102,7 +93,8 @@ export class Room {
       step: 2,                    // WPM added per dollar row (host's choice)
       cats: [], tiles: [],        // the board; tiles: { c, r, dollars, answer, dd, used, points }
       bank: 0,
-      clue: null                  // the clue in play (see pick())
+      clue: null,                 // the clue in play (see pick())
+      chat: []                    // the last CHAT_KEEP messages: { from, text, at }
     };
   }
 
@@ -186,6 +178,8 @@ export class Room {
       ws.addEventListener('error', gone);
       this.save();
       this.broadcastState();
+      // The chat so far (also after a reload).
+      try { ws.send(JSON.stringify({ t: 'chatlog', chat: this.s.chat })); } catch (e) {}
       // Someone rejoining mid-clue gets the clue (minus timing they missed).
       if (this.s.phase === 'clue' && this.s.clue) this.sendClue(ws, pid);
       return new Response(null, { status: 101, webSocket: pair[0] });
@@ -207,6 +201,8 @@ export class Room {
       case 'pick': this.pick(pid, m.c, m.r); return;
       case 'len': this.gotLen(pid, m); return;
       case 'answer': this.gotAnswer(pid, m); return;
+      case 'clear': this.gotClear(pid); return;
+      case 'chat': this.gotChat(pid, m); return;
       case 'skip': if (isHost && this.s.phase === 'pick') this.nextTurn(); return;
       case 'kick': if (isHost && m.pid !== pid) this.kick(m.pid); return;
       case 'end': if (isHost) this.gameOver(); return;
@@ -252,6 +248,8 @@ export class Room {
       c, r, dd: tile.dd, by: pid,
       startAt: now + (tile.dd ? DD_CARD_MS : 0) + COUNTDOWN_MS,
       deadline: null,
+      ext: 0,                         // extra time added by players clearing their answers (ms)
+      clears: {},                     // player id -> how many times they've cleared this clue
       lens: {},                       // player id -> their playback length (ms)
       answers: {},                    // player id -> { text, ok }
       // Who's taking part: everyone connected when the tile opened.
@@ -267,7 +265,8 @@ export class Room {
   sendClue(ws, pid) {
     const cl = this.s.clue, tile = this.s.tiles.find((t) => t.c === cl.c && t.r === cl.r);
     try {
-      ws.send(JSON.stringify({ t: 'clue', c: cl.c, r: cl.r, dd: cl.dd, text: tile.answer, startAt: cl.startAt, deadline: cl.deadline }));
+      ws.send(JSON.stringify({ t: 'clue', c: cl.c, r: cl.r, dd: cl.dd, text: tile.answer, startAt: cl.startAt, deadline: cl.deadline, ext: cl.ext || 0,
+        clears: (cl.clears && cl.clears[pid]) || 0 }));
     } catch (e) {}
   }
 
@@ -288,8 +287,43 @@ export class Room {
     const longest = lens.length ? Math.max.apply(null, lens) : DEFAULT_LEN_MS;
     cl.deadline = cl.startAt + longest + ANSWER_MS;
     this.save();
-    this.broadcast({ t: 'deadline', at: cl.deadline });
+    this.broadcast({ t: 'deadline', at: cl.deadline, ext: cl.ext });
     this.timer('answer', cl.deadline - Date.now(), () => this.reveal());
+  }
+
+  // A player wiped their answer to send it again. The first MAX_CLEARS
+  // times on a clue, everyone's clock gets CLEAR_MS more; after that the
+  // player can still re-send, but the clock keeps running.
+  gotClear(pid) {
+    const cl = this.s.clue;
+    if (this.s.phase !== 'clue' || !cl || !cl.deadline || pid in cl.answers) return;
+    if (Date.now() >= cl.deadline) return;
+    if (!cl.clears) cl.clears = {};
+    const n = cl.clears[pid] || 0;
+    if (n >= MAX_CLEARS) return;
+    cl.clears[pid] = n + 1;
+    cl.ext = (cl.ext || 0) + CLEAR_MS;
+    cl.deadline += CLEAR_MS;
+    this.save();
+    const p = this.s.players.find((x) => x.id === pid);
+    this.broadcast({ t: 'deadline', at: cl.deadline, ext: cl.ext, by: p ? p.name : '' });
+    this.timer('answer', cl.deadline - Date.now(), () => this.reveal());
+  }
+
+  // Chat under the players list. Kept only with the rest of the room.
+  gotChat(pid, m) {
+    const p = this.s.players.find((x) => x.id === pid);
+    if (!p || p.removed) return;
+    const text = cleanText(m.text, 200).replace(/\s+/g, ' ').trim();
+    if (!text) return;
+    const now = Date.now();
+    if (now - (p.chatAt || 0) < CHAT_GAP_MS) return;
+    p.chatAt = now;
+    const msg = { from: p.name, text, at: now };
+    this.s.chat.push(msg);
+    if (this.s.chat.length > CHAT_KEEP) this.s.chat.splice(0, this.s.chat.length - CHAT_KEEP);
+    this.save();
+    this.broadcast(Object.assign({ t: 'chat' }, msg));
   }
 
   gotAnswer(pid, m) {
