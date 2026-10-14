@@ -1342,17 +1342,28 @@ function carSaveDraft(){
   try{ localStorage.setItem(CAR_DRAFT_KEY, JSON.stringify(car.run)); }catch(e){}
 }
 // Save a finished (or interrupted) run to Progress as ICR practice time.
+// The draft is removed only after the run is saved (removing it first lost
+// the run if the app closed at that moment); the uid stops a double save.
+function carDropDraft(uid){
+  try{
+    const d = JSON.parse(localStorage.getItem(CAR_DRAFT_KEY) || 'null');
+    if(!d || !d.uid || d.uid === uid) localStorage.removeItem(CAR_DRAFT_KEY);
+  }catch(e){}
+}
 function carCommit(run){
-  try{ localStorage.removeItem(CAR_DRAFT_KEY); }catch(e){}
-  if(!run || !run.heard) return;
-  const durationMs = Math.max(0, run.end - run.start);
-  if(durationMs < 5000) return;
-  HST.history.add({ trainer: 'icr', mode: 'car', group: run.group, wpm: run.wpm,
+  const durationMs = run ? Math.max(0, run.end - run.start) : 0;
+  if(!run || !run.heard || durationMs < 5000){ carDropDraft(run && run.uid); return; }
+  HST.history.add({ trainer: 'icr', mode: 'car', uid: run.uid, group: run.group, wpm: run.wpm,
                     start: run.start, end: run.end, durationMs: durationMs, heard: run.heard,
                     rounds: 0, roundsCorrect: 0, timeouts: 0, charsTotal: 0, charsCorrect: 0, chars: {},
-                    timeSum: 0, timeCount: 0 });
+                    timeSum: 0, timeCount: 0 }).then(() => carDropDraft(run.uid));
 }
-try{ carCommit(JSON.parse(localStorage.getItem(CAR_DRAFT_KEY) || 'null')); }catch(e){}
+try{
+  const left = JSON.parse(localStorage.getItem(CAR_DRAFT_KEY) || 'null');
+  if(left) HST.history.all().then(rows => {
+    if(left.uid && rows.some(x => x.uid === left.uid)) carDropDraft(left.uid); else carCommit(left);
+  });
+}catch(e){}
 
 function carSetChars(){
   return settings.carSet === 'numbers' ? NUMBERS.slice()
@@ -1390,7 +1401,7 @@ function carStart(){
   initAudio();                                   // a click: sound is allowed now
   car.running = true; car.plays = 0; car.char = null;
   car.endAt = performance.now() + min * 60000;
-  car.run = { start: Date.now(), end: Date.now(), group: settings.carSet || 'letters', wpm: settings.wpm, heard: 0 };
+  car.run = { uid: HST.history.newUid(), start: Date.now(), end: Date.now(), group: settings.carSet || 'letters', wpm: settings.wpm, heard: 0 };
   carSaveDraft();
   carShowPlaying(true);
   carUpdateLeft();

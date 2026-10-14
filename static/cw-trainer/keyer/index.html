@@ -361,6 +361,9 @@
     } else if (downAt != null) {
       marks.push({ s: downAt, e: t });
       downAt = null;
+      // Long attempts (Warm Up): keep the session's time and letters current,
+      // so closing the app mid-attempt still saves it as practice.
+      if (sess) rec.alive({ sentChars: Math.max(sess.sent, sess.sent + live.replace(/<[A-Z]+>/g, '*').replace(/\s/g, '').length) });
       decoder.up(t);
       afterMark(t);
     }
@@ -902,7 +905,9 @@
     if (follow) $('followNote').textContent = sync
       ? 'Your Vail adapter does the keying; the app sets it to this speed when you start sending.'
       : 'Your adapter is doing the keying itself, at about ' + Math.round(1200 / ak.unitMs) +
-        ' WPM, so this slider doesn’t change your speed. To control it from here, turn on “Set my Vail adapter’s speed from the app” in Keyer Setup.';
+        ' WPM, so this slider doesn’t change your speed. ' + (HST.vailSpeed.state().supported
+          ? 'To control it from here, turn on “Set my Vail adapter’s speed from the app” in Keyer Setup.'
+          : 'This browser can’t set the adapter’s speed: change it in Vail Zoomer, or use Chrome or Edge.');
     $('cWpm').value = keyWpm(); $('cWpmVal').textContent = keyWpm() + ' WPM';
     $('cTone').value = sh.toneHz; $('cToneVal').textContent = sh.toneHz + ' Hz';
     $('cVol').value = sh.volume; $('cVolVal').textContent = sh.volume + '%';

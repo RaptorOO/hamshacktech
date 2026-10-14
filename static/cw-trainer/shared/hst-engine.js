@@ -525,30 +525,58 @@
       function saveDraft() {
         try { localStorage.setItem(DRAFT_KEY, JSON.stringify(run)); } catch (e) {}
       }
+      // The draft is removed only once its session is safely saved (and only
+      // if it's still that session's draft -- a new one may have started).
+      // Removing it first lost the session when the app was closing at that
+      // moment (2026-10-14). Each run has its uid from the start, so a
+      // draft whose session did get saved isn't saved twice.
+      function dropDraft(uid) {
+        try {
+          var d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+          if (!d || d.uid === uid || !d.uid) localStorage.removeItem(DRAFT_KEY);
+        } catch (e) {}
+      }
       function commit(r) {
-        try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
         // Nothing practiced: don't record. (Keyer Practice's Free send has
         // no right answers, so it counts characters sent instead.)
-        if (!r || !(r.charsTotal || r.sentChars)) return Promise.resolve();
-        r.end = r.end || Date.now();
+        if (!r || !(r.charsTotal || r.sentChars)) { dropDraft(r && r.uid); return Promise.resolve(); }
+        r.end = r.end || r.start;            // a recovered draft ends at its last saved moment
         r.durationMs = Math.max(0, r.end - r.start);
-        return HST.history.add(r);
+        if (!r.uid) r.uid = HST.history.newUid();
+        return HST.history.add(r).then(function () { dropDraft(r.uid); });
       }
 
-      // Recover a session that was interrupted by closing the app.
+      // Recover a session that was interrupted by closing the app (unless
+      // it was saved after all, just before the app closed).
       try {
         var left = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
-        if (left) commit(left);
+        if (left) HST.history.all().then(function (rows) {
+          if (left.uid && rows.some(function (x) { return x.uid === left.uid; })) dropDraft(left.uid);
+          else commit(left);
+        });
       } catch (e) {}
 
       return {
         start: function (meta) {
           if (run) commit(run);
-          run = { trainer: trainer, start: Date.now(), end: 0,
+          run = { trainer: trainer, uid: HST.history.newUid(), start: Date.now(), end: 0,
                   rounds: 0, roundsCorrect: 0, timeouts: 0,
                   charsTotal: 0, charsCorrect: 0, chars: {},
                   timeSum: 0, timeCount: 0 };
           Object.keys(meta || {}).forEach(function (k) { run[k] = meta[k]; });
+          run.end = run.start;
+          saveDraft();
+        },
+        // Still practicing: move the session's end to now (and save the
+        // draft), at most every 5 s. For long attempts like the Warm Up,
+        // so time spent before the app closes is still counted.
+        // patch (optional): fields to update now, e.g. { sentChars: 12 },
+        // so a session closed mid-attempt still counts as practice.
+        alive: function (patch) {
+          if (!run) return;
+          if (patch) Object.keys(patch).forEach(function (k) { run[k] = patch[k]; });
+          if (Date.now() - run.end < 5000) return;
+          run.end = Date.now();
           saveDraft();
         },
         char: function (ch, correct) {

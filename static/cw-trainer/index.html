@@ -1331,11 +1331,13 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-14-vail-follow';
+  var RELEASE = '2026-10-14-round-5';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
-    '<strong>Vail adapter fix.</strong> If your Vail adapter does its own keying (Vail Zoomer turns that on), the app now recognizes it and follows the adapter’s dits and dahs exactly, instead of timing them a second time. No more stuttering at slower speeds.',
-    '<strong>Your speed, not the adapter’s.</strong> In Chrome or Edge, turn on <strong>Set my Vail adapter’s speed from the app</strong> in Keyer Setup, and each tool’s speed setting controls your adapter again.',
+    '<strong>Jeopardy: separate copying and sending speeds.</strong> The setup screen and My speed now have a Copying group and a Sending group, and sending has its own <strong>Farnsworth</strong> setting: if you leave extra space between letters, your gaps aren’t read as word breaks.',
+    '<strong>Jeopardy: CORRECT or INCORRECT</strong> now shows big, in green or red, when each clue is revealed.',
+    '<strong>Warm Up time always counts.</strong> A warm-up is saved to Progress even if you close the app part-way through (it could be lost before).',
+    '<strong>Vail adapter:</strong> in Safari, the Keyer tab now says to change your adapter’s speed in Vail Zoomer (Safari can’t set it from the app).',
     'This note appears once after each update. You can find it again under Settings.'
   ];
   var SEEN_KEY = 'hct-cw-seen-release';

@@ -68,8 +68,18 @@
       step: p.step == null ? 2 : Math.max(0, Math.min(5, Number(p.step))),
       // Your paddles' keying speed for answers -- Jeopardy's own; starts
       // from the Keyer Setup speed the first time.
-      sendWpm: Math.min(40, Math.max(5, Number(p.sendWpm) || keyerWpm()))
+      sendWpm: Math.min(40, Math.max(5, Number(p.sendWpm) || keyerWpm())),
+      // Farnsworth for your SENDING (0 = off): you leave extra space between
+      // letters, so the app reads your word spaces at that wider spacing.
+      sendFw: Math.max(0, Number(p.sendFw) || 0)
     };
+  }
+  // How much wider than standard your sending spacing is (1 = standard).
+  function sendSpaceRatio() {
+    const p = prefs();
+    if (!p.sendFw || p.sendFw >= p.sendWpm) return 1;
+    const t = HST.timing(p.sendWpm, p.sendFw);
+    return t.ts / t.ta;
   }
   function keyerWpm() { try { return HST.keyerSettings.get().wpm; } catch (e) { return 20; }
   }
@@ -113,6 +123,7 @@
     fillFarnsworth(p.charWpm, p.fwpm);
     el('olStep').value = String(p.step);
     el('olSend').value = p.sendWpm; el('olSendVal').textContent = p.sendWpm + ' WPM';
+    fillFarnsworth(p.sendWpm, p.sendFw, 'olSendFw');
     el('olCode').value = code || '';
     el('olError').textContent = '';
     // First time online: make sure the speeds get looked at.
@@ -145,6 +156,7 @@
     el('spChar').value = p.charWpm; el('spCharVal').textContent = p.charWpm + ' WPM';
     fillFarnsworth(p.charWpm, p.fwpm, 'spFw');
     el('spSend').value = p.sendWpm; el('spSendVal').textContent = p.sendWpm + ' WPM';
+    fillFarnsworth(p.sendWpm, p.sendFw, 'spSendFw');
     el('speedModal').classList.add('show');
   }
   function saveSpeedDialog() {
@@ -152,12 +164,13 @@
     p.charWpm = Number(el('spChar').value);
     p.fwpm = Number(el('spFw').value);
     p.sendWpm = Number(el('spSend').value);
+    p.sendFw = Number(el('spSendFw').value);
     save(PREFS_KEY, p);
     el('speedModal').classList.remove('show');
   }
   function readDialog() {
     const name = el('olName').value.trim().toUpperCase().replace(/[^A-Z0-9 ./-]/g, '').slice(0, 16);
-    const p = { name, charWpm: Number(el('olChar').value), fwpm: Number(el('olFw').value), step: Number(el('olStep').value), sendWpm: Number(el('olSend').value) };
+    const p = { name, charWpm: Number(el('olChar').value), fwpm: Number(el('olFw').value), step: Number(el('olStep').value), sendWpm: Number(el('olSend').value), sendFw: Number(el('olSendFw').value) };
     save(PREFS_KEY, p);
     return p;
   }
@@ -581,7 +594,7 @@
   function renderSent(cl, fallback) {
     const box = el('sentText');
     let a = null;
-    try { a = cl.marks.length ? HST.analyzeSending(cl.marks, { unitMs: unitMs(), automatic: automatic() }) : null; } catch (e) {}
+    try { a = cl.marks.length ? HST.analyzeSending(cl.marks, { unitMs: unitMs(), automatic: automatic(), spaceRatio: sendSpaceRatio() }) : null; } catch (e) {}
     let chars = a ? a.chars.slice() : [];
     // Don't show a letter that's still being keyed (it would flicker
     // through E, A, R... while you send L).
@@ -642,10 +655,15 @@
     el('clue').classList.add('revealed');
     el('clueOnline').hidden = true;
     setClueStatus('', false);
-    const yours = m.yours && m.yours.text
-      ? '<div class="mine ' + (m.yours.ok ? 'ok' : 'no') + '">You sent: <b>' + esc(m.yours.text || '(nothing)') + '</b> ' + (m.yours.ok ? '✓' : '— not quite') + '</div>'
+    // Your answer: a big green CORRECT or red INCORRECT (Tim, 2026-10-14),
+    // then what you sent.
+    const answered = !!(m.yours && m.yours.text);
+    const verdict = answered
+      ? '<div class="verdict ' + (m.yours.ok ? 'ok' : 'no') + '">' + (m.yours.ok ? 'CORRECT' : 'INCORRECT') + '</div>' : '';
+    const yours = answered
+      ? '<div class="mine ' + (m.yours.ok ? 'ok' : 'no') + '">You sent: <b>' + esc(m.yours.text) + '</b></div>'
       : '<div class="mine no">You didn’t send an answer this time.</div>';
-    el('clueResult').innerHTML =
+    el('clueResult').innerHTML = verdict +
       '<div class="ans">' + esc(m.answer) + '</div>' +
       // Points are shared by how many copied it, so say so plainly.
       '<div class="grp"><span class="cnt">' + m.correct + ' of ' + m.total + ' correct</span> · <b>+' + money(m.points) + '</b>' +
@@ -687,6 +705,7 @@
     decoder = HST.createDecoder({
       unitMs: unitMs,
       adaptive: () => !automatic(),
+      spaceRatio: sendSpaceRatio,
       onChar: (ch) => {
         const cl = O.clue;
         if (!cl || cl.sent != null) return;
@@ -716,7 +735,7 @@
     // the live decode), dropping a closing AR.
     let text = cl.live;
     try {
-      const a = HST.analyzeSending(cl.marks, { unitMs: unitMs(), automatic: automatic() });
+      const a = HST.analyzeSending(cl.marks, { unitMs: unitMs(), automatic: automatic(), spaceRatio: sendSpaceRatio() });
       if (a && a.text) text = a.text;
     } catch (e) {}
     text = String(text || '').replace(/<AR>\s*$/, '').trim();
@@ -829,8 +848,14 @@
       fillFarnsworth(v, Number(el('spFw').value), 'spFw');
     });
     el('mySpeed').addEventListener('click', openSpeedDialog);
-    el('olSend').addEventListener('input', () => { el('olSendVal').textContent = el('olSend').value + ' WPM'; });
-    el('spSend').addEventListener('input', () => { el('spSendVal').textContent = el('spSend').value + ' WPM'; });
+    el('olSend').addEventListener('input', () => {
+      el('olSendVal').textContent = el('olSend').value + ' WPM';
+      fillFarnsworth(Number(el('olSend').value), Number(el('olSendFw').value), 'olSendFw');
+    });
+    el('spSend').addEventListener('input', () => {
+      el('spSendVal').textContent = el('spSend').value + ' WPM';
+      fillFarnsworth(Number(el('spSend').value), Number(el('spSendFw').value), 'spSendFw');
+    });
     el('spSave').addEventListener('click', saveSpeedDialog);
     el('spCancel').addEventListener('click', () => el('speedModal').classList.remove('show'));
     el('olHostBtn').addEventListener('click', hostRoom);
