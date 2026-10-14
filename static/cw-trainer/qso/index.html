@@ -307,7 +307,8 @@
   var KEY_NAMES = { iambicB: 'Paddles (iambic B)', iambicA: 'Paddles (iambic A)', straight: 'Straight key', bug: 'Bug' };
   var ADAPTER_NAMES = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter' };
   function cfg() { return HST.keyerSettings.get(); }
-  function automatic() { var k = cfg().keyType; return k === 'iambicA' || k === 'iambicB'; }
+  // The app's keyer makes the elements (paddles, unless the adapter is keying itself).
+  function automatic() { return HST.keyerAutomatic(); }
 
   /* ---------------- speeds ----------------
      The QSO tab keeps its own two speeds, so copying and sending can

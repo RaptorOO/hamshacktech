@@ -274,6 +274,7 @@
         <input type="range" id="cVol" min="0" max="100" step="5">
       </div>
     </div>
+    <p class="help ckey" id="followNote" hidden></p>
     <p class="help ckey">Your key: <span id="setupText"></span> &middot; <button class="linkish" id="setupLink" type="button">Keyer Setup&hellip;</button></p>
   </section>
 
@@ -320,7 +321,8 @@
   var KEY_NAMES = { iambicB: 'Paddles (iambic B)', iambicA: 'Paddles (iambic A)', straight: 'Straight key', bug: 'Bug' };
   var ADAPTER_NAMES = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter' };
   function cfg() { return HST.keyerSettings.get(); }
-  function automatic() { var k = cfg().keyType; return k === 'iambicA' || k === 'iambicB'; }
+  // The app's keyer makes the elements (paddles, unless the adapter is keying itself).
+  function automatic() { return HST.keyerAutomatic(); }
   // Keyer Practice's own sending speed (Tool Settings), saved with its
   // other choices. It starts from the Keyer Setup speed the first time.
   if (!prefs.wpm) { prefs.wpm = cfg().wpm || 20; savePrefs(); }
@@ -593,7 +595,7 @@
 
     // Measurements
     var t = [];
-    t.push(tile(Math.round(a.charWpm), 'WPM', 'Character speed', automatic() ? 'set by your keyer' : 'your dits and dahs'));
+    t.push(tile(Math.round(a.charWpm), 'WPM', 'Character speed', automatic() ? 'set by your keyer' : HST.adapterKeying.get().on && cfg().keyType !== 'straight' ? 'set by your adapter' : 'your dits and dahs'));
     t.push(tile(Math.round(a.overallWpm), 'WPM', 'Overall speed', 'including your spacing'));
     if (a.charGap.n) t.push(tile(r1(a.charGap.mean), 'dits', 'Letter spacing', 'perfect is 3', within(a.charGap.mean, OK.charGap) ? 'good' : 'off'));
     if (a.wordGap.n) t.push(tile(r1(a.wordGap.mean), 'dits', 'Word spacing', 'perfect is 7', within(a.wordGap.mean, OK.wordGap) ? 'good' : 'off'));
@@ -891,7 +893,13 @@
   // this tab's own HST.shared copy (the sidetone reads it from there).
   function renderConsole() {
     var sh = HST.shared.get(), straight = cfg().keyType === 'straight';
-    $('cWpmLabel').textContent = straight ? 'Starting speed guess' : 'Keyer speed';
+    // The adapter doing the keying itself (see HST.adapterKeying): its speed
+    // rules, and this slider is only where the timing analysis starts.
+    var ak = HST.adapterKeying.get(), follow = ak.on && !straight && cfg().adapter !== 'keyboard';
+    $('cWpmLabel').textContent = straight || follow ? 'Starting speed guess' : 'Keyer speed';
+    $('followNote').hidden = !follow;
+    if (follow) $('followNote').textContent = 'Your adapter is doing the keying itself, at about ' + Math.round(1200 / ak.unitMs) +
+      ' WPM, and the app follows it. To change your sending speed, change it in Vail Zoomer.';
     $('cWpm').value = keyWpm(); $('cWpmVal').textContent = keyWpm() + ' WPM';
     $('cTone').value = sh.toneHz; $('cToneVal').textContent = sh.toneHz + ' Hz';
     $('cVol').value = sh.volume; $('cVolVal').textContent = sh.volume + '%';
@@ -900,6 +908,7 @@
   $('cTone').addEventListener('input', function (e) { HST.shared.set({ toneHz: Number(e.target.value) }); });
   $('cVol').addEventListener('input', function (e) { HST.shared.set({ volume: Number(e.target.value) }); });
   HST.shared.onChange(renderConsole);
+  HST.adapterKeying.onChange(function () { decoder.reset(); renderConsole(); });
 
   $('setupLink').addEventListener('click', function () {
     try { window.parent.HCT.openKeyerSetup(); } catch (e) { setStatus('Open Settings (the gear icon) → Keyer Setup.', true); }
