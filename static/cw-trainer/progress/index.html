@@ -22,6 +22,7 @@
     --key2: #93c5fd;       /* blue-300: second sending series (overall speed) */
     --qso: #f472b6;        /* pink-400: QSO practice everywhere on this page */
     --jep: #818cf8;        /* indigo-400: Jeopardy (its blue board) everywhere on this page */
+    --tp: #fb923c;         /* orange-400: Test Prep everywhere on this page */
     /* Practice added by hand (outside the app), one color per kind */
     --zoom: #38bdf8;       /* sky-400 */
     --onair: #c084fc;      /* purple-400 */
@@ -70,6 +71,7 @@
   .legend .icr { color: var(--icr); } .legend .cg { color: var(--cg); }
   .legend .key { color: var(--key); } .legend .key2 { color: var(--key2); } .legend .qso { color: var(--qso); font-weight: 500; }
   .legend .jep { color: var(--jep); font-weight: 500; }
+  .legend .tp { color: var(--tp); font-weight: 500; }
   .legend .zoom { color: var(--zoom); } .legend .onair { color: var(--onair); } .legend .other { color: var(--other); }
   .legend .icr, .legend .cg, .legend .key, .legend .key2, .legend .zoom, .legend .onair, .legend .other { font-weight: 500; }
   .legend { flex-wrap: wrap; row-gap: 4px; }
@@ -106,6 +108,7 @@
   .tag { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; color: var(--lime-ink); }
   .tag.icr { background: var(--icr); } .tag.cg { background: var(--cg); } .tag.key { background: var(--key); } .tag.qso { background: var(--qso); }
   .tag.jep { background: var(--jep); }
+  .tag.tp { background: var(--tp); }
   .tag.zoom { background: var(--zoom); } .tag.onair { background: var(--onair); } .tag.other { background: var(--other); }
 
   /* ---------- "Add practice time" dialog ---------- */
@@ -193,7 +196,7 @@
           </div>
           <button type="button" class="addbtn" data-addtime title="Add practice you did outside the CW Trainer">+ Add time</button>
         </div>
-        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span><span class="key" id="timeKeyLegend">Keyer</span><span class="qso" id="timeQsoLegend">QSO</span><span class="jep" id="timeJepLegend">Jeopardy</span><span class="zoom" id="timeZoomLegend">Zoom Session</span><span class="onair" id="timeOnairLegend">On-Air</span><span class="other" id="timeOtherLegend">Other</span></div>
+        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span><span class="key" id="timeKeyLegend">Keyer</span><span class="qso" id="timeQsoLegend">QSO</span><span class="tp" id="timeTpLegend">Test Prep</span><span class="jep" id="timeJepLegend">Jeopardy</span><span class="zoom" id="timeZoomLegend">Zoom Session</span><span class="onair" id="timeOnairLegend">On-Air</span><span class="other" id="timeOtherLegend">Other</span></div>
         <div id="chTime"></div>
       </section>
 
@@ -308,9 +311,9 @@
 
   var DAY = 86400000;
   var RANGE_KEY = 'hct-cw-progress-range';
-  var COLORS = { icr: 'var(--icr)', 'code-groups': 'var(--cg)', keyer: 'var(--key)', qso: 'var(--qso)', jeopardy: 'var(--jep)',
+  var COLORS = { icr: 'var(--icr)', 'code-groups': 'var(--cg)', keyer: 'var(--key)', qso: 'var(--qso)', 'test-prep': 'var(--tp)', jeopardy: 'var(--jep)',
                  zoom: 'var(--zoom)', 'on-air': 'var(--onair)', other: 'var(--other)' };
-  var TRAINER_NAMES = { icr: 'ICR', 'code-groups': 'Code Groups', keyer: 'Keyer', qso: 'QSO', jeopardy: 'Jeopardy',
+  var TRAINER_NAMES = { icr: 'ICR', 'code-groups': 'Code Groups', keyer: 'Keyer', qso: 'QSO', 'test-prep': 'Test Prep', jeopardy: 'Jeopardy',
                         zoom: 'Zoom Session', 'on-air': 'On-Air', other: 'Other' };
   // Practice added by hand is saved as { trainer: 'manual', kind: one of
   // these }; each kind gets its own color in the Practice time chart.
@@ -319,7 +322,7 @@
   function manualKind(s) { return MANUAL_KINDS.indexOf(s.kind) >= 0 ? s.kind : 'other'; }
   // The chart series a session belongs to.
   function seriesOf(s) { return s.trainer === 'manual' ? manualKind(s) : s.trainer; }
-  var TIME_SERIES = ['icr', 'code-groups', 'keyer', 'qso', 'jeopardy'].concat(MANUAL_KINDS);
+  var TIME_SERIES = ['icr', 'code-groups', 'keyer', 'qso', 'test-prep', 'jeopardy'].concat(MANUAL_KINDS);
   var QSO_NAMES = { 'std-they': 'Standard QSO \u00b7 answered CQ', 'std-you': 'Standard QSO \u00b7 called CQ',
                     'pota-they': 'POTA \u00b7 hunted', 'pota-you': 'POTA \u00b7 activated',
                     'sota-they': 'SOTA \u00b7 chased', 'sota-you': 'SOTA \u00b7 activated',
@@ -386,7 +389,7 @@
           var b = buckets[i][seriesOf(s)];
           if (!b) return;
           b.ms += s.durationMs || 0;
-          if (s.trainer === 'qso' || s.trainer === 'jeopardy' || s.trainer === 'manual') return;   // practice time only
+          if (s.trainer === 'qso' || s.trainer === 'test-prep' || s.trainer === 'jeopardy' || s.trainer === 'manual') return;   // practice time only
           b.chars += s.charsTotal; b.correct += s.charsCorrect;
           if (s.trainer === 'keyer') {                        // sending: weight by letters sent
             var n = s.sentChars || 0;
@@ -560,7 +563,7 @@
     // Tiles
     // Practice time, streak and sessions count every tab; "Characters copied"
     // and the copying charts count only ICR and Code Groups (receiving).
-    var ms = 0, chars = 0, correct = 0, byTrainer = { icr: 0, 'code-groups': 0, keyer: 0, qso: 0, jeopardy: 0, manual: 0 };
+    var ms = 0, chars = 0, correct = 0, byTrainer = { icr: 0, 'code-groups': 0, keyer: 0, qso: 0, 'test-prep': 0, jeopardy: 0, manual: 0 };
     function copying(s) { return s.trainer === 'icr' || s.trainer === 'code-groups'; }
     rows.forEach(function (s) {
       ms += s.durationMs || 0; byTrainer[s.trainer] = (byTrainer[s.trainer] || 0) + 1;
@@ -575,6 +578,8 @@
     $('timeQsoLegend').hidden = !hasQso;
     var hasJep = allRows.some(function (s) { return s.trainer === 'jeopardy'; });
     $('timeJepLegend').hidden = !hasJep;
+    var hasTp = allRows.some(function (s) { return s.trainer === 'test-prep'; });
+    $('timeTpLegend').hidden = !hasTp;
     var manualHas = {};
     allRows.forEach(function (s) { if (s.trainer === 'manual') manualHas[manualKind(s)] = true; });
     $('timeZoomLegend').hidden = !manualHas.zoom;
@@ -590,6 +595,7 @@
     $('tSessions').textContent = rows.length;
     $('tSessionsSub').textContent = byTrainer.icr + ' ICR · ' + byTrainer['code-groups'] + ' Code Groups' +
       (hasSending ? ' · ' + byTrainer.keyer + ' Keyer' : '') + (hasQso ? ' · ' + byTrainer.qso + ' QSO' : '') +
+      (hasTp ? ' · ' + byTrainer['test-prep'] + ' Test Prep' : '') +
       (hasJep ? ' · ' + byTrainer.jeopardy + ' Jeopardy' : '') +
       (byTrainer.manual ? ' · ' + byTrainer.manual + ' added' : '');
 
@@ -665,6 +671,15 @@
                '</td><td class="num">' + esc(s.wpm || '') + '</td><td class="num">' + HST.fmtClock(s.durationMs || 0) +
                '</td><td class="num">' + (s.sentChars || 0) + '</td><td class="num">' +
                (s.copyTotal ? pct(s.copyRight, s.copyTotal) + '%' : '\u2014') + '</td></tr>';
+      }
+      // Test Prep: one practice test, its score and whether it passed.
+      if (s.trainer === 'test-prep') {
+        var tw = (s.format === 'quick' ? 'Quick test' : 'CWA test') + ' · ' + (s.right || 0) + '/' + (s.questions || 0) +
+                 (s.completed ? (s.passed ? ' · Passed' : ' · Not yet') : ' (quit early)');
+        return '<tr><td>' + esc(when) + '</td><td><span class="tag tp">Test Prep</span></td><td>' + esc(tw) +
+               '</td><td class="num">' + esc((s.wpm || '') + (s.fwpm && s.fwpm < s.wpm ? '/' + s.fwpm : '')) +
+               '</td><td class="num">' + HST.fmtClock(s.durationMs || 0) + '</td><td class="num">—</td><td class="num">' +
+               (s.completed ? (s.score || 0) + '%' : '—') + '</td></tr>';
       }
       // Jeopardy: time played; online, how many clues you copied.
       if (s.trainer === 'jeopardy') {
