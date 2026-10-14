@@ -896,10 +896,13 @@
     // The adapter doing the keying itself (see HST.adapterKeying): its speed
     // rules, and this slider is only where the timing analysis starts.
     var ak = HST.adapterKeying.get(), follow = ak.on && !straight && cfg().adapter !== 'keyboard';
-    $('cWpmLabel').textContent = straight || follow ? 'Starting speed guess' : 'Keyer speed';
+    var sync = follow && HST.vailSpeed.state().on;   // the app sets the adapter's speed
+    $('cWpmLabel').textContent = straight || (follow && !sync) ? 'Starting speed guess' : 'Keyer speed';
     $('followNote').hidden = !follow;
-    if (follow) $('followNote').textContent = 'Your adapter is doing the keying itself, at about ' + Math.round(1200 / ak.unitMs) +
-      ' WPM, and the app follows it. To change your sending speed, change it in Vail Zoomer.';
+    if (follow) $('followNote').textContent = sync
+      ? 'Your Vail adapter does the keying; the app sets it to this speed when you start sending.'
+      : 'Your adapter is doing the keying itself, at about ' + Math.round(1200 / ak.unitMs) +
+        ' WPM, so this slider doesn’t change your speed. To control it from here, turn on “Set my Vail adapter’s speed from the app” in Keyer Setup.';
     $('cWpm').value = keyWpm(); $('cWpmVal').textContent = keyWpm() + ' WPM';
     $('cTone').value = sh.toneHz; $('cToneVal').textContent = sh.toneHz + ' Hz';
     $('cVol').value = sh.volume; $('cVolVal').textContent = sh.volume + '%';
@@ -909,6 +912,7 @@
   $('cVol').addEventListener('input', function (e) { HST.shared.set({ volume: Number(e.target.value) }); });
   HST.shared.onChange(renderConsole);
   HST.adapterKeying.onChange(function () { decoder.reset(); renderConsole(); });
+  HST.vailSpeedPrefs.onChange(renderConsole);
 
   $('setupLink').addEventListener('click', function () {
     try { window.parent.HCT.openKeyerSetup(); } catch (e) { setStatus('Open Settings (the gear icon) → Keyer Setup.', true); }
