@@ -369,7 +369,7 @@
      and survives restarts). Nothing leaves the device.
 
      A session record looks like:
-       { trainer: 'icr' | 'code-groups' | 'keyer' | 'qso' | 'manual',
+       { trainer: 'icr' | 'code-groups' | 'keyer' | 'qso' | 'jeopardy' | 'manual',
          start, end, durationMs,            // wall-clock times (ms)
          group, wpm, fwpm, groupSize,       // what was practiced, at what speed
          rounds, roundsCorrect, timeouts,   // ICR: 1 character per round
@@ -384,6 +384,9 @@
      QSO records (Milestone 7): style ('std' | 'pota'), who ('they' | 'you'
      called CQ), dxCall, theirWpm, completed, overs, copyRight/copyTotal
      (the copy check), plus the same sending fields as Keyer.
+     Jeopardy records (jeopardy/index.html) are time played in an online
+     room: mode ('online'), clues, right (copied correctly) and score
+     (Your Score at the end).
      Manual records are practice added by hand on the Progress tab:
      kind ('zoom' | 'on-air' | 'other'), dateOnly (true when added for an
      earlier day), and only the time fields above.

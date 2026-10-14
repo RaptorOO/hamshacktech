@@ -14,8 +14,9 @@
      * keying your answer, the 60-second countdown, and the reveal
      * Replay (hear the clue again) and Clear (+15 s to send it again)
      * chat under the players list
+     * the host's Pause / Resume, and Your Score (only you see yours)
 
-   It reuses the single-device game's board, tiles and zoom card from
+   It uses the board, tiles and zoom card from
    index.html (renderBoard, openClue, closeClue...) and the CW Trainer's
    shared keyer, decoder and Morse audio (../shared/hst-*.js).
    ===================================================================== */
@@ -287,28 +288,32 @@
     el('playersPanel').hidden = false;
     el('launchModal').classList.remove('show');
     el('gameOverModal').classList.remove('show');
-    cancelScheduledPlay();
     hideClueNow();
+    el('pauseBtn').hidden = true;    // online, only the host gets it (gotState)
     el('roomCode').textContent = O.room.code;
     if (!O.keyerOn) startKeyer();
   }
 
   function leave(msg) {
     O.closedForGood = true;
+    practiceEnd();
     clearTimeout(O.retryTimer);
     if (O.ws) { try { O.ws.close(); } catch (e) {} }
     O.ws = null;
     save(ROOM_KEY, null);
     stopClue();
-    // Back to the single-device game.
+    // Back to the start screen.
     O.active = false; O.st = null; O.room = null; O.clue = null; O.lastTurnId = null;
     document.body.classList.remove('online');
     el('playersPanel').hidden = true;
     el('turnCard').hidden = true; el('lobbyCard').hidden = true;
+    showPaused(false);
+    el('pauseBtn').hidden = true;
     el('chatLog').innerHTML = ''; el('chatInput').value = '';
     el('gameOverModal').classList.remove('show');
+    el('myScoreValue').textContent = money(0);
     loadPools();
-    newGame();
+    showIdleBoard();
     if (msg) { el('noticeText').textContent = msg; el('noticeModal').classList.add('show'); }
     else el('launchModal').classList.add('show');
   }
@@ -317,8 +322,11 @@
 
   function gotState(m) {
     const prevPhase = O.st && O.st.phase;
+    const wasPaused = !!(O.st && O.st.paused);
     O.st = m;
     el('bankValue').textContent = money(m.bank);
+    el('myScoreValue').textContent = money(m.myScore || 0);
+    if (m.paused && !wasPaused) pausedNow(m.paused);
     renderPlayers();
     renderOnlineBoard();
     renderLobby();
@@ -330,11 +338,44 @@
     } else el('turnCard').hidden = true;
     if (m.phase === 'over') {
       el('gameOverScore').textContent = money(m.bank);
+      el('goMineValue').textContent = money(m.myScore || 0);
       el('gameOverModal').classList.add('show');
     } else el('gameOverModal').classList.remove('show');
-    el('hostSkip').hidden = !isHost() || m.phase !== 'pick';
+    el('hostSkip').hidden = !isHost() || m.phase !== 'pick' || !!m.paused;
     el('hostEnd').hidden = !isHost() || m.phase === 'over' || m.phase === 'lobby';
+    // Pause: the host's button, everyone's "Paused" card.
+    const canPause = isHost() && (m.phase === 'pick' || m.phase === 'clue' || m.phase === 'reveal');
+    el('pauseBtn').hidden = !isHost() || (!canPause && !m.paused);
+    showPaused(!!m.paused, isHost());
+    if (m.paused) el('turnCard').hidden = true;
+    else if (wasPaused && m.phase === 'pick') showTurnCard(false);
+    if (m.phase === 'over') practiceEnd();
   }
+
+  /* ---------------- pause (the host's Pause button) ----------------
+     The room does the real work (workers/rooms: pause/resume). Here:
+     stop the sound, stop keying, and if this clue will be started over
+     on resume (someone's Morse was still playing), drop its timers; the
+     room sends the clue again when the host resumes. */
+  O.togglePause = function () {
+    if (!isHost() || !O.st) return;
+    send({ t: O.st.paused ? 'resume' : 'pause' });
+  };
+  function pausedNow(at) {
+    try { HST.audio.stop(); } catch (e) {}
+    stopKeyingForClue();
+    const cl = O.clue;
+    if (!cl) return;
+    const answering = cl.deadline && at >= cl.deadline - 60000 - (cl.ext || 0);
+    if (!answering) {
+      clueTimers.forEach((t) => { clearTimeout(t); clearInterval(t); });
+      clueTimers = [];
+      el('clue').classList.remove('answering');
+      el('clueOnline').hidden = true;
+      setClueStatus('Paused', false);
+    } else renderAnswerArea();
+  }
+  function paused() { return !!(O.st && O.st.paused); }
 
   // The players panel: join order, host first. Whoever's turn it is is
   // highlighted; a tick shows who has answered the clue in play.
@@ -376,7 +417,7 @@
   // Called by index.html's tile click handler while online.
   O.tileClicked = function (cell) {
     const st = O.st;
-    if (!st || st.phase !== 'pick' || st.turnId !== O.room.pid || cell.onlineUsed) return;
+    if (!st || st.phase !== 'pick' || st.paused || st.turnId !== O.room.pid || cell.onlineUsed) return;
     unlockAudio();
     el('turnCard').hidden = true;
     send({ t: 'pick', c: cell.cat, r: cell.row });
@@ -425,9 +466,8 @@
     const text = PREAMBLE + ' ' + m.text;
     const len = morseMs(text, sp.wpm, sp.fwpm);
     O.clue = { c: m.c, r: m.r, dd: m.dd, text: m.text, startAt: m.startAt, deadline: m.deadline, ext: m.ext || 0, sp, len,
-               playEnd: m.startAt + len, sent: null, marks: [], live: '',
-               clears: m.clears || 0, replayEnd: 0, extNote: '', extNoteUntil: 0 };
-    send({ t: 'len', ms: Math.round(len) });   // the room waits for the slowest player's playback
+               playEnd: m.startAt + len, sent: m.sent != null ? m.sent : null, marks: [], live: '',
+               clears: m.clears || 0, replayEnd: 0, extNote: '', extNoteUntil: 0 };    send({ t: 'len', ms: Math.round(len) });   // the room waits for the slowest player's playback
 
     const cell = state.board.find((t) => t.cat === m.c && t.row === m.r) || { cat: m.c, row: m.r, dollars: 0 };
     el('clue').classList.add('online');
@@ -453,6 +493,7 @@
 
     // Start the Morse at the room's moment (if we joined late, start now).
     later(m.startAt - serverNow(), () => {
+      if (paused()) { setClueStatus('Paused', false); return; }   // joined while the game is paused
       unlockAudio();
       try { HST.audio.playMorse(text, audioOpts(sp)); } catch (e) {}
       setClueStatus('Listen', true);
@@ -484,7 +525,7 @@
     if (!cl) return;
     if (!cl.deadline) { el('cdNum').textContent = '60'; el('cd').style.setProperty('--p', 1); return; }
     const total = 60000 + (cl.ext || 0);
-    const left = cl.deadline - serverNow();
+    const left = cl.deadline - (paused() ? O.st.paused : serverNow());   // paused: the clock stands still
     const secs = Math.max(0, Math.min(total / 1000, Math.ceil(left / 1000)));
     el('cdNum').textContent = secs;
     el('cd').style.setProperty('--p', Math.max(0, Math.min(1, left / total)));
@@ -495,7 +536,7 @@
 
   function canKey() {
     const cl = O.clue;
-    return !!(cl && !cl.sent && O.st && O.st.phase === 'clue' && serverNow() >= cl.playEnd &&
+    return !!(cl && cl.sent == null && O.st && O.st.phase === 'clue' && !O.st.paused && serverNow() >= cl.playEnd &&
               (!cl.deadline || serverNow() < cl.deadline));
   }
 
@@ -506,7 +547,7 @@
     el('clueOnline').hidden = !answering;
     if (!answering) return;
     if (cl.sent != null) {
-      el('sentText').textContent = cl.sent || '(nothing)';
+      renderSent(cl, cl.sent || '(nothing)');
       el('sentLabel').textContent = 'You sent';
       el('ansNote').textContent = 'Waiting for the others…';
       el('ansDone').hidden = true;
@@ -514,9 +555,10 @@
       el('ansClear').hidden = true;
       el('opads').hidden = true;
     } else {
-      el('sentText').textContent = cl.live || '';
+      renderSent(cl, cl.live || '');
       el('sentLabel').textContent = 'Your answer';
-      el('ansNote').textContent = cl.live ? 'Tap Done, press Enter or send AR when you’re finished.' : 'Send your answer with your key.';
+      el('ansNote').textContent = paused() ? 'Paused: the clock has stopped. You can carry on when the host resumes.'
+        : cl.live ? 'Tap Done, press Enter or send AR when you’re finished.' : 'Send your answer with your key.';
       el('ansDone').hidden = false;
       const replaying = Date.now() < cl.replayEnd;
       el('ansReplay').hidden = false;
@@ -529,6 +571,33 @@
         : 'Wipe your answer and send it again (no more extra time on this clue).';
       el('opads').hidden = !showPads();
     }
+  }
+
+  /* Your answer as you sent it. Each letter sits after the gap you
+     actually left (read from the timing of your key), so letters run
+     together or spread out the way you sent them, and a word space
+     shows as a real gap. Measured in dits: 3 between letters, 7
+     between words is standard; 5 or more counts as a word space. */
+  function renderSent(cl, fallback) {
+    const box = el('sentText');
+    let a = null;
+    try { a = cl.marks.length ? HST.analyzeSending(cl.marks, { unitMs: unitMs(), automatic: automatic() }) : null; } catch (e) {}
+    let chars = a ? a.chars.slice() : [];
+    // Don't show a letter that's still being keyed (it would flicker
+    // through E, A, R... while you send L).
+    if (cl.sent == null && chars.length) {
+      const last = cl.marks[cl.marks.length - 1];
+      if (downAt != null || performance.now() - last.e < 2 * a.unit) chars.pop();
+    }
+    if (!chars.length) { box.textContent = cl.marks.length ? '' : fallback; return; }
+    box.setAttribute('aria-label', a.text);
+    box.innerHTML = chars.map((c, k) => {
+      const g = k ? a.gaps[k - 1] : null;
+      let em = 0;
+      if (g && g.kind === 'word') em = Math.max(0.6, Math.min(1.8, 0.75 + (g.units - 7) * 0.08));
+      else if (g) em = Math.max(0.04, Math.min(0.4, 0.04 + (g.units - 2) * 0.12));
+      return '<span class="sc' + (g && g.kind === 'word' ? ' w' : '') + '" style="margin-left:' + em.toFixed(2) + 'em">' + esc(c.text) + '</span>';
+    }).join('');
   }
 
   // Replay: hear the clue again at your own speed. Only you hear it,
@@ -567,6 +636,8 @@
     if (cl) clueTimers.forEach((t) => { clearTimeout(t); clearInterval(t); });
     clueTimers = [];
     el('bankValue').textContent = money(m.bank);
+    if (m.myScore != null) el('myScoreValue').textContent = money(m.myScore);
+    practiceNote({ clues: 1, right: m.yours && m.yours.ok ? 1 : 0, score: m.myScore || 0 });
     el('clue').classList.remove('answering', 'listening');
     el('clue').classList.add('revealed');
     el('clueOnline').hidden = true;
@@ -602,7 +673,12 @@
   let keyer = null, decoder = null, downAt = null, endTimer = null;
   function kcfg() { return HST.keyerSettings.get(); }
   function automatic() { const k = kcfg().keyType; return k === 'iambicA' || k === 'iambicB'; }
-  function unitMs() { return 1200 / kcfg().wpm; }
+  // The length of one dit. Paddles and a bug make their dits at
+  // Jeopardy's own sending speed (My speed), so read the timing at that
+  // speed; with a wrong unit every word space read as a letter space.
+  // A straight key has no set speed: the Keyer Setup speed is the guess
+  // (the decoder and analyzer learn the real one from your dits).
+  function unitMs() { const k = kcfg(); return 1200 / (k.keyType === 'straight' ? k.wpm : prefs().sendWpm); }
   function startKeyer() {
     O.keyerOn = true;
     keyer = HST.createKeyer({ key: onKey, wpm: () => prefs().sendWpm });   // Jeopardy's own keying speed
@@ -721,7 +797,7 @@
      ===================================================================== */
   function startGame() {
     unlockAudio();
-    // Same board-making as the single-device game: 5 answers per category,
+    // Deal the board: 5 answers per category,
     // one hidden Daily Double in each column.
     loadPools();
     const rows = 5, cats = state.categories.slice(0, 6), tiles = [];
@@ -764,7 +840,9 @@
     el('olKeySetup').addEventListener('click', () => { try { window.parent.HCT.openKeyerSetup(); } catch (e) {} });
     el('openHost').addEventListener('click', () => openOnlineDialog('host'));
     el('openJoin').addEventListener('click', () => openOnlineDialog('join'));
-    el('barOnline').addEventListener('click', () => openOnlineDialog('join'));
+    // The start screen (instructions, Host / Join) and its toolbar button.
+    el('barStart').addEventListener('click', () => el('launchModal').classList.add('show'));
+    el('launchClose').addEventListener('click', () => el('launchModal').classList.remove('show'));
 
     el('lobbyStart').addEventListener('click', startGame);
     el('lobbyInvite').addEventListener('click', (e) => shareInvite(e.currentTarget));
@@ -832,7 +910,11 @@
     let online = false;
     try { online = !!(await (await fetch('/rooms/config', { cache: 'no-store' })).json()).online; } catch (e) {}
     document.body.classList.toggle('online-ok', online);
-    if (!online) return;
+    if (!online) {
+      // Jeopardy is played in a room on the server, so it needs the internet.
+      el('offlineNote').textContent = 'Jeopardy needs an internet connection. Connect, then reopen this tab.';
+      return;
+    }
     const params = new URLSearchParams(location.search);
     const linkCode = (params.get('room') || '').toUpperCase();
     const saved = load(ROOM_KEY, null);

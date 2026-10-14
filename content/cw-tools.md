@@ -22,7 +22,7 @@ Everything for CW practice now lives in one free app: the **HamShackTech CW Trai
     <li><strong>Keyer</strong>: sending practice with your own key through a Vail or VBand adapter (or the on-screen paddles), with your speed, spacing and timing measured.</li>
     <li><strong>QSO</strong>: work a complete contact (standard, POTA, SOTA or a CWops CWT) with a virtual station, using your key. Set separate copy and sending speeds.</li>
     <li><strong>Progress</strong>: your practice time, day streaks, accuracy and speed trends, and the characters you miss most.</li>
-    <li><strong>Jeopardy</strong>: Morse Code Jeopardy for CW groups. Play online with up to 20 people, each hearing the clues at their own speed and answering with their key, or screen-share it over Zoom. Everyone builds one group score together.</li>
+    <li><strong>Jeopardy</strong>: Morse Code Jeopardy for CW groups. Play online with up to 20 people, or on your own, each hearing the clues at their own speed and answering with their key. Everyone builds one group score together.</li>
   </ul>
   <p>Each tool keeps its own speed, tone and volume, so your ICR speed doesn&rsquo;t change your QSO speed. Sign in with your email (optional, no password) and your practice history follows you to all your devices.</p>
 

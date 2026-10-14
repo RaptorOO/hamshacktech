@@ -14,7 +14,7 @@
    (functions/rooms/[[path]].js) that holds a binding to this class.
 
    Messages are small JSON objects with a "t" (type) field:
-     app -> room   ping, start, pick, len, answer, clear, chat, skip, kick, end
+     app -> room   ping, start, pick, len, answer, clear, chat, skip, kick, end, pause, resume
      room -> app   pong, state, clue, deadline, reveal, chat, nudge, kicked, error
    ===================================================================== */
 
@@ -93,6 +93,8 @@ export class Room {
       step: 2,                    // WPM added per dollar row (host's choice)
       cats: [], tiles: [],        // the board; tiles: { c, r, dollars, answer, dd, used, points }
       bank: 0,
+      paused: 0,                  // when the host paused the game (0 = not paused); see pause()
+      pausedLeft: 0,              // reveal: how long the answer still had to stay up
       clue: null,                 // the clue in play (see pick())
       chat: []                    // the last CHAT_KEEP messages: { from, text, at }
     };
@@ -114,6 +116,8 @@ export class Room {
 
   timer(name, ms, fn) {
     clearTimeout(this.timers[name]);
+    this.due = this.due || {};
+    this.due[name] = Date.now() + ms;   // so a pause knows how much time was left
     this.timers[name] = setTimeout(() => { delete this.timers[name]; fn(); }, ms);
   }
   cancel(name) { clearTimeout(this.timers[name]); delete this.timers[name]; }
@@ -203,7 +207,9 @@ export class Room {
       case 'answer': this.gotAnswer(pid, m); return;
       case 'clear': this.gotClear(pid); return;
       case 'chat': this.gotChat(pid, m); return;
-      case 'skip': if (isHost && this.s.phase === 'pick') this.nextTurn(); return;
+      case 'skip': if (isHost && this.s.phase === 'pick' && !this.s.paused) this.nextTurn(); return;
+      case 'pause': if (isHost) this.pause(); return;
+      case 'resume': if (isHost) this.resume(); return;
       case 'kick': if (isHost && m.pid !== pid) this.kick(m.pid); return;
       case 'end': if (isHost) this.gameOver(); return;
     }
@@ -222,6 +228,8 @@ export class Room {
     this.s.tiles = tiles;
     this.s.step = Math.max(0, Math.min(5, Number(m.step) || 0));
     this.s.bank = 0;
+    this.s.paused = 0;
+    this.s.players.forEach((p) => { p.score = 0; });   // everyone's own score starts again too
     this.s.clue = null;
     this.s.phase = 'pick';
     // The host goes first; everyone else in the order they joined.
@@ -235,7 +243,7 @@ export class Room {
   // The player whose turn it is picks a tile.
   pick(pid, c, r) {
     const s = this.s;
-    if (s.phase !== 'pick') return;
+    if (s.phase !== 'pick' || s.paused) return;
     const turnP = s.players[s.turn];
     if (!turnP || turnP.id !== pid) return;
     const tile = s.tiles.find((t) => t.c === c && t.r === r && !t.used);
@@ -266,13 +274,15 @@ export class Room {
     const cl = this.s.clue, tile = this.s.tiles.find((t) => t.c === cl.c && t.r === cl.r);
     try {
       ws.send(JSON.stringify({ t: 'clue', c: cl.c, r: cl.r, dd: cl.dd, text: tile.answer, startAt: cl.startAt, deadline: cl.deadline, ext: cl.ext || 0,
-        clears: (cl.clears && cl.clears[pid]) || 0 }));
+        clears: (cl.clears && cl.clears[pid]) || 0,
+        // Already answered (after a reload, or when a pause started the clue over).
+        sent: cl.answers[pid] ? cl.answers[pid].text : null }));
     } catch (e) {}
   }
 
   gotLen(pid, m) {
     const cl = this.s.clue;
-    if (this.s.phase !== 'clue' || !cl || cl.deadline) return;
+    if (this.s.phase !== 'clue' || !cl || cl.deadline || this.s.paused) return;
     cl.lens[pid] = Math.max(0, Math.min(120000, Number(m.ms) || 0));
     if (cl.who.every((id) => id in cl.lens || !this.sockets.has(id))) this.setDeadline();
   }
@@ -281,7 +291,7 @@ export class Room {
   // player's playback finishes, so choosing a slower speed costs no time.
   setDeadline() {
     const cl = this.s.clue;
-    if (this.s.phase !== 'clue' || !cl || cl.deadline) return;
+    if (this.s.phase !== 'clue' || !cl || cl.deadline || this.s.paused) return;
     this.cancel('lens');
     const lens = cl.who.map((id) => (id in cl.lens ? cl.lens[id] : DEFAULT_LEN_MS));
     const longest = lens.length ? Math.max.apply(null, lens) : DEFAULT_LEN_MS;
@@ -296,7 +306,7 @@ export class Room {
   // player can still re-send, but the clock keeps running.
   gotClear(pid) {
     const cl = this.s.clue;
-    if (this.s.phase !== 'clue' || !cl || !cl.deadline || pid in cl.answers) return;
+    if (this.s.phase !== 'clue' || !cl || !cl.deadline || pid in cl.answers || this.s.paused) return;
     if (Date.now() >= cl.deadline) return;
     if (!cl.clears) cl.clears = {};
     const n = cl.clears[pid] || 0;
@@ -328,7 +338,8 @@ export class Room {
 
   gotAnswer(pid, m) {
     const cl = this.s.clue;
-    if (this.s.phase !== 'clue' || !cl || pid in cl.answers) return;
+    // While paused the clock is stopped, and so is answering.
+    if (this.s.phase !== 'clue' || !cl || pid in cl.answers || this.s.paused) return;
     const tile = this.s.tiles.find((t) => t.c === cl.c && t.r === cl.r);
     const text = normalize(cleanText(m.text, 60));
     cl.answers[pid] = { text, ok: answerMatches(text, tile.answer) };
@@ -343,7 +354,7 @@ export class Room {
   // Time's up (or everyone answered): show the answer and the group's result.
   reveal() {
     const s = this.s, cl = s.clue;
-    if (s.phase !== 'clue' || !cl) return;
+    if (s.phase !== 'clue' || !cl || s.paused) return;
     this.cancel('answer'); this.cancel('lens');
     const tile = s.tiles.find((t) => t.c === cl.c && t.r === cl.r);
     // Who counts: those who answered, plus those who took part and are still here.
@@ -354,6 +365,12 @@ export class Room {
     const points = total ? Math.round(value * correct / total) : 0;
     tile.points = points;
     s.bank += points;
+    // Your Score: the tile's full value (doubled on a Daily Double) for
+    // each one you copy right. Only you see your own (broadcastState).
+    counted.forEach((id) => {
+      const p = s.players.find((x) => x.id === id);
+      if (p && cl.answers[id] && cl.answers[id].ok) p.score = (p.score || 0) + value;
+    });
     s.phase = 'reveal';
     this.save();
     // Each player privately sees what the app read from their own sending.
@@ -361,16 +378,74 @@ export class Room {
       try {
         ws.send(JSON.stringify({
           t: 'reveal', c: cl.c, r: cl.r, dd: tile.dd, answer: tile.answer, correct, total, points, value,
-          bank: s.bank, yours: cl.answers[id] || null
+          bank: s.bank, yours: cl.answers[id] || null, myScore: this.scoreOf(id)
         }));
       } catch (e) {}
     });
     this.broadcastState();
-    this.timer('reveal', REVEAL_MS, () => {
-      s.clue = null;
-      if (s.tiles.every((t) => t.used)) this.gameOver();
-      else this.nextTurn();
-    });
+    this.timer('reveal', REVEAL_MS, () => this.afterReveal());
+  }
+  afterReveal() {
+    const s = this.s;
+    s.clue = null;
+    if (s.tiles.every((t) => t.used)) this.gameOver();
+    else this.nextTurn();
+  }
+  scoreOf(pid) { const p = this.s.players.find((x) => x.id === pid); return (p && p.score) || 0; }
+
+  /* ---------------- pause (host only) ----------------
+     Everything stops where it is: no picks, no reminders, no clock.
+       picking   -> the 30 s reminder starts again on resume
+       clue, while anyone's Morse is still playing (or before it starts)
+                 -> on resume the clue starts again from "Stand by";
+                    anyone who already answered keeps their answer
+       clue, answering -> the clock stops; on resume everyone gets the
+                    time that was left, and keeps what they'd keyed
+       reveal    -> the answer stays up; the rest of its 6 s on resume */
+  pause() {
+    const s = this.s;
+    if (s.paused || ['pick', 'clue', 'reveal'].indexOf(s.phase) < 0) return;
+    const now = Date.now();
+    s.paused = now;
+    s.pausedLeft = s.phase === 'reveal' ? Math.max(1000, ((this.due && this.due.reveal) || now) - now) : 0;
+    ['pick', 'answer', 'lens', 'reveal'].forEach((n) => this.cancel(n));
+    this.save();
+    this.broadcastState();
+  }
+  resume() {
+    const s = this.s;
+    if (!s.paused) return;
+    const now = Date.now(), pausedAt = s.paused, cl = s.clue;
+    s.paused = 0;
+    if (s.phase === 'pick') {
+      this.save(); this.broadcastState(); this.startPickTimer();
+      return;
+    }
+    if (s.phase === 'reveal') {
+      this.save(); this.broadcastState();
+      this.timer('reveal', s.pausedLeft || REVEAL_MS, () => this.afterReveal());
+      return;
+    }
+    if (s.phase !== 'clue' || !cl) { this.save(); this.broadcastState(); return; }
+    if (cl.deadline && pausedAt >= cl.deadline - ANSWER_MS - (cl.ext || 0)) {
+      // Everyone's clue had finished: carry on with the time that was left.
+      cl.deadline += now - pausedAt;
+      this.save();
+      this.broadcastState();
+      this.broadcast({ t: 'deadline', at: cl.deadline, ext: cl.ext });
+      const waiting = cl.who.filter((id) => this.sockets.has(id) && !(id in cl.answers));
+      if (!waiting.length && Object.keys(cl.answers).length) { this.reveal(); return; }
+      this.timer('answer', cl.deadline - now, () => this.reveal());
+      return;
+    }
+    // Someone's Morse was cut off: send the clue again from "Stand by".
+    cl.startAt = now + COUNTDOWN_MS;
+    cl.deadline = null;
+    cl.lens = {};
+    this.save();
+    this.broadcastState();
+    this.sockets.forEach((ws, id) => this.sendClue(ws, id));
+    this.timer('lens', LEN_WAIT_MS, () => this.setDeadline());
   }
 
   // Turn passes to the next player in join order who is still here.
@@ -391,9 +466,10 @@ export class Room {
   // 30 seconds with no pick: if they've left, move on; if they're here,
   // remind them (their app pulses the card and replays their call sign).
   startPickTimer() {
+    if (this.s && this.s.paused) return;   // resume() starts it again
     this.timer('pick', NUDGE_MS, () => {
       const s = this.s;
-      if (!s || s.phase !== 'pick') return;
+      if (!s || s.phase !== 'pick' || s.paused) return;
       const p = s.players[s.turn];
       if (!p || !p.on || p.removed) { this.nextTurn(); return; }
       const ws = this.sockets.get(p.id);
@@ -406,6 +482,7 @@ export class Room {
     const s = this.s;
     // If the player whose turn it is leaves, give them 30 seconds to come back.
     if (s.phase === 'pick' && s.players[s.turn] && s.players[s.turn].id === pid) this.startPickTimer();
+    if (s.paused) return;   // resume() sorts out the clue
     // If everyone left mid-clue is now answered, reveal.
     if (s.phase === 'clue' && s.clue && s.clue.deadline) {
       const waiting = s.clue.who.filter((id) => this.sockets.has(id) && !(id in s.clue.answers));
@@ -423,7 +500,7 @@ export class Room {
       try { ws.send(JSON.stringify({ t: 'kicked' })); ws.close(4003, 'Removed by host'); } catch (e) {}
       this.sockets.delete(pid);
     }
-    if (this.s.phase === 'pick' && this.s.players[this.s.turn] === p) this.nextTurn();
+    if (this.s.phase === 'pick' && this.s.players[this.s.turn] === p && !this.s.paused) this.nextTurn();
     this.save();
     this.broadcastState();
   }
@@ -431,6 +508,7 @@ export class Room {
   gameOver() {
     ['pick', 'answer', 'lens', 'reveal'].forEach((n) => this.cancel(n));
     this.s.phase = 'over';
+    this.s.paused = 0;
     this.s.clue = null;
     this.save();
     this.broadcastState();
@@ -450,6 +528,7 @@ export class Room {
     const cl = s.clue;
     const base = {
       t: 'state', code: s.code, phase: s.phase, hostId: s.hostId, step: s.step, bank: s.bank,
+      paused: s.paused || 0,
       turnId: s.players[s.turn] ? s.players[s.turn].id : null,
       players: s.players.filter((p) => !p.removed).map((p) => ({
         id: p.id, name: p.name, on: p.on,
@@ -466,7 +545,8 @@ export class Room {
       clue: cl ? { c: cl.c, r: cl.r, dd: cl.dd, startAt: cl.startAt, deadline: cl.deadline } : null
     };
     this.sockets.forEach((ws, id) => {
-      try { ws.send(JSON.stringify(Object.assign({ you: id }, base))); } catch (e) {}
+      // myScore goes only to its own player: nobody sees anyone else's.
+      try { ws.send(JSON.stringify(Object.assign({ you: id, myScore: this.scoreOf(id) }, base))); } catch (e) {}
     });
   }
 }
