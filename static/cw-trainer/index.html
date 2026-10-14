@@ -477,6 +477,12 @@
     <label class="check"><input type="checkbox" id="kSidetone"> Sidetone</label>
   </div>
   <p class="kstatus" id="kStatus"></p>
+  <!-- Vail adapter, Chrome/Edge: let the app set the adapter's speed (HST.vailSpeed). -->
+  <div id="kSpeedSync" hidden>
+    <label class="check"><input type="checkbox" id="kSpeedSyncOn"> Set my Vail adapter&rsquo;s speed from the app</label>
+    <p class="hint" id="kSpeedSyncStatus"></p>
+  </div>
+  <p class="hint" id="kFollow" hidden></p>
   <!-- Shown for the Vail adapter only (see renderKeyer). -->
   <p class="hint" id="kVailTip"><strong>Vail adapter tip:</strong> if you&rsquo;ve used vailmorse.com since plugging the adapter in, unplug it and plug it back in. The Vail site switches the adapter to a mode where it stops sending key presses, and it stays that way until it&rsquo;s replugged.</p>
 
@@ -806,6 +812,37 @@
   var decoded = '';
   var rawDown = {};                       // which physical contacts are closed, for the lights
 
+  // When the adapter is doing the keying itself (HST.adapterKeying in
+  // shared/hst-keyer.js), say so: its speed is set in Vail Zoomer, not here.
+  function renderFollow() {
+    var s = HST.keyerSettings.get(), ak = HST.adapterKeying.get(), vs = HST.vailSpeed.state();
+    var on = ak.on && s.adapter !== 'keyboard' && s.keyType !== 'straight';
+    // The speed switch: Vail adapter in Chrome or Edge.
+    $('kSpeedSync').hidden = !(s.adapter === 'vail' && vs.supported);
+    $('kSpeedSyncOn').checked = vs.on;
+    $('kSpeedSyncStatus').textContent = vs.status ||
+      (vs.on ? 'Each tool’s speed setting sets your adapter’s speed while you use it.'
+             : 'Your Vail adapter has its own keyer (Vail Zoomer turns it on and sets its speed). Turn this on and each tool’s speed setting controls it. The browser asks once to use MIDI devices: choose Allow.');
+    $('kFollow').hidden = !on;
+    if (on) $('kFollow').innerHTML = '<strong>Your adapter is doing the keying itself</strong>, at about ' + Math.round(1200 / ak.unitMs) + ' WPM. ' +
+      'The app follows its dits and dahs exactly. ' + (vs.on
+        ? 'It sets the adapter to each tool’s speed when you start sending there.'
+        : (vs.supported ? 'Turn on the switch above to control its speed from the app, or change it in Vail Zoomer.'
+                        : 'This browser can’t set the adapter’s speed: change it in Vail Zoomer, or use Chrome or Edge.'));
+  }
+  HST.adapterKeying.onChange(renderFollow);
+  HST.vailSpeed.onChange(renderFollow);
+  HST.vailSpeedPrefs.onChange(renderFollow);
+  $('kSpeedSyncOn').addEventListener('change', function (e) {
+    if (e.target.checked) {
+      HST.vailSpeed.enable().then(function (ok) {
+        if (ok) HST.vailSpeed.want(HST.keyerSettings.get().wpm, true);   // the speed on this panel, now
+        renderFollow();
+      });
+    } else HST.vailSpeed.disable();
+    renderFollow();
+  });
+
   function renderKeyer(s) {
     $('kAdapter').value = s.adapter;
     $('kInput').value = s.input;
@@ -817,6 +854,7 @@
     // MIDI is a Vail-adapter option, and switched off for now (HST.MIDI_ENABLED).
     $('kInputField').hidden = !HST.MIDI_ENABLED || s.adapter !== 'vail';
     $('kVailTip').hidden = s.adapter !== 'vail';
+    renderFollow();
     $('kReversed').parentNode.style.display = straight ? 'none' : '';
     // For a straight key the speed slider is only the decoder's first guess;
     // it learns the actual speed from the sending.
@@ -952,7 +990,7 @@
     decoder = HST.createDecoder({
       unitMs: function () { return 1200 / HST.keyerSettings.get().wpm; },
       // Learn the sender's own speed when a person times the elements.
-      adaptive: function () { var k = HST.keyerSettings.get().keyType; return k === 'straight' || k === 'bug'; },
+      adaptive: function () { return !HST.keyerAutomatic(); },
       onChar: function (ch) {
         decoded = (decoded + ch).slice(-160);
         renderDecoded();
@@ -1293,12 +1331,11 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-13-trainer-round-4';
+  var RELEASE = '2026-10-14-vail-follow';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
-    '<strong>Keyer: new Warm Up tab.</strong> A daily warm-up that works every letter, number and prosign, by Bob Carter, WR7Q. Each character turns green or red as you send it, and you get a full timing report at your keyer speed when you finish.',
-    '<strong>Car Mode time now counts.</strong> Time spent in ICR Car Mode shows up on the Progress tab as ICR practice. Car Mode also plays X, P, F, L, Y, Q, U and V a little more often.',
-    '<strong>Keyer Free send:</strong> the Timing chart now scrolls to keep up with what you’re sending.',
+    '<strong>Vail adapter fix.</strong> If your Vail adapter does its own keying (Vail Zoomer turns that on), the app now recognizes it and follows the adapter’s dits and dahs exactly, instead of timing them a second time. No more stuttering at slower speeds.',
+    '<strong>Your speed, not the adapter’s.</strong> In Chrome or Edge, turn on <strong>Set my Vail adapter’s speed from the app</strong> in Keyer Setup, and each tool’s speed setting controls your adapter again.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
   var SEEN_KEY = 'hct-cw-seen-release';

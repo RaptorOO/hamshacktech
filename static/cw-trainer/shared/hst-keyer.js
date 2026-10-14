@@ -91,6 +91,137 @@
     };
   });
 
+  /* ADAPTER DOES THE KEYING (Tim, 2026-10-14)
+     A Vail adapter has its own keyer, and Vail Zoomer (or the adapter's
+     own buttons) switches it on and sets its speed; the adapter saves
+     that. Then a held paddle doesn't arrive as one long press but as
+     finished dits and dahs at the ADAPTER's speed (Diagnostics showed a
+     held dah as 210 ms on / 70 ms off, over and over). Timing those again
+     with the app's own keyer garbled them whenever the app was slower.
+     The app can't switch the adapter's keyer off: "passthrough" (MIDI
+     Program Change 0) crashes the current firmware (keyers[0] is NULL in
+     vail-adapter keyers.cpp), freezing it until replugged. So instead the
+     keyer below RECOGNIZES the adapter's keying -- presses exactly 1 or 3
+     units long with exactly 1-unit gaps, which a hand on a paddle doesn't
+     produce -- and from then on simply follows it, like a straight key:
+     tone on while the adapter says "down". The speed is the adapter's.
+     It's remembered (all tools, every launch), and dropped again as soon
+     as a press is too long to be the adapter's (a hand holding a paddle).
+       on       true while the adapter is doing the keying
+       unitMs   the adapter's dit length (its speed = 1200 / unitMs) */
+  HST.adapterKeying = makeStore('hct-cw-adapter-keying-v1', function (o) {
+    return { on: !!o.on, unitMs: Math.round(num(o.unitMs, 15, 300, 80)) };
+  });
+  // True when the app's own keyer makes the dits and dahs (paddles, and
+  // the adapter isn't keying itself). Every tool's timing analysis uses it:
+  // exact element lengths at the tool's speed, or learned from the sending.
+  HST.keyerAutomatic = function () {
+    var k = HST.keyerSettings.get().keyType;
+    return (k === 'iambicA' || k === 'iambicB') && !HST.adapterKeying.get().on;
+  };
+
+  /* SETTING THE ADAPTER'S SPEED (Tim, 2026-10-14)
+     Following the adapter fixes the stutter, but then its speed rules,
+     and each tool's own speed setting would do nothing. So the app sets
+     the adapter's speed to the speed of the tool being used, with the one
+     MIDI command Vail Zoomer uses for that: Control Change 1, dit length
+     in 2 ms steps (B0 01 vv). The firmware only stores the new length
+     (adapter.cpp HandleMIDI, case 1), so this command is safe. The app
+     never sends anything else: Program Change 0 crashes the adapter, and
+     CC 0 would switch it out of keyboard mode.
+     Opt-in (a button in Keyer Setup), Chrome and Edge only (Web MIDI).
+     Sent only when the speed actually needs to change: when you start
+     keying at a different speed than last sent, or when the adapter is
+     heard keying at a speed other than the tool's (Vail Zoomer sets its
+     own speed every time it connects). The port is opened, the command
+     sent, and the port let go of straight away, so Vail Zoomer can still
+     connect to the adapter. Only the top window talks MIDI; tool frames
+     call it there.
+       HST.vailSpeed.enable()        ask for MIDI (after a click) and switch this on
+       HST.vailSpeed.disable()
+       HST.vailSpeed.want(wpm, force)  make the adapter key at wpm
+       HST.vailSpeed.state()         { on, supported, status } ; onChange(fn) */
+  HST.midiSupported = !!navigator.requestMIDIAccess;
+  HST.vailSpeedPrefs = makeStore('hct-cw-vail-speed-v1', function (o) { return { on: !!o.on }; });
+  var topHST = null;
+  try { topHST = window.top !== window && window.top.HST; } catch (e) {}
+  if (topHST && topHST.vailSpeed) {
+    HST.vailSpeed = topHST.vailSpeed;               // a tool inside the app: use the app's
+  } else HST.vailSpeed = (function () {
+    var VAIL_NAME = /vail|qt ?py|trinkey|xiao|seeed|adafruit/i;
+    var access = null, asking = null, lastSent = null, lastAt = 0, status = '', fns = [];
+    function changed(msg) {
+      if (msg != null) status = msg;
+      var s = api.state();
+      fns.forEach(function (fn) { try { fn(s); } catch (e) { console.error(e); } });
+    }
+    // MIDI access, with a time limit: on Tim's PC the Windows MIDI service
+    // once hung, and a request that never answers mustn't block anything.
+    function getAccess() {
+      if (access) return Promise.resolve(access);
+      if (!HST.midiSupported) return Promise.reject(new Error('This browser can’t use MIDI. Chrome and Edge can.'));
+      if (asking) return asking;
+      asking = new Promise(function (resolve, reject) {
+        var t = setTimeout(function () { asking = null; reject(new Error('The browser didn’t answer the MIDI request. Unplug the adapter and plug it back in, then try again.')); }, 8000);
+        navigator.requestMIDIAccess().then(function (a) {
+          clearTimeout(t); asking = null; access = a;
+          a.onstatechange = function (e) { if (e && e.port && e.port.state === 'disconnected') lastSent = null; };
+          resolve(a);
+        }, function (err) {
+          clearTimeout(t); asking = null;
+          reject(new Error('MIDI is blocked for this site. Allow “MIDI devices” in the browser’s site settings, then try again.'));
+        });
+      });
+      return asking;
+    }
+    function adapterPorts(a) {
+      var out = [];
+      a.outputs.forEach(function (p) { if (p.state === 'connected' && VAIL_NAME.test(p.name || '')) out.push(p); });
+      return out;
+    }
+    function send(value) {
+      return getAccess().then(function (a) {
+        var ports = adapterPorts(a);
+        if (!ports.length) throw new Error('No Vail adapter found among the MIDI devices. Is it plugged in?');
+        return Promise.all(ports.map(function (p) {
+          return (p.open ? p.open() : Promise.resolve()).then(function () {
+            p.send([0xB0, 0x01, value]);                      // CC 1: dit length = value x 2 ms
+            setTimeout(function () { try { if (p.close) p.close(); } catch (e) {} }, 400);
+          });
+        }));
+      });
+    }
+    var api = {
+      state: function () { return { on: HST.vailSpeedPrefs.get().on, supported: HST.midiSupported, status: status }; },
+      onChange: function (fn) { fns.push(fn); },
+      enable: function () {
+        changed('Asking the browser for MIDI access… choose Allow if it asks.');
+        return getAccess().then(function () {
+          HST.vailSpeedPrefs.set({ on: true });
+          lastSent = null;
+          changed('The app now sets your adapter’s speed to the speed of the tool you’re using.');
+          return true;
+        }, function (e) { changed(e.message); return false; });
+      },
+      disable: function () { HST.vailSpeedPrefs.set({ on: false }); changed(''); },
+      want: function (wpm, force) {
+        if (!HST.vailSpeedPrefs.get().on || !HST.midiSupported) return;
+        var value = Math.max(1, Math.min(127, Math.round(1200 / Math.max(5, wpm) / 2)));
+        var now = performance.now();
+        if (value === lastSent && !force) return;
+        if (now - lastAt < 1500) return;                     // at most one command every 1.5 s
+        lastAt = now;
+        var prev = lastSent;
+        lastSent = value;
+        send(value).then(function () {
+          HST.adapterKeying.set({ unitMs: value * 2 });
+          changed('Adapter speed set to ' + Math.round(1200 / (value * 2)) + ' WPM.');
+        }, function (e) { lastSent = prev; changed(e.message); });
+      }
+    };
+    return api;
+  })();
+
   // "Experimental features" switch. Off by default; tools still being
   // built stay hidden until a tester turns this on.
   HST.experimental = makeStore('hct-cw-experimental-v1', function (o) { return { on: !!o.on }; });
@@ -287,6 +418,93 @@
       return useMidi ? src === 'midi' : src === 'keyboard';
     }
 
+    /* ---- recognizing an adapter that keys by itself (see HST.adapterKeying) ----
+       Watches the adapter's key presses. Six in a row that are each 1 or 3
+       units long (within ~20%), never overlapping, with at least three
+       1-unit gaps between them, are the adapter's keyer at work. */
+    var watch = { down: {}, presses: [] };
+    function following() {
+      var c = cfg();
+      return HST.adapterKeying.get().on && c.adapter !== 'keyboard' && c.keyType !== 'straight';
+    }
+    function near(x, target, tol) { return x >= target * (1 - tol) && x <= target * (1 + tol); }
+    function looksKeyed(p) {
+      var vals = [], gaps = [], i;
+      for (i = 0; i < p.length; i++) {
+        vals.push(p[i].e - p[i].s);
+        if (i) {
+          var g = p[i].s - p[i - 1].e;
+          if (g < 0) return 0;                       // overlapping presses: a hand
+          gaps.push(g);
+          if (g < 400) vals.push(g);
+        }
+      }
+      var u = Math.min.apply(null, vals);
+      if (!(u >= 15 && u <= 250)) return 0;          // 5 to 80 WPM
+      for (i = 0; i < p.length; i++) {
+        var d = p[i].e - p[i].s;
+        if (!near(d, u, 0.2) && !near(d, 3 * u, 0.15)) return 0;
+      }
+      var unitGaps = gaps.filter(function (g) { return g < 2 * u; });
+      if (unitGaps.length < 3 || !unitGaps.every(function (g) { return near(g, u, 0.25); })) return 0;
+      // The unit: from the key-down lengths (dits as they are, dahs / 3).
+      var sum = 0;
+      for (i = 0; i < p.length; i++) { var dd = p[i].e - p[i].s; sum += near(dd, u, 0.2) ? dd : dd / 3; }
+      return sum / p.length;
+    }
+    function observe(which, down, t) {
+      var c = cfg();
+      if (c.adapter === 'keyboard' || c.keyType === 'straight') return;
+      var other = which === 'dit' ? 'dah' : 'dit';
+      if (down) {
+        // Both paddles down at once never comes from the adapter's keyer.
+        if (watch.down[other] != null && following()) stopFollowing('both paddles held');
+        watch.down[which] = t;
+        // Starting to key: make sure the adapter keys at this tool's speed.
+        if (following()) HST.vailSpeed.want(wantWpm());
+        return;
+      }
+      var s = watch.down[which];
+      delete watch.down[which];
+      if (s == null) return;
+      var ak = HST.adapterKeying.get();
+      if (following()) {
+        var d = t - s;
+        if (d > 6.5 * ak.unitMs) { stopFollowing('a long press'); return; }   // a hand holding the paddle
+        // The adapter's actual speed, from this element (a dit, or a dah / 3).
+        var u = d < 2 * ak.unitMs ? d : d / 3;
+        if (Math.abs(u - ak.unitMs) > 0.12 * ak.unitMs) {
+          watch.offSpeed = (watch.offSpeed || 0) + 1;
+          if (watch.offSpeed >= 2) {                 // keying at another speed (Vail Zoomer set it?)
+            watch.offSpeed = 0;
+            HST.adapterKeying.set({ unitMs: u });
+            HST.vailSpeed.want(wantWpm(), true);
+          }
+        } else watch.offSpeed = 0;
+        return;
+      }
+      watch.presses.push({ s: s, e: t });
+      if (watch.presses.length > 6) watch.presses.shift();
+      if (watch.presses.length < 6) return;
+      var u = looksKeyed(watch.presses);
+      if (u) {
+        watch.presses = [];
+        clearTimeout(st.timer); st.timer = null; st.busy = false;   // stop the app's own element sequence
+        st.dit = st.dah = st.ditMem = st.dahMem = false; st.last = null;
+        sideSilence();
+        HST.adapterKeying.set({ on: true, unitMs: u });
+        if (h.adapterKeying) h.adapterKeying(true, 1200 / u);
+        HST.vailSpeed.want(wantWpm());
+      }
+    }
+    // This tool's sending speed (the QSO and Jeopardy tabs have their own).
+    function wantWpm() { return (h.wpm && h.wpm()) || cfg().wpm; }
+    function stopFollowing(why) {
+      watch.presses = [];
+      HST.adapterKeying.set({ on: false });
+      if (h.adapterKeying) h.adapterKeying(false, null, why);
+    }
+
     function feed(src, which, down, t, detail) {
       var info = { src: src, which: which, down: down, t: t, detail: detail, accepted: accepts(src) };
       // When one press arrives by BOTH routes (a Vail adapter can send
@@ -301,7 +519,21 @@
         }
       }
       if (h.raw) h.raw(info);
-      if (info.accepted) input(which, down, t, src + ':' + which);
+      if (!info.accepted) return;
+      if (src === 'keyboard' && which !== 'straight') {
+        var was = following();
+        observe(which, down, t);
+        // While the adapter keys, its presses ARE the dits and dahs: one
+        // contact, followed exactly. (The press that just switched this on
+        // or off was already handled the other way.)
+        if (was && following()) return manualInput('adapter', down, t);
+        if (!was && following()) return;
+        if (was) {                    // just stopped following: let go of the adapter's contact
+          manualInput('adapter', false, t);
+          if (!down) return;
+        }
+      }
+      input(which, down, t, src + ':' + which);
     }
 
     // h.keyLog (optional): told about EVERY key event, mapped or not, so

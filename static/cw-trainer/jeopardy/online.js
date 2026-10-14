@@ -672,7 +672,8 @@
      You hear only your own sidetone. */
   let keyer = null, decoder = null, downAt = null, endTimer = null;
   function kcfg() { return HST.keyerSettings.get(); }
-  function automatic() { const k = kcfg().keyType; return k === 'iambicA' || k === 'iambicB'; }
+  // The app's keyer makes the elements (paddles, unless the adapter is keying itself).
+  function automatic() { return HST.keyerAutomatic(); }
   // The length of one dit. Paddles and a bug make their dits at
   // Jeopardy's own sending speed (My speed), so read the timing at that
   // speed; with a wrong unit every word space read as a letter space.
