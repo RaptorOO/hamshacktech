@@ -816,7 +816,9 @@
         code += isDah ? '-' : '.';
         var u = unit(), now = performance.now();
         timers.push(setTimeout(endChar, Math.max(0, t + 2 * u - now)));
-        timers.push(setTimeout(function () { endChar(); if (o.onWord) o.onWord(); }, Math.max(0, t + 5 * u - now)));
+        // o.spaceRatio (optional): Farnsworth sending, so a word space is longer.
+        var sr = (o.spaceRatio && o.spaceRatio()) || 1;
+        timers.push(setTimeout(function () { endChar(); if (o.onWord) o.onWord(); }, Math.max(0, t + 5 * u * sr - now)));
       },
       speedWpm: function () { return 1200 / unit(); },
       reset: function () { clearTimers(); code = ''; downT = null; ditEst = dahEst = null; }
@@ -898,7 +900,10 @@
       if (gapU < 2) { intraGaps.push(gapU); continue; }
       chars.push({ code: cur.code, text: HST.decodeSymbol(cur.code), first: cur.first, last: i,
                    start: marks[cur.first].s, end: marks[i].e });
-      if (!last) gaps.push({ after: chars.length - 1, kind: gapU < 5 ? 'char' : 'word', units: gapU });
+      // o.spaceRatio (optional, >= 1): the sender uses Farnsworth spacing,
+      // gaps that much longer than standard, so the letter/word split moves
+      // out by the same factor.
+      if (!last) gaps.push({ after: chars.length - 1, kind: gapU < 5 * (o.spaceRatio || 1) ? 'char' : 'word', units: gapU });
       cur = { code: '', first: i + 1 };
     }
 
