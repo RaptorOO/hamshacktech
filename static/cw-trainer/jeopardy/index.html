@@ -141,6 +141,14 @@
     color: var(--gold);
     text-shadow: 0 2px 0 #5a4300, 0 0 18px rgba(244,211,94,0.45);
   }
+  /* Your Score (online): next to the Group Score, only on your screen. */
+  .bank.mine {
+    margin-left: 10px; min-width: 170px;
+    border-color: var(--lime);
+    box-shadow: 0 0 24px var(--lime-glow), inset 0 1px 0 rgba(255,255,255,0.12);
+  }
+  .bank.mine .bank-label { color: #c6e07a; }
+  .bank.mine .bank-value { color: var(--lime); text-shadow: 0 2px 0 #2a4000, 0 0 18px var(--lime-glow); }
   .hostbar {
     display: flex; flex-wrap: nowrap; align-items: center; justify-content: center;
     gap: 8px 10px;
@@ -222,12 +230,9 @@
     background: linear-gradient(180deg, rgba(255,255,255,0.18), transparent 36%);
     pointer-events: none;
   }
-  .tile:hover:not(.armed):not(.dd-open):not(.dd-face) {
+  body.online .board:not(.locked) .tile:not(.revealed):not(.awarded):hover {
     filter: brightness(1.12);
     box-shadow: 0 8px 18px rgba(0,0,0,0.45), 0 0 22px var(--lime-glow);
-  }
-  .tile.armed, .tile.dd-open, .tile.dd-face {
-    box-shadow: 0 0 0 2px var(--lime), 0 0 22px var(--lime-glow);
   }
   .tile.revealed, .tile.awarded {
     background: linear-gradient(165deg, #163816, #0a1a0a);
@@ -252,49 +257,7 @@
     text-shadow: 0 1px 0 #0a1a40;
     position: relative; z-index: 1;
   }
-  .dd-banner {
-    display: none;
-    position: relative; z-index: 1;
-    font-family: "Russo One", "Oswald", sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-size: clamp(16px, 1.8vw, 26px);
-    line-height: 1.1;
-    color: var(--gold);
-    text-shadow: 0 0 16px rgba(244,211,94,0.55);
-    padding: 8px;
-  }
-  .tile-actions {
-    position: relative; z-index: 2; display: none; flex-direction: column; gap: 4px;
-    padding: 6px; width: 100%; height: 100%; justify-content: center;
-  }
-  .tile.armed .face, .tile.dd-open .face, .tile.dd-face .face { display: none; }
-  .tile.dd-face .dd-banner { display: block; }
-  .tile.armed .tile-actions, .tile.dd-open .tile-actions { display: flex; }
-  .tile.revealed .face, .tile.revealed .tile-actions, .tile.revealed .dd-banner,
-  .tile.awarded .face, .tile.awarded .tile-actions, .tile.awarded .dd-banner { display: none; }
-  .tile-actions button {
-    font-family: "Oswald", sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    font-size: clamp(11px, 1.15vw, 15px);
-    border: 0;
-    border-radius: 6px;
-    padding: 6px 4px;
-    cursor: pointer;
-    color: #142000;
-    background: linear-gradient(180deg, #e8ff7a, var(--lime-deep));
-    box-shadow: 0 2px 0 #4a6a08;
-  }
-  .tile-actions button.reveal {
-    background: linear-gradient(180deg, #ffe9a8, #e0b33a);
-    box-shadow: 0 2px 0 #8a6808; color: #1a1400;
-  }
-  .tile-actions button.award {
-    background: linear-gradient(180deg, #c8ff9a, #5aaa22);
-    box-shadow: 0 2px 0 #2a5a10;
-  }
-  .tile-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .tile.revealed .face, .tile.awarded .face { display: none; }
   .answer {
     display: none;
     position: relative;
@@ -376,7 +339,6 @@
     0%, 100% { transform: scale(0.8); opacity: 0.55; }
     50% { transform: scale(1.25); opacity: 1; }
   }
-  .clue-hint { font-size: 12px; color: rgba(215,231,255,0.55); letter-spacing: 0.06em; }
   /* People who've asked their computer for less motion get a quick fade
      instead of the zoom. */
   @media (prefers-reduced-motion: reduce) {
@@ -454,14 +416,13 @@
 
   /* =================== Online rooms (online.js) =================== */
   [hidden] { display: none !important; }
-  .on-only, .on-only-b, .off-only, .online-ok-only { display: none !important; }
+  .on-only, .on-only-b, .online-ok-only { display: none !important; }
   body.online .on-only { display: inline-flex !important; }
   body.online .on-only[hidden] { display: none !important; }   /* host-only buttons stay hidden for players */
   body.online .on-only-b { display: block !important; }
-  body.online .off-only-b { display: none; }
-  body.online-ok:not(.online) .off-only { display: inline-block !important; }
   body.online-ok .online-ok-only { display: block !important; }
-  body.online #newGame, body.online #stopAudio, body.online #editContent { display: none !important; }
+  body.online #editContent, body.online #barStart { display: none !important; }
+  body.online-ok .online-off-only { display: none !important; }
   .room-chip {
     align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px;
     border: 1px solid rgba(198,240,53,0.4); color: #d5e8c4;
@@ -509,8 +470,7 @@
   .chat-form input { flex: 1; min-width: 0; background: #081208; color: #eaf6dc; border: 1px solid #3d5a22; border-radius: 6px; padding: 6px 8px; font-size: 14px; }
   .chat-form button.btn { padding: 5px 9px; font-size: 13px; }
   .conn-note { color: #ffd27a; font-size: 13px; }
-  .board.locked .tile { cursor: default; }
-  .board.locked .tile:hover { filter: none !important; }
+  .board.locked .tile, body:not(.online) .tile { cursor: default; }
   .tile .pts { font-size: 0.55em; color: var(--gold); margin-top: 4px; text-shadow: none; }
 
   /* Lobby and turn cards sit over the board. */
@@ -543,7 +503,6 @@
 
   /* The clue card, online: countdown ring, your answer, the reveal. */
   .cd, .cd-note, .clue-online, .clue-result { display: none; }
-  .clue.online .clue-hint { display: none; }
   .clue.online.answering .cd { display: grid; }
   .clue.online.answering .cd-note { display: block; }
   .clue.online.answering .clue-online { display: flex; }
@@ -572,8 +531,26 @@
   .sent-label { font-family: "Oswald", sans-serif; letter-spacing: 0.2em; text-transform: uppercase; font-size: 13px; color: #d7e7ff; }
   .sent {
     min-height: 1.4em; width: 100%; padding: 6px 12px; border-radius: 10px; background: rgba(0,0,0,0.3);
-    font-family: "Oswald", sans-serif; font-weight: 700; letter-spacing: 0.12em; font-size: clamp(26px, 3.6vw, 46px); color: var(--lime);
+    font-family: "Oswald", sans-serif; font-weight: 700; letter-spacing: 0; font-size: clamp(26px, 3.6vw, 46px); color: var(--lime);
+    overflow-wrap: anywhere;
   }
+  /* One letter of your answer; online.js sets its margin from the gap
+     you left before it, so the spacing on screen is the spacing you sent. */
+  .sent .sc { display: inline-block; }
+  .sent .sc:first-child { margin-left: 0 !important; }
+
+  /* Paused: a card over the board (both games). */
+  .pause-card {
+    position: absolute; z-index: 7; inset: 8px; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    background: rgba(4,10,4,0.78); backdrop-filter: blur(3px); text-align: center; padding: 16px;
+  }
+  .pause-card .pc-title {
+    font-family: "Russo One", "Oswald", sans-serif; font-size: clamp(44px, 8vw, 96px); letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--gold); text-shadow: 0 0 30px rgba(244,211,94,0.55);
+  }
+  .pause-card .pc-msg { font-family: "Oswald", sans-serif; font-size: clamp(16px, 2vw, 22px); color: #f3ffd4; letter-spacing: 0.04em; }
+  button.btn.paused { background: linear-gradient(180deg, #ffe9a8, #e0b33a); color: #1a1400; box-shadow: 0 2px 0 #8a6808, 0 6px 16px rgba(0,0,0,0.35); }
   .ans-note { font-size: 14px; color: rgba(215,231,255,0.8); }
   .ans-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
   .btn kbd { font-size: 11px; opacity: 0.7; margin-left: 4px; }
@@ -615,13 +592,17 @@
   @keyframes sb-pulse { 50% { box-shadow: 0 0 0 4px rgba(255,90,74,0.45), 0 0 28px rgba(255,90,74,0.7); } }
 
   /* Phones and narrow windows: smaller header, wrapping buttons, a
-     board that fits the width. (Helps the single-device game too.) */
+     board that fits the width. */
   @media (max-width: 760px) {
     .app { grid-template-rows: auto auto minmax(0, 1fr) auto auto; padding: 6px 8px; gap: 6px; }
     header.masthead { height: auto; gap: 10px; }
     .brand-mark, .logo-kicker, .logo-sub, .halo { display: none; }
     .logo h1 { font-size: 20px; }
     .bank { min-width: 0; padding: 4px 12px 2px; }
+    .bank.mine { min-width: 0; margin-left: 6px; }
+    body.online .bank { padding: 4px 8px 2px; }
+    body.online .bank-value { font-size: 24px; }
+    .bank-label { font-size: 9px; letter-spacing: 0.06em; white-space: nowrap; }
     .bank-value { font-size: 28px; }
     .hostbar { height: auto; flex-wrap: wrap; padding: 6px; gap: 6px; }
     button.btn { font-size: 13px; padding: 6px 9px; }
@@ -633,9 +614,7 @@
     .wpm { font-size: 9px; letter-spacing: 0.02em; }
     .answer { font-size: 11px; padding: 2px; }
     .status { height: auto; font-size: 11px; }
-    .status > div:last-child { display: none; }
     .clue { padding: 10px; }
-    .clue-hint { display: none; }
     .turn-card.mine { padding: 14px; }
     .lobby-card { padding: 14px; }
     .lobby-card p { font-size: 14px; }
@@ -691,13 +670,18 @@
       <div class="bank-label">Group Score</div>
       <div class="bank-value" id="bankValue">$0</div>
     </div>
+    <!-- Online: your own score. Only your screen shows it. -->
+    <div class="bank mine on-only-b" title="Only you can see your score">
+      <div class="bank-label">Your Score</div>
+      <div class="bank-value" id="myScoreValue">$0</div>
+    </div>
   </header>
   <div class="hostbar">
-    <button class="btn" id="newGame">New Game</button>
-    <button class="btn ghost" id="stopAudio">Stop Audio</button>
+    <!-- Pause: only the host sees it (online.js) -->
+    <button class="btn ghost" id="pauseBtn" type="button" hidden>Pause</button>
+    <!-- Host mode (?host=1): edit the categories before hosting -->
     <button class="btn ghost host-only" id="editContent">Content</button>
-    <!-- Online play (shown only when the site has online rooms set up) -->
-    <button class="btn ghost off-only" id="barOnline">Play Online</button>
+    <button class="btn" id="barStart" type="button">Host or Join a Game</button>
     <span class="room-chip on-only">Room <b id="roomCode"></b></span>
     <!-- Change your own copy speed mid-game (only you hear it) -->
     <button class="btn ghost on-only" id="mySpeed">My speed</button>
@@ -726,6 +710,12 @@
       <div class="tc-msg" id="turnMsg"></div>
     </div>
     <button class="sound-hint" id="soundHint" type="button" hidden>Tap here to turn on sound</button>
+    <!-- Paused (both games): the host resumes from here or the Pause button -->
+    <div class="pause-card" id="pauseCard" hidden role="status" aria-live="assertive">
+      <div class="pc-title">Paused</div>
+      <div class="pc-msg" id="pauseMsg"></div>
+      <button class="btn big" id="pauseResume" type="button">Resume</button>
+    </div>
     <!-- Clue card that zooms out of the chosen tile (see .clue CSS / openClue JS) -->
     <div class="clue" id="clue" hidden role="status" aria-live="polite" title="Click to hide this card">
       <div class="clue-cat" id="clueCat"></div>
@@ -733,7 +723,6 @@
       <div class="clue-dollars" id="clueDollars"></div>
       <div class="clue-wpm" id="clueWpm"></div>
       <div class="clue-status"><span class="clue-dot"></span><span id="clueText"></span></div>
-      <div class="clue-hint">Host: click to hide · Stop Audio to cancel</div>
       <!-- Online: the 60-second countdown and your keyed answer -->
       <div class="cd" id="cd"><span id="cdNum">60</span></div>
       <div class="cd-note" id="cdNote"></div>
@@ -771,10 +760,7 @@
   </aside>
   </div>
   <div class="status">
-    <div class="off-only-b">Zoom: Share screen + Share sound · group solves together · Daily Double = send CW live</div>
-    <div class="on-only-b">Online room · everyone hears clues on their own device and answers with their key · Daily Double = double points</div>
-    <div>Now: <code id="nowPlaying">idle</code></div>
-  </div>
+    <div>Everyone hears clues on their own device and answers with their key · Daily Double = double points</div>  </div>
   <footer class="brand-foot">
     <a href="https://hamshacktech.com" target="_blank" rel="noopener">hamshacktech.com</a>
     <span class="copyright">Copyright &copy; 2026 Ham Shack Tech LLC</span>
@@ -783,37 +769,36 @@
 
 <div class="modal-back show" id="launchModal">
   <div class="modal">
-    <h2>Host Instructions</h2>
-    <div class="online-intro online-ok-only">
-      <h3>New: play online</h3>
-      <p>Everyone joins from their own CW Trainer, hears each clue on their own device at their own speed, and answers with their key. No Zoom needed.</p>
-      <div class="modal-actions">
-        <button class="btn" id="openHost" type="button">Host Online Game</button>
-        <button class="btn" id="openJoin" type="button">Join Online Game</button>
+    <h2>Morse Code Jeopardy</h2>
+    <div class="online-intro">
+      <p>Everyone joins from their own CW Trainer, hears each clue on their own device at their own speed, and answers with their key. To play by yourself, host a game and start it with just you.</p>
+      <div class="modal-actions online-ok-only">
+        <button class="btn" id="openHost" type="button">Host a Game</button>
+        <button class="btn" id="openJoin" type="button">Join a Game</button>
       </div>
+      <p class="ol-error online-off-only" id="offlineNote">Checking the connection…</p>
     </div>
-    <h3>To share the game on Zoom</h3>
+    <h3>Background</h3>
     <ul>
-      <li>Open Morse Code Jeopardy in a browser window</li>
-      <li>On Zoom, click the Share Screen button at the bottom</li>
-      <li>Select just the Application Window that shows your browser screen with Jeopardy loaded</li>
-      <li>On the right panel, select Share Sound. IF YOU DO NOT DO THIS, PLAYERS WILL NOT BE ABLE TO HEAR CODE!</li>
+      <li>The game was designed not to be competitive as players are at different stages of their morse code journey. It is about having fun.</li>
+      <li>The game displays a Group Score and Your Score. Your score is only visible to you.</li>
     </ul>
     <h3>How to play</h3>
     <ul>
-      <li>THIS GAME IS NOT COMPETITIVE AND INDIVIDUAL PLAYERS ARE NOT SCORED. THIS IS TO HELP OUR GROUP HAVE FUN.</li>
-      <li>Players take turns calling a category and dollar amount.</li>
-      <li>The tile zooms out to fill the screen. After a 3-second countdown you'll hear VVV, then the hidden answer in Morse — up to three times (original speed, then two slower plays).</li>
-      <li>If the group copies it on the first play, click Got it for 100% of the tile. Second play = 50%. Third play = 25%.</li>
-      <li>Each column hides one Daily Double. That player must think of an answer that would be fitting for that category and send it to the group in CW. The group copies live and the tile is scored like other tiles depending on how many times the player has to send the code.</li>
-      <li>After Reveal, click the answer to hear it again.</li>
+      <li>Turns go in the order people joined, host first. When it's yours, you'll see "It's your turn" and hear your call sign in Morse. Pick any tile. After 30 seconds you get a reminder.</li>
+      <li>The tile zooms out to fill the screen. After "Stand by · 3, 2, 1" you hear VVV, then the answer in Morse. Everyone hears it on their own device at their own speed. Each dollar row is a little faster than the one above it.</li>
+      <li>When your clue ends, send the answer with your key: a Vail or VBand adapter, the [ and ] keys, or the DIT and DAH pads on a phone. Your copy appears on the card as you send, with the spacing you sent.</li>
+      <li>When you're done, tap Done, press Enter or send AR. Replay plays the clue again (only you hear it). Clear wipes your answer so you can send it again. The first two times on a clue, Clear gives everyone 15 more seconds.</li>
+      <li>Everyone gets 60 seconds, counted from when the slowest player's clue ends. The answer is shown when time runs out or when everyone has answered.</li>
+      <li>The letters must be exact, but spacing between words isn't marked wrong.</li>
+      <li>The group earns the tile's value times the share of players who copied it. For example, 2 of 4 correct earns half.</li>
+      <li>Your Score, next to the Group Score, adds the full tile value for each one you get right. Only you can see it.</li>
+      <li>Each column hides one Daily Double, worth double points.</li>
+      <li>Use My speed to change your listening and sending speeds during the game.</li>
+      <li>The host can Pause and Resume the game, skip a turn or end the game. While paused, the clock stops. A clue that was still playing starts over from Stand by.</li>
     </ul>
-    <h3>Game settings</h3>
+    <h3>Sound</h3>
     <div class="settings-grid">
-      <div class="setting">
-        <label for="charWpm">Character speed (WPM)</label>
-        <input id="charWpm" type="number" min="10" max="40" step="1" value="25" />
-      </div>
       <div class="setting">
         <label for="tone">Tone (Hz)</label>
         <input id="tone" type="number" min="400" max="900" step="10" value="600" />
@@ -822,17 +807,10 @@
         <label for="volume">Volume (%)</label>
         <input id="volume" type="number" min="0" max="100" step="1" value="90" />
       </div>
-      <div class="setting">
-        <label for="tiers">WPM tiers (5 speeds)</label>
-        <input id="tiers" type="text" value="6, 9, 12, 16, 20" />
-      </div>
-      <div class="setting">
-        <label for="slowSteps">Slower plays</label>
-        <input id="slowSteps" type="text" value="70%, 50%" />
-      </div>
     </div>
+    <p class="small">Your listening and sending speeds are set when you host or join, and with My speed during the game.</p>
     <div class="modal-actions">
-      <button class="btn" id="letsPlay">Let’s Play</button>
+      <button class="btn ghost" id="launchClose" type="button">Close</button>
     </div>
   </div>
 </div>
@@ -843,6 +821,7 @@
     <p>Group Score:</p>
     <div class="go-score" id="gameOverScore">$0</div>
     <p style="font-size:28px;color:var(--lime);margin:10px 0;">Great Job!</p>
+    <p class="on-only-b">Your score: <b id="goMineValue" style="color:var(--lime)">$0</b> <span style="color:var(--muted);font-size:15px">(only you see this)</span></p>
     <p>Post your score on your group's WhatsApp and/or Groups.io account!</p>
     <div class="modal-actions">
       <button class="btn" id="playAgain">New Game</button>
@@ -966,14 +945,6 @@
 <script>
 // Reuse the site's existing square alien-mascot icon (same artwork, already served at the site root)
 const LOGO_SRC = "../icons/apple-touch-icon.png";
-const PLAY_DELAY_SEC = 3;
-// Sent before every answer, like a station's test transmission, so the group
-// hears the code is starting (and at what speed) before the answer itself.
-// "VVV" is sent as one word (letter spacing between the V's), then a normal
-// word space, then the answer.
-const PREAMBLE = "VVV";
-const CLUE_HOLD_MS = 700;      // how long the clue card stays up after the Morse ends
-const DD_CARD_MS = 2600;       // how long the Daily Double card stays up
 const DOLLARS = [200, 400, 600, 800, 1000];
 
 const DEFAULT_CATEGORIES = [
@@ -1258,26 +1229,22 @@ NAME HR IS
 SRI QRM` }
 ];
 
-const ITU = {
-  A:".-", B:"-...", C:"-.-.", D:"-..", E:".", F:"..-.", G:"--.", H:"....",
-  I:"..", J:".---", K:"-.-", L:".-..", M:"--", N:"-.", O:"---", P:".--.",
-  Q:"--.-", R:".-.", S:"...", T:"-", U:"..-", V:"...-", W:".--", X:"-..-",
-  Y:"-.--", Z:"--..",
-  "0":"-----","1":".----","2":"..---","3":"...--","4":"....-","5":".....",
-  "6":"-....","7":"--...","8":"---..","9":"----.",
-  ".":".-.-.-", ",":"--..--", "?":"..--..", "/":"-..-.", "=":"-...-",
-  "+":".-.-.", "-":"-....-", "@":".--.-.", "'":".----.", "!":"-.-.--",
-  "(":"-.--.", ")":"-.--.-", ":":"---...", ";":"-.-.-.", '"':".-..-.",
-  "$":"...-..-", "&":".-...", "_":"..--.-"
-};
-
 const $ = (id) => document.getElementById(id);
 const state = {
   categories: [], board: [], audio: null, host: false,
-  pendingPlay: null, countdown: null, bank: 0,
   clueCell: null,   // the tile the clue card is currently showing (null = card hidden)
-  clueTimer: null   // timer that shrinks the card back into its tile
+  clueTimer: null   // timer that hides the card once it has shrunk into its tile
 };
+
+// The Paused card and the Pause button's label (online.js drives these).
+function showPaused(on, canResume) {
+  $("pauseCard").hidden = !on;
+  $("pauseMsg").textContent = canResume ? "Press Resume to carry on." : "The host paused the game.";
+  $("pauseResume").hidden = !canResume;
+  const b = $("pauseBtn");
+  b.textContent = on ? "Resume" : "Pause";
+  b.classList.toggle("paused", on);
+}
 
 function parseLines(text) {
   return text.split(/\r?\n/).map(s => s.trim()).filter(s => s && !s.startsWith("#"));
@@ -1295,19 +1262,17 @@ function clampInput(el, min, max) {
 function loadSettings() {
   try {
     const raw = JSON.parse(localStorage.getItem("mcj-settings") || "{}");
-    if (raw.charWpm) $("charWpm").value = raw.charWpm;
     if (raw.tone) $("tone").value = raw.tone;
-    if (raw.tiers) $("tiers").value = raw.tiers;
-    if (raw.slowSteps) $("slowSteps").value = raw.slowSteps;
     if (raw.volume != null) $("volume").value = raw.volume;
   } catch {}
 }
 function saveSettings() {
-  localStorage.setItem("mcj-settings", JSON.stringify({
-    charWpm: $("charWpm").value, tone: $("tone").value,
-    tiers: $("tiers").value, slowSteps: $("slowSteps").value,
-    volume: $("volume").value
-  }));
+  try {
+    const raw = JSON.parse(localStorage.getItem("mcj-settings") || "{}");
+    raw.tone = $("tone").value;
+    raw.volume = $("volume").value;
+    localStorage.setItem("mcj-settings", JSON.stringify(raw));
+  } catch {}
 }
 function loadPools() {
   if (state.host) {
@@ -1325,16 +1290,6 @@ function savePools() {
   if (!state.host) return;
   localStorage.setItem("mcj-pools", JSON.stringify(state.categories));
 }
-function parseTiers() {
-  const nums = $("tiers").value.split(/[,\s]+/).map(Number).filter(n => n > 0 && n < 80);
-  if (nums.length !== 5) throw new Error("WPM tiers must be exactly 5 positive numbers.");
-  return nums;
-}
-function parseSlowSteps() {
-  const parts = $("slowSteps").value.split(/[,\s]+/).map(s => s.replace("%","")).map(Number);
-  const fracs = parts.filter(n => n > 0 && n <= 100).map(n => n > 1 ? n / 100 : n);
-  return fracs.length ? fracs.slice(0, 2) : [0.7, 0.5];
-}
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -1344,12 +1299,6 @@ function shuffle(arr) {
   return a;
 }
 function money(n) { return "$" + Math.round(n).toLocaleString("en-US"); }
-function awardFraction(plays) {
-  if (plays <= 1) return 1;
-  if (plays === 2) return 0.5;
-  return 0.25;
-}
-function updateBank() { $("bankValue").textContent = money(state.bank); }
 
 function setHostMode(on) {
   state.host = !!on;
@@ -1364,35 +1313,6 @@ function tryUnlockHost() {
     return;
   }
   setHostMode(false);
-}
-
-function cancelScheduledPlay() {
-  if (state.pendingPlay) { clearTimeout(state.pendingPlay); state.pendingPlay = null; }
-  if (state.countdown) { clearInterval(state.countdown); state.countdown = null; }
-}
-// Play a tile's answer: the clue card zooms out of the tile, counts down
-// "Stand by · 3, 2, 1", then shows "Listen" while VVV + the answer is sent,
-// then shrinks back into the tile so the host can use its buttons.
-function schedulePlay(cell, text, effectiveWpm, label, speedNote) {
-  cancelScheduledPlay();
-  if (state.audio) state.audio.stop();
-  openClue(cell, { wpmText: speedNote || `${effectiveWpm} WPM` });
-  let left = PLAY_DELAY_SEC;
-  const standBy = () => {
-    $("nowPlaying").textContent = `Stand by · ${left}`;
-    setClueStatus(`Stand by · ${left}`, false);
-  };
-  standBy();
-  state.countdown = setInterval(() => {
-    left -= 1;
-    if (left > 0) standBy();
-  }, 1000);
-  state.pendingPlay = setTimeout(() => {
-    cancelScheduledPlay();
-    const ms = state.audio.play(PREAMBLE + " " + text, effectiveWpm, label);
-    setClueStatus("Listen", true);
-    closeClueAfter(ms + CLUE_HOLD_MS);
-  }, PLAY_DELAY_SEC * 1000);
 }
 
 // ---- Clue card (the zoom effect) ----------------------------------------
@@ -1449,10 +1369,6 @@ function setClueStatus(text, listening) {
   $("clueText").textContent = text;
   $("clue").classList.toggle("listening", !!listening);
 }
-function closeClueAfter(ms) {
-  if (state.clueTimer) clearTimeout(state.clueTimer);
-  state.clueTimer = setTimeout(closeClue, ms);
-}
 // Shrink the card back into its tile, then hide it.
 function closeClue() {
   if (state.clueTimer) { clearTimeout(state.clueTimer); state.clueTimer = null; }
@@ -1469,22 +1385,13 @@ function closeClue() {
   });
   setTimeout(done, 600);
 }
-// Hide the card immediately with no animation (New Game, etc.).
+// Hide the card immediately with no animation (leaving a room, etc.).
 function hideClueNow() {
   if (state.clueTimer) { clearTimeout(state.clueTimer); state.clueTimer = null; }
   state.clueCell = null;
   const card = $("clue");
   card.classList.remove("open", "listening");
   card.hidden = true;
-}
-
-function boardFinished() {
-  return state.board.length > 0 && state.board.every(c => c.status === "revealed" || c.awarded);
-}
-function maybeGameOver() {
-  if (!boardFinished()) return;
-  $("gameOverScore").textContent = money(state.bank);
-  $("gameOverModal").classList.add("show");
 }
 
 class MorseAudio {
@@ -1512,14 +1419,6 @@ class MorseAudio {
   }
   setTone(hz) { if (this.osc) this.osc.frequency.setTargetAtTime(hz, this.ctx.currentTime, 0.01); }
   setVolume(v) { if (this.master) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.02); }
-  stop() {
-    if (!this.ctx || !this.toneGain) return;
-    const t = this.ctx.currentTime;
-    this.toneGain.gain.cancelScheduledValues(t);
-    this.toneGain.gain.setTargetAtTime(0, t, 0.01);
-    this.timer++;
-    $("nowPlaying").textContent = "idle";
-  }
   beep(freq, start, dur, level, type) {
     const o = this.ctx.createOscillator(), g = this.ctx.createGain();
     o.type = type || "sine";
@@ -1530,55 +1429,6 @@ class MorseAudio {
     o.connect(g).connect(this.master);
     o.start(start);
     o.stop(start + dur + 0.02);
-  }
-  timings(charWpm, effectiveWpm) {
-    let send = charWpm;
-    if (effectiveWpm >= charWpm) send = effectiveWpm;
-    const tDit = 1.2 / send;
-    let tSpace = tDit;
-    if (effectiveWpm < send) {
-      tSpace = ((60 / effectiveWpm) - 31 * tDit) / 19;
-      if (tSpace < tDit) tSpace = tDit;
-    }
-    return { tDit, tSpace };
-  }
-  play(text, effectiveWpm, label) {
-    this.ensure(); this.stop();
-    const my = ++this.timer;
-    const charWpm = Number($("charWpm").value) || 25;
-    const { tDit, tSpace } = this.timings(charWpm, effectiveWpm);
-    const fade = Math.min(0.004, tDit * 0.35);
-    const level = 0.7;
-    let t = this.ctx.currentTime + 0.04;
-    const g = this.toneGain.gain;
-    g.setValueAtTime(0, t);
-    const words = String(text).toUpperCase().trim().split(/\s+/);
-    for (let w = 0; w < words.length; w++) {
-      const word = words[w];
-      for (let i = 0; i < word.length; i++) {
-        const code = ITU[word[i]];
-        if (!code) continue;
-        for (let k = 0; k < code.length; k++) {
-          const dur = code[k] === "-" ? 3 * tDit : tDit;
-          g.setValueAtTime(0, t);
-          g.linearRampToValueAtTime(level, t + fade);
-          g.setValueAtTime(level, t + dur - fade);
-          g.linearRampToValueAtTime(0, t + dur);
-          t += dur;
-          if (k < code.length - 1) t += tDit;
-        }
-        if (i < word.length - 1) t += 3 * tSpace;
-      }
-      if (w < words.length - 1) t += 7 * tSpace;
-    }
-    t += 0.15;
-    $("nowPlaying").textContent = `${label} · ${effectiveWpm} WPM effective · char ${charWpm}`;
-    const endMs = Math.max(0, (t - this.ctx.currentTime) * 1000);
-    setTimeout(() => {
-      if (this.timer !== my) return;
-      $("nowPlaying").textContent = "idle";
-    }, endMs);
-    return endMs;   // length of the whole transmission, in ms
   }
   revealSting() {
     this.ensure();
@@ -1596,34 +1446,14 @@ class MorseAudio {
   }
 }
 
-function newGame() {
-  saveSettings();
-  cancelScheduledPlay();
-  state.audio && state.audio.stop();
-  hideClueNow();
-  $("gameOverModal").classList.remove("show");
-  let tiers;
-  try { tiers = parseTiers(); } catch (e) { alert(e.message); return; }
-  const rows = tiers.length, next = [];
-  const ddRowByCat = state.categories.map(() => Math.floor(Math.random() * rows));
-  for (let c = 0; c < state.categories.length; c++) {
-    const pool = parseLines(state.categories[c].lines);
-    if (pool.length < rows) {
-      alert(`Category “${state.categories[c].name}” has ${pool.length} usable lines; need at least ${rows}.`);
-      return;
-    }
-    const pick = shuffle(pool).slice(0, rows);
-    for (let r = 0; r < rows; r++) {
-      next.push({
-        cat: c, row: r, wpm: tiers[r], dollars: DOLLARS[r] || (r + 1) * 200,
-        answer: pick[r], slowUsed: 0, plays: 0, status: "idle",
-        dailyDouble: ddRowByCat[c] === r, awarded: 0
-      });
-    }
-  }
-  state.board = next;
-  state.bank = 0;
-  updateBank();
+// The board behind the start screen, before you're in a room: the
+// categories and dollar rows, nothing to click.
+function showIdleBoard() {
+  state.board = [];
+  state.categories.slice(0, 6).forEach((cat, c) => DOLLARS.forEach((dollars, r) => {
+    state.board.push({ cat: c, row: r, dollars, wpm: "", answer: "", status: "idle" });
+  }));
+  $("bankValue").textContent = money(0);
   renderBoard();
 }
 
@@ -1663,135 +1493,25 @@ function renderTile(cell) {
   el.className = "tile " + (cell.awarded ? "awarded" : cell.status);
   el.dataset.cat = cell.cat;   // lets the clue card find this tile again
   el.dataset.row = cell.row;
-  const catName = state.categories[cell.cat].name;
-  const fracNow = awardFraction(Math.max(1, cell.plays));
   el.innerHTML = `
     <div class="face">
       <div class="dollars">${money(cell.dollars)}</div>
-      <div class="wpm">${cell.wpm} WPM</div>
+      <div class="wpm">${cell.wpm ? cell.wpm + " WPM" : ""}</div>
     </div>
-    <div class="dd-banner">Daily Double</div>
-    <div class="tile-actions"></div>
     <div class="answer"></div>`;
-  const actions = el.querySelector(".tile-actions");
-  if (cell.dailyDouble && cell.status === "dd-open") {
-    actions.innerHTML = `
-      <button type="button" class="award" data-act="award1">Got it · ${money(cell.dollars)}</button>
-      <button type="button" class="award" data-act="award2">2nd try · ${money(cell.dollars * 0.5)}</button>
-      <button type="button" class="award" data-act="award3">3rd try · ${money(cell.dollars * 0.25)}</button>
-      <button type="button" class="reveal" data-act="pass">Pass</button>`;
-  } else if (!cell.dailyDouble) {
-    actions.innerHTML = `
-      <button type="button" data-act="slower">Play Slower</button>
-      <button type="button" class="award" data-act="award">${"Got it · " + money(cell.dollars * fracNow)}</button>
-      <button type="button" class="reveal" data-act="reveal">Reveal</button>`;
+  if (!(window.Online && Online.active)) return el;   // the idle board
+  // In a room (online.js): a played tile shows its answer and points,
+  // and the room decides what a click does.
+  if (cell.onlineUsed) {
+    const ans = el.querySelector(".answer");
+    ans.append(cell.answer.toUpperCase());
+    const pts = document.createElement("div");
+    pts.className = "pts";
+    pts.textContent = "+" + money(cell.onlinePoints || 0) + (cell.onlineDd ? " · DD" : "");
+    ans.appendChild(pts);
   }
-  const ans = el.querySelector(".answer");
-  if (cell.dailyDouble && (cell.status === "revealed" || cell.awarded)) {
-    ans.textContent = cell.awarded ? money(cell.awarded) : "—";
-  } else {
-    ans.textContent = cell.answer.toUpperCase();
-  }
-  const slower = el.querySelector("[data-act=slower]");
-  if (slower && cell.slowUsed >= parseSlowSteps().length) slower.disabled = true;
-
-  // Online rooms (online.js): the room decides what a click does.
-  if (window.Online && Online.active) {
-    if (cell.onlineUsed) {
-      el.querySelector(".answer").innerHTML = "";
-      el.querySelector(".answer").append(cell.answer.toUpperCase());
-      const pts = document.createElement("div");
-      pts.className = "pts";
-      pts.textContent = "+" + money(cell.onlinePoints || 0) + (cell.onlineDd ? " · DD" : "");
-      el.querySelector(".answer").appendChild(pts);
-    }
-    el.addEventListener("click", () => Online.tileClicked(cell));
-    return el;
-  }
-  el.addEventListener("click", (e) => {
-    const act = e.target.getAttribute && e.target.getAttribute("data-act");
-    if (act === "slower") { e.stopPropagation(); playSlower(cell); return; }
-    if (act === "reveal") { e.stopPropagation(); reveal(cell); return; }
-    if (act === "award") { e.stopPropagation(); award(cell, cell.plays || 1); return; }
-    if (act === "award1") { e.stopPropagation(); award(cell, 1); return; }
-    if (act === "award2") { e.stopPropagation(); award(cell, 2); return; }
-    if (act === "award3") { e.stopPropagation(); award(cell, 3); return; }
-    if (act === "pass") { e.stopPropagation(); passDD(cell); return; }
-    if (cell.status === "revealed" || cell.awarded) {
-      if (!cell.dailyDouble) schedulePlay(cell, cell.answer, cell.wpm, catName);
-      return;
-    }
-    if (cell.status === "idle") firstPlay(cell);
-    else if (cell.status === "dd-face") openDDControls(cell);
-  });
+  el.addEventListener("click", () => Online.tileClicked(cell));
   return el;
-}
-
-function firstPlay(cell) {
-  if (cell.dailyDouble) {
-    cell.status = "dd-face";
-    $("nowPlaying").textContent = "Daily Double";
-    state.audio.dailyDoubleSting();
-    renderBoard();
-    // Same zoom for a Daily Double, showing "Daily Double" instead of a
-    // countdown (no Morse plays: the player sends live).
-    openClue(cell, { dd: true, wpmText: `${cell.wpm} WPM` });
-    closeClueAfter(DD_CARD_MS);
-    return;
-  }
-  cell.status = "armed";
-  cell.plays = 1;
-  renderBoard();
-  schedulePlay(cell, cell.answer, cell.wpm, state.categories[cell.cat].name);
-}
-function openDDControls(cell) {
-  cell.status = "dd-open";
-  renderBoard();
-}
-function playSlower(cell) {
-  const steps = parseSlowSteps();
-  if (cell.slowUsed >= steps.length) return;
-  const speed = Math.max(3, Math.round(cell.wpm * steps[cell.slowUsed] * 10) / 10);
-  cell.slowUsed += 1;
-  cell.plays += 1;
-  renderBoard();
-  schedulePlay(cell, cell.answer, speed, state.categories[cell.cat].name + " slower",
-               `Slower · ${speed} WPM`);
-}
-function reveal(cell) {
-  cell.status = "revealed";
-  state.audio.revealSting();
-  renderBoard();
-  maybeGameOver();
-}
-function award(cell, plays) {
-  if (cell.awarded) return;
-  const frac = awardFraction(plays);
-  cell.awarded = Math.round(cell.dollars * frac);
-  cell.plays = plays;
-  state.bank += cell.awarded;
-  cell.status = "revealed";
-  updateBank();
-  state.audio.revealSting();
-  renderBoard();
-  maybeGameOver();
-}
-function passDD(cell) {
-  cell.status = "revealed";
-  cell.awarded = 0;
-  renderBoard();
-  maybeGameOver();
-}
-
-function openLaunch() {
-  $("gameOverModal").classList.remove("show");
-  $("launchModal").classList.add("show");
-}
-function launchGame() {
-  saveSettings();
-  $("launchModal").classList.remove("show");
-  $("gameOverModal").classList.remove("show");
-  newGame();
 }
 
 function openContent() {
@@ -1814,11 +1534,10 @@ function saveContentFromEditor() {
   const next = areas.map((ta, i) => ({
     id: state.categories[i].id, name: state.categories[i].name, lines: ta.value
   }));
-  const tiers = parseTiers();
-  const bad = next.find(c => parseLines(c.lines).length < tiers.length);
+  const bad = next.find(c => parseLines(c.lines).length < DOLLARS.length);
   const err = $("contentError");
   if (bad) {
-    err.textContent = `“${bad.name}” needs at least ${tiers.length} answers.`;
+    err.textContent = `“${bad.name}” needs at least ${DOLLARS.length} answers.`;
     err.classList.add("show");
     return;
   }
@@ -1835,10 +1554,88 @@ function saveContentFromEditor() {
   img.src = LOGO_SRC;
 })();
 
+// ---- Practice time (the CW Trainer's Progress tab) ------------------------
+// Time spent playing is saved as a Practice History session with trainer
+// 'jeopardy' and mode 'online' (see HST.history in shared/hst-engine.js).
+// Only time actually playing counts: the Jeopardy tab on screen and a game
+// under way in your room, not paused. A session ends when the game ends,
+// you leave the room, you switch tabs (the app shell calls
+// HSTJeopardy.endPractice) or close the app.
+const PRACTICE_TICK_MS = 5000;
+const PRACTICE_MIN_MS = 15000;              // shorter than this isn't worth a row
+const PRACTICE_DRAFT = "hct-cw-run-jeopardy";
+const practice = { rec: null, lastTick: 0 };
+function practiceMode() {
+  const st = window.Online && Online.active && Online.st;
+  return st && !st.paused && ["pick", "clue", "reveal"].indexOf(st.phase) >= 0 ? "online" : null;
+}
+function practiceVisible() {
+  if (document.hidden) return false;
+  try { if (window.frameElement && window.frameElement.hidden) return false; } catch (e) {}
+  return true;
+}
+function practiceTick() {
+  const now = Date.now();
+  const mode = practiceVisible() ? practiceMode() : null;
+  if (!mode) { practice.lastTick = 0; return; }
+  if (!practice.rec) {
+    practice.rec = { trainer: "jeopardy", uid: HST.history.newUid(), mode, start: now, end: now, durationMs: 0,
+                     charsTotal: 0, charsCorrect: 0, clues: 0, right: 0, score: 0 };
+  }
+  if (practice.lastTick) practice.rec.durationMs += Math.min(now - practice.lastTick, 2 * PRACTICE_TICK_MS);
+  practice.rec.end = now;
+  practice.lastTick = now;
+  try { localStorage.setItem(PRACTICE_DRAFT, JSON.stringify(practice.rec)); } catch (e) {}
+}
+// A clue played: whether you copied it, and your score so far.
+function practiceNote(n) {
+  practiceTick();
+  const r = practice.rec;
+  if (!r) return;
+  r.clues += n.clues || 0;
+  r.right += n.right || 0;
+  if (n.score != null) r.score = n.score;
+}
+function practiceSave(r) {
+  if (!r || r.durationMs < PRACTICE_MIN_MS) {
+    try { localStorage.removeItem(PRACTICE_DRAFT); } catch (e) {}
+    return;
+  }
+  const clearDraft = () => {
+    try {
+      const d = JSON.parse(localStorage.getItem(PRACTICE_DRAFT) || "null");
+      if (!d || d.start === r.start) localStorage.removeItem(PRACTICE_DRAFT);
+    } catch (e) {}
+  };
+  // The uid makes this safe to repeat: if the app closed after saving but
+  // before the backup copy was cleared, the next open doesn't add it twice.
+  try {
+    HST.history.all()
+      .then((rows) => rows.some((x) => x.uid === r.uid) ? null : HST.history.add(r))
+      .then(clearDraft, () => {});
+  } catch (e) {}
+}
+function practiceEnd() {
+  practiceTick();
+  const r = practice.rec;
+  practice.rec = null;
+  practice.lastTick = 0;
+  practiceSave(r);
+}
+// A session cut off by closing the app is saved the next time Jeopardy opens.
+try {
+  const left = JSON.parse(localStorage.getItem(PRACTICE_DRAFT) || "null");
+  if (left && left.trainer === "jeopardy") practiceSave(left);
+} catch (e) {}
+setInterval(practiceTick, PRACTICE_TICK_MS);
+window.addEventListener("pagehide", practiceEnd);
+window.HSTJeopardy = { endPractice: practiceEnd };
+
 state.audio = new MorseAudio();
 tryUnlockHost();
 loadSettings();
 loadPools();
+showIdleBoard();
 
 // Your key's sidetone (online answers) uses this game's tone and volume too.
 // (HST.shared here is Jeopardy's own copy; the other tools aren't touched.)
@@ -1856,25 +1653,12 @@ $("volume").addEventListener("change", () => {
   state.audio.setVolume(volumeLevel());
   saveSettings(); syncSidetone();
 });
-$("charWpm").addEventListener("change", () => {
-  clampInput($("charWpm"), 10, 40);
-  saveSettings();
-});
-["tiers","slowSteps"].forEach(id => $(id).addEventListener("change", saveSettings));
-$("letsPlay").addEventListener("click", launchGame);
-$("newGame").addEventListener("click", openLaunch);
-$("playAgain").addEventListener("click", openLaunch);
-$("stopAudio").addEventListener("click", () => {
-  if (window.Online && Online.active) return;   // an online clue is run by the room
-  cancelScheduledPlay();
-  state.audio.stop();
-  $("nowPlaying").textContent = "idle";
-  closeClue();
-});
-// Clicking the clue card hides it early (the Morse keeps playing).
-$("clue").addEventListener("click", () => { if (!(window.Online && Online.active)) closeClue(); });
 // Keep the card filling the board if the window is resized while it's up.
 window.addEventListener("resize", () => { if (state.clueCell) placeClue(fullRect()); });
+// Pause / Resume: the host's; the room pauses everyone.
+function togglePause() { if (window.Online && Online.active) Online.togglePause(); }
+$("pauseBtn").addEventListener("click", togglePause);
+$("pauseResume").addEventListener("click", togglePause);
 $("editContent").addEventListener("click", openContent);
 $("closeContent").addEventListener("click", () => $("contentModal").classList.remove("show"));
 $("saveContent").addEventListener("click", saveContentFromEditor);

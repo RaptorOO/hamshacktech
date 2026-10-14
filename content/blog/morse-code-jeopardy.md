@@ -9,6 +9,15 @@ featureimage: "img/blog/morse-code-jeopardy/01-morse-code-jeopardy-board.png"
 showHero: false # see note in guides/vail-zoomer-zoom-setup.md
 ---
 
+{{< alert "circle-info" >}}
+**Update, October 2026:** Morse Code Jeopardy is now played online inside the
+[CW Trainer](/cw-trainer/?tab=jeopardy), and Zoom is no longer needed. Everyone
+joins a room from their own device, hears each clue at their own speed,
+answers with their own key and chats in the game. You can also host a game
+and play on your own. The screen-share version described below has been
+retired.
+{{< /alert >}}
+
 If you practice CW with a group on Zoom, you've been here. The canned QSO:
 name, QTH, rig, antenna, weather, 73. Then "tell us what you're having for
 dinner." Then "send us your favorite car ever." And on and on it goes. None

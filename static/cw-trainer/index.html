@@ -688,8 +688,9 @@
     } else if (slug === 'qso') {
       clickIfVisible('endQsoBtn');       // QSO: stop the contact (it goes to the copy check)
     } else if (slug === 'jeopardy') {
-      var stop = doc.getElementById('stopAudio');   // Jeopardy's own Stop Audio
-      if (stop) stop.click();
+      // The room keeps going (you're still in it); save the time played
+      // so far to Practice History (Progress).
+      try { frame.contentWindow.HSTJeopardy.endPractice(); } catch (e) {}
     }                                    // (Progress has nothing to stop)
   }
 
