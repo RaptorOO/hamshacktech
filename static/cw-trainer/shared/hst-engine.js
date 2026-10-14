@@ -369,7 +369,7 @@
      and survives restarts). Nothing leaves the device.
 
      A session record looks like:
-       { trainer: 'icr' | 'code-groups' | 'keyer' | 'qso' | 'jeopardy' | 'manual',
+       { trainer: 'icr' | 'code-groups' | 'keyer' | 'qso' | 'test-prep' | 'jeopardy' | 'manual',
          start, end, durationMs,            // wall-clock times (ms)
          group, wpm, fwpm, groupSize,       // what was practiced, at what speed
          rounds, roundsCorrect, timeouts,   // ICR: 1 character per round
@@ -387,6 +387,10 @@
      Jeopardy records (jeopardy/index.html) are time played in an online
      room: mode ('online'), clues, right (copied correctly) and score
      (Your Score at the end).
+     Test Prep records (test-prep/index.html) are one practice CW Academy
+     placement test each: format ('full' | 'quick'), questions, answered,
+     right, score (%), passed, completed (false if quit part-way),
+     replays, and items [{ cat, sent, picked, ok, ms }].
      Manual records are practice added by hand on the Progress tab:
      kind ('zoom' | 'on-air' | 'other'), dateOnly (true when added for an
      earlier day), and only the time fields above.

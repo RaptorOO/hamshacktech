@@ -21,6 +21,7 @@ Everything for CW practice now lives in one free app: the **HamShackTech CW Trai
     <li><strong>Code Groups</strong>: head copy of character groups, common words, QSO elements and call signs, with Farnsworth spacing and a replay after each miss.</li>
     <li><strong>Keyer</strong>: sending practice with your own key through a Vail or VBand adapter (or the on-screen paddles), with your speed, spacing and timing measured.</li>
     <li><strong>QSO</strong>: work a complete contact (standard, POTA, SOTA or a CWops CWT) with a virtual station, using your key. Set separate copy and sending speeds.</li>
+    <li><strong>Test Prep</strong>: practice the CW Academy placement test for Intermediate. Hear a call sign or short phrase at 25 WPM (Farnsworth 10), pick it from 4 choices, and see if you reach the 80% pass mark.</li>
     <li><strong>Progress</strong>: your practice time, day streaks, accuracy and speed trends, and the characters you miss most.</li>
     <li><strong>Jeopardy</strong>: Morse Code Jeopardy for CW groups. Play online with up to 20 people, or on your own, each hearing the clues at their own speed and answering with their key. Everyone builds one group score together.</li>
   </ul>

@@ -94,18 +94,19 @@
   .tab:hover { color: var(--text); }
   .tab { flex: none; white-space: nowrap; }
   .tab .narrow { display: none; }      /* "Stats" replaces "Progress" on phones */
-  /* Six tabs: if a small screen can't fit them, the tab row scrolls
+  /* Seven tabs: if a small screen can't fit them, the tab row scrolls
      sideways rather than pushing the gear off the screen. */
   .tabs { min-width: 0; overflow-x: auto; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
   .tab[aria-selected="true"] { background: var(--lime); color: var(--lime-ink); }
   /* The selected tab takes that trainer's color from the Progress tab, so
      each trainer has one color everywhere: ICR lime, Code Groups emerald,
-     Keyer amber, QSO pink. (Progress and Jeopardy stay lime.) */
+     Keyer amber, QSO pink, Test Prep orange. (Progress and Jeopardy stay lime.) */
   #tab-icr[aria-selected="true"]         { background: #a3e635; }   /* lime-400 */
   #tab-code-groups[aria-selected="true"] { background: #34d399; }   /* emerald-400 */
   #tab-keyer[aria-selected="true"]       { background: #fbbf24; }   /* amber-400 */
   #tab-qso[aria-selected="true"]         { background: #f472b6; }   /* pink-400 */
+  #tab-test-prep[aria-selected="true"]   { background: #fb923c; }   /* orange-400 */
   .tab:focus-visible, .install:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 
   .spacer { flex: 1; }
@@ -388,6 +389,8 @@
             aria-controls="frame-keyer" aria-selected="false">Keyer</button>
     <button class="tab" role="tab" id="tab-qso" data-tab="qso"
             aria-controls="frame-qso" aria-selected="false">QSO</button>
+    <button class="tab" role="tab" id="tab-test-prep" data-tab="test-prep"
+            aria-controls="frame-test-prep" aria-selected="false">Test<span class="long"> Prep</span></button>
     <button class="tab" role="tab" id="tab-progress" data-tab="progress"
             aria-controls="frame-progress" aria-selected="false"><span class="wide">Progress</span><span class="narrow">Stats</span></button>
     <button class="tab" role="tab" id="tab-jeopardy" data-tab="jeopardy"
@@ -632,6 +635,8 @@
           title="Keyer Practice" data-src="keyer/" hidden></iframe>
   <iframe id="frame-qso" role="tabpanel" aria-labelledby="tab-qso"
           title="QSO Practice" data-src="qso/" hidden></iframe>
+  <iframe id="frame-test-prep" role="tabpanel" aria-labelledby="tab-test-prep"
+          title="Test Prep" data-src="test-prep/" hidden></iframe>
   <iframe id="frame-progress" role="tabpanel" aria-labelledby="tab-progress"
           title="Progress" data-src="progress/" hidden></iframe>
   <iframe id="frame-jeopardy" role="tabpanel" aria-labelledby="tab-jeopardy"
@@ -693,6 +698,9 @@
       clickIfVisible('endBtn');          // Keyer Practice: save the session to Progress
     } else if (slug === 'qso') {
       clickIfVisible('endQsoBtn');       // QSO: stop the contact (it goes to the copy check)
+    } else if (slug === 'test-prep') {
+      // Stop the code; the question waits with a Play button.
+      try { frame.contentWindow.HSTTestPrep.pause(); } catch (e) {}
     } else if (slug === 'jeopardy') {
       // The room keeps going (you're still in it); save the time played
       // so far to Practice History (Progress).
@@ -745,10 +753,10 @@
     });
   });
 
-  // Which tab to open: a ?tab=icr / code-groups / progress / jeopardy link (the CW
+  // Which tab to open: a ?tab=icr / code-groups / test-prep / progress / jeopardy link (the CW
   // Tools page and the old trainer addresses use these) wins; otherwise
   // the tab used last time; ICR the very first time.
-  var TABS = ['icr', 'code-groups', 'keyer', 'qso', 'progress', 'jeopardy'];
+  var TABS = ['icr', 'code-groups', 'keyer', 'qso', 'test-prep', 'progress', 'jeopardy'];
   var params = new URLSearchParams(location.search);
   var wanted = params.get('tab');
   // Jeopardy's host mode (the Content editor) is turned on with host=1;
@@ -1331,13 +1339,11 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-14-round-5';
+  var RELEASE = '2026-10-14-test-prep';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
-    '<strong>Jeopardy: separate copying and sending speeds.</strong> The setup screen and My speed now have a Copying group and a Sending group, and sending has its own <strong>Farnsworth</strong> setting: if you leave extra space between letters, your gaps aren’t read as word breaks.',
-    '<strong>Jeopardy: CORRECT or INCORRECT</strong> now shows big, in green or red, when each clue is revealed.',
-    '<strong>Warm Up time always counts.</strong> A warm-up is saved to Progress even if you close the app part-way through (it could be lost before).',
-    '<strong>Vail adapter:</strong> in Safari, the Keyer tab now says to change your adapter’s speed in Vail Zoomer (Safari can’t set it from the app).',
+    '<strong>New: Test Prep.</strong> Practice the CW Academy placement test that moves you from Fundamental to Intermediate. Each question sends a call sign or a short word or phrase at 25 WPM (Farnsworth 10 WPM), then you pick what you heard from 4 choices. 80% passes.',
+    'See your score right away, hear any question again, and take another test with new questions. A chart shows your scores over time, and each test counts on the Progress tab.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
   var SEEN_KEY = 'hct-cw-seen-release';

@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Prep — HamShackTech CW Trainer</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+  /* Same avocado palette as the app shell and the other tabs. Test Prep's
+     own color (orange-400) is its tab and Progress color. */
+  :root {
+    --bg: #100e0c;
+    --panel: #1c1917;      /* stone-900 */
+    --well: #292524;       /* stone-800 */
+    --border: #44403c;     /* stone-700 */
+    --grid: #2f2a27;
+    --text: #fafaf9;       /* stone-50 */
+    --muted: #a8a29e;      /* stone-400 */
+    --dim: #78716c;        /* stone-500 */
+    --lime: #a3e635;       /* lime-400 */
+    --lime-ink: #1a2e05;
+    --tp: #fb923c;         /* orange-400: Test Prep */
+    --good: #4ade80;       /* green-400 */
+    --bad: #f87171;        /* red-400 */
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.5 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 22px 18px 56px; }
+  button, input, select { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 16px; }
+  h1 { margin: 0; font: 600 1.9rem/1.1 'Oswald', sans-serif; letter-spacing: 0.02em; }
+  .head .sub { color: var(--muted); font-size: 0.9rem; }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+  .card h2 { margin: 0 0 12px; font: 600 1.05rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+  .label { color: var(--dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
+  .hint { color: var(--dim); font-size: 0.82rem; line-height: 1.5; margin: 6px 0 0; }
+  .desc { color: var(--muted); font-size: 0.9rem; margin: 0 0 14px; }
+  .desc b { color: var(--text); font-weight: 500; }
+
+  /* ---------- setup ---------- */
+  .choices { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end; margin-bottom: 14px; }
+  .seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--well); border: 1px solid var(--border); border-radius: 9px; }
+  .seg button { border: 0; border-radius: 6px; padding: 7px 14px; background: transparent; color: var(--muted); font: 500 0.88rem/1 'Inter', sans-serif; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--tp); color: #431407; }
+  .group .label { display: block; margin-bottom: 5px; }
+  .check { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 0.88rem; cursor: pointer; }
+  .check input { width: 16px; height: 16px; margin: 0; accent-color: var(--tp); }
+  .checks { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-bottom: 14px; }
+  .speeds { border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px 12px; margin: 0 0 14px; }
+  .speeds legend { padding: 0 6px; }
+  .speed-row { display: grid; grid-template-columns: 210px 1fr 70px; gap: 12px; align-items: center; padding: 5px 0; }
+  .speed-row label { color: var(--text); font-size: 0.9rem; }
+  .speed-row label span { color: var(--dim); font-size: 0.82rem; }
+  .speed-row input[type="range"] { width: 100%; accent-color: var(--tp); }
+  .speed-row output { font: 500 0.92rem 'JetBrains Mono', monospace; color: var(--tp); text-align: right; }
+  select { width: 100%; padding: 8px 10px; background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 7px; font-size: 0.95rem; }
+  .linkbtn { background: none; border: 0; padding: 0; color: var(--tp); font: inherit; font-size: 0.82rem; cursor: pointer; text-decoration: underline; }
+
+  .btn { border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; background: var(--well); color: var(--text); font: 500 0.9rem/1 'Inter', sans-serif; cursor: pointer; }
+  .btn:hover { border-color: var(--tp); }
+  .btn.primary { background: var(--tp); border-color: var(--tp); color: #431407; }
+  .btn.big { padding: 11px 22px; font-size: 1rem; }
+  .btn:disabled { opacity: 0.45; cursor: default; }
+  .btn kbd { font: 0.75rem 'JetBrains Mono', monospace; color: var(--dim); margin-left: 6px; }
+  .btn.primary kbd { color: #431407; opacity: 0.7; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+  /* ---------- the test ---------- */
+  .qhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .qhead h2 { margin: 0; }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--well); border: 1px solid var(--border); }
+  .dot.now { border-color: var(--tp); box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.35); }
+  .dot.done { background: var(--dim); border-color: var(--dim); }
+  .dot.ok { background: var(--good); border-color: var(--good); }
+  .dot.no { background: var(--bad); border-color: var(--bad); }
+  .listen { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 64px; margin: 4px 0 14px;
+            color: var(--muted); font-size: 1rem; }
+  .wave { display: inline-flex; gap: 4px; align-items: center; height: 26px; }
+  .wave i { display: block; width: 5px; height: 8px; border-radius: 3px; background: var(--tp); opacity: 0.35; }
+  .playing .wave i { animation: bounce 0.9s ease-in-out infinite; opacity: 1; }
+  .playing .wave i:nth-child(2) { animation-delay: 0.15s; } .playing .wave i:nth-child(3) { animation-delay: 0.3s; }
+  .playing .wave i:nth-child(4) { animation-delay: 0.45s; } .playing .wave i:nth-child(5) { animation-delay: 0.6s; }
+  @keyframes bounce { 0%, 100% { height: 8px; } 50% { height: 26px; } }
+  @media (prefers-reduced-motion: reduce) { .playing .wave i { animation: none; height: 18px; } }
+  .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .answer {
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 64px;
+    background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 12px;
+    font: 600 1.35rem/1.1 'JetBrains Mono', monospace; letter-spacing: 0.08em; text-align: left; cursor: pointer;
+  }
+  .answer:hover:not(:disabled) { border-color: var(--tp); }
+  .answer:disabled { cursor: default; }
+  .answer .n { flex: none; width: 24px; height: 24px; border-radius: 6px; background: var(--bg); color: var(--dim);
+               font: 500 0.8rem/24px 'Inter', sans-serif; letter-spacing: 0; text-align: center; }
+  .answer.right { border-color: var(--good); background: #052e16; color: var(--good); }
+  .answer.wrong { border-color: var(--bad); background: #450a0a; color: var(--bad); }
+  .answer.picked { border-color: var(--tp); }
+  .answers.waiting .answer { visibility: hidden; }
+  .verdict { min-height: 1.5em; margin: -4px 0 10px; font: 600 1.05rem 'Oswald', sans-serif; letter-spacing: 0.06em; }
+  .verdict.ok { color: var(--good); } .verdict.no { color: var(--bad); }
+
+  /* ---------- results ---------- */
+  .score { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-bottom: 16px; }
+  .score .big { font: 600 3.2rem/1 'Oswald', sans-serif; }
+  .score .big small { font-size: 1.4rem; color: var(--muted); margin-left: 6px; }
+  .badge { display: inline-block; padding: 6px 16px; border-radius: 99px; font: 600 1.15rem/1.2 'Oswald', sans-serif; letter-spacing: 0.08em; }
+  .badge.pass { background: #14532d; color: var(--good); border: 1px solid var(--good); }
+  .badge.fail { background: #450a0a; color: var(--bad); border: 1px solid var(--bad); }
+  .score .why { color: var(--muted); font-size: 0.9rem; flex-basis: 100%; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .tile { background: var(--well); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .tile .val { font: 600 1.45rem/1.1 'Oswald', sans-serif; }
+  .tile .lbl { color: var(--muted); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; }
+  .table-wrap { overflow-x: auto; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th { color: var(--dim); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  td.mono { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em; }
+  td.ok { color: var(--good); } td.no { color: var(--bad); }
+  .play { border: 1px solid var(--border); background: var(--well); color: var(--muted); border-radius: 6px; padding: 3px 8px; font-size: 0.78rem; cursor: pointer; }
+  .play:hover { color: var(--text); border-color: var(--tp); }
+
+  /* ---------- score history chart ---------- */
+  svg.chart { display: block; width: 100%; height: auto; overflow: visible; }
+  svg.chart text { fill: var(--dim); font: 11px 'Inter', sans-serif; }
+  .nodata { color: var(--dim); font-size: 0.88rem; padding: 22px 0; text-align: center; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.8rem; color: var(--muted); margin: 0 0 8px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: currentColor; }
+  .legend .pass { color: var(--good); } .legend .fail { color: var(--bad); }
+  .legend .line::before { height: 0; border-top: 2px dashed var(--tp); background: none; width: 14px; vertical-align: 3px; }
+  .legend .line { color: var(--muted); }
+  .summary { color: var(--muted); font-size: 0.88rem; margin: 10px 0 0; }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 1.55rem; }
+    .wrap { padding: 16px 12px 40px; }
+    .speed-row { grid-template-columns: 1fr 64px; gap: 4px 10px; }
+    .speed-row label { grid-column: 1 / -1; }
+    .answers { grid-template-columns: 1fr; }
+    .answer { font-size: 1.2rem; min-height: 54px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>Test Prep</h1>
+    <span class="sub">CW Academy: Fundamental &rarr; Intermediate</span>
+  </div>
+
+  <!-- ================= Before the test ================= -->
+  <section class="card" id="setupCard" aria-labelledby="setupTitle">
+    <h2 id="setupTitle">Practice the placement test</h2>
+    <p class="desc">At the end of Fundamental, CW Academy checks your copy before placing you in Intermediate.
+      Each question sends a <b>call sign</b> or a <b>short word or phrase</b> in Morse; then you pick what you heard from
+      <b>4 choices</b> of the same length. The test sends <b>25 WPM characters</b> with Farnsworth spacing for an overall
+      speed of about <b>10 WPM</b>. You need <b>80%</b> to pass.</p>
+
+    <div class="choices">
+      <div class="group">
+        <span class="label">Test</span>
+        <div class="seg" role="group" aria-label="Test length">
+          <button type="button" data-format="full" aria-pressed="true">Full &middot; 10 questions</button>
+          <button type="button" data-format="quick" aria-pressed="false">Quick &middot; 5 questions</button>
+        </div>
+      </div>
+    </div>
+    <p class="hint" id="formatHint" style="margin:-6px 0 14px"></p>
+
+    <fieldset class="speeds">
+      <legend class="label">Speed, tone and volume</legend>
+      <div class="speed-row">
+        <label for="wpm">Character speed</label>
+        <input type="range" id="wpm" min="5" max="40" step="1">
+        <output id="wpmVal" for="wpm"></output>
+      </div>
+      <div class="speed-row">
+        <label for="fw">Farnsworth <span>(overall speed)</span></label>
+        <select id="fw"></select>
+        <output></output>
+      </div>
+      <div class="speed-row">
+        <label for="tone">Tone</label>
+        <input type="range" id="tone" min="300" max="1000" step="10">
+        <output id="toneVal" for="tone"></output>
+      </div>
+      <div class="speed-row">
+        <label for="vol">Volume</label>
+        <input type="range" id="vol" min="0" max="100" step="5">
+        <output id="volVal" for="vol"></output>
+      </div>
+      <p class="hint" id="speedHint"></p>
+    </fieldset>
+    <div class="checks">
+      <label class="check"><input type="checkbox" id="feedback"> Show right or wrong after each answer</label>
+      <label class="check"><input type="checkbox" id="replays"> Allow replays</label>
+    </div>
+    <div class="actions">
+      <button class="btn primary big" id="startBtn" type="button">Start test <kbd>Enter</kbd></button>
+    </div>
+  </section>
+
+  <!-- ================= The test ================= -->
+  <section class="card" id="testCard" hidden aria-labelledby="qTitle">
+    <div class="qhead">
+      <h2 id="qTitle">Question 1 of 10</h2>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+    </div>
+    <div class="listen" id="listen" aria-live="polite">
+      <span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+      <span id="listenText">Listen&hellip;</span>
+    </div>
+    <div class="answers waiting" id="answers" role="group" aria-label="Choose what you heard"></div>
+    <p class="verdict" id="verdict" aria-live="polite"></p>
+    <div class="actions">
+      <button class="btn" id="replayBtn" type="button">Replay <kbd>R</kbd></button>
+      <span style="flex:1"></span>
+      <button class="btn" id="quitBtn" type="button">Quit test</button>
+    </div>
+    <p class="hint">Pick with the mouse, or press <b>1</b>&ndash;<b>4</b>.</p>
+  </section>
+
+  <!-- ================= Results ================= -->
+  <section class="card" id="resultCard" hidden aria-labelledby="resultTitle">
+    <h2 id="resultTitle">Your result</h2>
+    <div class="score">
+      <span class="big" id="scoreBig"></span>
+      <span class="badge" id="scoreBadge"></span>
+      <span class="why" id="scoreWhy"></span>
+    </div>
+    <div class="tiles" id="tiles"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Type</th><th>Sent</th><th>Your answer</th><th></th><th></th></tr></thead>
+        <tbody id="review"></tbody>
+      </table>
+    </div>
+    <div class="actions">
+      <button class="btn primary big" id="againBtn" type="button">Take another test <kbd>Enter</kbd></button>
+      <button class="btn" id="setupBtn" type="button">Change settings</button>
+    </div>
+  </section>
+
+  <!-- ================= Score history ================= -->
+  <section class="card" id="historyCard" aria-labelledby="historyTitle">
+    <h2 id="historyTitle">Your test scores</h2>
+    <div class="legend" id="historyLegend"><span class="pass">Passed</span><span class="fail">Not yet</span><span class="line">80% pass mark</span></div>
+    <div id="chart"></div>
+    <p class="summary" id="historySummary"></p>
+  </section>
+</div>
+
+<script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-content.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  var PASS = 80;                 // percent needed to pass
+  var CHART_TESTS = 20;          // how many recent tests the chart shows
+
+  /* =====================================================================
+     SETTINGS
+     Character speed and Farnsworth are kept here, not in HST.shared, so
+     this tab starts at the test's own 25 WPM / 10 WPM whatever speed the
+     other tabs use. Tone and volume are this tab's HST.shared settings.
+     ===================================================================== */
+  var PREFS_KEY = 'hct-cw-test-prep-v1';
+  var prefs = { format: 'full', wpm: 25, fw: 10, feedback: true, replays: true };
+  try { var saved = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (saved) Object.keys(prefs).forEach(function (k) { if (k in saved) prefs[k] = saved[k]; }); } catch (e) {}
+  prefs.wpm = Math.min(40, Math.max(5, Number(prefs.wpm) || 25));
+  prefs.fw = Number(prefs.fw) || 0;
+  function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
+  function fwpm() { return prefs.fw && prefs.fw < prefs.wpm ? prefs.fw : 0; }
+
+  var FORMATS = {
+    full: { n: 10, calls: 5, hint: '5 call signs and 5 words or short phrases, in random order, like the CW Academy test.' },
+    quick: { n: 5, calls: 0, hint: '5 words or short phrases (2 to 4 letters each), no call signs.' }
+  };
+
+  /* =====================================================================
+     CONTENT
+     Words of 2-4 letters (everyday English and the abbreviations heard in
+     a QSO) and two-word phrases built from them. Every word in a phrase
+     is also in the word list, so wrong answers can swap one word for a
+     similar one of the same length.
+     ===================================================================== */
+  var WORDS = (
+    'NO GO SO UP IN ON AT IT IS AM AN AS BE BY DO HE IF ME MY OF OK OR TO US WE HI ' +
+    'OM UR ES FB GM GE GA TU DE CQ HR WX VY GL OP ' +
+    'THE AND FOR ARE BUT NOT YOU ALL ANY CAN HAD HER WAS ONE OUR OUT DAY GET HAS HIM HIS HOW ' +
+    'MAN NEW NOW OLD SEE TWO WAY WHO BOY DID ITS LET PUT SAY SHE TOO USE YES RUN SUN FUN BIG ' +
+    'RED HOT SIT TOP CAT DOG CAR BUS MAP PEN KEY SET RIG ANT TNX AGN PSE CPY RPT QTH QSL QRS ' +
+    'QRL QSO RST PWR SIG HPE CUL FER BOB TIM JIM TOM SUE ANN JOE TEN SIX ' +
+    'STOP GOOD HOME BACK CALL COME DOWN EACH FIND GIVE HAVE HELP HERE JUST KEEP KNOW LAST LIKE ' +
+    'LINE LONG LOOK MADE MAKE MORE MOST MUCH MUST NAME NEAR NEXT NICE ONLY OPEN OVER PART PLAY ' +
+    'READ REST SAID SAME SEND SHOW SIDE SOME SOON TAKE TALK TELL THAN THAT THEM THEN THEY THIS ' +
+    'TIME TOLD TURN VERY WAIT WANT WARM WEEK WELL WENT WERE WHAT WHEN WILL WITH WORD WORK YEAR ' +
+    'YOUR BAND BEAM COLD COOL RAIN SNOW WIND FINE FAST SLOW EASY HARD LATE SURE TEST CODE TONE ' +
+    'NOTE LUCK FIVE FOUR NINE OHIO IOWA'
+  ).split(' ');
+  // Single-word questions: 3 and 4 letters, as the CWA notes describe.
+  var QUESTION_WORDS = WORDS.filter(function (w) { return w.length >= 3; });
+  var PHRASES = [
+    'NO WAY', 'STOP NOW', 'GO HOME', 'SEE YOU', 'TNX OM', 'GM OM', 'HW CPY', 'PSE QRS', 'PSE AGN', 'UR RST',
+    'GOOD DAY', 'NICE DAY', 'TOO BAD', 'COME BACK', 'GO SLOW', 'BE BACK', 'NOT NOW', 'ALL SET', 'RUN FAST',
+    'VY FB', 'FB OM', 'GL OM', 'CUL OM', 'TNX FER', 'HPE CUL', 'WX WARM', 'WX COLD', 'RIG FINE', 'NAME BOB',
+    'NAME SUE', 'QTH OHIO', 'GOOD LUCK', 'SEE YOU SOON', 'ANT UP', 'PWR TEN', 'RIG OK', 'ALL OK', 'TU OM',
+    'GE OM', 'CALL ME', 'HELP ME', 'WAIT HERE', 'COME HERE', 'GO NOW', 'SAY AGN', 'SEND AGN', 'KEEP OUT',
+    'TAKE CARE', 'HAVE FUN', 'NICE WX', 'WX RAIN', 'WX SNOW', 'GOOD SIG', 'BAND OPEN', 'TOO FAST', 'TIME UP',
+    'SO LONG', 'BIG SIG', 'HOT DAY', 'COOL WX', 'MY QTH', 'UR SIG', 'TEST NOW', 'WE RUN', 'YES SIR'
+  ].filter(function (p) {                       // keep words to 2-4 letters
+    return p.split(' ').every(function (w) { return w.length >= 2 && w.length <= 4; });
+  });
+  PHRASES.forEach(function (p) { p.split(' ').forEach(function (w) { if (WORDS.indexOf(w) < 0) WORDS.push(w); }); });
+
+  /* Wrong answers should be close calls, like a real multiple-choice test:
+     words of the same length that share letters, and call signs with one
+     or two characters changed to ones that SOUND alike. Two characters
+     sound alike when their Morse differs by one element: a dit swapped
+     for a dah (A .- / M --) or one added or dropped (S ... / H ....). */
+  function morseNear(a, b) {
+    var x = HST.MORSE[a], y = HST.MORSE[b];
+    if (!x || !y || a === b) return false;
+    if (x.length === y.length) {
+      var d = 0; for (var i = 0; i < x.length; i++) if (x[i] !== y[i]) d++;
+      return d === 1;
+    }
+    if (Math.abs(x.length - y.length) !== 1) return false;
+    var s = x.length < y.length ? x : y, l = x.length < y.length ? y : x;
+    for (var k = 0; k < l.length; k++) if (l.slice(0, k) + l.slice(k + 1) === s) return true;
+    return false;
+  }
+  var ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), DIGITS = '0123456789'.split('');
+  function neighbors(ch) {
+    var pool = /[0-9]/.test(ch) ? DIGITS : ALPHA;
+    var near = pool.filter(function (c) { return morseNear(ch, c); });
+    return near.length ? near : pool.filter(function (c) { return c !== ch; });
+  }
+
+  // How alike two same-length words look and sound (higher = closer).
+  function likeness(a, b) {
+    var s = 0;
+    for (var i = 0; i < a.length; i++) s += a[i] === b[i] ? 2 : morseNear(a[i], b[i]) ? 1 : 0;
+    return s + Math.random();                   // random tie-break
+  }
+  function similarWord(w, avoid) {
+    var c = WORDS.filter(function (x) { return x.length === w.length && x !== w && avoid.indexOf(x) < 0; });
+    c.sort(function (a, b) { return likeness(w, b) - likeness(w, a); });
+    return c.length ? pick(c.slice(0, 6)) : null;
+  }
+
+  // Three different wrong answers for a word or phrase, same word lengths.
+  function wordChoices(answer) {
+    var words = answer.split(' '), out = [], tries = 0;
+    while (out.length < 3 && tries++ < 60) {
+      var w = words.slice();
+      // Phrases: usually change one word, sometimes both.
+      var idx = words.length === 1 ? [0] : (Math.random() < 0.7 ? [Math.floor(Math.random() * words.length)] : words.map(function (_, i) { return i; }));
+      idx.forEach(function (i) { var r = similarWord(words[i], [words[i]]); if (r) w[i] = r; });
+      var cand = w.join(' ');
+      if (cand !== answer && out.indexOf(cand) < 0) out.push(cand);
+    }
+    return out;
+  }
+
+  // Three different wrong call signs: one or two characters swapped for
+  // ones that sound alike (letters for letters, digits for digits).
+  function callChoices(answer) {
+    var out = [], tries = 0;
+    while (out.length < 3 && tries++ < 60) {
+      var c = answer.split('');
+      var changes = out.length === 1 ? 2 : 1;
+      var spots = shuffle(c.map(function (_, i) { return i; })).slice(0, changes);
+      spots.forEach(function (i) { c[i] = pick(neighbors(c[i])); });
+      var cand = c.join('');
+      if (cand !== answer && out.indexOf(cand) < 0) out.push(cand);
+    }
+    return out;
+  }
+
+  function makeQuestions(format) {
+    var f = FORMATS[format], qs = [], usedText = {};
+    function add(cat, make, choices) {
+      var text, tries = 0;
+      do { text = make(); } while (usedText[text] && tries++ < 30);
+      usedText[text] = true;
+      qs.push({ cat: cat, text: text, choices: shuffle([text].concat(choices(text))) });
+    }
+    for (var i = 0; i < f.calls; i++) add('call', HST.content.callSign, callChoices);
+    // Words and phrases: about half single words, half two-word phrases.
+    var wordsLeft = f.n - f.calls;
+    var phraseCount = Math.random() < 0.5 ? Math.floor(wordsLeft / 2) : Math.ceil(wordsLeft / 2);
+    for (var j = 0; j < wordsLeft; j++) {
+      if (j < phraseCount) add('phrase', function () { return pick(PHRASES); }, wordChoices);
+      else add('word', function () { return pick(QUESTION_WORDS); }, wordChoices);
+    }
+    return shuffle(qs);
+  }
+
+  /* =====================================================================
+     SETUP SCREEN
+     ===================================================================== */
+  function renderSetup() {
+    document.querySelectorAll('[data-format]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.format === prefs.format)); });
+    $('formatHint').textContent = FORMATS[prefs.format].hint;
+    $('wpm').value = prefs.wpm; $('wpmVal').textContent = prefs.wpm + ' WPM';
+    var opts = ['<option value="0">Off (' + prefs.wpm + ' WPM spacing)</option>'];
+    for (var w = 5; w < prefs.wpm; w++) opts.push('<option value="' + w + '">' + w + ' WPM' + (w === 10 ? ' (CWA test)' : '') + '</option>');
+    $('fw').innerHTML = opts.join('');
+    $('fw').value = String(fwpm());
+    var sh = HST.shared.get();
+    $('tone').value = sh.toneHz; $('toneVal').textContent = sh.toneHz + ' Hz';
+    $('vol').value = sh.volume; $('volVal').textContent = sh.volume + '%';
+    var official = prefs.wpm === 25 && fwpm() === 10;
+    $('speedHint').innerHTML = official
+      ? 'These are the CW Academy test speeds.'
+      : 'The CW Academy test is 25 WPM with Farnsworth 10. <button type="button" class="linkbtn" id="resetSpeeds">Use the test speeds</button>';
+    var rs = $('resetSpeeds');
+    if (rs) rs.addEventListener('click', function () { prefs.wpm = 25; prefs.fw = 10; savePrefs(); renderSetup(); });
+    $('feedback').checked = !!prefs.feedback;
+    $('replays').checked = !!prefs.replays;
+  }
+
+  document.querySelectorAll('[data-format]').forEach(function (b) {
+    b.addEventListener('click', function () { prefs.format = b.dataset.format; savePrefs(); renderSetup(); });
+  });
+  $('wpm').addEventListener('input', function (e) {
+    prefs.wpm = Number(e.target.value);
+    savePrefs(); renderSetup();
+  });
+  $('fw').addEventListener('change', function (e) { prefs.fw = Number(e.target.value); savePrefs(); renderSetup(); });
+  $('tone').addEventListener('input', function (e) { HST.shared.set({ toneHz: Number(e.target.value) }); });
+  $('vol').addEventListener('input', function (e) { HST.shared.set({ volume: Number(e.target.value) }); });
+  $('feedback').addEventListener('change', function (e) { prefs.feedback = e.target.checked; savePrefs(); });
+  $('replays').addEventListener('change', function (e) { prefs.replays = e.target.checked; savePrefs(); });
+  HST.shared.onChange(function (s) {
+    $('tone').value = s.toneHz; $('toneVal').textContent = s.toneHz + ' Hz';
+    $('vol').value = s.volume; $('volVal').textContent = s.volume + '%';
+  });
+
+  /* =====================================================================
+     THE TEST
+     state: 'setup' | 'playing' (code sounding) | 'paused' (stopped by a
+     tab switch; Play to hear it) | 'answer' (choices showing) |
+     'marked' (answer shown, moving on) | 'results'
+     ===================================================================== */
+  var state = 'setup';
+  var test = null;            // { format, wpm, fwpm, start, questions, i, replays }
+  var playToken = 0;          // a newer playback cancels an older one's "done"
+  var shownAt = 0;            // when the choices appeared (answer time)
+
+  function show(card) {
+    ['setupCard', 'testCard', 'resultCard'].forEach(function (id) { $(id).hidden = id !== card; });
+  }
+
+  function sendOpts() {
+    var sh = HST.shared.get();
+    return { wpm: test ? test.wpm : prefs.wpm, fwpm: test ? test.fwpm : fwpm(), toneHz: sh.toneHz, volume: sh.volume };
+  }
+
+  function startTest() {
+    HST.audio.unlock();         // from the click, so iOS allows sound
+    test = { format: prefs.format, wpm: prefs.wpm, fwpm: fwpm(), feedback: prefs.feedback, allowReplay: prefs.replays,
+             start: Date.now(), questions: makeQuestions(prefs.format), i: 0, replays: 0 };
+    show('testCard');
+    askQuestion();
+  }
+
+  function renderDots() {
+    $('dots').innerHTML = test.questions.map(function (q, i) {
+      var cls = i === test.i && state !== 'results' ? 'now' : q.picked == null ? '' : !test.feedback ? 'done' : q.ok ? 'ok' : 'no';
+      return '<span class="dot ' + cls + '"></span>';
+    }).join('');
+  }
+
+  function askQuestion() {
+    var q = test.questions[test.i];
+    $('qTitle').textContent = 'Question ' + (test.i + 1) + ' of ' + test.questions.length;
+    $('verdict').textContent = ''; $('verdict').className = 'verdict';
+    $('answers').innerHTML = q.choices.map(function (c, k) {
+      return '<button class="answer" type="button" data-k="' + k + '" disabled><span class="n">' + (k + 1) + '</span><span>' + esc(c) + '</span></button>';
+    }).join('');
+    $('answers').classList.add('waiting');
+    renderDots();
+    play(700);                 // a short pause, then the code
+  }
+
+  function play(delay) {
+    var q = test.questions[test.i], token = ++playToken;
+    state = 'playing';
+    $('listen').classList.add('playing');
+    $('listenText').textContent = 'Listen…';
+    $('replayBtn').disabled = true;
+    $('replayBtn').firstChild.textContent = 'Replay ';
+    setTimeout(function () {
+      if (token !== playToken || state !== 'playing') return;
+      HST.audio.playMorse(q.text.split(''), sendOpts()).done.then(function () {
+        if (token !== playToken || state !== 'playing') return;
+        showChoices();
+      });
+    }, delay || 0);
+  }
+
+  function showChoices() {
+    state = 'answer';
+    $('listen').classList.remove('playing');
+    $('listenText').textContent = 'What did you hear?';
+    $('answers').classList.remove('waiting');
+    $('answers').querySelectorAll('.answer').forEach(function (b) { b.disabled = false; });
+    $('replayBtn').disabled = !test.allowReplay;
+    if (!shownAt) shownAt = Date.now();      // replays don't restart the answer clock
+  }
+
+  function choose(k) {
+    if (state !== 'answer') return;
+    var q = test.questions[test.i];
+    q.picked = q.choices[k];
+    q.ok = q.picked === q.text;
+    q.ms = Date.now() - shownAt;
+    shownAt = 0;
+    state = 'marked';
+    $('replayBtn').disabled = true;
+    var btns = $('answers').querySelectorAll('.answer');
+    btns.forEach(function (b, i) {
+      b.disabled = true;
+      if (!test.feedback) { if (i === k) b.classList.add('picked'); return; }
+      if (q.choices[i] === q.text) b.classList.add('right');
+      else if (i === k) b.classList.add('wrong');
+    });
+    if (test.feedback) {
+      $('verdict').textContent = q.ok ? 'CORRECT' : 'INCORRECT — it was ' + q.text;
+      $('verdict').className = 'verdict ' + (q.ok ? 'ok' : 'no');
+    }
+    renderDots();
+    setTimeout(function () {
+      if (state !== 'marked') return;
+      test.i++;
+      if (test.i < test.questions.length) askQuestion();
+      else finish();
+    }, test.feedback ? (q.ok ? 1000 : 2000) : 450);
+  }
+
+  $('answers').addEventListener('click', function (e) {
+    var b = e.target.closest('.answer');
+    if (b && !b.disabled) choose(Number(b.dataset.k));
+  });
+  $('replayBtn').addEventListener('click', replay);
+  function replay() {
+    if (state === 'paused') { play(300); return; }
+    if (state !== 'answer' || !test.allowReplay) return;
+    test.replays++;
+    test.questions[test.i].replays = (test.questions[test.i].replays || 0) + 1;
+    play(250);
+  }
+
+  // Quit: the time spent still counts as practice on the Progress tab.
+  $('quitBtn').addEventListener('click', function () {
+    HST.audio.stop(); playToken++;
+    var answered = test.questions.filter(function (q) { return q.picked != null; }).length;
+    if (answered) save(false);
+    test = null; state = 'setup';
+    show('setupCard'); renderSetup();
+  });
+
+  /* Switching to another tab (the app shell calls this): stop the sound.
+     If the code was still playing, the question waits with a Play button
+     instead of showing the choices for code you didn't hear. */
+  function pause() {
+    if (state !== 'playing') return;
+    HST.audio.stop(); playToken++;
+    state = 'paused';
+    $('listen').classList.remove('playing');
+    $('listenText').textContent = 'Paused — press Play to hear the question.';
+    $('replayBtn').firstChild.textContent = 'Play ';
+    $('replayBtn').disabled = false;
+  }
+
+  /* =====================================================================
+     RESULTS + SAVING
+     A test is one Progress session: { trainer: 'test-prep', format,
+     wpm, fwpm, questions, right, score, passed, completed, replays,
+     items: [{ cat, sent, picked, ok, ms }] } plus the usual start / end /
+     durationMs. Quitting part-way saves what was answered with
+     completed: false (practice time only; the chart leaves it out).
+     ===================================================================== */
+  function save(completed) {
+    var answered = test.questions.filter(function (q) { return q.picked != null; });
+    var right = answered.filter(function (q) { return q.ok; }).length;
+    var n = test.questions.length;
+    var end = Date.now();
+    var rec = {
+      trainer: 'test-prep', uid: HST.history.newUid(), start: test.start, end: end, durationMs: end - test.start,
+      format: test.format, wpm: test.wpm, fwpm: test.fwpm || 0, questions: n, answered: answered.length,
+      right: right, score: Math.round(right / n * 100), completed: completed,
+      passed: completed && right / n * 100 >= PASS, replays: test.replays,
+      items: answered.map(function (q) { return { cat: q.cat, sent: q.text, picked: q.picked, ok: q.ok, ms: q.ms }; })
+    };
+    return HST.history.add(rec).then(function () { return rec; });
+  }
+
+  var CAT_NAMES = { call: 'Call sign', word: 'Word', phrase: 'Phrase' };
+
+  function finish() {
+    state = 'results';
+    var qs = test.questions, n = qs.length;
+    var right = qs.filter(function (q) { return q.ok; }).length;
+    var score = Math.round(right / n * 100), passed = score >= PASS;
+    show('resultCard');
+    $('scoreBig').innerHTML = right + '/' + n + '<small>' + score + '%</small>';
+    $('scoreBadge').textContent = passed ? 'PASS' : 'NOT YET';
+    $('scoreBadge').className = 'badge ' + (passed ? 'pass' : 'fail');
+    var need = Math.ceil(n * PASS / 100);
+    $('scoreWhy').textContent = passed
+      ? 'You copied ' + right + ' of ' + n + '. ' + need + ' or more passes. Nice copying!'
+      : 'You need ' + need + ' of ' + n + ' (80%) to pass. ' + (need - right === 1 ? 'Just one more.' : 'Keep practicing and try again.');
+
+    function tally(cats) {
+      var t = qs.filter(function (q) { return cats.indexOf(q.cat) >= 0; });
+      return t.length ? t.filter(function (q) { return q.ok; }).length + '/' + t.length : null;
+    }
+    var times = qs.filter(function (q) { return q.ms != null; }).map(function (q) { return q.ms; });
+    var avg = times.length ? times.reduce(function (a, b) { return a + b; }, 0) / times.length : 0;
+    var tiles = [];
+    var tc = tally(['call']); if (tc) tiles.push([tc, 'Call signs']);
+    var tw = tally(['word', 'phrase']); if (tw) tiles.push([tw, 'Words and phrases']);
+    tiles.push([(avg / 1000).toFixed(1) + ' s', 'Average answer time']);
+    tiles.push([test.wpm + (test.fwpm ? '/' + test.fwpm : '') + ' WPM', 'Speed']);
+    if (test.allowReplay) tiles.push([String(test.replays), test.replays === 1 ? 'Replay used' : 'Replays used']);
+    $('tiles').innerHTML = tiles.map(function (t) { return '<div class="tile"><div class="val">' + esc(t[0]) + '</div><div class="lbl">' + esc(t[1]) + '</div></div>'; }).join('');
+
+    $('review').innerHTML = qs.map(function (q, i) {
+      return '<tr><td>' + (i + 1) + '</td><td>' + CAT_NAMES[q.cat] + '</td><td class="mono">' + esc(q.text) +
+             '</td><td class="mono ' + (q.ok ? 'ok' : 'no') + '">' + esc(q.picked) + '</td><td class="' + (q.ok ? 'ok' : 'no') + '">' +
+             (q.ok ? '✓' : '✗') + '</td><td><button class="play" type="button" data-i="' + i + '">Hear it</button></td></tr>';
+    }).join('');
+    save(true);                // the chart redraws when history changes
+    $('againBtn').focus();
+  }
+
+  $('review').addEventListener('click', function (e) {
+    var b = e.target.closest('.play');
+    if (!b || !test) return;
+    HST.audio.stop();
+    HST.audio.playMorse(test.questions[Number(b.dataset.i)].text.split(''), sendOpts());
+  });
+  $('startBtn').addEventListener('click', startTest);
+  $('againBtn').addEventListener('click', function () { HST.audio.stop(); startTest(); });
+  $('setupBtn').addEventListener('click', function () { HST.audio.stop(); test = null; state = 'setup'; show('setupCard'); renderSetup(); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target;
+    if (t && /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName) && t.type !== 'checkbox') return;
+    if (state === 'answer' && /^[1-4]$/.test(e.key)) { e.preventDefault(); choose(Number(e.key) - 1); return; }
+    if ((state === 'answer' || state === 'paused') && (e.key === 'r' || e.key === 'R')) { e.preventDefault(); replay(); return; }
+    if (e.key === 'Enter' && (state === 'setup' || state === 'results') && !(t && t.tagName === 'BUTTON')) {
+      e.preventDefault();
+      if (state === 'results') HST.audio.stop();
+      startTest();
+    }
+  });
+
+  /* =====================================================================
+     SCORE HISTORY CHART -- the last 20 completed tests, oldest on the
+     left. Green bars passed, red bars didn't; the dashed line is 80%.
+     ===================================================================== */
+  function drawHistory() {
+    return HST.history.all().then(function (rows) {
+      var tests = rows.filter(function (s) { return s.trainer === 'test-prep' && s.completed; });
+      var shown = tests.slice(-CHART_TESTS);
+      $('historyLegend').hidden = !shown.length;
+      if (!shown.length) {
+        $('chart').innerHTML = '<div class="nodata">Take a test and your scores will show up here.</div>';
+        $('historySummary').textContent = '';
+        return;
+      }
+      var W = 640, H = 220, L = 38, R = 8, T = 10, B = 34;
+      var cw = (W - L - R) / Math.max(shown.length, 5), bw = Math.min(34, cw * 0.62);
+      function y(p) { return T + (H - T - B) * (1 - p / 100); }
+      var svg = ['<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Test scores, oldest to newest">'];
+      [0, 20, 40, 60, 80, 100].forEach(function (p) {
+        svg.push('<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(p) + '" y2="' + y(p) + '" stroke="#2f2a27"/>');
+        svg.push('<text x="' + (L - 6) + '" y="' + (y(p) + 4) + '" text-anchor="end">' + p + '%</text>');
+      });
+      shown.forEach(function (s, i) {
+        var x = L + cw * i + (cw - bw) / 2, h = Math.max(2, y(0) - y(s.score));
+        var color = s.passed ? '#4ade80' : '#f87171';
+        var when = new Date(s.start).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        svg.push('<rect x="' + x.toFixed(1) + '" y="' + (y(0) - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) +
+                 '" rx="3" fill="' + color + '"' + (i === shown.length - 1 ? '' : ' opacity="0.75"') + '><title>' + esc(when + ': ' + s.right + '/' + s.questions +
+                 ' (' + s.score + '%)' + (s.format === 'quick' ? ', quick test' : '')) + '</title></rect>');
+        svg.push('<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y(s.score) - 4).toFixed(1) + '" text-anchor="middle" style="fill:#a8a29e">' + s.score + '</text>');
+        if (shown.length <= 10 || i % 2 === (shown.length - 1) % 2) {
+          svg.push('<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + esc(when) + '</text>');
+        }
+      });
+      svg.push('<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(PASS) + '" y2="' + y(PASS) + '" stroke="#fb923c" stroke-width="2" stroke-dasharray="6 5"/>');
+      svg.push('</svg>');
+      $('chart').innerHTML = svg.join('');
+
+      var passes = tests.filter(function (s) { return s.passed; }).length;
+      var best = Math.max.apply(null, tests.map(function (s) { return s.score; }));
+      var last5 = tests.slice(-5), avg5 = Math.round(last5.reduce(function (a, s) { return a + s.score; }, 0) / last5.length);
+      $('historySummary').textContent = tests.length + (tests.length === 1 ? ' test' : ' tests') + ' taken · passed ' + passes +
+        ' · best ' + best + '% · average of the last ' + last5.length + ': ' + avg5 + '%' +
+        (tests.length > CHART_TESTS ? ' (the chart shows the last ' + CHART_TESTS + ')' : '');
+    });
+  }
+  HST.history.onChange(function () { drawHistory(); });
+
+  // For the app shell: stop the sound when you switch to another tab.
+  window.HSTTestPrep = { pause: pause };
+
+  renderSetup();
+  drawHistory();
+})();
+</script>
+</body>
+</html>
