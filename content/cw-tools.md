@@ -17,7 +17,7 @@ Everything for CW practice now lives in one free app: the **HamShackTech CW Trai
 
   <p>One app you use online, or install on your computer, phone or tablet. Installed, it gets its own icon and its own window, and it works with no internet connection. Updates arrive automatically whenever you open it while you're online. Inside, one tab each:</p>
   <ul>
-    <li><strong>ICR</strong>: Instant Character Recognition drills. Hear a character, press the space bar the moment you know it, then type it. Tracks your weakest characters and drills them, and Car Mode plays characters for hands-free listening.</li>
+    <li><strong>ICR</strong>: Instant Character Recognition drills. Hear a character, press the space bar the moment you know it, then type it. Tracks your weakest characters and drills them, Car Mode plays characters for hands-free listening, and Walk Mode does the same with a voice that says each one, playing on with the phone in your pocket.</li>
     <li><strong>Code Groups</strong>: head copy of character groups, common words, QSO elements and call signs, with Farnsworth spacing and a replay after each miss.</li>
     <li><strong>Keyer</strong>: sending practice with your own key through a Vail or VBand adapter (or the on-screen paddles), with your speed, spacing and timing measured.</li>
     <li><strong>QSO</strong>: work a complete contact (standard, POTA, SOTA or a CWops CWT) with a virtual station, using your key. Set separate copy and sending speeds.</li>

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Progress — HamShackTech CW Trainer</title>
 <link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../shared/hst-chrome.css">
 <style>
   /* Same avocado palette as the app shell and trainers. */
   :root {
@@ -162,7 +163,8 @@
 <body>
 <div class="wrap">
   <div class="head">
-    <h1>Your Progress</h1>
+    <img class="hst-mascot" src="../icons/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
+    <h1 class="hst-title">CW Progress</h1>
     <div class="spacer"></div>
     <div class="range" role="group" aria-label="Time range">
       <button type="button" data-days="7">7 days</button>
@@ -272,6 +274,10 @@
     <span id="footNote">Your history is saved only on this device.</span>
     <button type="button" class="linkbtn" id="clearBtn">Clear history</button>
   </div>
+  <footer class="hst-foot">
+    <div class="hst-73"><b>73</b> Practice often, don&rsquo;t quit and have fun</div>
+    <div class="hst-copy">&copy; HamShackTech LLC 2026</div>
+  </footer>
 </div>
 
 <!-- Add practice done outside the CW Trainer (a Zoom class, on-air
@@ -697,9 +703,9 @@
                (s.charsTotal ? pct(s.charsCorrect, s.charsTotal) + '%' : '—') + '</td></tr>';
       }
       // ICR Car Mode: listening only, so time but no grading.
-      if (s.trainer === 'icr' && s.mode === 'car') {
+      if (s.trainer === 'icr' && (s.mode === 'car' || s.mode === 'walk')) {
         return '<tr><td>' + esc(when) + '</td><td><span class="tag icr">ICR</span></td><td>' +
-               esc('Car Mode · ' + (CAR_SETS[s.group] || 'Letters') + (s.heard ? ' · ' + s.heard + ' heard' : '')) +
+               esc((s.mode === 'walk' ? 'Walk Mode · ' : 'Car Mode · ') + (CAR_SETS[s.group] || 'Letters') + (s.heard ? ' · ' + s.heard + ' heard' : '')) +
                '</td><td class="num">' + esc(s.wpm || '') + '</td><td class="num">' + HST.fmtClock(s.durationMs || 0) +
                '</td><td class="num">—</td><td class="num">—</td></tr>';
       }

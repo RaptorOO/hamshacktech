@@ -1,0 +1,27 @@
+/* HamShackTech CW Trainer -- shared page chrome
+   ==============================================
+   The masthead (alien logo + "CW ..." title) and the footer every tool
+   page uses, so they look the same on every tab (Tim, 2026-10-15).
+   Each page links this after fonts/fonts.css; its own <style> still
+   sets everything else. Colors are the site's avocado palette. */
+
+/* ---------- masthead: logo + title ---------- */
+.hst-masthead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.hst-mascot { width: 40px; height: 40px; flex: none; }
+h1.hst-title {
+  margin: 0;
+  font: 600 clamp(1.7rem, 1.3rem + 1.6vw, 2.4rem)/1.1 'Oswald', sans-serif;
+  letter-spacing: 0.01em;
+  color: #fafaf9;
+}
+
+/* ---------- footer ---------- */
+.hst-foot { text-align: center; margin: 40px 0 8px; font-family: 'Inter', system-ui, sans-serif; }
+.hst-foot .hst-73 { font: 500 1rem/1.4 'Oswald', sans-serif; letter-spacing: 0.04em; color: #a8a29e; }
+.hst-foot .hst-73 b { color: #a3e635; font-weight: 600; margin-right: 4px; }
+.hst-foot .hst-copy { margin-top: 2.6em; font-size: 0.78rem; color: #78716c; letter-spacing: 0.03em; }
+
+/* One line, for Jeopardy's full-screen board (its footer row is 24px). */
+.hst-foot.compact { margin: 0; line-height: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hst-foot.compact .hst-73, .hst-foot.compact .hst-copy { display: inline; margin: 0; font-size: 0.8rem; }
+.hst-foot.compact .hst-copy { margin-left: 14px; }
