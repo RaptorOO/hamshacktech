@@ -852,6 +852,7 @@
 </dialog>
 
 <script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-listen.js"></script>
 <script>
 /* =====================================================================
    CW ICR TRAINER — application script
@@ -1343,38 +1344,23 @@ function finishTrial(isCorrect){
 //
 // WALK MODE (Tim, 2026-10-15) is Car Mode for a walk: after the fifth
 // play's two seconds a voice says the character (only after the fifth,
-// from 2026-10-16 -- users found it too much after every play), and it
-// keeps playing with the screen off and the phone in a pocket.
+// from 2026-10-16 -- users found it too much after every play).
 //
-// BOTH modes play the same way, so both keep going when the screen
-// locks. (Car Mode used to play live through Web Audio and relied on the
-// Screen Wake Lock to keep the screen on; on phones where that isn't
-// honored -- iPhone home-screen apps on older iOS, Low Power Mode -- the
-// screen timed out and the sound stopped with time still left. Fixed
-// 2026-10-16 by moving Car Mode onto Walk Mode's player.) Phones stop a
-// page's Web Audio (and its timers) once the screen locks, but they keep
-// playing an ordinary <audio> element, like a podcast. So the practice is
-// built as audio ahead of time: about 90 seconds at a time it renders the
-// tones (and, in Walk Mode, the voice clips voice/A.mp3 ... voice/9.mp3,
-// spoken by the Kokoro voice "af_heart" and bundled with the app) into a
-// WAV, and plays that through one <audio> element, queueing the next
-// stretch while the current one plays. The lock screen shows "Car Mode"
-// or "Walk Mode" with a pause button (Media Session). Car Mode still asks
-// to keep the screen on, so you can glance at the character. The phone's
-// own speech (speechSynthesis) can't be used: it goes silent when the
-// screen locks.
+// Both play through HST.listen (shared/hst-listen.js), which renders the
+// practice into audio files so it keeps playing with the screen off.
+// (Car Mode used to play live through Web Audio and relied on the Screen
+// Wake Lock; where that isn't honored the screen timed out and the sound
+// stopped with time still left. Fixed 2026-10-16.) Car Mode still asks
+// to keep the screen on, so you can glance at the character.
 const CAR_REPEATS = 5;      // plays per character
-const CAR_GAP_MS = 2000;    // quiet after each play
-const WALK_AFTER_S = 1.0;   // Walk: after the fifth play's quiet, the voice, then this much quiet
-const WALK_CHUNK_S = 90;    // seconds of practice rendered at a time
-const WALK_RATE = 24000;    // sample rate of the rendered audio (the voice clips' rate)
+const CAR_GAP_S = 2;        // quiet after each play
 const CAR_WPM_MIN = 5, CAR_WPM_MAX = 40;
 // Characters picked more often (Tim's list), 1.5x as likely as the rest.
 const CAR_EMPHASIS = { X: 1.5, P: 1.5, F: 1.5, L: 1.5, Y: 1.5, Q: 1.5, U: 1.5, V: 1.5 };
 // The run in progress is also kept here, so closing the app mid-run
 // still saves its time (next time the ICR tab opens).
 const CAR_DRAFT_KEY = 'hct-cw-run-icr-car';
-let car = { mode: 'car', running: false, endAt: 0, last: null, wake: null, run: null };
+let car = { mode: 'car', player: null, last: null, wake: null, run: null };
 
 // A random character, never the same one twice in a row, weighted by CAR_EMPHASIS.
 function carPick(){
@@ -1419,6 +1405,7 @@ function carSetChars(){
 function carWpm(){
   return Math.min(CAR_WPM_MAX, Math.max(CAR_WPM_MIN, Number(settings.carWpm) || settings.wpm || 20));
 }
+function carRunning(){ return !!(car.player && car.player.running()); }
 function renderCarSetup(){
   els.carMinInput.value = settings.carMin;
   els.carPresets.querySelectorAll('[data-min]').forEach(b =>
@@ -1439,17 +1426,13 @@ function carSetSpeed(delta){
   if(w === carWpm()) return;
   settings.carWpm = w; saveState(); renderCarSpeed();
   if(car.run) car.run.wpm = w;
-  if(car.running) walkRestart();
+  if(carRunning()) car.player.restart();
 }
 function carShowPlaying(on){
   els.carSetup.hidden = on;
   els.carPlaying.hidden = !on;
   els.carPlayBtn.hidden = on;
   els.carStopBtn.hidden = !on;
-}
-function carUpdateLeft(){
-  const left = car.endAt + walkPausedFor() - Date.now();
-  els.carLeft.textContent = HST.fmtClock(Math.max(0, left));
 }
 function carStatus(text){
   els.carStatus.textContent = text || '';
@@ -1469,274 +1452,59 @@ function carStart(){
   if(!(min >= 1 && min <= 180)){ els.carMinInput.focus(); els.carMinInput.select(); return; }
   settings.carMin = min; saveState();
   initAudio();                                   // a click: sound is allowed now
-  walkUnlock();                                  // ...and for the <audio> player (iPhone)
-  car.running = true;
   car.run = { uid: HST.history.newUid(), mode: car.mode, start: Date.now(), end: Date.now(),
               group: settings.carSet || 'letters', wpm: carWpm(), heard: 0 };
   carSaveDraft();
   carShowPlaying(true);
   carStatus('');
-  if(car.mode === 'car') carWake(true);
-  walkStart(min);
-}
-function carStop(){
-  const wasRunning = car.running;
-  car.running = false;
-  walkHalt();
-  stopAudioImmediate();
-  carWake(false);
-  carShowPlaying(false);
-  if(wasRunning && car.run){ car.run.end = Date.now(); carCommit(car.run); car.run = null; }
-}
-
-/* ---------- The player (both modes): practice rendered into audio files ---------- */
-let walk = { el: null, voice: null, cur: null, next: null, rendering: null, silentUrl: null,
-             pausedAt: 0, pausedMs: 0, heardBefore: 0, gen: 0, raf: 0 };
-
-function walkPausedFor(){ return walk.pausedMs + (walk.pausedAt ? Date.now() - walk.pausedAt : 0); }
-
-// The 36 voice clips, decoded once.
-function walkLoadVoice(){
-  if(walk.voice) return walk.voice;
-  const ctx = HST.audio.unlock();
-  const chars = [...LETTERS, ...NUMBERS];
-  walk.voice = Promise.all(chars.map(c =>
-    fetch('../voice/' + c + '.mp3')
-      .then(r => { if(!r.ok) throw new Error(c); return r.arrayBuffer(); })
-      .then(b => new Promise((ok, bad) => ctx.decodeAudioData(b, ok, bad)))
-  )).then(bufs => { const m = {}; chars.forEach((c, i) => { m[c] = bufs[i]; }); return m; })
-    .catch(e => { walk.voice = null; throw e; });
-  return walk.voice;
-}
-
-// One shaped tone burst (5 ms fades, like the live sidetone) into an offline context.
-function walkTone(octx, when, dur, peak){
-  const osc = octx.createOscillator(); osc.frequency.value = settings.toneHz;
-  const g = octx.createGain(), edge = Math.min(0.005, dur / 4);
-  g.gain.setValueAtTime(0, when);
-  g.gain.linearRampToValueAtTime(peak, when + edge);
-  g.gain.setValueAtTime(peak, Math.max(when + edge, when + dur - edge));
-  g.gain.linearRampToValueAtTime(0, when + dur);
-  osc.connect(g).connect(octx.destination);
-  osc.start(when); osc.stop(when + dur + 0.01);
-}
-// The Practice Timer bell, rendered (same recipe as HST.audio.bell).
-function walkBell(octx, t0, volume){
-  const P = [[0.5,0.35,1.6],[1.0,0.60,1.2],[1.19,0.40,0.9],[1.5,0.25,0.7],[2.0,0.45,0.6],[2.74,0.20,0.35],[3.76,0.12,0.25],[5.4,0.06,0.15]];
-  const level = Math.max(volume, 40) / 100 * 0.16;
-  [0, 1.1, 2.2].forEach(s => P.forEach(p => {
-    const osc = octx.createOscillator(); osc.frequency.value = 523.25 * p[0];
-    const g = octx.createGain(), t = t0 + s;
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(level * p[1], t + 0.004);
-    g.gain.setTargetAtTime(0, t + 0.004, p[2] / 3);
-    osc.connect(g).connect(octx.destination);
-    osc.start(t); osc.stop(t + p[2] * 2 + 0.1);
-  }));
-}
-
-// Plan and render up to WALK_CHUNK_S seconds of whole characters (five
-// plays each, two seconds of quiet after each; in Walk Mode the voice
-// then says it after the fifth) into a WAV, ending with the bell if the
-// time is up by then. startAt = when (wall clock) this stretch will start
-// playing. Returns { url, dur, events: [{ t, char, play }], sets, last }.
-async function walkRender(startAt){
-  const voice = car.mode === 'walk' ? await walkLoadVoice() : null;
-  const gap = CAR_GAP_MS / 1000;
-  const unit = 1.2 / carWpm();                          // one dit, in seconds
-  const peak = (settings.volume / 100) * 0.35, vgain = Math.min(1, settings.volume / 100 * 0.9);
-  const left = (car.endAt + walkPausedFor() - startAt) / 1000;  // practice time remaining
-  const plan = [];                                      // [t, char, play]
-  let t = 0.3, sets = 0;
-  while(t < WALK_CHUNK_S && t < left){
-    const ch = carPick(); sets++;
-    for(let p = 1; p <= CAR_REPEATS; p++){
-      plan.push([t, ch, p]);
-      const code = HST.MORSE[ch];
-      for(let i = 0; i < code.length; i++) t += (code[i] === '-' ? 3 : 1) * unit + (i < code.length - 1 ? unit : 0);
-      t += gap;
-      if(voice && p === CAR_REPEATS) t += voice[ch].duration + WALK_AFTER_S;
-    }
-  }
-  const last = t >= left;
-  const dur = t + (last ? 6 : 0);
-  const octx = new OfflineAudioContext(1, Math.ceil(dur * WALK_RATE), WALK_RATE);
-  plan.forEach(([t0, ch, p]) => {
-    const code = HST.MORSE[ch]; let c = t0;
-    for(let i = 0; i < code.length; i++){
-      const d = (code[i] === '-' ? 3 : 1) * unit;
-      walkTone(octx, c, d, peak); c += d + unit;
-    }
-    if(!voice || p !== CAR_REPEATS) return;
-    const src = octx.createBufferSource(); src.buffer = voice[ch];
-    const g = octx.createGain(); g.gain.value = vgain;
-    src.connect(g).connect(octx.destination);
-    src.start(c - unit + gap);
-  });
-  if(last) walkBell(octx, t + 0.2, settings.volume);
-  const buf = await octx.startRendering();
-  return { url: URL.createObjectURL(walkWav(buf)), dur, sets, last,
-           events: plan.map(([t0, ch, p]) => ({ t: t0, char: ch, play: p })) };
-}
-
-// An AudioBuffer as a 16-bit mono WAV file.
-function walkWav(buf){
-  const data = buf.getChannelData(0), n = data.length;
-  const out = new DataView(new ArrayBuffer(44 + n * 2));
-  const str = (o, s) => { for(let i = 0; i < s.length; i++) out.setUint8(o + i, s.charCodeAt(i)); };
-  str(0, 'RIFF'); out.setUint32(4, 36 + n * 2, true); str(8, 'WAVE'); str(12, 'fmt ');
-  out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, 1, true);
-  out.setUint32(24, buf.sampleRate, true); out.setUint32(28, buf.sampleRate * 2, true);
-  out.setUint16(32, 2, true); out.setUint16(34, 16, true); str(36, 'data'); out.setUint32(40, n * 2, true);
-  for(let i = 0; i < n; i++){ const s = Math.max(-1, Math.min(1, data[i])); out.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true); }
-  return new Blob([out.buffer], { type: 'audio/wav' });
-}
-
-function walkElement(){
-  if(walk.el) return walk.el;
-  const el = walk.el = document.createElement('audio');
-  el.setAttribute('playsinline', ''); el.preload = 'auto';
-  el.style.display = 'none'; document.body.appendChild(el);
-  el.addEventListener('ended', walkNextChunk);
-  el.addEventListener('timeupdate', walkShow);
-  // Paused or resumed from the lock screen or earbuds: the time left waits too.
-  el.addEventListener('pause', () => {
-    if(!car.running || el.ended || el.loop) return;      // ended, or the silent start
-    if(!walk.pausedAt) walk.pausedAt = Date.now();
-    els.carPlayCount.textContent = 'Paused';
-    carStatus('Paused. Press play on your lock screen or earbuds, or Stop.');
-  });
-  el.addEventListener('play', () => {
-    if(walk.pausedAt){ walk.pausedMs += Date.now() - walk.pausedAt; walk.pausedAt = 0; }
-    carStatus('');
-  });
-  if('mediaSession' in navigator){
-    const ms = navigator.mediaSession;
-    try{
-      ms.setActionHandler('play', () => { if(car.running) el.play().catch(() => {}); });
-      ms.setActionHandler('pause', () => el.pause());
-      ms.setActionHandler('stop', () => carStop());
-    }catch(e){}
-  }
-  return el;
-}
-
-// What's on screen follows the audio: the character now playing and which play.
-function walkSetsHeard(){
-  const c = walk.cur; if(!c || !walk.el || c.counted) return 0;
-  return c.events.filter(e => e.play === 1 && e.t <= walk.el.currentTime).length;
-}
-function walkShow(){
-  const c = walk.cur; if(!c || !car.running) return;
-  const now = walk.el.currentTime;
-  let ev = null;
-  for(const e of c.events){ if(e.t <= now + 0.05) ev = e; else break; }
-  if(ev){
-    els.carChar.textContent = ev.char;
-    if(!walk.pausedAt) els.carPlayCount.textContent = 'Play ' + ev.play + ' of ' + CAR_REPEATS;
-  }
-  carUpdateLeft();
-  if(car.run && Date.now() - car.run.end > 5000){
-    car.run.heard = walk.heardBefore + walkSetsHeard(); car.run.end = Date.now(); carSaveDraft();
-  }
-}
-function walkFrame(){
-  walkShow();
-  if(car.running) walk.raf = requestAnimationFrame(walkFrame);
-}
-
-// iPhones only let an <audio> element play if it was first started by a
-// tap. Rendering takes a moment, so Play starts the element right away on
-// a looping bit of silence; walkPlay then swaps in the real audio.
-function walkUnlock(){
-  const el = walkElement();
-  if(!walk.silentUrl){
-    const ctx = HST.audio.unlock();
-    walk.silentUrl = URL.createObjectURL(walkWav(ctx.createBuffer(1, WALK_RATE / 2, WALK_RATE)));
-  }
-  el.loop = true;
-  el.src = walk.silentUrl;
-  el.play().catch(() => {});
-}
-function walkPlay(chunk){
-  const el = walkElement();
-  walk.cur = chunk;
-  el.loop = false;
-  el.src = chunk.url;
-  const go = el.play();
-  if(go && go.catch) go.catch(() => carStatus('The phone blocked the sound. Press play on the lock screen, or Stop and start again.'));
-  // Queue the next stretch now, while this one plays.
-  if(!chunk.last){
-    const gen = walk.gen;
-    walk.rendering = walkRender(Date.now() + chunk.dur * 1000)
-      .then(next => { if(gen === walk.gen && car.running) walk.next = next; else URL.revokeObjectURL(next.url); })
-      .catch(() => {});
-  }
-}
-async function walkNextChunk(){
-  if(!car.running || !walk.cur) return;
-  const done = walk.cur;
-  walk.heardBefore += done && !done.counted ? done.sets : 0;
-  car.run.heard = walk.heardBefore; car.run.end = Date.now(); carSaveDraft();
-  if(done && done.last){ walk.cur = null; URL.revokeObjectURL(done.url); carStop(); return; }   // the bell was in the audio
-  const gen = walk.gen;
-  if(!walk.next && walk.rendering) await walk.rendering;
-  if(!car.running || gen !== walk.gen) return;
-  const next = walk.next; walk.next = null;
-  if(done) URL.revokeObjectURL(done.url);
-  walk.cur = null;
-  if(next) walkPlay(next); else carStop();
-}
-
-async function walkStart(min){
-  walk.gen++; walk.pausedAt = 0; walk.pausedMs = 0; walk.heardBefore = 0; walk.next = null;
-  car.endAt = Date.now() + min * 60000;
   els.carChar.textContent = '';
   els.carPlayCount.textContent = 'Getting ready…';
-  carUpdateLeft();
-  walkElement();
-  if('mediaSession' in navigator && window.MediaMetadata){
-    try{
-      navigator.mediaSession.metadata = new MediaMetadata({ title: car.mode === 'walk' ? 'Walk Mode' : 'Car Mode', artist: 'HamShackTech CW Trainer',
-        artwork: [{ src: '../icons/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' }] });
-    }catch(e){}
-  }
-  try{
-    const first = await walkRender(Date.now());
-    if(!car.running){ URL.revokeObjectURL(first.url); return; }
-    walkPlay(first);
-    cancelAnimationFrame(walk.raf); walk.raf = requestAnimationFrame(walkFrame);
-  }catch(e){
-    carStop();
+  els.carLeft.textContent = HST.fmtClock(min * 60000);
+  if(car.mode === 'car') carWake(true);
+  car.player = HST.listen.createPlayer({
+    title: () => car.mode === 'walk' ? 'Walk Mode' : 'Car Mode',
+    minutes: min,
+    voice: car.mode === 'walk',
+    next: () => ({ text: carPick(), plays: CAR_REPEATS, gap: CAR_GAP_S }),
+    sound: () => ({ wpm: carWpm(), fwpm: 0, toneHz: settings.toneHz, volume: settings.volume }),
+    onShow: (ev) => {
+      els.carChar.textContent = ev.text;
+      if(!car.paused) els.carPlayCount.textContent = 'Play ' + ev.play + ' of ' + ev.plays;
+    },
+    onTick: (left) => {
+      els.carLeft.textContent = HST.fmtClock(left);
+      if(car.run && Date.now() - car.run.end > 5000){ car.run.heard = car.player.heard(); car.run.end = Date.now(); carSaveDraft(); }
+    },
+    onPause: (paused) => {
+      car.paused = paused;
+      if(paused) els.carPlayCount.textContent = 'Paused';
+      carStatus(paused ? 'Paused. Press play on your lock screen or earbuds, or Stop.' : '');
+    },
+    onEnd: (heard) => carFinish(heard)
+  });
+  car.paused = false;
+  car.player.start().catch(() => {
+    carFinish(0);
     carStatus(car.mode === 'walk' ? 'Walk Mode couldn’t load its voice. Check your connection and try again.'
                                   : 'Car Mode couldn’t start. Please try again.');
-  }
+  });
 }
-// New speed: drop what's queued and start a fresh character at the new speed.
-async function walkRestart(){
-  const gen = ++walk.gen;
-  walk.heardBefore += walkSetsHeard();
-  if(walk.cur) walk.cur.counted = true;        // a second tap before the new audio is ready mustn't count it twice
-  if(walk.next){ URL.revokeObjectURL(walk.next.url); walk.next = null; }
-  const chunk = await walkRender(Date.now());
-  if(gen !== walk.gen || !car.running){ URL.revokeObjectURL(chunk.url); return; }
-  const old = walk.cur;
-  walkPlay(chunk);
-  if(old) URL.revokeObjectURL(old.url);
+// The run is over (Stop, the time ran out, or the popup closed): save it.
+function carFinish(heard){
+  carWake(false);
+  carShowPlaying(false);
+  if(car.run){ car.run.heard = heard; car.run.end = Date.now(); carCommit(car.run); car.run = null; }
 }
-function walkHalt(){
-  walk.gen++;
-  cancelAnimationFrame(walk.raf);
-  if(car.run) car.run.heard = walk.heardBefore + walkSetsHeard();
-  if(walk.el){ walk.el.pause(); walk.el.loop = false; walk.el.removeAttribute('src'); walk.el.load(); }
-  [walk.cur, walk.next].forEach(c => { if(c) URL.revokeObjectURL(c.url); });
-  walk.cur = walk.next = null; walk.pausedAt = 0;
-  if('mediaSession' in navigator){ try{ navigator.mediaSession.metadata = null; }catch(e){} }
+function carStop(){
+  if(!car.player) return;
+  const heard = car.player.stop();
+  stopAudioImmediate();
+  if(car.run) carFinish(heard);
 }
 
 // Coming back to the app (the screen was locked, say): ask for the wake lock again.
 document.addEventListener('visibilitychange', () => {
-  if(document.visibilityState === 'visible' && car.running && car.mode === 'car') carWake(true);
+  if(document.visibilityState === 'visible' && carRunning() && car.mode === 'car') carWake(true);
 });
 function openCarDialog(mode){
   car.mode = mode;
@@ -1744,7 +1512,7 @@ function openCarDialog(mode){
   els.carDialog.classList.toggle('walk', mode === 'walk');
   els.carTitle.textContent = mode === 'walk' ? 'Walk Mode' : 'Car Mode';
   renderCarSetup(); carShowPlaying(false); carStatus(''); els.carChar.textContent = '';
-  if(mode === 'walk') walkLoadVoice().catch(() => {});   // fetch the voice while you choose
+  if(mode === 'walk') HST.listen.loadVoice().catch(() => {});   // fetch the voice while you choose
   els.carDialog.showModal();
 }
 function wireCarMode(){
