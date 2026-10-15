@@ -263,6 +263,31 @@
     border-radius: 8px;
   }
   .timer-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  /* Walk Mode button (under Start Session) and popup. */
+  .walk-btn {
+    display: block; margin: 10px auto 0; padding: 8px 22px; border-radius: 999px; cursor: pointer;
+    background: transparent; border: 1px solid var(--border-strong); color: var(--text-dim);
+    font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.03em; text-transform: uppercase;
+  }
+  .walk-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .walk-label { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 8px; }
+  .walk-what { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent2); margin: -4px 0 14px; }
+  .walk-seg { display: flex; gap: 6px; margin: 0 0 16px; }
+  .walk-seg button, .walk-speed button {
+    padding: 9px 0; border-radius: 8px; cursor: pointer; background: var(--panel-2);
+    border: 1px solid var(--border-strong); color: var(--text); font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .walk-seg button { flex: 1; }
+  .walk-seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #14200a; font-weight: 700; }
+  .timer-presets button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  .walk-speed { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; }
+  .walk-speed button { width: 52px; height: 44px; padding: 0; font-size: 1.3rem; line-height: 1; }
+  .walk-speed button:disabled { opacity: 0.4; cursor: default; }
+  .walk-speed output { flex: 1; text-align: center; font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .walk-group { font-family: var(--font-mono); font-size: clamp(2.2rem, 9vw, 3.6rem); font-weight: 700; text-align: center;
+                color: var(--accent); letter-spacing: 0.08em; margin: 6px 0; min-height: 1.3em; word-break: break-all; }
+  .walk-meta { text-align: center; font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-dim); margin: 0 0 16px; }
+  .walk-status { font-size: 0.85rem; color: var(--text-dim); margin: -6px 0 14px; }
   .timer-actions .btn-secondary { margin-top: 0; }
   .timer-actions .btn-primary { border-color: var(--accent); color: var(--accent); }
 
@@ -821,6 +846,56 @@
     </div>
   </dialog>
 
+  <!-- Walk Mode: hands-free listening for a walk or hike, with the
+       practice group set in Tool Settings. Keeps playing with the screen
+       off; a voice spells each group after its last play. -->
+  <dialog class="info-dialog" id="walkDialog" aria-labelledby="walkDialogTitle">
+    <h2 id="walkDialogTitle">Walk Mode</h2>
+    <div id="walkSetup">
+      <p>Listen only &mdash; nothing to type. Each group plays, with a moment after each play to say it, then a voice
+         <strong>spells it out</strong> so you know if you got it. It keeps playing with the screen off and the phone
+         in your pocket. Earbuds recommended.</p>
+      <div class="walk-label">Playing (from Tool Settings)</div>
+      <div class="walk-what" id="walkWhat"></div>
+      <div class="walk-label">How long</div>
+      <div class="timer-presets" id="walkPresets">
+        <button type="button" data-min="5">5 min</button>
+        <button type="button" data-min="10">10 min</button>
+        <button type="button" data-min="15">15 min</button>
+        <button type="button" data-min="20">20 min</button>
+        <button type="button" data-min="30">30 min</button>
+        <button type="button" data-min="60">60 min</button>
+      </div>
+      <label class="timer-entry">
+        Or enter
+        <input type="number" id="walkMinInput" min="1" max="180" step="1" inputmode="numeric" />
+        minutes
+      </label>
+      <div class="walk-label">Plays per group</div>
+      <div class="walk-seg" role="group" aria-label="Plays per group">
+        <button type="button" data-plays="1">Once</button>
+        <button type="button" data-plays="2">Twice</button>
+        <button type="button" data-plays="3">3 times</button>
+      </div>
+    </div>
+    <div id="walkPlaying" hidden>
+      <div class="walk-group" id="walkGroup" aria-live="off"></div>
+      <div class="walk-meta"><span id="walkPlayCount"></span> &middot; <span id="walkLeft"></span> left</div>
+    </div>
+    <div class="walk-label">Speed</div>
+    <div class="walk-speed" role="group" aria-label="Character speed">
+      <button type="button" id="walkSlower" aria-label="Slower">&minus;</button>
+      <output id="walkWpmVal" aria-live="polite"></output>
+      <button type="button" id="walkFaster" aria-label="Faster">+</button>
+    </div>
+    <p class="walk-status" id="walkStatus" hidden></p>
+    <div class="timer-actions">
+      <button type="button" class="btn-secondary btn-primary" id="walkPlayBtn">Play</button>
+      <button type="button" class="btn-secondary danger" id="walkStopBtn" hidden>Stop</button>
+      <button type="button" class="btn-secondary" id="walkCloseBtn">Close</button>
+    </div>
+  </dialog>
+
   <!-- ===================================================================
        PRACTICE MODULE
        =================================================================== -->
@@ -884,6 +959,8 @@
     <div class="meter-label" id="meterLabel">&nbsp;</div>
 
     <button class="session-btn" id="sessionBtn" type="button">Start Session</button>
+    <!-- Walk Mode: listen-only practice that keeps playing in your pocket (see WALK MODE in the script). -->
+    <button class="walk-btn" id="walkBtn" type="button" title="Listen-only practice that keeps playing in your pocket">Walk Mode</button>
     <button class="next-btn" id="nextBtn" type="button" hidden>Next &#9656;</button>
     <div class="tap-hint" id="tapHint">Tap the practice box, then start — your keyboard stays live for the whole session.</div>
 
@@ -1040,6 +1117,7 @@
 </div>
 
 <script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-listen.js"></script>
 <script>
 (function () {
   "use strict";
@@ -1421,7 +1499,9 @@
       wordPool: 500,     // Common Words group only: how many of GENERAL_WORDS to draw from (100/500/1000/2000)
       headCopy: false,   // Head Copy Mode: no typing allowed while code is playing
       timerMin: 0,       // Practice Timer length in minutes; 0 = off
-      buzzer: true       // buzz on a missed group or timeout (the Buzzer chip mutes it)
+      buzzer: true,      // buzz on a missed group or timeout (the Buzzer chip mutes it)
+      walkMin: 15,       // Walk Mode: how long to play, in minutes
+      walkPlays: 2       // Walk Mode: plays per group before the voice spells it
     },
     running: false,
     drilling: false,
@@ -2138,6 +2218,172 @@
       updateReplayBtn();
     });
   }
+
+  /* =====================================================================
+     WALK MODE (Tim, 2026-10-16) -- ICR's Walk Mode, for code groups.
+     Listen only: the practice group from Tool Settings (letters, words,
+     call signs...) plays once, twice or three times, with a moment after
+     each play to say it out loud (2 s, or half a second per character
+     for longer groups), then a voice spells it out. Plays through
+     HST.listen (shared/hst-listen.js), which renders the practice into
+     audio files so it keeps going with the screen off and the phone in a
+     pocket. Uses this page's speed, Farnsworth, tone and volume; the
+     popup's - / + change the Character Speed (here and in Tool Settings).
+     Each run is saved to Progress as Code Groups practice time (mode:
+     'walk', nothing graded); the run in progress is kept in a draft, so
+     closing the app mid-walk still counts it.
+     ===================================================================== */
+  var WALK_DRAFT_KEY = "hct-cw-run-cg-walk";
+  var GROUP_NAMES = { letters: "Letters", numbers: "Numbers", mixed: "Mixed", qso: "QSO Elements",
+                      words: "Common Words", calls: "Call Signs", custom: "Custom" };
+  var walk = { player: null, run: null, paused: false };
+  var walkEls = {};
+  ["walkBtn", "walkDialog", "walkSetup", "walkPlaying", "walkWhat", "walkPresets", "walkMinInput", "walkGroup",
+   "walkPlayCount", "walkLeft", "walkSlower", "walkFaster", "walkWpmVal", "walkStatus", "walkPlayBtn",
+   "walkStopBtn", "walkCloseBtn"].forEach(function (id) { walkEls[id] = $(id); });
+
+  function walkRunning() { return !!(walk.player && walk.player.running()); }
+  function walkFw() { var s = state.settings; return s.fwpm && s.fwpm < s.wpm ? s.fwpm : 0; }
+  function walkSpeedText() { return state.settings.wpm + (walkFw() ? "/" + walkFw() : "") + " WPM"; }
+  function walkWhatText() {
+    var s = state.settings, g = GROUP_NAMES[s.group] || s.group;
+    if (s.group === "words") g += " \u00b7 " + s.groupSize + " letters";
+    else if (["letters", "numbers", "mixed", "custom"].indexOf(s.group) >= 0) g += " \u00b7 " + s.groupSize + " per group";
+    return g + " \u00b7 " + walkSpeedText();
+  }
+  function walkStatus(text) { walkEls.walkStatus.textContent = text || ""; walkEls.walkStatus.hidden = !text; }
+  function walkShowPlaying(on) {
+    walkEls.walkSetup.hidden = on; walkEls.walkPlaying.hidden = !on;
+    walkEls.walkPlayBtn.hidden = on; walkEls.walkStopBtn.hidden = !on;
+  }
+  function renderWalk() {
+    var s = state.settings;
+    walkEls.walkMinInput.value = s.walkMin;
+    walkEls.walkPresets.querySelectorAll("[data-min]").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(Number(b.dataset.min) === s.walkMin));
+    });
+    walkEls.walkDialog.querySelectorAll("[data-plays]").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(Number(b.dataset.plays) === s.walkPlays));
+    });
+    walkEls.walkWhat.textContent = walkWhatText();
+    walkEls.walkWpmVal.textContent = walkSpeedText();
+    walkEls.walkSlower.disabled = s.wpm <= 5;
+    walkEls.walkFaster.disabled = s.wpm >= 40;
+  }
+
+  function walkSaveDraft() { try { localStorage.setItem(WALK_DRAFT_KEY, JSON.stringify(walk.run)); } catch (e) {} }
+  function walkDropDraft(uid) {
+    try {
+      var d = JSON.parse(localStorage.getItem(WALK_DRAFT_KEY) || "null");
+      if (!d || !d.uid || d.uid === uid) localStorage.removeItem(WALK_DRAFT_KEY);
+    } catch (e) {}
+  }
+  function walkCommit(run) {
+    var durationMs = run ? Math.max(0, run.end - run.start) : 0;
+    if (!run || !run.heard || durationMs < 5000) { walkDropDraft(run && run.uid); return; }
+    HST.history.add({ trainer: "code-groups", mode: "walk", uid: run.uid, group: run.group, groupSize: run.groupSize,
+                      wpm: run.wpm, fwpm: run.fwpm, start: run.start, end: run.end, durationMs: durationMs, heard: run.heard,
+                      rounds: 0, roundsCorrect: 0, timeouts: 0, charsTotal: 0, charsCorrect: 0, chars: {},
+                      timeSum: 0, timeCount: 0 }).then(function () { walkDropDraft(run.uid); });
+  }
+  try {
+    var walkLeft = JSON.parse(localStorage.getItem(WALK_DRAFT_KEY) || "null");
+    if (walkLeft) HST.history.all().then(function (rows) {
+      if (walkLeft.uid && rows.some(function (x) { return x.uid === walkLeft.uid; })) walkDropDraft(walkLeft.uid); else walkCommit(walkLeft);
+    });
+  } catch (e) {}
+
+  function walkStart() {
+    var min = Math.round(Number(walkEls.walkMinInput.value));
+    if (!(min >= 1 && min <= 180)) { walkEls.walkMinInput.focus(); walkEls.walkMinInput.select(); return; }
+    if (!buildRound()) { walkStatus(emptyRoundMessage() + " (in Tool Settings)."); return; }
+    state.settings.walkMin = min; saveSettings();
+    ensureAudioCtx();                              // a click: sound is allowed now
+    var s = state.settings;
+    walk.run = { uid: HST.history.newUid(), start: Date.now(), end: Date.now(), group: s.group, groupSize: s.groupSize,
+                 wpm: s.wpm, fwpm: walkFw(), heard: 0 };
+    walkSaveDraft();
+    walkShowPlaying(true); walkStatus("");
+    walkEls.walkGroup.textContent = "";
+    walkEls.walkPlayCount.textContent = "Getting ready\u2026";
+    walkEls.walkLeft.textContent = HST.fmtClock(min * 60000);
+    walk.paused = false;
+    walk.player = HST.listen.createPlayer({
+      title: function () { return "Walk Mode \u00b7 Code Groups"; },
+      minutes: min,
+      voice: true,
+      next: function () {
+        var text = (buildRound() || ["E"]).join("");
+        return { text: text, plays: state.settings.walkPlays, gap: Math.max(2, 0.5 * text.replace(/ /g, "").length) };
+      },
+      sound: function () { var s = state.settings; return { wpm: s.wpm, fwpm: walkFw(), toneHz: s.toneHz, volume: s.volume }; },
+      onShow: function (ev) {
+        walkEls.walkGroup.textContent = ev.text;
+        if (!walk.paused) walkEls.walkPlayCount.textContent = ev.plays > 1 ? "Play " + ev.play + " of " + ev.plays : "Listen";
+      },
+      onTick: function (left) {
+        walkEls.walkLeft.textContent = HST.fmtClock(left);
+        if (walk.run && Date.now() - walk.run.end > 5000) { walk.run.heard = walk.player.heard(); walk.run.end = Date.now(); walkSaveDraft(); }
+      },
+      onPause: function (paused) {
+        walk.paused = paused;
+        if (paused) walkEls.walkPlayCount.textContent = "Paused";
+        walkStatus(paused ? "Paused. Press play on your lock screen or earbuds, or Stop." : "");
+      },
+      onEnd: function (heard) { walkFinish(heard); }
+    });
+    walk.player.start().catch(function () {
+      walkFinish(0);
+      walkStatus("Walk Mode couldn\u2019t load its voice. Check your connection and try again.");
+    });
+  }
+  function walkFinish(heard) {
+    walkShowPlaying(false);
+    if (walk.run) { walk.run.heard = heard; walk.run.end = Date.now(); walkCommit(walk.run); walk.run = null; }
+  }
+  function walkStop() {
+    if (!walk.player) return;
+    var heard = walk.player.stop();
+    stopAllAudio();
+    if (walk.run) walkFinish(heard);
+  }
+  // - / +: Character Speed, the same setting as Tool Settings. A fresh
+  // group starts at the new speed right away.
+  function walkSetSpeed(delta) {
+    var w = Math.min(40, Math.max(5, state.settings.wpm + delta));
+    if (w === state.settings.wpm) return;
+    HST.shared.set({ wpm: w });                    // applyShared() + the Tool Settings slider follow
+    if (walk.run) { walk.run.wpm = w; walk.run.fwpm = walkFw(); }
+    renderWalk();
+    if (walkRunning()) walk.player.restart();
+  }
+
+  walkEls.walkBtn.addEventListener("click", function () {
+    if (state.drilling) endDrill();
+    if (state.running) stopSession();
+    renderWalk(); walkShowPlaying(false); walkStatus("");
+    HST.listen.loadVoice().catch(function () {});   // fetch the voice while you choose
+    walkEls.walkDialog.showModal();
+  });
+  walkEls.walkPresets.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-min]"); if (!b) return;
+    state.settings.walkMin = Number(b.dataset.min); saveSettings(); renderWalk();
+  });
+  walkEls.walkMinInput.addEventListener("input", function () {
+    walkEls.walkPresets.querySelectorAll("[data-min]").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(Number(b.dataset.min) === Number(walkEls.walkMinInput.value)));
+    });
+  });
+  walkEls.walkDialog.querySelectorAll("[data-plays]").forEach(function (b) {
+    b.addEventListener("click", function () { state.settings.walkPlays = Number(b.dataset.plays); saveSettings(); renderWalk(); });
+  });
+  walkEls.walkSlower.addEventListener("click", function () { walkSetSpeed(-1); });
+  walkEls.walkFaster.addEventListener("click", function () { walkSetSpeed(1); });
+  walkEls.walkPlayBtn.addEventListener("click", walkStart);
+  walkEls.walkStopBtn.addEventListener("click", walkStop);
+  walkEls.walkCloseBtn.addEventListener("click", function () { walkEls.walkDialog.close(); });
+  walkEls.walkDialog.addEventListener("close", walkStop);   // Close or Esc stops playback
+  walkEls.walkDialog.addEventListener("click", function (e) { if (e.target === walkEls.walkDialog && !walkRunning()) walkEls.walkDialog.close(); });
 
   function lockSettings(locked) {
     els.settingsFieldset.disabled = locked;

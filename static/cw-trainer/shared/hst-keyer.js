@@ -922,10 +922,13 @@
     var text = words.map(function (w) { return w.map(function (k) { return chars[k].text; }).join(''); }).join(' ');
 
     // ---- spacing statistics ----
+    // With Farnsworth (o.spaceRatio) every gap is meant to be that much
+    // longer, so the "pause to think" cut-offs below stretch with it.
+    var sr = o.spaceRatio || 1;
     // A letter gap over 10 units is a pause to think, not spacing -- left out too.
-    var cg = gaps.filter(function (g) { return g.kind === 'char' && g.units <= 10; }).map(function (g) { return g.units; });
+    var cg = gaps.filter(function (g) { return g.kind === 'char' && g.units <= 10 * sr; }).map(function (g) { return g.units; });
     // A word gap over 14 units is a pause to think, not spacing -- left out of the average.
-    var wg = gaps.filter(function (g) { return g.kind === 'word' && g.units <= 14; }).map(function (g) { return g.units; });
+    var wg = gaps.filter(function (g) { return g.kind === 'word' && g.units <= 14 * sr; }).map(function (g) { return g.units; });
     var cgMean = mean(cg);
     var cgSd = cg.length > 1 ? Math.sqrt(cg.reduce(function (a, x) { return a + (x - cgMean) * (x - cgMean); }, 0) / (cg.length - 1)) : 0;
 
@@ -944,7 +947,7 @@
       var g = gaps[k];
       if (g) {
         idealUnits += g.kind === 'word' ? 7 : 3;
-        actualMs += Math.min(g.units, g.kind === 'word' ? 14 : 10) * u;
+        actualMs += Math.min(g.units, (g.kind === 'word' ? 14 : 10) * sr) * u;
       }
     });
 
@@ -957,8 +960,8 @@
       chars: chars, words: words, text: text, gaps: gaps,
       intra: { mean: mean(intraGaps), n: intraGaps.length },
       charGap: { mean: cgMean, sd: cgSd, n: cg.length,
-                 tight: cg.filter(function (x) { return x < 2.5; }).length,
-                 loose: cg.filter(function (x) { return x > 4.5; }).length },
+                 tight: cg.filter(function (x) { return x < 2.5 * sr; }).length,
+                 loose: cg.filter(function (x) { return x > 4.5 * sr; }).length },
       wordGap: { mean: mean(wg), n: wg.length }
     };
   };

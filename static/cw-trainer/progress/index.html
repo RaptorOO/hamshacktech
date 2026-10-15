@@ -88,6 +88,8 @@
   .section-title small { font: 400 0.82rem 'Inter', sans-serif; color: var(--dim); margin-left: 8px; letter-spacing: 0; }
   svg.chart { display: block; max-width: 100%; overflow: visible; }
   svg.chart text { fill: var(--dim); font: 11px 'Inter', sans-serif; }
+  svg.chart line.target { stroke: var(--text); stroke-width: 1.5; stroke-dasharray: 6 5; opacity: 0.75; }
+  svg.chart text.target { fill: var(--text); font-weight: 600; opacity: 0.85; }
   .nodata { color: var(--dim); font-size: 0.85rem; padding: 26px 0; text-align: center; }
 
   /* ---------- trouble characters ---------- */
@@ -457,6 +459,11 @@
     return c;
   }
 
+  // Practice time goal: 60 minutes a day (Tim, 2026-10-16). Drawn as a
+  // dashed "Target Time" line across the Practice time chart; when the
+  // chart shows weeks it's 7 x 60 = 420 minutes a week.
+  var TARGET_MIN_PER_DAY = 60;
+
   // Stacked bars: ICR on the bottom, then Code Groups, Keyer, QSO and Jeopardy, then
   // practice added by hand (Zoom Session, On-Air, Other).
   function barChart(el, buckets, label) {
@@ -465,7 +472,8 @@
       maxMin = Math.max(maxMin, TIME_SERIES.reduce(function (sum, k) { return sum + b[k].ms; }, 0) / 60000);
     });
     if (!maxMin) { el.innerHTML = '<div class="nodata">No practice in this range.</div>'; return; }
-    var ax = axis(0, maxMin);
+    var target = TARGET_MIN_PER_DAY * buckets[0].step;      // per day, or per week
+    var ax = axis(0, Math.max(maxMin, target * 1.15));      // the target line always fits
     var c = makeChart(el, buckets, ax, function (v) { return Math.round(v); });
     var bw = Math.max(2, Math.min(28, (c.W - L - R) / c.n * 0.7));
     buckets.forEach(function (b, i) {
@@ -481,6 +489,10 @@
         top = y;
       });
     });
+    var ty = c.y(target).toFixed(1);
+    c.svg += '<line class="target" x1="' + L + '" x2="' + (c.W - R) + '" y1="' + ty + '" y2="' + ty + '"><title>Target Time: ' +
+             target + ' minutes a ' + (buckets[0].step === 1 ? 'day' : 'week') + '</title></line>' +
+             '<text class="target" x="' + (c.W - R - 2) + '" y="' + (Number(ty) - 5) + '" text-anchor="end">Target Time · ' + target + ' min</text>';
     c.done(label);
   }
 
@@ -708,6 +720,13 @@
                esc((s.mode === 'walk' ? 'Walk Mode · ' : 'Car Mode · ') + (CAR_SETS[s.group] || 'Letters') + (s.heard ? ' · ' + s.heard + ' heard' : '')) +
                '</td><td class="num">' + esc(s.wpm || '') + '</td><td class="num">' + HST.fmtClock(s.durationMs || 0) +
                '</td><td class="num">—</td><td class="num">—</td></tr>';
+      }
+      // Code Groups Walk Mode: listening only, so time but no grading.
+      if (s.trainer === 'code-groups' && s.mode === 'walk') {
+        return '<tr><td>' + esc(when) + '</td><td><span class="tag cg">Code Groups</span></td><td>' +
+               esc('Walk Mode · ' + (GROUP_NAMES[s.group] || s.group || '') + (s.heard ? ' · ' + s.heard + ' heard' : '')) +
+               '</td><td class="num">' + esc((s.wpm || '') + (s.fwpm && s.fwpm < s.wpm ? '/' + s.fwpm : '')) + '</td><td class="num">' +
+               HST.fmtClock(s.durationMs || 0) + '</td><td class="num">—</td><td class="num">—</td></tr>';
       }
       var icr = s.trainer === 'icr';
       var what = GROUP_NAMES[s.group] || s.group || '';

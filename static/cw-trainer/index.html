@@ -694,6 +694,7 @@
     } else if (slug === 'code-groups') {
       clickIfStop('drillBtn');           // Code Groups relabels these buttons
       clickIfStop('sessionBtn');         // to "Stop ..." while running
+      clickIfVisible('walkStopBtn');     // Walk Mode, if it's playing
     } else if (slug === 'keyer') {
       clickIfVisible('endBtn');          // Keyer Practice: save the session to Progress
     } else if (slug === 'qso') {
@@ -1339,11 +1340,13 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-16-round-7';
+  var RELEASE = '2026-10-16-round-8';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
-    '<strong>Car Mode keeps playing if your screen turns off.</strong> Some phones let the screen time out during Car Mode, which stopped the sound with time still left. It now plays on until your time is up, like Walk Mode, with play and pause on the lock screen.',
-    '<strong>Walk Mode speaks less:</strong> the voice now says the character only after the fifth play.',
+    '<strong>New: Walk Mode for Code Groups</strong> (under Start Session). Your practice group plays once, twice or three times, then a voice spells it out. Like ICR&rsquo;s Walk Mode, it keeps playing with the phone in your pocket.',
+    '<strong>Keyer: Farnsworth spacing</strong> in Tool Settings, for all three modes. Practice sending at, say, 25/10: letters at your keyer speed, with the extra space between letters and words that 10 WPM overall needs. Your spacing is graded against that.',
+    '<strong>Progress: Target Time.</strong> The Practice time chart has a dashed line at 60 minutes a day.',
+    '<strong>Walk Mode says A correctly.</strong> The voice was saying “I” for the letter A.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
   var SEEN_KEY = 'hct-cw-seen-release';

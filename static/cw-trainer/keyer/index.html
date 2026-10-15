@@ -55,6 +55,7 @@
   .cset label { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.88rem; margin-bottom: 6px; }
   .cset output { color: var(--lime); font-family: 'JetBrains Mono', ui-monospace, monospace; }
   .cset input[type="range"] { width: 100%; accent-color: var(--lime); }
+  .cset select { width: 100%; padding: 6px 8px; background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 7px; font: 0.9rem 'Inter', sans-serif; }
   .ckey { margin: 12px 0 0; color: var(--muted); font-size: 0.85rem; }
   .ckey strong { color: var(--text); font-weight: 500; }
   .linkish { background: none; border: 0; padding: 0; color: var(--lime); cursor: pointer; font: inherit; }
@@ -275,7 +276,14 @@
         <label for="cVol">Sidetone volume <output id="cVolVal"></output></label>
         <input type="range" id="cVol" min="0" max="100" step="5">
       </div>
+      <!-- Farnsworth: practice SENDING with extra space between letters and
+           words, e.g. 25/10 (characters at 25 WPM, overall 10 WPM). -->
+      <div class="cset">
+        <label for="cFw">Farnsworth spacing <output id="cFwVal"></output></label>
+        <select id="cFw"></select>
+      </div>
     </div>
+    <p class="help ckey" id="fwNote" hidden></p>
     <p class="help ckey" id="followNote" hidden></p>
     <p class="help ckey">Your key: <span id="setupText"></span> &middot; <button class="linkish" id="setupLink" type="button">Keyer Setup&hellip;</button></p>
   </section>
@@ -320,7 +328,7 @@
 
   /* ---------------- this tab's own saved choices ---------------- */
   var PREFS_KEY = 'hct-cw-keyer-practice-v1';
-  var prefs = { mode: 'copy', source: 'word', showCode: false, wpm: 0 };   // wpm 0 = not set yet
+  var prefs = { mode: 'copy', source: 'word', showCode: false, wpm: 0, fw: 0 };   // wpm 0 = not set yet; fw 0 = Farnsworth off
   try { var saved = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (saved) Object.keys(prefs).forEach(function (k) { if (k in saved) prefs[k] = saved[k]; }); } catch (e) {}
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
 
@@ -334,6 +342,15 @@
   if (!prefs.wpm) { prefs.wpm = cfg().wpm || 20; savePrefs(); }
   function keyWpm() { return Math.min(40, Math.max(5, Number(prefs.wpm) || 20)); }
   function unitMs() { return 1200 / keyWpm(); }
+  /* Farnsworth sending (Tim, 2026-10-16): instructors have students send
+     at, say, 25/10 -- characters at the keyer speed, but letters and words
+     spaced out for an overall 10 WPM -- to practice clean spacing. The
+     gaps then target 3 and 7 dits times this ratio (HST.timing's spacing
+     unit / dit), and the live decoder and the analysis read a letter gap
+     that long as a letter gap, not a word break. 1 = standard spacing. */
+  function fwpm() { var f = Number(prefs.fw) || 0; return f && f < keyWpm() ? f : 0; }
+  function spaceRatio() { if (!fwpm()) return 1; var t = HST.timing(keyWpm(), fwpm()); return t.ts / t.ta; }
+  function speedText() { return keyWpm() + (fwpm() ? '/' + fwpm() : '') + ' WPM'; }
 
   /* ---------------- the key ----------------
      The keyer (shared/hst-keyer.js) turns the adapter's paddle presses
@@ -345,6 +362,7 @@
   var decoder = HST.createDecoder({
     unitMs: unitMs,
     adaptive: function () { return !automatic(); },
+    spaceRatio: spaceRatio,
     onChar: function (ch) { live += ch; showLive(); },
     onWord: function () { if (live && live.slice(-1) !== ' ') { live += ' '; showLive(); } }
   });
@@ -414,14 +432,14 @@
     waitTimer = setTimeout(function () {
       var a = analyze();
       if (a && a.chars.length >= lettersWanted) return finishAttempt();
-      waitTimer = setTimeout(finishAttempt, Math.max(3000, 14 * u) - 5.5 * u);
+      waitTimer = setTimeout(finishAttempt, Math.max(3000, 14 * u, 10 * u * spaceRatio()) - 5.5 * u);   // Farnsworth word gaps can run 4 s+
     }, 5.5 * u);
   }
 
   // In Copy this the number of words is known, so word breaks are found
   // from it (see HST.analyzeSending); Free send goes by gap length alone.
   function analyze(list) {
-    return HST.analyzeSending(list || marks, { unitMs: unitMs(), automatic: automatic(),
+    return HST.analyzeSending(list || marks, { unitMs: unitMs(), automatic: automatic(), spaceRatio: spaceRatio(),
       expectWords: (prefs.mode === 'copy' || prefs.mode === 'warmup') && analyzedTarget ? analyzedTarget.split(' ').length : 0 });
   }
   var analyzedTarget = '';   // the target the marks being analyzed were meant to be
@@ -452,7 +470,7 @@
     waitTimer = setTimeout(function () {
       var a = analyze();
       if (a) showResult(a, null, null);
-      waitTimer = setTimeout(endLine, Math.max(4000, 14 * u) - 5.5 * u);
+      waitTimer = setTimeout(endLine, Math.max(4000, 14 * u, 10 * u * spaceRatio()) - 5.5 * u);
     }, 5.5 * u);
   }
   function endLine() {
@@ -534,7 +552,7 @@
     target = analyzedTarget = WARMUP_TARGET;
     if (!warmSpans.length) buildWarm();
     paintWarm([], 0);
-    $('warmProgress').innerHTML = 'Your keyer speed is <b>' + keyWpm() + ' WPM</b> (Tool Settings, below). Start sending when you’re ready.';
+    $('warmProgress').innerHTML = 'Your keyer speed is <b>' + speedText() + '</b>' + (fwpm() ? ' (Farnsworth)' : '') + ' (Tool Settings, below). Start sending when you’re ready.';
     setStatus(msg || 'Start with the first E.');
   }
 
@@ -550,9 +568,10 @@
 
   function warmFinished(a, g) {
     paintWarm(g.items, -1);
-    var pctOfSet = Math.round(100 * a.overallWpm / keyWpm());
+    var goal = fwpm() || keyWpm(), pctOfSet = Math.round(100 * a.overallWpm / goal);
     $('warmProgress').innerHTML = '<b>' + g.correct + ' of ' + g.total + '</b> right' + (g.extra ? ' (' + g.extra + ' extra)' : '') +
-      ' at your keyer speed of <b>' + keyWpm() + ' WPM</b> · overall speed <b>' + Math.round(a.overallWpm) + ' WPM</b> (' + pctOfSet + '% of it)';
+      ' at your keyer speed of <b>' + speedText() + '</b> · overall speed <b>' + Math.round(a.overallWpm) + ' WPM</b> (' + pctOfSet + '% of ' +
+      (fwpm() ? 'your Farnsworth ' + goal + ')' : 'it)');
     setStatus(g.correct === g.total && !g.extra ? 'Clean warm-up! Your timing report is below.' : 'Your timing report is below. Again (Esc) runs it from the top.');
   }
 
@@ -573,8 +592,17 @@
   /* ---------------- results ---------------- */
   // Ranges counted as "on target" -- loose enough for real sending, which
   // is never machine-perfect (USB and the browser add a few ms of wobble too).
+  // With Farnsworth on, the letter and word gap targets (and their ranges)
+  // are stretched by the spacing ratio; setTargets() refreshes them.
   var OK = { charGap: [2.4, 3.8], wordGap: [5.8, 9], ratio: [2.6, 3.6], spread: 25 };
+  var GAP = { ch: 3, word: 7 };                    // the targets, in dits
+  function setTargets() {
+    var r = spaceRatio();
+    GAP = { ch: 3 * r, word: 7 * r };
+    OK.charGap = [2.4 * r, 3.8 * r]; OK.wordGap = [5.8 * r, 9 * r];
+  }
   function within(x, r) { return x >= r[0] && x <= r[1]; }
+  function fwSub(std) { return fwpm() ? 'target ' + r1(std === 3 ? GAP.ch : GAP.word) + ' at ' + speedText() : 'perfect is ' + std; }
 
   function tile(val, unit, lbl, sub, cls) {
     return '<div class="tile ' + (cls || '') + '"><div class="val">' + val + (unit ? '<small>' + unit + '</small>' : '') +
@@ -586,6 +614,7 @@
   var marks0 = [];
   function showResult(a, g, want) {
     marks0 = marks.slice();
+    setTargets();
     $('result').hidden = false;
 
     // Letter-by-letter comparison (Copy this only)
@@ -605,9 +634,9 @@
     // Measurements
     var t = [];
     t.push(tile(Math.round(a.charWpm), 'WPM', 'Character speed', automatic() ? 'set by your keyer' : HST.adapterKeying.get().on && cfg().keyType !== 'straight' ? 'set by your adapter' : 'your dits and dahs'));
-    t.push(tile(Math.round(a.overallWpm), 'WPM', 'Overall speed', 'including your spacing'));
-    if (a.charGap.n) t.push(tile(r1(a.charGap.mean), 'dits', 'Letter spacing', 'perfect is 3', within(a.charGap.mean, OK.charGap) ? 'good' : 'off'));
-    if (a.wordGap.n) t.push(tile(r1(a.wordGap.mean), 'dits', 'Word spacing', 'perfect is 7', within(a.wordGap.mean, OK.wordGap) ? 'good' : 'off'));
+    t.push(tile(Math.round(a.overallWpm), 'WPM', 'Overall speed', fwpm() ? 'target ' + fwpm() + ' (Farnsworth)' : 'including your spacing'));
+    if (a.charGap.n) t.push(tile(r1(a.charGap.mean), 'dits', 'Letter spacing', fwSub(3), within(a.charGap.mean, OK.charGap) ? 'good' : 'off'));
+    if (a.wordGap.n) t.push(tile(r1(a.wordGap.mean), 'dits', 'Word spacing', fwSub(7), within(a.wordGap.mean, OK.wordGap) ? 'good' : 'off'));
     if (a.ratio) t.push(tile(r1(a.ratio), ': 1', 'Dah to dit', 'perfect is 3 : 1', within(a.ratio, OK.ratio) ? 'good' : 'off'));
     if (a.charGap.n >= 3) {
       var spread = Math.round(100 * a.charGap.sd / a.charGap.mean);
@@ -640,11 +669,17 @@
       });
     }
     // Spacing
-    if (a.charGap.n) {
+    if (a.charGap.n && fwpm()) {
+      if (a.charGap.mean < OK.charGap[0]) tips.push('Your letters are closer together (' + r1(a.charGap.mean) + ' dits) than Farnsworth ' + speedText() + ' asks for (' + r1(GAP.ch) + '). Hold the gap a little longer between letters.');
+      else if (a.charGap.mean > OK.charGap[1]) tips.push('There\u2019s more space between letters (' + r1(a.charGap.mean) + ' dits) than Farnsworth ' + speedText() + ' asks for (' + r1(GAP.ch) + '). Start each letter a little sooner.');
+    } else if (a.charGap.n) {
       if (a.charGap.mean < OK.charGap[0]) tips.push('Your letters are close together (' + r1(a.charGap.mean) + ' dits). Leave a full 3-dit gap so they don’t run into each other.');
       else if (a.charGap.mean > OK.charGap[1]) tips.push('There’s extra space between letters (' + r1(a.charGap.mean) + ' dits; 3 is standard). That’s fine while learning — it’s Farnsworth spacing — but tightening it brings your overall speed up toward your character speed.');
     }
-    if (a.wordGap.n) {
+    if (a.wordGap.n && fwpm()) {
+      if (a.wordGap.mean < OK.wordGap[0]) tips.push('Words are closer (' + r1(a.wordGap.mean) + ' dits) than Farnsworth ' + speedText() + ' asks for (' + r1(GAP.word) + '). Pause a little longer between words.');
+      else if (a.wordGap.mean > OK.wordGap[1]) tips.push('Long pauses between words (' + r1(a.wordGap.mean) + ' dits; Farnsworth ' + speedText() + ' asks for ' + r1(GAP.word) + ').');
+    } else if (a.wordGap.n) {
       if (a.wordGap.mean < OK.wordGap[0]) tips.push('Words are a little close (' + r1(a.wordGap.mean) + ' dits). A 7-dit pause makes the break between words obvious.');
       else if (a.wordGap.mean > OK.wordGap[1]) tips.push('Long pauses between words (' + r1(a.wordGap.mean) + ' dits; 7 is standard).');
     }
@@ -655,7 +690,7 @@
       if (a.ratio < OK.ratio[0]) tips.push('Your dahs are short compared with your dits (' + r1(a.ratio) + ' : 1). Hold dahs for three dits’ worth.');
       else if (a.ratio > OK.ratio[1]) tips.push('Your dahs are long compared with your dits (' + r1(a.ratio) + ' : 1). Aim for three dits’ worth.');
     }
-    if (a.charGap.n >= 3 && 100 * a.charGap.sd / a.charGap.mean > OK.spread) tips.push('Your letter gaps vary quite a bit. Steady spacing is a big part of a good “fist” — try counting the 3 dits in your head.');
+    if (a.charGap.n >= 3 && 100 * a.charGap.sd / a.charGap.mean > OK.spread) tips.push('Your letter gaps vary quite a bit. Steady spacing is a big part of a good “fist” — try counting the ' + (fwpm() ? 'gap' : '3 dits') + ' in your head.');
     if (!tips.length) tips.push(g ? 'Clean sending — nice fist!' : 'Spacing looks good.');
     return tips;
   }
@@ -772,7 +807,7 @@
     if (!sess) {
       sess = { start: Date.now(), tries: 0, right: 0, total: 0, sent: 0,
                cgSum: 0, cgN: 0, wgSum: 0, wgN: 0, wpmW: 0, overallW: 0 };
-      rec.start({ mode: prefs.mode, source: prefs.mode === 'copy' ? prefs.source : prefs.mode, keyType: cfg().keyType, wpm: keyWpm() });
+      rec.start({ mode: prefs.mode, source: prefs.mode === 'copy' ? prefs.source : prefs.mode, keyType: cfg().keyType, wpm: keyWpm(), fwpm: fwpm() });
       $('endBtn').hidden = false;
       clockTimer = setInterval(renderSession, 1000);
     }
@@ -915,10 +950,25 @@
           ? 'To control it from here, turn on “Set my Vail adapter’s speed from the app” in Keyer Setup.'
           : 'This browser can’t set the adapter’s speed: change it in Vail Zoomer, or use Chrome or Edge.');
     $('cWpm').value = keyWpm(); $('cWpmVal').textContent = keyWpm() + ' WPM';
+    var fo = ['<option value="0">Off (standard spacing)</option>'];
+    for (var w = 5; w < keyWpm(); w++) fo.push('<option value="' + w + '">' + w + ' WPM overall</option>');
+    $('cFw').innerHTML = fo.join('');
+    $('cFw').value = String(fwpm());
+    $('cFwVal').textContent = fwpm() ? keyWpm() + '/' + fwpm() : 'Off';
+    $('fwNote').hidden = !fwpm();
+    if (fwpm()) {
+      setTargets();
+      $('fwNote').textContent = 'Farnsworth ' + speedText() + ': send your letters at ' + keyWpm() + ' WPM, but leave about ' +
+        r1(GAP.ch) + ' dits between letters and ' + r1(GAP.word) + ' between words (instead of 3 and 7), for an overall ' + fwpm() + ' WPM.';
+    }
     $('cTone').value = sh.toneHz; $('cToneVal').textContent = sh.toneHz + ' Hz';
     $('cVol').value = sh.volume; $('cVolVal').textContent = sh.volume + '%';
   }
   $('cWpm').addEventListener('input', function (e) { prefs.wpm = Number(e.target.value); savePrefs(); keyer.reset(); renderConsole(); });
+  $('cFw').addEventListener('change', function (e) {
+    prefs.fw = Number(e.target.value); savePrefs(); decoder.reset(); renderConsole();
+    if (prefs.mode === 'warmup' && state !== 'sending') warmReady();
+  });
   $('cTone').addEventListener('input', function (e) { HST.shared.set({ toneHz: Number(e.target.value) }); });
   $('cVol').addEventListener('input', function (e) { HST.shared.set({ volume: Number(e.target.value) }); });
   HST.shared.onChange(renderConsole);
