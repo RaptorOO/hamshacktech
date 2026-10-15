@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Test Prep — HamShackTech CW Trainer</title>
 <link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../shared/hst-chrome.css">
 <style>
   /* Same avocado palette as the app shell and the other tabs. Test Prep's
      own color (orange-400) is its tab and Progress color. */
@@ -32,7 +33,7 @@
   :focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
   [hidden] { display: none !important; }
 
-  .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 16px; }
+  .head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-bottom: 16px; }
   h1 { margin: 0; font: 600 1.9rem/1.1 'Oswald', sans-serif; letter-spacing: 0.02em; }
   .head .sub { color: var(--muted); font-size: 0.9rem; }
 
@@ -151,7 +152,8 @@
 <body>
 <div class="wrap">
   <div class="head">
-    <h1>Test Prep</h1>
+    <img class="hst-mascot" src="../icons/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
+    <h1 class="hst-title">CW Test Prep</h1>
     <span class="sub">CW Academy: Fundamental &rarr; Intermediate</span>
   </div>
 
@@ -159,9 +161,10 @@
   <section class="card" id="setupCard" aria-labelledby="setupTitle">
     <h2 id="setupTitle">Practice the placement test</h2>
     <p class="desc">At the end of Fundamental, CW Academy checks your copy before placing you in Intermediate.
-      Each question sends a <b>call sign</b> or a <b>short word or phrase</b> in Morse; then you pick what you heard from
-      <b>4 choices</b> of the same length. The test sends <b>25 WPM characters</b> with Farnsworth spacing for an overall
-      speed of about <b>10 WPM</b>. You need <b>80%</b> to pass.</p>
+      The content of the online test is not published, but we believe it will be something like this.
+      Each question will send a <b>call sign</b> or a <b>short word or phrase</b> in Morse; then you pick what you heard from
+      <b>4 choices</b> of the same length. The test will send <b>25 WPM characters</b> with Farnsworth spacing for an overall
+      speed of about <b>10 WPM</b>, and you will need <b>80%</b> to pass.</p>
 
     <div class="choices">
       <div class="group">
@@ -255,6 +258,10 @@
     <div id="chart"></div>
     <p class="summary" id="historySummary"></p>
   </section>
+  <footer class="hst-foot">
+    <div class="hst-73"><b>73</b> Practice often, don&rsquo;t quit and have fun</div>
+    <div class="hst-copy">&copy; HamShackTech LLC 2026</div>
+  </footer>
 </div>
 
 <script src="../shared/hst-engine.js"></script>

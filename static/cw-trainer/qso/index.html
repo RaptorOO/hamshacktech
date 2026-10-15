@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QSO Practice — HamShackTech CW Trainer</title>
 <link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../shared/hst-chrome.css">
 <style>
   /* Same avocado palette as the app shell and the other tabs. */
   :root {
@@ -149,7 +150,8 @@
 <body>
 <div class="wrap">
   <div class="head">
-    <h1>QSO Practice</h1>
+    <img class="hst-mascot" src="../icons/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
+    <h1 class="hst-title">CW QSO Practice</h1>
     <div class="spacer"></div>
     <button class="chip" id="setupChip" type="button" title="Open Keyer Setup"><span id="setupText"></span><span class="chg">Change</span></button>
   </div>
@@ -280,6 +282,10 @@
     <p>It&rsquo;s forgiving like a real operator: order doesn&rsquo;t matter, repeats are fine, and a call sign with one letter off still gets through. If something&rsquo;s missing they&rsquo;ll ask &mdash; <b>QRZ?</b> (who&rsquo;s calling?), <b>NAME?</b>, <b>RST?</b>, <b>PSE AGN</b> &mdash; or <b>QRS</b> if they can&rsquo;t read you. You can ask them too: send <b>AGN</b> or <b>?</b> to hear their last over again, or <b>QRS</b> to have them slow down.</p>
     <p><b>Standard QSO:</b> call signs, signal report, name and QTH, then 73. <b>POTA:</b> the quick Parks on the Air exchange &mdash; the activator calls CQ POTA with the park number, hunters send just their call, each side sends 5NN (599) and state, then TU. <b>SOTA:</b> the same idea from a mountain top &mdash; the activator signs /P and gives the summit reference; real signal reports are traded. <b>CWT:</b> the CWops Test, a fast weekly mini-contest &mdash; the exchange is just name and CWops member number (CWA if you don&rsquo;t have one), with no signal report. Enter your number in the box that appears when you pick CWT.</p>
   </details>
+  <footer class="hst-foot">
+    <div class="hst-73"><b>73</b> Practice often, don&rsquo;t quit and have fun</div>
+    <div class="hst-copy">&copy; HamShackTech LLC 2026</div>
+  </footer>
 </div>
 
 <script src="../shared/hst-engine.js"></script>

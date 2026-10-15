@@ -17,7 +17,7 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = 'ce14fb0f6932';
+const VERSION = '4c560f0b6afd';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline.
@@ -59,11 +59,48 @@ const PRECACHE = [
   '/cw-trainer/progress/',
   '/cw-trainer/qso/',
   '/cw-trainer/shared/hst-account.js',
+  '/cw-trainer/shared/hst-chrome.css',
   '/cw-trainer/shared/hst-content.js',
   '/cw-trainer/shared/hst-engine.js',
   '/cw-trainer/shared/hst-keyer.js',
   '/cw-trainer/shared/hst-qso.js',
-  '/cw-trainer/test-prep/'
+  '/cw-trainer/test-prep/',
+  '/cw-trainer/voice/0.mp3',
+  '/cw-trainer/voice/1.mp3',
+  '/cw-trainer/voice/2.mp3',
+  '/cw-trainer/voice/3.mp3',
+  '/cw-trainer/voice/4.mp3',
+  '/cw-trainer/voice/5.mp3',
+  '/cw-trainer/voice/6.mp3',
+  '/cw-trainer/voice/7.mp3',
+  '/cw-trainer/voice/8.mp3',
+  '/cw-trainer/voice/9.mp3',
+  '/cw-trainer/voice/A.mp3',
+  '/cw-trainer/voice/B.mp3',
+  '/cw-trainer/voice/C.mp3',
+  '/cw-trainer/voice/D.mp3',
+  '/cw-trainer/voice/E.mp3',
+  '/cw-trainer/voice/F.mp3',
+  '/cw-trainer/voice/G.mp3',
+  '/cw-trainer/voice/H.mp3',
+  '/cw-trainer/voice/I.mp3',
+  '/cw-trainer/voice/J.mp3',
+  '/cw-trainer/voice/K.mp3',
+  '/cw-trainer/voice/L.mp3',
+  '/cw-trainer/voice/M.mp3',
+  '/cw-trainer/voice/N.mp3',
+  '/cw-trainer/voice/O.mp3',
+  '/cw-trainer/voice/P.mp3',
+  '/cw-trainer/voice/Q.mp3',
+  '/cw-trainer/voice/R.mp3',
+  '/cw-trainer/voice/S.mp3',
+  '/cw-trainer/voice/T.mp3',
+  '/cw-trainer/voice/U.mp3',
+  '/cw-trainer/voice/V.mp3',
+  '/cw-trainer/voice/W.mp3',
+  '/cw-trainer/voice/X.mp3',
+  '/cw-trainer/voice/Y.mp3',
+  '/cw-trainer/voice/Z.mp3'
 ];
 
 // Install: download and save every file. If any one fails, the install fails
