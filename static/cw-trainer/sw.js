@@ -17,7 +17,7 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = 'cf81286af9ca';
+const VERSION = '914414e3a235';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline.

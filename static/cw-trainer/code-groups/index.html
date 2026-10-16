@@ -363,6 +363,9 @@
     transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
   }
   .blank.filled, .blank.active { border-color: var(--accent2); }
+  /* Long rounds (Phrases & Sayings): smaller boxes, so a sentence fits. */
+  .blanks.long { gap: clamp(3px, 0.8vw, 6px); }
+  .blanks.long .blank { width: clamp(22px, 5.4vw, 36px); height: clamp(32px, 7.5vw, 46px); font-size: clamp(0.95rem, 3vw, 1.3rem); border-radius: 6px; }
   .blank.correct { background: var(--good-soft); border-color: var(--good); color: var(--good); }
   .blank.incorrect { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
   .blank.pop { transform: translateY(-2px); }
@@ -492,6 +495,7 @@
     width: clamp(10px, 2vw, 18px);
     flex-shrink: 0;
   }
+  .blank-word { display: flex; gap: inherit; }
 
   /* ---------------------------------------------------------------------
      Answer row — [Head Copy Mode] [character boxes] [Replay]
@@ -809,6 +813,11 @@
       heard every one at that setting.
     </p>
     <p>
+      <strong>Phrases &amp; Sayings</strong> sends whole sentences to head copy: old proverbs
+      (&ldquo;PRACTICE MAKES PERFECT&rdquo;) and phrases from real contacts (&ldquo;UR RST IS 599&rdquo;).
+      Type just the letters; the spaces fill in by themselves. Longer phrases get a little more time to answer.
+    </p>
+    <p>
       The <strong>Elapsed</strong> stopwatch counts up from Start Session. Tap <strong>Timer</strong>
       to choose how long to practice; when it runs out, a bell rings and the session stops.
     </p>
@@ -986,6 +995,7 @@
             <option value="mixed">Mixed (A–Z, 0–9)</option>
             <option value="qso">QSO Elements</option>
             <option value="words">Common Words</option>
+            <option value="phrases">Phrases &amp; Sayings</option>
             <option value="calls">Call Signs</option>
             <option value="custom">Custom</option>
           </select>
@@ -1151,6 +1161,45 @@
     "CALL", "WX", "QSO", "73", "BK", "BT", "GM", "GE", "GA", "OP",
     "THX", "SOTA", "/P", "ES", "HW", "TU", "TNX", "RR", "QRL", "AGN",
     "PSE", "SRI", "SIG"
+  ];
+
+  /* Phrases & Sayings (Tim, 2026-10-16) -- whole sentences to head copy:
+     old proverbs and sayings (all long in the public domain), plus the
+     phrases you actually hear in a CW contact. A fixed list, dealt like
+     a shuffled deck (see drawFromDeck), so nothing repeats until every
+     phrase has come up. Letters, digits and spaces only; at most 32
+     characters, so one fits in the practice box. Add or remove freely. */
+  var PHRASES = [
+    "ACTIONS SPEAK LOUDER THAN WORDS", "AFTER A STORM COMES A CALM", "ALL IS WELL THAT ENDS WELL",
+    "ALL ROADS LEAD TO ROME", "ALL THAT GLITTERS IS NOT GOLD", "AN APPLE A DAY",
+    "A PENNY SAVED IS A PENNY EARNED", "APPEARANCES CAN BE DECEIVING", "A WATCHED POT NEVER BOILS",
+    "BARKING DOGS SELDOM BITE", "BETTER LATE THAN NEVER", "BETTER SAFE THAN SORRY",
+    "BLOOD IS THICKER THAN WATER", "BREAK A LEG", "CURIOSITY KILLED THE CAT", "DO AS I SAY NOT AS I DO",
+    "EARLY TO BED EARLY TO RISE", "EASIER SAID THAN DONE", "EASY COME EASY GO", "EASY DOES IT",
+    "EVERY CLOUD HAS A SILVER LINING", "EVERY DOG HAS ITS DAY", "FAMILIARITY BREEDS CONTEMPT",
+    "FIGHT FIRE WITH FIRE", "FIRST THINGS FIRST", "FORTUNE FAVORS THE BOLD", "GREAT MINDS THINK ALIKE",
+    "HASTE MAKES WASTE", "HOME IS WHERE THE HEART IS", "HONESTY IS THE BEST POLICY",
+    "HOPE FOR THE BEST", "IGNORANCE IS BLISS", "IN FOR A PENNY IN FOR A POUND", "IT IS NEVER TOO LATE",
+    "IT TAKES TWO TO TANGO", "KEEP YOUR CHIN UP", "KILL TWO BIRDS WITH ONE STONE", "KNOCK ON WOOD",
+    "KNOWLEDGE IS POWER", "LAUGHTER IS THE BEST MEDICINE", "LESS IS MORE", "LET SLEEPING DOGS LIE",
+    "LIGHTNING NEVER STRIKES TWICE", "LIKE FATHER LIKE SON", "LOOK BEFORE YOU LEAP",
+    "MAKE HAY WHILE THE SUN SHINES", "MANY HANDS MAKE LIGHT WORK", "MONEY TALKS", "NEVER SAY NEVER",
+    "NEVER TOO OLD TO LEARN", "NO NEWS IS GOOD NEWS", "NO PAIN NO GAIN",
+    "NOTHING VENTURED NOTHING GAINED", "OLD HABITS DIE HARD", "ONE STEP AT A TIME", "OPPOSITES ATTRACT",
+    "OUT OF SIGHT OUT OF MIND", "PATIENCE IS A VIRTUE", "PRACTICE MAKES PERFECT",
+    "PRACTICE WHAT YOU PREACH", "PRIDE COMES BEFORE A FALL", "PUT YOUR BEST FOOT FORWARD",
+    "ROME WAS NOT BUILT IN A DAY", "SEEING IS BELIEVING", "SILENCE IS GOLDEN",
+    "SLOW AND STEADY WINS THE RACE", "SPEAK OF THE DEVIL", "STILL WATERS RUN DEEP",
+    "STRIKE WHILE THE IRON IS HOT", "THE BEST IS YET TO COME", "THE EARLY BIRD GETS THE WORM",
+    "THE MORE THE MERRIER", "THE PROOF IS IN THE PUDDING", "THE SKY IS THE LIMIT",
+    "THERE IS NO PLACE LIKE HOME", "THINK OUTSIDE THE BOX", "TIME FLIES", "TIME HEALS ALL WOUNDS",
+    "TIME IS MONEY", "TIME WILL TELL", "TOMORROW IS ANOTHER DAY", "TOO MANY COOKS SPOIL THE BROTH",
+    "TWO HEADS ARE BETTER THAN ONE", "TWO WRONGS DO NOT MAKE A RIGHT", "WASTE NOT WANT NOT",
+    "WELL BEGUN IS HALF DONE", "WHAT GOES AROUND COMES AROUND", "WHEN IN ROME",
+    "WHEN IT RAINS IT POURS", "YOU REAP WHAT YOU SOW", "73 ES GUD DX", "CUL ES 73", "FB OM TNX FER QSO",
+    "GL ON THE BANDS", "HPE CU AGN SN", "HW CPY OM", "NAME HR IS BOB", "NICE SIG OM", "PSE QRS",
+    "PWR HR IS 5 WATTS", "QTH IS OHIO", "RIG HR IS QRP", "SEE U ON THE AIR", "THE BAND IS OPEN",
+    "TNX FER THE CALL", "UR RST IS 599", "VY FB OM", "WX HR IS SUNNY", "ANT IS A DIPOLE", "CW IS FUN"
   ];
 
   /* Common Words is built from two lists that are merged at practice
@@ -1616,7 +1665,7 @@
   function updateGroupSizeFieldUI(group) {
     els.callMixField.style.display = group === "calls" ? "" : "none";
     els.wordPoolField.style.display = group === "words" ? "" : "none";
-    if (group === "qso" || group === "calls") {
+    if (group === "qso" || group === "calls" || group === "phrases") {
       els.groupSizeField.style.display = "none";
     } else {
       els.groupSizeField.style.display = "";
@@ -1782,6 +1831,7 @@
       return drawFromDeck("qso", QSO_ELEMENTS).split("");
     }
     if (s.group === "calls") return generateCallSign().split("");
+    if (s.group === "phrases") return drawFromDeck("phrases", PHRASES).split("");
     if (s.group === "words") {
       var pool = wordsOfLength(s.groupSize);
       if (!pool.length) return null;
@@ -1834,14 +1884,22 @@
   // is already known — a literal " " (only ever appears in "HW CPY?") gets
   // a narrow .blank-gap spacer instead of a full-size .blank box, so the
   // row visibly reads as two words rather than one run-together string.
+  // Each word's boxes sit in their own .blank-word group, so a long
+  // phrase only wraps between words on a narrow screen, never mid-word.
   function renderBlanksForRound(chars) {
     els.blanksRow.innerHTML = "";
+    els.blanksRow.classList.toggle("long", chars.length > 12);   // phrases: smaller boxes
+    var word = null;
     chars.forEach(function (ch) {
       var d = document.createElement("div");
-      d.className = ch === " " ? "blank-gap" : "blank";
-      els.blanksRow.appendChild(d);
+      if (ch === " ") { d.className = "blank-gap"; els.blanksRow.appendChild(d); word = null; return; }
+      if (!word) { word = document.createElement("div"); word.className = "blank-word"; els.blanksRow.appendChild(word); }
+      d.className = "blank";
+      word.appendChild(d);
     });
   }
+  // The answer boxes (and word gaps) in order, one per character.
+  function blankCells() { return els.blanksRow.querySelectorAll(".blank, .blank-gap"); }
 
   // True while Head Copy Mode is holding back typing — i.e. the mode is
   // on and the group's first send is still sounding.
@@ -1863,7 +1921,7 @@
   }
 
   function renderBlanksTyping() {
-    var cells = els.blanksRow.children;
+    var cells = blankCells();
     var nextIndex = state.typed.length; // the blank the caret belongs in next
     for (var i = 0; i < cells.length; i++) {
       var cell = cells[i];
@@ -1888,7 +1946,7 @@
   }
 
   function renderBlanksReveal(results) {
-    var cells = els.blanksRow.children;
+    var cells = blankCells();
     for (var i = 0; i < cells.length; i++) {
       var r = results[i];
       var cell = cells[i];
@@ -2173,7 +2231,10 @@
     renderBlanksTyping(); // swaps the dashed "wait" box for the live caret in Head Copy Mode
     updateReplayBtn();
     if (state.settings.unlimited) updateMeter(1, "Unlimited time", false);
-    else startTimer(state.settings.maxTimeSec);
+    // Phrases: half a second more for each character past five, so a
+    // 30-character sentence isn't a race against the Max Time to Answer.
+    else startTimer(state.settings.maxTimeSec +
+      (state.settings.group === "phrases" ? 0.5 * Math.max(0, state.currentChars.length - 5) : 0));
   }
 
   // ---- Review pause (after a missed or timed-out group) --------------
@@ -2235,7 +2296,7 @@
      ===================================================================== */
   var WALK_DRAFT_KEY = "hct-cw-run-cg-walk";
   var GROUP_NAMES = { letters: "Letters", numbers: "Numbers", mixed: "Mixed", qso: "QSO Elements",
-                      words: "Common Words", calls: "Call Signs", custom: "Custom" };
+                      words: "Common Words", phrases: "Phrases & Sayings", calls: "Call Signs", custom: "Custom" };
   var walk = { player: null, run: null, paused: false };
   var walkEls = {};
   ["walkBtn", "walkDialog", "walkSetup", "walkPlaying", "walkWhat", "walkPresets", "walkMinInput", "walkGroup",
@@ -2620,10 +2681,16 @@
     // but keep whatever was already typed (e.g. before pressing Replay).
     if (inputLocked()) { els.hiddenInput.value = state.typed.join(""); return; }
     // A-Z0-9 as before, plus the punctuation QSO Elements/Common Words can
-    // contain: "?" (the bare "?" element, "HW CPY?"), "/" ("/P", "/AR" etc.),
-    // "'" ("THAT'S"), and a literal space for the one two-word element.
-    var v = els.hiddenInput.value.toUpperCase().replace(/[^A-Z0-9?/' ]/g, "");
-    v = v.slice(0, state.currentChars.length);
+    // contain: "?" (the bare "?" element, "HW CPY?"), "/" ("/P", "/AR" etc.)
+    // and "'" ("THAT'S").
+    // Spaces fill in by themselves (Tim, 2026-10-16, for Phrases & Sayings):
+    // whatever was typed is laid into the group's letter boxes in order,
+    // skipping over its word gaps, so a missed (or extra) space never
+    // shifts the rest of a sentence out of line. Typing the space works too.
+    var letters = els.hiddenInput.value.toUpperCase().replace(/[^A-Z0-9?/']/g, "").split("");
+    var cells = state.currentChars, out = [];
+    for (var ci = 0; ci < cells.length && letters.length; ci++) out.push(cells[ci] === " " ? " " : letters.shift());
+    var v = out.join("");
     els.hiddenInput.value = v;
     state.typed = v.split("");
     renderBlanksTyping();

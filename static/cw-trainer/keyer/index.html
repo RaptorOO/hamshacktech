@@ -107,6 +107,8 @@
     font: 500 1.05rem/1.7 'JetBrains Mono', monospace; white-space: pre-wrap; word-break: break-word; color: var(--muted);
   }
   .warm .t { border-radius: 3px; }
+  .warm .t.pro + .t.pro { margin-left: 0.35em; }   /* <SK><SK>: a little air between prosigns */
+  .warm .blk { white-space: nowrap; }
   .warm .t.ok { color: var(--good); }
   .warm .t.bad { color: var(--bad); text-decoration: underline wavy; text-underline-offset: 4px; }
   .warm .t.next { color: var(--text); background: #3f6212; }
@@ -122,6 +124,8 @@
   }
   .btn:hover { border-color: var(--lime); }
   .btn.primary { background: var(--lime); border-color: var(--lime); color: var(--lime-ink); }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+  .btn:disabled:hover { border-color: var(--border); }
   .btn kbd { font: 0.75rem 'JetBrains Mono', monospace; color: var(--dim); margin-left: 6px; }
   .btn.primary kbd { color: var(--lime-ink); opacity: 0.7; }
 
@@ -490,7 +494,11 @@
   var WARMUP_LINES = [
     'EEEEE  TTTTT  IIIII  MMMMM  SSSSS  OOOOO  HHHHH  00000  55555',
     'AAAAA  NNNNN  UUUUU  DDDDD  VVVVV  BBBBB  44444  66666',
-    'ABCDEF GHIJK LMNOP QRSTU VWXYZ  12345  67890   /  ,  .  ?   <SK>  <AR>  <BT>',
+    'ABCDEF GHIJK LMNOP QRSTU VWXYZ  12345  67890',
+    // Punctuation and prosigns in blocks of five, like the letters above
+    // (Tim, 2026-10-16). A prosign block is one word: five prosigns with
+    // letter gaps between them, drawn slightly apart so they're readable.
+    '/////  ,,,,,  .....  ?????  <SK><SK><SK><SK><SK>  <AR><AR><AR><AR><AR>  <BT><BT><BT><BT><BT>',
     'THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS BACK   7 0 3 6 4 5 1 2 8 9'
   ];
   var WARMUP_TARGET = WARMUP_LINES.join(' ').replace(/\s+/g, ' ');
@@ -501,8 +509,13 @@
   // The window: the text exactly as written (spacing kept), one span per character.
   function buildWarm() {
     var k = 0, html = WARMUP_LINES.map(function (line) {
-      return line.replace(/<[A-Z]+>|\S| +/g, function (m) {
-        return m.charAt(0) === ' ' ? m : '<span class="t">' + esc(m) + '</span>';
+      return line.replace(/(?:<[A-Z]+>)+|\S| +/g, function (m) {
+        if (m.charAt(0) === ' ') return m;
+        if (m.length === 1) return '<span class="t">' + esc(m) + '</span>';
+        // A block of prosigns stays on one line (it's one word).
+        return '<span class="blk">' + m.match(/<[A-Z]+>/g).map(function (p) {
+          return '<span class="t pro">' + esc(p) + '</span>';
+        }).join('') + '</span>';
       });
     }).join('\n');
     $('warm').innerHTML = html;
@@ -532,7 +545,7 @@
 
   function paintWarm(items, next) {
     warmSpans.forEach(function (el, k) {
-      el.className = 't' + (k < items.length ? (items[k].ok ? ' ok' : ' bad') : '') + (k === next ? ' next' : '');
+      el.className = (el.textContent.length > 1 ? 't pro' : 't') + (k < items.length ? (items[k].ok ? ' ok' : ' bad') : '') + (k === next ? ' next' : '');
     });
   }
 
@@ -587,6 +600,18 @@
   function setStatus(text, warn) {
     $('status').textContent = text || '';
     $('status').classList.toggle('warn', !!warn);
+    updateDone();
+  }
+  /* Done (Enter) grades the attempt you're sending right now. Every
+     attempt is also graded by itself when you pause, so most of the time
+     there's nothing left for Done to do -- and it used to look broken
+     (Tim, 2026-10-16). It's now greyed out unless an attempt is in
+     progress. (Called from setStatus, which every state change uses.) */
+  function updateDone() {
+    var b = $('doneBtn'), on = state === 'sending';
+    b.disabled = !on;
+    b.title = on ? 'Grade what you\u2019ve sent now (it\u2019s also graded when you pause)'
+                 : 'Start sending first. Each try is graded by itself when you pause.';
   }
 
   /* ---------------- results ---------------- */

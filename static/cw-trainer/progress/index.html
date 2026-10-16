@@ -337,7 +337,7 @@
                     'cwt-they': 'CWT \u00b7 answered CQ', 'cwt-you': 'CWT \u00b7 called CQ' };
   var GROUP_NAMES = {
     letters: 'Letters', numbers: 'Numbers', mixed: 'Mixed', punctuation: 'Punctuation',
-    all: 'All', custom: 'Custom', qso: 'QSO Elements', words: 'Common Words', calls: 'Call Signs'
+    all: 'All', custom: 'Custom', qso: 'QSO Elements', words: 'Common Words', phrases: 'Phrases & Sayings', calls: 'Call Signs'
   };
   var SEND_SOURCES = { letter: 'Letters & numbers', word: 'Words', call: 'Call signs', phrase: 'QSO phrases' };
   var CAR_SETS = { letters: 'Letters', numbers: 'Numbers', both: 'Letters + numbers' };
@@ -730,7 +730,7 @@
       }
       var icr = s.trainer === 'icr';
       var what = GROUP_NAMES[s.group] || s.group || '';
-      if (!icr && s.groupSize && ['qso', 'calls'].indexOf(s.group) < 0) what += s.group === 'words' ? ' · ' + s.groupSize + '-letter' : ' · ' + s.groupSize + '/group';
+      if (!icr && s.groupSize && ['qso', 'calls', 'phrases'].indexOf(s.group) < 0) what += s.group === 'words' ? ' · ' + s.groupSize + '-letter' : ' · ' + s.groupSize + '/group';
       var wpm = s.wpm + (s.fwpm && s.fwpm < s.wpm ? '/' + s.fwpm : '');
       return '<tr><td>' + esc(when) + '</td><td><span class="tag ' + (icr ? 'icr">ICR' : 'cg">Code Groups') + '</span></td><td>' +
              esc(what) + '</td><td class="num">' + esc(wpm) + '</td><td class="num">' + HST.fmtClock(s.durationMs || 0) +
