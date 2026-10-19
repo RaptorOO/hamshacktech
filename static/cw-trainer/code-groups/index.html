@@ -427,6 +427,17 @@
   }
   .session-btn:hover { filter: brightness(1.08); }
   .session-btn:active { transform: scale(0.98); }
+  /* The countdown sits just right of the button, so the button doesn't move. */
+  .session-wrap { position: relative; display: inline-block; }
+  .countdown {
+    position: absolute; left: 100%; top: 50%; margin-left: 14px; transform: translateY(-50%);
+    width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--accent); color: var(--accent); background: var(--recess);
+    font-family: var(--font-display); font-size: 1.5rem; font-weight: 600;
+  }
+  .countdown.tick { animation: countdown-pop 0.35s ease-out; }
+  @keyframes countdown-pop { from { transform: translateY(-50%) scale(1.35); opacity: 0.4; } to { transform: translateY(-50%) scale(1); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .countdown.tick { animation: none; } }
   .session-btn.running {
     background: transparent;
     color: var(--bad);
@@ -967,7 +978,11 @@
     </div>
     <div class="meter-label" id="meterLabel">&nbsp;</div>
 
-    <button class="session-btn" id="sessionBtn" type="button">Start Session</button>
+    <span class="session-wrap">
+      <button class="session-btn" id="sessionBtn" type="button">Start Session</button>
+      <!-- 3-2-1 countdown after Start Session (see startSession). -->
+      <span class="countdown" id="countdown" aria-live="assertive" hidden></span>
+    </span>
     <!-- Walk Mode: listen-only practice that keeps playing in your pocket (see WALK MODE in the script). -->
     <button class="walk-btn" id="walkBtn" type="button" title="Listen-only practice that keeps playing in your pocket">Walk Mode</button>
     <button class="next-btn" id="nextBtn" type="button" hidden>Next &#9656;</button>
@@ -2421,6 +2436,7 @@
 
   walkEls.walkBtn.addEventListener("click", function () {
     if (state.drilling) endDrill();
+    cancelCountdown();
     if (state.running) stopSession();
     renderWalk(); walkShowPlaying(false); walkStatus("");
     HST.listen.loadVoice().catch(function () {});   // fetch the voice while you choose
@@ -2449,6 +2465,51 @@
   function lockSettings(locked) {
     els.settingsFieldset.disabled = locked;
     els.lockNote.classList.toggle("show", locked);
+  }
+
+  /* Start Session counts down 3, 2, 1 before the first group plays, so
+     there's time to get your hands on the keyboard (Tim, 2026-10-19). The
+     count shows just right of the button and disappears when the session
+     starts. The button reads Stop Session meanwhile and cancels the count;
+     audio and the keyboard are set up right away, inside the tap, which
+     browsers (iPhones especially) require. */
+  var COUNTDOWN_SEC = 3;
+  var countdown = { timer: null, left: 0 };
+  function counting() { return !!countdown.timer; }
+  function cancelCountdown() {
+    if (!countdown.timer) return;
+    clearInterval(countdown.timer); countdown.timer = null;
+    $("countdown").hidden = true;
+    els.sessionBtn.textContent = "Start Session";
+    els.sessionBtn.classList.remove("running");
+    els.tapHint.style.display = "";
+    lockSettings(false);
+    setStatus("idle", "Idle");
+  }
+  function showCount() {
+    var el = $("countdown");
+    el.textContent = countdown.left;
+    el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick");   // replay the pop
+  }
+  function beginCountdown() {
+    if (state.drilling) endDrill(); // a normal practice session and a drill are mutually exclusive
+    ensureAudioCtx();
+    els.hiddenInput.focus({ preventScroll: true });   // the keyboard is live from the tap
+    els.sessionBtn.textContent = "Stop Session";
+    els.sessionBtn.classList.add("running");
+    els.tapHint.style.display = "none";
+    lockSettings(true);
+    setStatus("idle", "Get ready\u2026");
+    countdown.left = COUNTDOWN_SEC;
+    $("countdown").hidden = false;
+    showCount();
+    countdown.timer = setInterval(function () {
+      countdown.left--;
+      if (countdown.left > 0) { showCount(); return; }
+      clearInterval(countdown.timer); countdown.timer = null;
+      $("countdown").hidden = true;
+      startSession();
+    }, 1000);
   }
 
   function startSession() {
@@ -2543,6 +2604,7 @@
   function startDrill() {
     var worst = computeWorst(5).map(function (e) { return e[0]; });
     if (!worst.length) return;
+    cancelCountdown();
     if (state.running) stopSession(); // a drill and a practice session are mutually exclusive
     ensureAudioCtx(); // safe here \u2014 this call is itself inside a click handler (a user gesture)
     state.drillQueue = worst;
@@ -2651,7 +2713,9 @@
   });
 
   els.sessionBtn.addEventListener("click", function () {
-    if (state.running) stopSession(); else startSession();
+    if (counting()) cancelCountdown();
+    else if (state.running) stopSession();
+    else beginCountdown();
   });
 
   els.blanksRow.addEventListener("click", function () { els.hiddenInput.focus({ preventScroll: true }); });
