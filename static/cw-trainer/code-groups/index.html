@@ -435,6 +435,7 @@
     border: 2px solid var(--accent); color: var(--accent); background: var(--recess);
     font-family: var(--font-display); font-size: 1.5rem; font-weight: 600;
   }
+  .countdown[hidden] { display: none; }   /* display:flex above would otherwise keep the last number on screen */
   .countdown.tick { animation: countdown-pop 0.35s ease-out; }
   @keyframes countdown-pop { from { transform: translateY(-50%) scale(1.35); opacity: 0.4; } to { transform: translateY(-50%) scale(1); opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .countdown.tick { animation: none; } }
