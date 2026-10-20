@@ -1,0 +1,2178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CW Call Signs Trainer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../shared/hst-chrome.css">
+
+<style>
+  /* ======================================================================
+     TOKENS
+     Panel-meter / VFO-display aesthetic: near-black chassis, with the
+     site-wide "avocado" palette (Blowfish colorScheme = "avocado", see
+     params.toml) standing in for the dial glow — lime as the primary
+     accent, emerald as a secondary "receive" accent. Values are pulled
+     straight from Blowfish's avocado scheme CSS (--color-primary-*,
+     --color-secondary-*) so this app reads as the same brand as the rest
+     of hamshacktech.com. "Good"/"bad" stay their own distinct green/red
+     so a correct or missed answer doesn't blend into the lime/emerald
+     brand accents.
+
+     Always dark: per Tim's request, this app no longer follows the
+     device/browser's light-mode preference (it previously did via
+     prefers-color-scheme, unlike its sibling ICR Trainer, which has
+     always been dark-only) — there's just one palette now, matching
+     ICR Trainer's behavior.
+     ====================================================================== */
+  :root {
+    --bg: #100e0c;
+    --panel: #1c1917;       /* avocado neutral-900 */
+    --panel-2: #292524;     /* avocado neutral-800 */
+    --recess: #140f0d;
+    --border: #44403c;      /* avocado neutral-700 */
+    --border-strong: #57534e;/* avocado neutral-600 */
+    --text: #fafaf9;        /* avocado neutral-50 */
+    --text-dim: #a8a29e;    /* avocado neutral-400 */
+    --text-faint: #78716c;  /* avocado neutral-500 */
+    --accent: #a3e635;      /* avocado lime-400 */
+    --accent-soft: #365314; /* avocado lime-900 */
+    --accent-ink: #ecfccb;  /* avocado lime-100 */
+    --accent2: #34d399;     /* avocado emerald-400 */
+    --good: #4ade80;
+    --good-soft: #123423;
+    --bad: #f66a7d;
+    --bad-soft: #3a1620;
+    --warn: #a3e635;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
+    --font-display: "Oswald", "Arial Narrow", sans-serif;
+    --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; } /* forces native form controls/scrollbars to render dark too */
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+  }
+
+  a { color: var(--accent2); }
+
+  /* ---------------------------------------------------------------------
+     Masthead
+     --------------------------------------------------------------------- */
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+  .masthead-title {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  /* Site mascot — the alien-with-headphones mark used in the main
+     hamshacktech.com header (see assets/hamshacktech_logo.png there).
+     Served from /apple-touch-icon.png, a pre-existing square, transparent
+     crop of the same artwork, so no new image asset is needed here.
+     Sits on its own baseline via align-self so it lines up with the
+     text rather than the flex row's shared baseline. */
+  .masthead .mascot {
+    width: 40px;
+    height: 40px;
+    align-self: center;
+    flex-shrink: 0;
+  }
+  .masthead h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.4rem);
+    letter-spacing: 0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  /* Info button + popup — replaces what used to be a permanent intro
+     paragraph under the masthead. Keeps the explanation one tap away
+     instead of costing every visitor (phones especially) scroll space
+     on every visit. Built on the native <dialog> element rather than a
+     hand-rolled modal: showModal()/close() give us focus-trapping,
+     Escape-to-close, and a backdrop for free, with broad support
+     including iOS Safari. */
+  .info-btn {
+    width: 26px;
+    height: 26px;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    color: var(--text-dim);
+    padding: 0;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .info-btn:hover, .info-btn:focus-visible { color: var(--accent2); border-color: var(--accent2); }
+  .info-btn svg { width: 16px; height: 16px; display: block; }
+
+  .info-dialog {
+    width: calc(100vw - 40px);
+    max-width: 480px;
+    margin: auto; /* combined with the <dialog>'s own centering, keeps it centered in the viewport */
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 22px 24px 20px;
+  }
+  .info-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+  .info-dialog h2 {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin: 0 0 12px;
+  }
+  .info-dialog p {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    margin: 0 0 18px;
+  }
+  .info-dialog .btn-secondary { width: auto; padding: 8px 22px; }
+
+  /* ---------------------------------------------------------------------
+     Session clock row — [Elapsed stopwatch] [Practice Timer button]
+     Sits at the very top of the practice panel. Both read like small
+     VFO-style digital readouts (mono, tabular digits) so the numbers
+     don't jitter sideways as they tick.
+     --------------------------------------------------------------------- */
+  .clock-row {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .clock-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px;
+    border-radius: 8px;
+    background: var(--recess);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .clock-chip svg { width: 16px; height: 16px; display: block; flex-shrink: 0; }
+  .clock-chip .clock-val {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+  .clock-chip.live { border-color: var(--accent2); }   /* stopwatch running */
+  .clock-chip.live .clock-val { color: var(--accent2); }
+  /* The Timer chip is also a button (opens the Set Timer popup). */
+  button.clock-chip { cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease; }
+  button.clock-chip:hover:not(:disabled) { color: var(--accent2); border-color: var(--accent2); }
+  button.clock-chip:disabled { cursor: default; }        /* locked while a session runs, but still readable */
+  .clock-chip.armed { border-color: var(--accent); }     /* a timer is set */
+  .clock-chip.armed .clock-val { color: var(--accent); }
+  .clock-chip.low .clock-val { color: var(--bad); }      /* final minute */
+  button#buzzBtn { cursor: pointer; }
+  #buzzBtn .mute { display: none; }
+  #buzzBtn[aria-pressed="false"] .mute { display: inline; }
+  #buzzBtn[aria-pressed="false"] .wave { display: none; }
+  #buzzBtn[aria-pressed="false"] .clock-val { opacity: 0.6; }
+  /* Brief flash when the timer runs out and the bell rings. */
+  .clock-chip.expired { animation: clock-flash 0.5s ease-in-out 6; border-color: var(--bad); }
+  .clock-chip.expired .clock-val { color: var(--bad); }
+  @keyframes clock-flash { 50% { background: var(--bad-soft); } }
+  @media (prefers-reduced-motion: reduce) { .clock-chip.expired { animation: none; background: var(--bad-soft); } }
+  /* Phones: tighten the chips so both stay on one line, even past an hour. */
+  @media (max-width: 600px) {
+    .clock-row { gap: 6px; }
+    .clock-chip { padding: 5px 9px; gap: 6px; font-size: 0.68rem; letter-spacing: 0.03em; }
+    .clock-chip .clock-val { font-size: 0.95rem; }
+    .clock-chip svg { width: 14px; height: 14px; }
+  }
+
+  /* Set Timer popup — reuses the .info-dialog shell above. */
+  .timer-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 14px;
+  }
+  .timer-presets button {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--panel-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .timer-presets button:hover { border-color: var(--accent2); color: var(--accent2); }
+  .timer-entry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 18px;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+  }
+  .timer-entry input[type="number"] {
+    width: 90px;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    padding: 7px 10px;
+    background: var(--recess);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+  }
+  .timer-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .timer-actions .btn-secondary { margin-top: 0; }
+  .timer-actions .btn-primary { border-color: var(--accent); color: var(--accent); }
+
+  /* ---------------------------------------------------------------------
+     Practice module — the "front panel" of the app
+     --------------------------------------------------------------------- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+  }
+
+  .practice {
+    position: relative; /* anchors .hidden-input's containing block so its
+                            "auto" position never falls back to the page's
+                            root and drags a focus-scroll with it */
+    padding: 26px clamp(16px, 4vw, 40px) 30px;
+    margin-bottom: 22px;
+    text-align: center;
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    min-height: 26px;
+  }
+  .status-pill {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    color: var(--text-dim);
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  }
+  .status-pill[data-mode="sending"] { color: var(--accent-ink); background: var(--accent-soft); border-color: var(--accent); }
+  .status-pill[data-mode="copy"]    { color: var(--accent2); border-color: var(--accent2); }
+  .status-pill[data-mode="correct"]{ color: var(--good); background: var(--good-soft); border-color: var(--good); }
+  .status-pill[data-mode="miss"], .status-pill[data-mode="timeout"] { color: var(--bad); background: var(--bad-soft); border-color: var(--bad); }
+  /* Shown right next to the main status pill whenever a drill is active,
+     so it's obvious from the practice box itself (not just the Drill
+     panel down below) that this round is pulling from the weak-character
+     set rather than the normal practice group. */
+  .status-pill.drill-flag { color: var(--accent2); border-color: var(--accent2); }
+
+  .blanks {
+    display: flex;
+    justify-content: center;
+    gap: clamp(6px, 1.6vw, 14px);
+    flex-wrap: wrap;
+    margin: 10px 0 22px;
+  }
+  .blank {
+    width: clamp(40px, 9vw, 58px);
+    height: clamp(52px, 11vw, 72px);
+    border-radius: 8px;
+    background: var(--recess);
+    border: 1px solid var(--border);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: clamp(1.3rem, 4vw, 1.9rem);
+    color: var(--text);
+    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+  }
+  .blank.filled, .blank.active { border-color: var(--accent2); }
+  /* Long rounds (Phrases & Sayings): smaller boxes, so a sentence fits. */
+  .blanks.long { gap: clamp(3px, 0.8vw, 6px); }
+  .blanks.long .blank { width: clamp(22px, 5.4vw, 36px); height: clamp(32px, 7.5vw, 46px); font-size: clamp(0.95rem, 3vw, 1.3rem); border-radius: 6px; }
+  .blank.correct { background: var(--good-soft); border-color: var(--good); color: var(--good); }
+  .blank.incorrect { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+  .blank.pop { transform: translateY(-2px); }
+  /* Blinking text-caret shown in whichever blank is next to be filled, so
+     it's visually obvious the (invisible) input already has focus and
+     typing can start with no click needed. */
+  .blank-caret {
+    width: 2px;
+    height: 54%;
+    background: var(--accent2);
+    animation: blank-caret-blink 1s step-end infinite;
+  }
+  @keyframes blank-caret-blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .blank { transition: none; }
+    .blank-caret { animation: none; }
+  }
+
+  /* S-meter style countdown */
+  .meter {
+    position: relative;
+    max-width: 420px;
+    margin: 0 auto 6px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--recess);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .meter-fill {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transform-origin: left center;
+    transition: transform 0.08s linear, background-color 0.2s ease;
+  }
+  .meter-fill.low { background: linear-gradient(90deg, var(--warn), var(--bad)); }
+  .meter-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-faint);
+    margin-bottom: 20px;
+    min-height: 1em;
+  }
+
+  .session-btn {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 13px 34px;
+    border-radius: 999px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #14200a; /* near-black w/ a green cast — high contrast on lime in both themes */
+    cursor: pointer;
+    transition: filter 0.12s ease, transform 0.08s ease;
+  }
+  .session-btn:hover { filter: brightness(1.08); }
+  .session-btn:active { transform: scale(0.98); }
+  /* The countdown sits just right of the button, so the button doesn't move. */
+  .session-wrap { position: relative; display: inline-block; }
+  .countdown {
+    position: absolute; left: 100%; top: 50%; margin-left: 14px; transform: translateY(-50%);
+    width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--accent); color: var(--accent); background: var(--recess);
+    font-family: var(--font-display); font-size: 1.5rem; font-weight: 600;
+  }
+  .countdown[hidden] { display: none; }   /* display:flex above would otherwise keep the last number on screen */
+  .countdown.tick { animation: countdown-pop 0.35s ease-out; }
+  @keyframes countdown-pop { from { transform: translateY(-50%) scale(1.35); opacity: 0.4; } to { transform: translateY(-50%) scale(1); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .countdown.tick { animation: none; } }
+  .session-btn.running {
+    background: transparent;
+    color: var(--bad);
+    border-color: var(--bad);
+  }
+  /* "Next" — only shown while the trainer is holding on a missed group's
+     results (see enterReview). Outlined in the emerald "receive" accent so
+     it reads as secondary to the main Start/Stop button beside it. */
+  .next-btn {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 13px 26px;
+    margin-left: 10px;
+    border-radius: 999px;
+    border: 1px solid var(--accent2);
+    background: transparent;
+    color: var(--accent2);
+    cursor: pointer;
+  }
+  .next-btn:hover { background: rgba(52, 211, 153, 0.12); }
+  .next-btn[hidden] { display: none; }
+  /* Phones: trim the pill padding so Stop Session and Next fit on one line. */
+  @media (max-width: 600px) {
+    .session-btn { padding: 12px 22px; }
+    .next-btn { padding: 12px 18px; }
+  }
+
+  .session-btn:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
+    outline: 2px solid var(--accent2);
+    outline-offset: 2px;
+  }
+
+  /* input.hidden-input[type="text"] (rather than plain .hidden-input) so this
+     beats the generic `input[type="text"] { width: 100% }` rule below on
+     specificity instead of losing a same-specificity tie by source order —
+     without this the "hidden" input was actually rendering full-width
+     (invisible but full-size), which is what let a focus() call drag the
+     whole page sideways to "reveal" it. */
+  input.hidden-input[type="text"] {
+    position: absolute;
+    top: 0;      /* pinned inside .practice (see above) instead of an "auto" */
+    left: 0;     /* static position, which is what was causing the page to */
+    opacity: 0;  /* jolt sideways the instant this input received focus() */
+    height: 1px;
+    width: 1px;
+    padding: 0;  /* the generic input padding would otherwise force this box
+                    back open to ~22px even with width:1px set above */
+    border: 0;
+    pointer-events: none;
+  }
+  .tap-hint {
+    font-size: 0.78rem;
+    color: var(--text-faint);
+    margin-top: 4px;
+  }
+
+  /* Word-gap spacer between the two halves of the one multi-word QSO
+     element ("HW CPY?") — a narrow, borderless flex item rather than a
+     full-size .blank box, so the answer row visibly reads as two short
+     words instead of one long run of letters. Height is left to the
+     row's default flex stretch so it lines up with the real .blank
+     cells on either side of it. */
+  .blank-gap {
+    width: clamp(10px, 2vw, 18px);
+    flex-shrink: 0;
+  }
+  .blank-word { display: flex; gap: inherit; }
+
+  /* ---------------------------------------------------------------------
+     Answer row — [Head Copy Mode] [character boxes] [Replay]
+     A 3-column grid so the two side buttons stay pinned to the left and
+     right of the boxes while the boxes themselves stay centered,
+     whatever the group length. On narrow (phone) screens there isn't
+     room for a 6-character call sign plus both buttons on one line, so
+     the boxes move to their own full-width row on top and the two
+     buttons sit underneath, left and right (see the media query below).
+     --------------------------------------------------------------------- */
+  .answer-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-areas: "left blanks right";
+    align-items: center;
+    gap: 14px;
+    margin: 10px 0 22px;
+  }
+  .answer-row .blanks { grid-area: blanks; margin: 0; }
+  .answer-row .side-left  { grid-area: left;  justify-self: end; }
+  .answer-row .side-right { grid-area: right; justify-self: start; }
+  @media (max-width: 600px) {
+    .answer-row {
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas: "blanks blanks" "left right";
+      row-gap: 14px;
+    }
+    .answer-row .side-left  { justify-self: start; }
+    .answer-row .side-right { justify-self: end; }
+    .answer-row .side-btn   { align-self: stretch; } /* keep both buttons the same height on their shared row */
+  }
+
+  /* Shared look for the two side buttons — same chassis styling as the
+     other secondary buttons, sized to roughly match a character box's
+     height so the row reads as one unit. */
+  .side-btn {
+    min-height: clamp(52px, 11vw, 72px);
+    min-width: 92px;
+    padding: 6px 12px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: var(--panel-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    line-height: 1.15;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  }
+  .side-btn:hover:not(:disabled) { color: var(--accent2); border-color: var(--accent2); }
+  .side-btn:disabled { cursor: not-allowed; opacity: 0.4; }
+  .side-btn svg { width: 20px; height: 20px; display: block; }
+
+  /* Head Copy Mode is a latching toggle (aria-pressed), so "on" gets the
+     same lime-on-dark treatment as the "Sending…" status pill — it should
+     be obvious at a glance that typing is going to be held back. */
+  .side-btn.toggle[aria-pressed="true"] {
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    border-color: var(--accent);
+  }
+  .side-btn .toggle-state {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    opacity: 0.85;
+  }
+
+  /* While Head Copy Mode is holding back input, the next box gets a
+     dashed border instead of the blinking caret, so it's clear typing
+     isn't open yet. */
+  .blank.locked { border-style: dashed; }
+
+  /* ---------------------------------------------------------------------
+     Lower grid: settings / stats / drill
+     --------------------------------------------------------------------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 920px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .card { padding: 20px 22px 24px; }
+  .card h2 {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin: 0 0 4px;
+  }
+  .card .sub {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin: 0 0 16px;
+  }
+
+  .field { margin-bottom: 15px; }
+  .field label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .field label .val {
+    font-family: var(--font-mono);
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  select, input[type="text"], input[type="number"] {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+  }
+  input[type="range"] {
+    width: 100%;
+    /* Was --accent2 (emerald) — per Tim's review, the round slider handles
+       now match the same lime green used everywhere else (the Start
+       Session button, the ICR Trainer's heading/button/sliders), so there's
+       one consistent accent green rather than two. */
+    accent-color: var(--accent);
+  }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+  .check-row input { accent-color: var(--accent2); }
+
+  fieldset { border: none; padding: 0; margin: 0; }
+  fieldset:disabled { opacity: 0.5; }
+  .lock-note {
+    font-size: 0.76rem;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 6px 9px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .lock-note.show { display: block; }
+
+  .btn-secondary {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 0.88rem;
+    padding: 9px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+  .btn-secondary:disabled { cursor: not-allowed; opacity: 0.5; }
+  .btn-secondary.danger:hover { border-color: var(--bad); color: var(--bad); }
+  #resetStatsBtn { margin-top: 14px; } /* sits under the size table */
+
+  /* Stats card */
+  .stat-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .tile {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .tile .v {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 1.15rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .tile .l {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+  }
+
+  table.size-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  table.size-table caption {
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+    margin-bottom: 6px;
+  }
+  table.size-table th, table.size-table td {
+    text-align: left;
+    padding: 5px 6px;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  table.size-table th { color: var(--text-dim); font-weight: 500; }
+  .empty-note { color: var(--text-faint); font-size: 0.85rem; }
+
+  /* Drill card */
+  .drill-list { list-style: none; margin: 0 0 16px; padding: 0; }
+  .drill-row {
+    display: grid;
+    grid-template-columns: 26px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+  }
+  .drill-char {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 1.05rem;
+    text-align: center;
+  }
+  .drill-bar-track {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--recess);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .drill-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--bad), var(--warn));
+  }
+  .drill-pct {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    min-width: 3.2em;
+    text-align: right;
+  }
+  .drilling-badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+    border-radius: 6px;
+    padding: 5px 8px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .drilling-badge.show { display: block; }
+
+  /* ---------------------------------------------------------------------
+     Call Signs only: the four practice modes, the Score / Speed chips
+     and the Speed Run results card. Everything above is the Code Groups
+     trainer's styling, so the two tabs look and feel the same (Tim,
+     2026-10-20).
+     --------------------------------------------------------------------- */
+  .mode-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0 0 10px; }
+  .mode-bar button {
+    padding: 8px 15px; border-radius: 999px; cursor: pointer;
+    background: var(--panel-2); border: 1px solid var(--border-strong); color: var(--text-dim);
+    font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.03em; text-transform: uppercase;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .mode-bar button:hover:not(:disabled) { color: var(--accent2); border-color: var(--accent2); }
+  .mode-bar button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #14200a; }
+  .mode-bar button:disabled { cursor: not-allowed; }
+  .mode-bar button:disabled:not([aria-pressed="true"]) { opacity: 0.4; }
+  .mode-desc { color: var(--text-dim); font-size: 0.88rem; max-width: 640px; margin: 0 auto 16px; }
+  .side-btn.invisible { visibility: hidden; }
+  .clock-chip[hidden] { display: none; }   /* .clock-chip's display:inline-flex would otherwise keep it showing */
+  .clock-chip.up .clock-val { color: var(--good); }
+  .clock-chip.down .clock-val { color: var(--bad); }
+  @media (max-width: 600px) {
+    .mode-bar button { padding: 7px 11px; font-size: 0.8rem; }
+  }
+
+  /* Speed Run results */
+  .run-card { margin-bottom: 22px; }
+  .run-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; margin: 4px 0 14px; }
+  .run-score { font-family: var(--font-display); font-size: 2.6rem; font-weight: 600; line-height: 1; color: var(--accent); }
+  .run-score small { font-size: 1rem; color: var(--text-dim); margin-left: 6px; letter-spacing: 0.05em; }
+  .run-best { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; padding: 4px 12px; border-radius: 999px;
+              color: var(--accent-ink); background: var(--accent-soft); border: 1px solid var(--accent); }
+  .run-why { color: var(--text-dim); font-size: 0.9rem; flex-basis: 100%; }
+  .run-card .stat-tiles { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+  .run-missed { color: var(--text-dim); font-size: 0.88rem; margin: -4px 0 14px; }
+  .run-missed b { font-family: var(--font-mono); color: var(--bad); letter-spacing: 0.1em; }
+  .run-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+  @media (max-width: 920px) { .run-cols { grid-template-columns: 1fr; } }
+  .run-table-wrap { max-height: 330px; overflow: auto; }
+  table.size-table td.mono { font-family: var(--font-mono); letter-spacing: 0.04em; }
+  table.size-table td.ok { color: var(--good); }
+  table.size-table td.no { color: var(--bad); }
+  table.size-table .num { text-align: right; }
+  table.size-table thead th { position: sticky; top: 0; background: var(--panel); }
+  .typed-x { color: var(--bad); text-decoration: underline; }
+  .hear { border: 1px solid var(--border-strong); background: var(--panel-2); color: var(--text-dim); border-radius: 6px;
+          padding: 2px 8px; font-size: 0.75rem; cursor: pointer; }
+  .hear:hover { color: var(--accent2); border-color: var(--accent2); }
+  svg.chart { display: block; width: 100%; height: auto; overflow: visible; }
+  svg.chart text { fill: var(--text-faint); font: 11px var(--font-body); }
+  .chart-sum { color: var(--text-dim); font-size: 0.85rem; margin: 8px 0 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="masthead-title">
+      <img class="mascot" src="../icons/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
+      <h1>CW Call Signs Trainer</h1>
+      <button type="button" class="info-btn" id="infoBtn" aria-haspopup="dialog" aria-controls="infoDialog" aria-label="About this trainer" title="About this trainer">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <dialog class="info-dialog" id="infoDialog" aria-labelledby="infoDialogTitle">
+    <h2 id="infoDialogTitle">About This Trainer</h2>
+    <p>Four ways to practice copying call signs, the thing you copy most on the air. Every call is made up fresh,
+      following the real formats (K6AB, KA6ABC, G4ABC, VE3XYZ&hellip;), so there's no list to memorize.</p>
+    <p><strong>Find the Number</strong>: a call plays every few seconds until you type its number. The fewer plays
+      you need, the more points (5 for the first play, down to 1).
+      <strong>Call Sign Builder</strong>: short three-character calls, a letter first, then a number and a letter in either order.
+      <strong>Call Sign Simulator</strong>: every call comes at a different speed, somewhere between the slowest and fastest you choose,
+      like the stations you'll hear on the bands.
+      <strong>Speed Run</strong>: get a call right and the next one is 1 WPM faster; miss it and it's 2 WPM slower.
+      Faster and longer calls score more.</p>
+    <p>After a miss the trainer waits with the answer showing: press <strong>Replay</strong> to hear it again at the
+      same speed, then <strong>Next</strong>, Enter or Space. <strong>Head Copy Mode</strong> blocks typing until the call
+      has finished. The <strong>Timer</strong> chip sets how long to practice.</p>
+    <button type="button" class="btn-secondary" id="infoCloseBtn">Close</button>
+  </dialog>
+
+  <dialog class="info-dialog" id="timerDialog" aria-labelledby="timerDialogTitle">
+    <h2 id="timerDialogTitle">Practice Timer</h2>
+    <p>Pick how long to practice. The countdown starts with <strong>Start Session</strong>;
+       when it reaches zero a bell rings and the session stops.</p>
+    <div class="timer-presets" id="timerPresets">
+      <button type="button" data-min="1">1 min</button>
+      <button type="button" data-min="2">2 min</button>
+      <button type="button" data-min="3">3 min</button>
+      <button type="button" data-min="5">5 min</button>
+      <button type="button" data-min="10">10 min</button>
+    </div>
+    <label class="timer-entry">
+      Or enter
+      <input type="number" id="timerInput" min="1" max="180" step="1" inputmode="numeric" />
+      minutes
+    </label>
+    <div class="timer-actions">
+      <button type="button" class="btn-secondary btn-primary" id="timerSetBtn">Set Timer</button>
+      <button type="button" class="btn-secondary" id="timerOffBtn">Timer Off</button>
+      <button type="button" class="btn-secondary" id="timerCancelBtn">Cancel</button>
+    </div>
+  </dialog>
+
+  <!-- ===================================================================
+       PRACTICE MODULE
+       =================================================================== -->
+  <section class="panel practice" aria-label="Practice module">
+    <div class="mode-bar" role="group" aria-label="Practice mode" id="modeBar">
+      <button type="button" data-mode="find">Find the Number</button>
+      <button type="button" data-mode="builder">Call Sign Builder</button>
+      <button type="button" data-mode="sim">Call Sign Simulator</button>
+      <button type="button" data-mode="run">Speed Run</button>
+    </div>
+    <p class="mode-desc" id="modeDesc"></p>
+
+    <div class="clock-row">
+      <div class="clock-chip" id="elapsedChip" title="Time since Start Session">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>
+        <span>Elapsed</span>
+        <span class="clock-val" id="elapsedVal" role="timer" aria-live="off">0:00</span>
+      </div>
+      <button type="button" class="clock-chip" id="timerBtn" aria-haspopup="dialog" aria-controls="timerDialog"
+              title="Set a practice timer — a bell rings and the session stops when it runs out">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span>Timer</span>
+        <span class="clock-val" id="timerVal" role="timer" aria-live="off">Off</span>
+      </button>
+      <button type="button" class="clock-chip" id="buzzBtn" aria-pressed="true" title="Buzz on a missed call — click to mute or unmute">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="mute" d="m22 9-6 6M16 9l6 6"/></svg>
+        <span>Buzzer</span>
+        <span class="clock-val" id="buzzVal">On</span>
+      </button>
+      <!-- Speed Run and Simulator: the speed of the call now playing. -->
+      <div class="clock-chip" id="speedChip" hidden>
+        <span>Speed</span>
+        <span class="clock-val" id="speedVal">—</span>
+      </div>
+      <!-- Find the Number and Speed Run: points this session / run. -->
+      <div class="clock-chip" id="scoreChip" hidden>
+        <span>Score</span>
+        <span class="clock-val" id="scoreVal">0</span>
+      </div>
+    </div>
+
+    <div class="status-row">
+      <span class="status-pill" id="statusPill" data-mode="idle">Idle</span>
+      <span class="status-pill drill-flag" id="drillFlag" style="display:none;"></span>
+    </div>
+
+    <div class="answer-row">
+      <button type="button" class="side-btn toggle side-left" id="headCopyBtn" aria-pressed="false"
+              title="When on, you can't type until the whole call has finished playing">
+        <span>Head Copy<br>Mode</span>
+        <span class="toggle-state" id="headCopyState">Off</span>
+      </button>
+
+      <div class="blanks" id="blanksRow" aria-live="polite"></div>
+
+      <button type="button" class="side-btn side-right" id="replayBtn" disabled
+              title="After a miss, hear the call again at the same speed">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        <span>Replay</span>
+      </button>
+    </div>
+
+    <div class="meter" aria-hidden="true">
+      <div class="meter-fill" id="meterFill" style="transform: scaleX(0);"></div>
+    </div>
+    <div class="meter-label" id="meterLabel">&nbsp;</div>
+
+    <span class="session-wrap">
+      <button class="session-btn" id="sessionBtn" type="button">Start Session</button>
+      <span class="countdown" id="countdown" aria-live="assertive" hidden></span>
+    </span>
+    <button class="next-btn" id="nextBtn" type="button" hidden>Next &#9656;</button>
+    <div class="tap-hint" id="tapHint">Tap the practice box, then start — your keyboard stays live for the whole session.</div>
+
+    <input class="hidden-input" id="hiddenInput" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text" aria-label="Type the call sign you heard" />
+  </section>
+
+  <!-- ===================================================================
+       SPEED RUN RESULTS (Speed Run mode only)
+       =================================================================== -->
+  <section class="panel card run-card" id="runCard" aria-label="Speed Run results" hidden>
+    <h2 id="runTitle">Speed Run</h2>
+    <div id="runLast">
+      <div class="run-head">
+        <span class="run-score" id="runScore"></span>
+        <span class="run-best" id="runBest" hidden>NEW BEST</span>
+        <span class="run-why" id="runWhy"></span>
+      </div>
+      <div class="stat-tiles" id="runTiles"></div>
+      <p class="run-missed" id="runMissed"></p>
+    </div>
+    <div class="run-cols">
+      <div class="run-table-wrap" id="runTableWrap">
+        <table class="size-table">
+          <caption>Last run, call by call</caption>
+          <thead><tr><th>#</th><th>Sent</th><th>You typed</th><th class="num">WPM</th><th class="num">Points</th><th></th></tr></thead>
+          <tbody id="runRows"></tbody>
+        </table>
+      </div>
+      <div>
+        <table class="size-table"><caption id="chartCaption">Your runs</caption></table>
+        <div id="runChart"></div>
+        <p class="chart-sum" id="runChartSum"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       SETTINGS / STATS / DRILL
+       =================================================================== -->
+  <div class="grid">
+
+    <section class="panel card" aria-label="Tool settings">
+      <h2>Tool Settings</h2>
+      <p class="sub">Locked while a session is running — stop first to change.</p>
+      <div class="lock-note" id="lockNote">Session running — stop to edit settings.</div>
+
+      <fieldset id="settingsFieldset">
+        <div class="field" id="callMixField">
+          <label for="callMixSelect">Call Sign Mix</label>
+          <select id="callMixSelect">
+            <option value="mixed">US + International</option>
+            <option value="us">US only</option>
+            <option value="intl">International only</option>
+          </select>
+        </div>
+
+        <div class="row2" id="runFields">
+          <div class="field">
+            <label for="runCallsSelect">Calls per Run</label>
+            <select id="runCallsSelect">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="runAdaptSelect">Speed</label>
+            <select id="runAdaptSelect">
+              <option value="1">Speeds up</option>
+              <option value="0">Fixed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field" id="wpmField">
+          <label for="wpmRange"><span id="wpmLabel">Character Speed (WPM)</span><span class="val" id="wpmVal">20</span></label>
+          <input type="range" id="wpmRange" min="5" max="40" step="1" value="20" />
+        </div>
+
+        <div class="field" id="fwpmField">
+          <label for="fwpmRange">Farnsworth Speed (WPM)<span class="val" id="fwpmVal">15</span></label>
+          <input type="range" id="fwpmRange" min="5" max="40" step="1" value="15" />
+        </div>
+
+        <!-- Call Sign Simulator: each call picks a speed between these. -->
+        <div id="simFields">
+          <div class="field">
+            <label for="simMinRange">Slowest Speed (WPM)<span class="val" id="simMinVal">15</span></label>
+            <input type="range" id="simMinRange" min="5" max="50" step="1" value="15" />
+          </div>
+          <div class="field">
+            <label for="simMaxRange">Fastest Speed (WPM)<span class="val" id="simMaxVal">30</span></label>
+            <input type="range" id="simMaxRange" min="5" max="50" step="1" value="30" />
+          </div>
+        </div>
+        <p class="sub" id="fullSpeedNote" style="margin-top:-6px">Calls are sent at full speed (no Farnsworth), the way you'll hear them on the air.</p>
+
+        <div class="row2">
+          <div class="field">
+            <label for="toneRange">Tone<span class="val" id="toneVal">600 Hz</span></label>
+            <input type="range" id="toneRange" min="300" max="1000" step="10" value="600" />
+          </div>
+          <div class="field">
+            <label for="volRange">Volume<span class="val" id="volVal">70%</span></label>
+            <input type="range" id="volRange" min="0" max="100" step="5" value="70" />
+          </div>
+        </div>
+
+        <!-- Find the Number: how often the call repeats, and how many plays before it counts as missed. -->
+        <div class="row2" id="findFields">
+          <div class="field">
+            <label for="replaySecRange">Replay Every<span class="val" id="replaySecVal">5 s</span></label>
+            <input type="range" id="replaySecRange" min="2" max="15" step="1" value="5" />
+          </div>
+          <div class="field">
+            <label for="maxPlaysSelect">Give Up After</label>
+            <select id="maxPlaysSelect">
+              <option value="5">5 plays</option>
+              <option value="10">10 plays</option>
+              <option value="20">20 plays</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field" id="maxTimeField">
+          <label for="maxTimeRange">Max Time to Answer<span class="val" id="maxTimeVal">6.0 s</span></label>
+          <input type="range" id="maxTimeRange" min="1" max="20" step="0.5" value="6" />
+          <div class="check-row">
+            <input type="checkbox" id="unlimitedCheck" />
+            <label for="unlimitedCheck" style="margin:0; color: var(--text-dim);">Unlimited time (no buzzer)</label>
+          </div>
+        </div>
+      </fieldset>
+    </section>
+
+    <section class="panel card" aria-label="Session statistics">
+      <h2>Statistics</h2>
+      <p class="sub" id="statsSub">This session, since last reset.</p>
+      <div class="stat-tiles" id="statTiles"></div>
+      <table class="size-table">
+        <caption id="statTableCaption">Accuracy by Speed</caption>
+        <thead id="statTableHead"></thead>
+        <tbody id="statTableBody"></tbody>
+      </table>
+      <button class="btn-secondary danger" id="resetStatsBtn" type="button">Reset Session Stats</button>
+    </section>
+
+    <section class="panel card" aria-label="Drill panel">
+      <h2>Your Worst Characters</h2>
+      <p class="sub">The 5 characters missed most often this session.</p>
+      <div class="drilling-badge" id="drillingBadge">Drilling weak characters</div>
+      <ul class="drill-list" id="drillList">
+        <li class="empty-note">Play a session to find your weak characters.</li>
+      </ul>
+      <button class="btn-secondary" id="drillBtn" type="button" disabled>Drill These Characters</button>
+    </section>
+
+  </div>
+
+  <footer class="hst-foot">
+    <div class="hst-73"><b>73</b> Practice often, don&rsquo;t quit and have fun</div>
+    <div class="hst-copy">&copy; HamShackTech LLC 2026</div>
+  </footer>
+</div>
+
+<script src="../shared/hst-engine.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  var DIGITS = "0123456789".split("");
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function letters(n) { var s = ""; for (var i = 0; i < n; i++) s += pick(ALPHA); return s; }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  /* =====================================================================
+     PRACTICE MODES (Tim, 2026-10-20)
+     ===================================================================== */
+  var MODES = {
+    find: { name: "Find the Number",
+            desc: "A call sign plays every few seconds. Type just its number as soon as you hear it: the fewer plays you need, the more points." },
+    builder: { name: "Call Sign Builder",
+               desc: "Short three-character calls: always a letter first, then a number and a letter in either order (K4A or KA4). Type all three." },
+    sim: { name: "Call Sign Simulator",
+           desc: "Every call comes at a different speed, between the slowest and fastest you set, like the stations on the bands. Replays use the same speed." },
+    run: { name: "Speed Run",
+           desc: "Copy a call and the next one is 1 WPM faster; miss it and it's 2 WPM slower. Points = speed × letters ÷ 2, halved if you use your one Replay." }
+  };
+  var RUN_STEP_UP = 1, RUN_STEP_DOWN = 2, RUN_MIN_WPM = 5, RUN_MAX_WPM = 60;
+  var FIND_MAX_POINTS = 5;          // found on the first play; one less for each play after, never below 1
+  var CHART_RUNS = 20;
+
+  /* =====================================================================
+     CALL SIGN GENERATOR -- the Code Groups trainer's: PREFIX + one DIGIT
+     (call area) + SUFFIX, US formats as the FCC issues them, plus UK
+     and other common DX formats.
+     ===================================================================== */
+  function range2(a, from, to) {
+    var out = [];
+    for (var c = from.charCodeAt(0); c <= to.charCodeAt(0); c++) out.push(a + String.fromCharCode(c));
+    return out;
+  }
+  var US_2X2_PREFIXES = range2("A", "A", "L").concat(range2("K", "A", "Z"), range2("N", "A", "Z"), range2("W", "A", "Z"));
+  var US_2X3_PREFIXES = range2("K", "A", "Z").concat(range2("N", "A", "Z"), range2("W", "A", "Z"));
+  function usCallSign() {
+    var fmt = pick(["1x2", "2x2", "2x3"]);
+    var digit = pick(DIGITS);
+    if (fmt === "1x2") return pick(["K", "N", "W"]) + digit + letters(2);
+    if (fmt === "2x2") return pick(US_2X2_PREFIXES) + digit + letters(2);
+    var first;                                   // the FCC skips Q-first 2x3 suffixes
+    do { first = pick(ALPHA); } while (first === "Q");
+    return pick(US_2X3_PREFIXES) + digit + first + letters(2);
+  }
+  function ukCallSign() {
+    var region = Math.random() < 0.5 ? "" : pick(["M", "W", "I", "D", "J", "U"]);
+    var series = pick(["G", "M", "2"]);
+    if (series === "G") {
+      var gDigit = pick(["0", "1", "2", "3", "4", "6", "7", "8"]);
+      var gLen = (gDigit === "2" || gDigit === "3" || gDigit === "4") && Math.random() < 0.3 ? 2 : 3;
+      return "G" + region + gDigit + letters(gLen);
+    }
+    if (series === "M") return "M" + region + pick(["0", "1", "3", "6", "7"]) + letters(3);
+    return "2" + (region || "E") + pick(["0", "1"]) + letters(3);
+  }
+  var INTL_FORMATS = [
+    { prefixes: ["VE", "VA"],                  digits: "123456789",  suffix: [2, 3] },
+    { prefixes: ["DL", "DJ", "DK", "DF", "DO"], digits: "123456789",  suffix: [2, 3] },
+    { prefixes: ["JA", "JH", "JR", "JE", "JF", "JG", "7K"], digits: "0123456789", suffix: [3] },
+    { prefixes: ["VK"],                        digits: "12345678",   suffix: [2, 3] },
+    { prefixes: ["ZL"],                        digits: "1234",       suffix: [2, 3] },
+    { prefixes: ["I", "IK", "IZ", "IW"],       digits: "0123456789", suffix: [2, 3] },
+    { prefixes: ["F"],                         digits: "14568",      suffix: [3] },
+    { prefixes: ["EA", "EB", "EC"],            digits: "123456789",  suffix: [2, 3] },
+    { prefixes: ["PA", "PD", "PE", "PH"],      digits: "0123456789", suffix: [2, 3] },
+    { prefixes: ["PY", "PU"],                  digits: "123456789",  suffix: [2, 3] }
+  ];
+  function intlCallSign() {
+    if (Math.random() < 0.4) return ukCallSign();
+    var f = pick(INTL_FORMATS);
+    return pick(f.prefixes) + pick(f.digits.split("")) + letters(pick(f.suffix));
+  }
+  // One call per the Call Sign Mix, never repeated in a session. Find the
+  // Number needs exactly one digit in the call (2E0ABC and 7K1ABC have two).
+  function generateCallSign(oneDigit) {
+    var mix = state.settings.callMix, call;
+    for (var tries = 0; tries < 50; tries++) {
+      var useUS = mix === "us" || (mix === "mixed" && Math.random() < 0.5);
+      call = useUS ? usCallSign() : intlCallSign();
+      if (oneDigit && call.replace(/[^0-9]/g, "").length !== 1) continue;
+      if (call.indexOf("SOS") === -1 && !state.callsUsed[call]) { state.callsUsed[call] = true; return call; }
+    }
+    return call;
+  }
+  // Call Sign Builder: a letter, then a digit and a letter in random order.
+  function builderCall() {
+    for (var tries = 0; tries < 50; tries++) {
+      var rest = Math.random() < 0.5 ? pick(DIGITS) + pick(ALPHA) : pick(ALPHA) + pick(DIGITS);
+      var call = pick(ALPHA) + rest;
+      if (!state.callsUsed[call]) { state.callsUsed[call] = true; return call; }
+    }
+    return call;
+  }
+
+  var REVEAL_PAUSE_MS = 1300;
+  var REVIEW_KEY_GUARD_MS = 400;
+  var INTER_GROUP_PAUSE_MS = 700;
+  var STORAGE_KEY = "hct-cw-call-signs-v2";
+  var DRILL_REPS = 5;
+  var DRILL_GAP_MS = 700;
+
+  /* =====================================================================
+     STATE
+     ===================================================================== */
+  var state = {
+    settings: {
+      mode: "find",
+      callMix: "mixed",
+      wpm: 20, fwpm: 15, toneHz: 600, volume: 70,
+      simMin: 15, simMax: 30,     // Simulator speed range
+      runCalls: 25, runAdapt: true,
+      replaySec: 5, maxPlays: 10, // Find the Number
+      maxTimeSec: 6, unlimited: false,
+      headCopy: false, timerMin: 0, buzzer: true
+    },
+    running: false,
+    drilling: false, drillQueue: null, drillPos: 0, drillReps: 0,
+    roundToken: 0, timerGen: 0, playId: 0,
+    playing: false,
+    currentAudio: Promise.resolve(),
+    callsUsed: {},
+    reviewing: false, reviewStartTs: 0, reviewResolver: null,
+    round: null,        // { sent, target: [chars to type], wpm, fwpm, plays, replayed, answerPlays }
+    typed: [],
+    acceptingInput: false, timerActive: false,
+    roundStartTs: 0, timerStartTs: null,
+    answerResolver: null,
+    timeUp: false,
+    score: 0,           // Find the Number / Speed Run points this session
+    run: null,          // Speed Run in progress (or last finished)
+    stats: freshStats()
+  };
+
+  function freshStats() {
+    return {
+      overall: { calls: 0, callsCorrect: 0, chars: 0, charsCorrect: 0, timeouts: 0,
+                 totalResponseMs: 0, responseCount: 0, playsSum: 0, found: 0, score: 0, top: 0 },
+      perBand: {},     // Simulator / Speed Run / Builder: { 15: { calls, correct, chars, charsCorrect } } in 5 WPM bands
+      perPlays: {},    // Find the Number: { 1: n, 2: n, ..., 5: n (5 or more) }
+      perChar: {}
+    };
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var els = {};
+  ["statusPill", "drillFlag", "blanksRow", "meterFill", "meterLabel", "sessionBtn", "tapHint", "hiddenInput",
+   "headCopyBtn", "headCopyState", "replayBtn", "nextBtn", "elapsedChip", "elapsedVal", "timerBtn", "timerVal",
+   "buzzBtn", "buzzVal", "speedChip", "speedVal", "scoreChip", "scoreVal",
+   "timerDialog", "timerPresets", "timerInput", "timerSetBtn", "timerOffBtn", "timerCancelBtn",
+   "infoBtn", "infoDialog", "infoCloseBtn", "modeBar", "modeDesc",
+   "callMixField", "callMixSelect", "runFields", "runCallsSelect", "runAdaptSelect",
+   "wpmField", "wpmLabel", "wpmRange", "wpmVal", "fwpmField", "fwpmRange", "fwpmVal",
+   "simFields", "simMinRange", "simMinVal", "simMaxRange", "simMaxVal", "fullSpeedNote",
+   "toneRange", "toneVal", "volRange", "volVal", "findFields", "replaySecRange", "replaySecVal", "maxPlaysSelect",
+   "maxTimeField", "maxTimeRange", "maxTimeVal", "unlimitedCheck", "settingsFieldset", "lockNote",
+   "statsSub", "statTiles", "statTableCaption", "statTableHead", "statTableBody", "resetStatsBtn",
+   "drillList", "drillBtn", "drillingBadge",
+   "runCard", "runTitle", "runLast", "runScore", "runBest", "runWhy", "runTiles", "runMissed", "runRows",
+   "chartCaption", "runChart", "runChartSum"].forEach(function (id) { els[id] = $(id); });
+
+  function mode() { return state.settings.mode; }
+
+  /* =====================================================================
+     SETTINGS
+     Character speed, tone and volume are this tab's HST.shared settings
+     (each tool keeps its own); everything else is saved here.
+     ===================================================================== */
+  function loadSettings() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      if (saved) for (var k in saved) if (state.settings.hasOwnProperty(k)) state.settings[k] = saved[k];
+    } catch (e) {}
+    if (!MODES[state.settings.mode]) state.settings.mode = "find";
+  }
+  function saveSettings() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.settings)); } catch (e) {}
+  }
+
+  // Which settings each mode uses. The Simulator and Speed Run send at
+  // full speed (their speed keeps changing, so a fixed Farnsworth speed
+  // would undo it); Find the Number replays on its own clock instead of
+  // a Max Time to Answer.
+  function updateFieldsForMode() {
+    var m = mode();
+    els.callMixField.style.display = m === "builder" ? "none" : "";
+    els.runFields.style.display = m === "run" ? "" : "none";
+    els.wpmField.style.display = m === "sim" ? "none" : "";
+    els.wpmLabel.textContent = m === "run" && state.settings.runAdapt ? "Starting Speed (WPM)" : "Character Speed (WPM)";
+    els.fwpmField.style.display = m === "find" || m === "builder" ? "" : "none";
+    els.simFields.style.display = m === "sim" ? "" : "none";
+    els.fullSpeedNote.style.display = m === "sim" || m === "run" ? "" : "none";
+    els.findFields.style.display = m === "find" ? "" : "none";
+    els.maxTimeField.style.display = m === "find" ? "none" : "";
+  }
+
+  function renderModeBar() {
+    var m = mode();
+    els.modeBar.querySelectorAll("button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.mode === m));
+      b.disabled = state.running || counting();
+    });
+    els.modeDesc.textContent = MODES[m].desc;
+    els.headCopyBtn.classList.toggle("invisible", m === "find");
+    els.runCard.hidden = m !== "run";
+    els.scoreChip.hidden = !(m === "find" || m === "run");
+    els.speedChip.hidden = !(m === "sim" || m === "run");
+  }
+
+  function applySettingsToUI() {
+    var s = state.settings;
+    updateFieldsForMode();
+    els.callMixSelect.value = s.callMix;
+    els.runCallsSelect.value = String(s.runCalls);
+    els.runAdaptSelect.value = s.runAdapt ? "1" : "0";
+    els.wpmRange.value = s.wpm; els.wpmVal.textContent = s.wpm;
+    els.fwpmRange.max = s.wpm;
+    els.fwpmRange.value = Math.min(s.fwpm, s.wpm); els.fwpmVal.textContent = els.fwpmRange.value;
+    els.simMinRange.value = s.simMin; els.simMinVal.textContent = s.simMin;
+    els.simMaxRange.value = s.simMax; els.simMaxVal.textContent = s.simMax;
+    els.toneRange.value = s.toneHz; els.toneVal.textContent = s.toneHz + " Hz";
+    els.volRange.value = s.volume; els.volVal.textContent = s.volume + "%";
+    els.replaySecRange.value = s.replaySec; els.replaySecVal.textContent = s.replaySec + " s";
+    els.maxPlaysSelect.value = String(s.maxPlays);
+    els.maxTimeRange.value = s.maxTimeSec; els.maxTimeVal.textContent = Number(s.maxTimeSec).toFixed(1) + " s";
+    els.unlimitedCheck.checked = s.unlimited;
+    els.maxTimeRange.disabled = s.unlimited;
+    renderHeadCopyBtn();
+    renderModeBar();
+    clocks.renderIdle();
+  }
+
+  /* =====================================================================
+     AUDIO + CLOCKS (../shared/hst-engine.js)
+     ===================================================================== */
+  function playBuzzer() { if (state.settings.buzzer) HST.audio.buzzer(state.settings.volume); }
+  function playBell() { HST.audio.bell(state.settings.volume); }
+  var clocks = null;
+  var practiceLog = HST.history.recorder("call-signs");
+
+  // Plays the round's call at the round's own speed (a replay sounds
+  // exactly like the first play). Only the newest play may clear
+  // state.playing, so an answer that cut one play short can't end a
+  // Replay that started after it.
+  function playCall(r) {
+    var id = ++state.playId, s = state.settings;
+    r.plays++;
+    state.playing = true;
+    var p = HST.audio.playMorse(r.sent.split(""), { wpm: r.wpm, fwpm: r.fwpm, toneHz: s.toneHz, volume: s.volume }).done
+      .then(function () { if (state.playId === id) state.playing = false; return state.playId === id; });
+    state.currentAudio = p;
+    return p;
+  }
+  function stopCall() {
+    HST.audio.stop();
+    state.playId++;
+    state.playing = false;
+    state.currentAudio = Promise.resolve(true);
+  }
+
+  function timerExpired() {
+    if (!state.running) return;
+    clocks.stop(true);
+    state.timeUp = true;     // the call in progress still counts; runLoop ends the session after it
+  }
+  function endTimedSession() {
+    stopSession("⏰ " + state.settings.timerMin + " min done", true);
+    playBell();
+  }
+  function openTimerDialog() {
+    if (state.running) return;
+    els.timerBtn.classList.remove("expired");
+    els.timerInput.value = state.settings.timerMin || "";
+    els.timerDialog.showModal();
+  }
+  function setTimerMinutes(min) {
+    state.settings.timerMin = min;
+    saveSettings();
+    clocks.renderIdle();
+    els.timerDialog.close();
+  }
+
+  /* =====================================================================
+     ROUNDS
+     ===================================================================== */
+  function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+  function buildRound() {
+    var s = state.settings, m = mode();
+    var fw = s.fwpm && s.fwpm < s.wpm ? s.fwpm : 0;
+    if (m === "find") {
+      var call = generateCallSign(true);
+      return { sent: call, target: [call.replace(/[^0-9]/g, "")], wpm: s.wpm, fwpm: fw, plays: 0 };
+    }
+    if (m === "builder") { var b = builderCall(); return { sent: b, target: b.split(""), wpm: s.wpm, fwpm: fw, plays: 0 }; }
+    var c = generateCallSign(false);
+    if (m === "sim") return { sent: c, target: c.split(""), wpm: randInt(Math.min(s.simMin, s.simMax), Math.max(s.simMin, s.simMax)), fwpm: 0, plays: 0 };
+    return { sent: c, target: c.split(""), wpm: state.run.wpm, fwpm: 0, plays: 0 };
+  }
+
+  /* =====================================================================
+     RENDERING
+     ===================================================================== */
+  function setStatus(m, label) { els.statusPill.setAttribute("data-mode", m); els.statusPill.textContent = label; }
+  function makeCaret() { var c = document.createElement("span"); c.className = "blank-caret"; return c; }
+  function idleBoxes() { return mode() === "find" ? 1 : mode() === "builder" ? 3 : 5; }
+  function renderBlanksIdle(n) {
+    els.blanksRow.innerHTML = "";
+    for (var i = 0; i < n; i++) { var d = document.createElement("div"); d.className = "blank"; els.blanksRow.appendChild(d); }
+  }
+  function blankCells() { return els.blanksRow.querySelectorAll(".blank"); }
+  function inputLocked() { return state.settings.headCopy && state.playing && mode() !== "find"; }
+  function renderHeadCopyBtn() {
+    var on = !!state.settings.headCopy;
+    els.headCopyBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    els.headCopyState.textContent = on ? "On" : "Off";
+  }
+  // Replay: after a miss (any mode, as often as you like), or once per
+  // call while answering in a Speed Run (that call's points are halved).
+  function canReplay() {
+    if (!state.running || state.playing) return false;
+    if (state.reviewing) return true;
+    return mode() === "run" && state.acceptingInput && state.round && !state.round.replayed;
+  }
+  function updateReplayBtn() { els.replayBtn.disabled = !canReplay(); }
+
+  function renderBlanksTyping() {
+    var cells = blankCells(), next = state.typed.length;
+    for (var i = 0; i < cells.length; i++) {
+      var cell = cells[i];
+      cell.innerHTML = "";
+      if (i < next) { cell.className = "blank filled"; cell.textContent = state.typed[i]; }
+      else if (i === next && state.acceptingInput && inputLocked()) cell.className = "blank locked";
+      else if (i === next && state.acceptingInput) { cell.className = "blank active"; cell.appendChild(makeCaret()); }
+      else cell.className = "blank";
+    }
+  }
+  function renderBlanksReveal(results) {
+    var cells = blankCells();
+    for (var i = 0; i < cells.length; i++) {
+      cells[i].textContent = results[i].actual;
+      cells[i].className = "blank " + (results[i].correct ? "correct" : "incorrect");
+    }
+  }
+  function updateMeter(fraction, labelText, low) {
+    els.meterFill.style.transform = "scaleX(" + Math.max(0, Math.min(1, fraction)) + ")";
+    els.meterFill.classList.toggle("low", !!low);
+    els.meterLabel.textContent = labelText || " ";
+  }
+  function renderChips(change) {
+    var m = mode();
+    if (m === "run" && state.run) els.speedVal.textContent = state.run.wpm + " WPM";
+    else if (m === "sim") els.speedVal.textContent = state.round && state.running ? state.round.wpm + " WPM" : "—";
+    els.speedChip.classList.toggle("up", change > 0);
+    els.speedChip.classList.toggle("down", change < 0);
+    els.scoreVal.textContent = m === "run" ? (state.run ? state.run.score : 0) : state.score;
+  }
+
+  function fmtPct(c, t) { return t ? Math.round(c / t * 100) + "%" : "—"; }
+  function tile(v, l) { return '<div class="tile"><div class="v">' + esc(v) + '</div><div class="l">' + esc(l) + "</div></div>"; }
+
+  function renderStatsPanel() {
+    var o = state.stats.overall, m = mode(), t = [];
+    t.push(tile(o.calls, "Calls Played"));
+    t.push(tile(fmtPct(o.callsCorrect, o.calls), m === "find" ? "Numbers Found" : "Call Accuracy"));
+    if (m === "find") {
+      t.push(tile(o.found ? (o.playsSum / o.found).toFixed(1) : "—", "Avg Plays to Find"));
+      t.push(tile(o.score, "Points"));
+    } else {
+      t.push(tile(fmtPct(o.charsCorrect, o.chars), "Character Accuracy"));
+      t.push(tile(o.responseCount ? Math.round(o.totalResponseMs / o.responseCount) + " ms" : "—", "Avg Answer Time"));
+      t.push(tile(o.timeouts, "Timeouts"));
+      t.push(tile(o.top ? o.top + " WPM" : "—", "Fastest Call Copied"));
+    }
+    els.statTiles.innerHTML = t.join("");
+
+    if (m === "find") {
+      els.statTableCaption.textContent = "Plays Needed";
+      els.statTableHead.innerHTML = "<tr><th>Plays</th><th>Found</th><th>Points</th></tr>";
+      var rows = [1, 2, 3, 4, 5].map(function (p) {
+        var n = state.stats.perPlays[p] || 0;
+        return n ? "<tr><td>" + (p === 5 ? "5+" : p) + "</td><td>" + n + "</td><td>" + Math.max(1, FIND_MAX_POINTS + 1 - p) + (p === 5 ? " or less" : "") + " each</td></tr>" : "";
+      }).join("");
+      els.statTableBody.innerHTML = rows || '<tr><td colspan="3" class="empty-note">No numbers found yet.</td></tr>';
+    } else {
+      els.statTableCaption.textContent = "Accuracy by Speed";
+      els.statTableHead.innerHTML = "<tr><th>WPM</th><th>Calls</th><th>Call %</th><th>Char %</th></tr>";
+      var bands = Object.keys(state.stats.perBand).map(Number).sort(function (a, b) { return a - b; });
+      els.statTableBody.innerHTML = bands.length ? bands.map(function (b) {
+        var x = state.stats.perBand[b];
+        return "<tr><td>" + b + "–" + (b + 4) + "</td><td>" + x.calls + "</td><td>" + fmtPct(x.correct, x.calls) +
+               "</td><td>" + fmtPct(x.charsCorrect, x.chars) + "</td></tr>";
+      }).join("") : '<tr><td colspan="4" class="empty-note">No calls played yet.</td></tr>';
+    }
+  }
+
+  function computeWorst(n) {
+    var entries = [];
+    for (var ch in state.stats.perChar) { var s = state.stats.perChar[ch]; if (s.played > 0) entries.push([ch, s]); }
+    entries.sort(function (a, b) {
+      var ma = a[1].played - a[1].correct, mb = b[1].played - b[1].correct;
+      if (mb !== ma) return mb - ma;
+      return a[1].correct / a[1].played - b[1].correct / b[1].played;
+    });
+    return entries.slice(0, n);
+  }
+  function renderDrillPanel() {
+    var worst = computeWorst(5);
+    var anyMisses = worst.some(function (e) { return e[1].played - e[1].correct > 0; });
+    els.drillList.innerHTML = !worst.length ? '<li class="empty-note">Play a session to find your weak characters.</li>' :
+      worst.map(function (e) {
+        var acc = Math.round(e[1].correct / e[1].played * 100);
+        return '<li class="drill-row"><span class="drill-char">' + esc(e[0]) + '</span>' +
+          '<span class="drill-bar-track"><span class="drill-bar-fill" style="width:' + acc + '%;"></span></span>' +
+          '<span class="drill-pct">' + acc + "% (" + e[1].correct + "/" + e[1].played + ")</span></li>";
+      }).join("");
+    els.drillBtn.disabled = !anyMisses;
+    els.drillBtn.textContent = state.drilling ? "Stop Drill" : "Drill These Characters";
+  }
+  function renderAll() { renderStatsPanel(); renderDrillPanel(); }
+
+  /* =====================================================================
+     GAME LOOP -- the Code Groups trainer's: the call plays, you type it
+     into the boxes (the answer is in when the last box fills, or on
+     Enter), a correct call moves straight on and a miss holds with the
+     answer showing until Next. Find the Number instead replays the call
+     every few seconds until you type a digit.
+     ===================================================================== */
+  // A countdown on the meter: sec seconds, label(secondsLeft), then onDone().
+  // The end comes from a timer, not the animation, so a replay or a time-out
+  // still happens when the browser pauses animations (window hidden).
+  function startClock(sec, label, onDone) {
+    state.timerActive = true;
+    var t0 = performance.now(), myGen = ++state.timerGen;
+    setTimeout(function () {
+      if (!state.timerActive || state.timerGen !== myGen) return;
+      state.timerActive = false;
+      updateMeter(0, label(0), true);
+      onDone();
+    }, sec * 1000);
+    requestAnimationFrame(function tick() {
+      if (!state.timerActive || state.timerGen !== myGen) return;
+      var rem = Math.max(0, sec * 1000 - (performance.now() - t0)), frac = rem / (sec * 1000);
+      updateMeter(frac, label(rem / 1000), frac < 0.3);
+      if (rem > 0) requestAnimationFrame(tick);
+    });
+  }
+  // Max Time to Answer, from the end of the call.
+  function startAnswerClock() {
+    if (state.settings.unlimited) { updateMeter(1, "Unlimited time", false); return; }
+    state.timerStartTs = performance.now();
+    startClock(state.settings.maxTimeSec, function (s) { return s.toFixed(1) + " s"; }, function () { finishAnswer(true); });
+  }
+
+  function finishAnswer(timedOut) {
+    if (!state.acceptingInput) return;
+    state.acceptingInput = false;
+    state.timerActive = false;
+    updateReplayBtn();
+    var resolve = state.answerResolver;
+    state.answerResolver = null;
+    if (resolve) resolve(timedOut);
+  }
+
+  function bandOf(wpm) { return Math.floor(wpm / 5) * 5; }
+
+  function evaluateRound(timedOut) {
+    var r = state.round, o = state.stats.overall, results = [], allCorrect = !timedOut;
+    r.target.forEach(function (actual, i) {
+      var typedCh = state.typed[i] || null, correct = typedCh === actual;
+      if (!correct) allCorrect = false;
+      results.push({ actual: actual, typedCh: typedCh, correct: correct });
+      var cs = state.stats.perChar[actual] || (state.stats.perChar[actual] = { played: 0, correct: 0 });
+      cs.played++; if (correct) cs.correct++;
+      practiceLog.char(actual, correct);
+      o.chars++; if (correct) o.charsCorrect++;
+    });
+    o.calls++;
+    if (allCorrect) o.callsCorrect++;
+    if (timedOut) o.timeouts++;
+    var ref = state.timerStartTs != null ? state.timerStartTs : state.roundStartTs;
+    var ms = Math.max(0, performance.now() - ref);
+    if (!timedOut && mode() !== "find") { o.totalResponseMs += ms; o.responseCount++; }
+    practiceLog.round(allCorrect, mode() === "find" ? null : ms, !!timedOut);
+
+    var pts = 0, change = 0;
+    if (mode() === "find") {
+      if (allCorrect) {
+        pts = Math.max(1, FIND_MAX_POINTS + 1 - r.answerPlays);
+        o.found++; o.playsSum += r.answerPlays;
+        var k = Math.min(5, r.answerPlays);
+        state.stats.perPlays[k] = (state.stats.perPlays[k] || 0) + 1;
+      }
+      state.score += pts; o.score += pts;
+      practiceLog.set({ score: state.score });
+    } else {
+      var band = state.stats.perBand[bandOf(r.wpm)] || (state.stats.perBand[bandOf(r.wpm)] = { calls: 0, correct: 0, chars: 0, charsCorrect: 0 });
+      band.calls++; if (allCorrect) band.correct++;
+      results.forEach(function (x) { band.chars++; if (x.correct) band.charsCorrect++; });
+      if (allCorrect) o.top = Math.max(o.top, r.wpm);
+      practiceLog.set({ topWpm: o.top });
+    }
+    if (mode() === "run") {
+      var run = state.run;
+      if (allCorrect) { pts = Math.round(r.wpm * r.sent.length / 2); if (r.replayed) pts = Math.round(pts / 2); }
+      run.score += pts;
+      run.items.push({ sent: r.sent, typed: state.typed.join(""), wpm: r.wpm, ok: allCorrect, pts: pts, replayed: !!r.replayed, timedOut: !!timedOut });
+      if (run.adapt) {
+        var w = allCorrect ? Math.min(RUN_MAX_WPM, run.wpm + RUN_STEP_UP) : Math.max(RUN_MIN_WPM, run.wpm - RUN_STEP_DOWN);
+        change = w - run.wpm; run.wpm = w;
+      }
+      practiceLog.set({ score: run.score });
+    }
+    return { allCorrect: allCorrect, results: results, pts: pts, change: change };
+  }
+
+  function resultLabel(outcome, timedOut) {
+    var r = state.round, m = mode();
+    if (timedOut && m === "find") return "✗ Not found · " + r.sent;
+    if (timedOut) return "⏱ Time's up · " + r.sent;
+    if (m === "find") return outcome.allCorrect
+      ? "✓ " + r.sent + " · " + r.answerPlays + (r.answerPlays === 1 ? " play" : " plays") + " · +" + outcome.pts
+      : "✗ Missed · " + r.sent;
+    var speed = m === "sim" || m === "run" ? " · " + r.wpm + " WPM" : "";
+    if (outcome.allCorrect) return "✓ Correct" + speed + (m === "run" ? " · +" + outcome.pts : "");
+    return "✗ Missed" + speed;
+  }
+
+  function runLoop() {
+    if (!state.running) return;
+    if (state.timeUp) { endTimedSession(); return; }
+    if (mode() === "run" && state.run.items.length >= state.run.calls) { finishRun(); return; }
+
+    var r = buildRound(), myToken = ++state.roundToken;
+    state.round = r;
+    renderBlanksIdle(r.target.length);
+    updateMeter(1, " ", false);
+    renderChips(0);
+    setStatus("sending", mode() === "find" ? "Listen for the number" : state.settings.headCopy ? "Listen — head copy" : "Sending…");
+
+    state.acceptingInput = true;
+    state.typed = [];
+    state.roundStartTs = performance.now();
+    state.timerStartTs = null;
+    els.hiddenInput.value = "";
+    renderBlanksTyping();
+    var roundDone = new Promise(function (resolve) { state.answerResolver = resolve; });
+
+    if (mode() === "find") findLoop(r, myToken);
+    else playCall(r).then(function (current) {
+      if (state.roundToken !== myToken || !current) return;
+      onPlaybackFinished();
+    });
+    updateReplayBtn();
+
+    roundDone.then(function (timedOut) {
+      if (state.roundToken !== myToken || !state.running) return null;
+      // Find the Number and Speed Run: an answer cuts the call off.
+      if (mode() === "find" || mode() === "run") stopCall();
+      var outcome = evaluateRound(timedOut);
+      if (!outcome.allCorrect) playBuzzer();
+      setStatus(timedOut ? "timeout" : outcome.allCorrect ? "correct" : "miss", resultLabel(outcome, timedOut));
+      renderBlanksReveal(outcome.results);
+      updateMeter(0, " ", false);
+      renderChips(outcome.change);
+      renderAll();
+      return state.currentAudio.then(function () {
+        if (state.roundToken !== myToken) return;
+        if (outcome.allCorrect) return sleep(REVEAL_PAUSE_MS);
+        return enterReview();
+      });
+    }).then(function () {
+      if (state.roundToken !== myToken || !state.running) return;
+      return sleep(INTER_GROUP_PAUSE_MS);
+    }).then(function () {
+      if (state.roundToken !== myToken) return;
+      runLoop();
+    });
+  }
+
+  function onPlaybackFinished() {
+    if (!state.running || !state.acceptingInput) { updateReplayBtn(); return; }
+    setStatus("copy", "Copy now");
+    renderBlanksTyping();
+    updateReplayBtn();
+    startAnswerClock();
+  }
+
+  // Find the Number: play, wait Replay Every seconds, play again... until
+  // a digit is typed, or Give Up After plays have gone by.
+  function findLoop(r, token) {
+    playCall(r).then(function (current) {
+      if (state.roundToken !== token || !current) return;
+      if (!state.running || !state.acceptingInput) { updateReplayBtn(); return; }
+      var last = r.plays >= state.settings.maxPlays;
+      setStatus("copy", "Play " + r.plays + " · type the number");
+      renderBlanksTyping();
+      startClock(state.settings.replaySec,
+        function (s) { return (last ? "Last play — time's up in " : "Next play in ") + s.toFixed(1) + " s"; },
+        function () {
+          if (state.roundToken !== token || !state.acceptingInput) return;
+          if (last) { finishAnswer(true); return; }
+          setStatus("sending", "Play " + (r.plays + 1));
+          updateMeter(1, " ", false);
+          findLoop(r, token);
+        });
+    });
+  }
+
+  var REVIEW_HINT = "Replay to hear it again · Enter / Space / Next to continue";
+  function enterReview() {
+    state.reviewing = true;
+    state.reviewStartTs = performance.now();
+    els.nextBtn.hidden = false;
+    updateMeter(0, REVIEW_HINT, false);
+    updateReplayBtn();
+    return new Promise(function (resolve) { state.reviewResolver = resolve; });
+  }
+  function leaveReview() {
+    if (!state.reviewing) return;
+    state.reviewing = false;
+    els.nextBtn.hidden = true;
+    if (state.playing) stopCall();
+    updateMeter(0, " ", false);
+    updateReplayBtn();
+    var resolve = state.reviewResolver;
+    state.reviewResolver = null;
+    if (resolve) resolve();
+  }
+
+  function replayCall() {
+    if (!canReplay()) return;
+    HST.audio.unlock();
+    var r = state.round, myToken = state.roundToken;
+    if (state.reviewing) {
+      updateMeter(0, "Replaying…", false);
+      updateReplayBtn();
+      playCall(r).then(function (current) {
+        if (state.roundToken !== myToken || !state.reviewing || !current) return;
+        updateMeter(0, REVIEW_HINT, false);
+        updateReplayBtn();
+      });
+      updateReplayBtn();
+      return;
+    }
+    // Speed Run, while answering: the answer clock waits for the replay.
+    r.replayed = true;
+    state.run.replays++;
+    state.timerActive = false;
+    setStatus("sending", "Replay · half points");
+    updateMeter(1, " ", false);
+    playCall(r).then(function (current) {
+      if (state.roundToken !== myToken || !current) return;
+      onPlaybackFinished();
+    });
+    updateReplayBtn();
+  }
+
+  /* =====================================================================
+     SPEED RUN -- a set number of calls; the run's results and a chart of
+     your runs show in the card under the practice box.
+     ===================================================================== */
+  function topCopied(items) { return items.reduce(function (t, c) { return c.ok ? Math.max(t, c.wpm) : t; }, 0); }
+
+  function finishRun() {
+    var run = state.run;
+    run.done = true;
+    stopSession("Run complete · " + run.score + " points");
+    renderRunCard();
+    if (run.score > run.prevBest && run.prevBest >= 0) els.runBest.hidden = false;
+  }
+
+  function typedHtml(sent, typed) {
+    if (!typed) return '<span class="typed-x">—</span>';
+    return typed.split("").map(function (c, i) { return c === sent[i] ? esc(c) : '<span class="typed-x">' + esc(c) + "</span>"; }).join("");
+  }
+
+  function renderRunCard() {
+    var run = state.run;
+    els.runLast.hidden = !run;
+    els.runRows.parentNode.parentNode.hidden = !run;
+    drawRunChart();
+    if (!run) return;
+    var items = run.items, n = items.length, right = items.filter(function (c) { return c.ok; }).length, top = topCopied(items);
+    els.runBest.hidden = true;
+    els.runTitle.textContent = run.done ? "Speed Run · last run" : "Speed Run · stopped after " + n + " of " + run.calls;
+    els.runScore.innerHTML = run.score + "<small>POINTS</small>";
+    els.runWhy.textContent = "You copied " + right + " of " + n + " calls" +
+      (run.adapt ? (top ? ", up to " + top + " WPM." : ".") : " at " + run.startWpm + " WPM.");
+    var tiles = [tile(right + "/" + n, "Calls Copied")];
+    if (run.adapt) { tiles.push(tile(top ? top + " WPM" : "—", "Top Speed Copied")); tiles.push(tile(run.startWpm + " → " + run.wpm, "Speed, Start → End")); }
+    else tiles.push(tile(run.startWpm + " WPM", "Speed"));
+    tiles.push(tile(run.replays, run.replays === 1 ? "Replay Used" : "Replays Used"));
+    els.runTiles.innerHTML = tiles.join("");
+    var miss = {};
+    items.forEach(function (c) { if (!c.ok) c.sent.split("").forEach(function (ch, i) { if (c.typed[i] !== ch) miss[ch] = (miss[ch] || 0) + 1; }); });
+    var worst = Object.keys(miss).sort(function (a, b) { return miss[b] - miss[a] || (a < b ? -1 : 1); }).slice(0, 8);
+    els.runMissed.innerHTML = worst.length ? "Characters you missed: <b>" + worst.map(esc).join(" ") + "</b>" :
+      n && right === n ? "Every call copied. Try a faster start next time!" : "";
+    els.runRows.innerHTML = items.map(function (c, i) {
+      return "<tr><td>" + (i + 1) + '</td><td class="mono">' + esc(c.sent) + '</td><td class="mono ' + (c.ok ? "ok" : "no") + '">' +
+        (c.ok ? esc(c.typed) : typedHtml(c.sent, c.typed)) + '</td><td class="num">' + c.wpm + '</td><td class="num">' +
+        (c.ok ? c.pts + (c.replayed ? " (replay)" : "") : "—") + '</td><td><button class="hear" type="button" data-i="' + i + '">Hear it</button></td></tr>';
+    }).join("");
+  }
+
+  // The last 20 completed runs of the chosen length (10, 25 and 50 calls
+  // score on different scales). The best one is drawn solid.
+  function drawRunChart() {
+    var calls = state.settings.runCalls;
+    els.chartCaption.textContent = "Your " + calls + "-call runs";
+    return HST.history.all().then(function (rows) {
+      var runs = rows.filter(function (s) { return s.trainer === "call-signs" && s.mode === "run" && s.completed && s.runCalls === calls; });
+      var shown = runs.slice(-CHART_RUNS);
+      if (!shown.length) {
+        els.runChart.innerHTML = '<p class="empty-note">Finish a ' + calls + "-call run and your scores will show here.</p>";
+        els.runChartSum.textContent = "";
+        return;
+      }
+      var max = Math.max.apply(null, shown.map(function (s) { return s.score || 0; }));
+      var best = Math.max.apply(null, runs.map(function (s) { return s.score || 0; }));
+      var step = [10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000].filter(function (s) { return max / s <= 5; })[0] || 5000;
+      var topV = Math.max(step, Math.ceil(max / step) * step);
+      var W = 520, H = 200, L = 42, R = 6, T = 14, B = 30;
+      var cw = (W - L - R) / Math.max(shown.length, 5), bw = Math.min(30, cw * 0.62);
+      function y(v) { return T + (H - T - B) * (1 - v / topV); }
+      var svg = ['<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Speed Run scores, oldest to newest">'];
+      for (var v = 0; v <= topV; v += step) {
+        svg.push('<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#44403c" stroke-opacity="0.5"/>');
+        svg.push('<text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + v + "</text>");
+      }
+      shown.forEach(function (s, i) {
+        var x = L + cw * i + (cw - bw) / 2, h = Math.max(2, y(0) - y(s.score || 0));
+        var when = new Date(s.start).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        svg.push('<rect x="' + x.toFixed(1) + '" y="' + (y(0) - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) +
+                 '" rx="3" fill="#a3e635"' + (s.score === best ? "" : ' opacity="0.5"') + "><title>" + esc(when + ": " + s.score + " points" +
+                 (s.adapt && s.topWpm ? ", top " + s.topWpm + " WPM" : "")) + "</title></rect>");
+        svg.push('<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y(s.score || 0) - 4).toFixed(1) + '" text-anchor="middle">' + (s.score || 0) + "</text>");
+        if (shown.length <= 8 || i % 2 === (shown.length - 1) % 2)
+          svg.push('<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + esc(when) + "</text>");
+      });
+      svg.push("</svg>");
+      els.runChart.innerHTML = svg.join("");
+      var fastest = runs.reduce(function (t, s) { return Math.max(t, s.topWpm || 0); }, 0);
+      els.runChartSum.textContent = runs.length + (runs.length === 1 ? " run" : " runs") + " · best " + best + " points" +
+        (fastest ? " · fastest call copied " + fastest + " WPM" : "");
+    });
+  }
+
+  /* =====================================================================
+     DRILL -- your weakest characters, 5 times each, on a loop (listening
+     only, not scored), as in Code Groups.
+     ===================================================================== */
+  function updateDrillFlag() {
+    if (state.drilling && state.drillQueue) { els.drillFlag.textContent = "Drilling " + state.drillQueue[state.drillPos]; els.drillFlag.style.display = ""; }
+    else els.drillFlag.style.display = "none";
+  }
+  function drillLoop() {
+    if (!state.drilling) return;
+    var s = state.settings;
+    updateDrillFlag();
+    HST.audio.playMorse([state.drillQueue[state.drillPos]], { wpm: s.wpm, toneHz: s.toneHz, volume: s.volume }).done.then(function () {
+      if (!state.drilling) return;
+      if (++state.drillReps >= DRILL_REPS) { state.drillReps = 0; state.drillPos = (state.drillPos + 1) % state.drillQueue.length; }
+      return sleep(DRILL_GAP_MS);
+    }).then(function () { if (state.drilling) drillLoop(); });
+  }
+  function startDrill() {
+    var worst = computeWorst(5).map(function (e) { return e[0]; });
+    if (!worst.length) return;
+    cancelCountdown();
+    if (state.running) stopSession();
+    HST.audio.unlock();
+    state.drillQueue = worst; state.drillPos = 0; state.drillReps = 0; state.drilling = true;
+    els.drillingBadge.classList.add("show");
+    els.drillingBadge.textContent = "Drilling: " + worst.join(" ");
+    renderDrillPanel();
+    renderBlanksIdle(1);
+    drillLoop();
+  }
+  function endDrill() {
+    state.drilling = false;
+    HST.audio.stop();
+    state.drillQueue = null; state.drillPos = 0; state.drillReps = 0;
+    els.drillingBadge.classList.remove("show");
+    updateDrillFlag();
+    renderDrillPanel();
+    renderBlanksIdle(idleBoxes());
+  }
+
+  /* =====================================================================
+     SESSION
+     ===================================================================== */
+  function lockSettings(locked) {
+    els.settingsFieldset.disabled = locked;
+    els.lockNote.classList.toggle("show", locked);
+    renderModeBar();
+  }
+
+  var COUNTDOWN_SEC = 3;
+  var countdown = { timer: null, left: 0 };
+  function counting() { return !!countdown.timer; }
+  function cancelCountdown() {
+    if (!countdown.timer) return;
+    clearInterval(countdown.timer); countdown.timer = null;
+    $("countdown").hidden = true;
+    els.sessionBtn.textContent = "Start Session";
+    els.sessionBtn.classList.remove("running");
+    els.tapHint.style.display = "";
+    lockSettings(false);
+    setStatus("idle", "Idle");
+  }
+  function showCount() {
+    var el = $("countdown");
+    el.textContent = countdown.left;
+    el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick");
+  }
+  function beginCountdown() {
+    if (state.drilling) endDrill();
+    HST.audio.unlock();
+    els.hiddenInput.focus({ preventScroll: true });
+    els.sessionBtn.textContent = "Stop Session";
+    els.sessionBtn.classList.add("running");
+    els.tapHint.style.display = "none";
+    countdown.left = COUNTDOWN_SEC;
+    countdown.timer = setInterval(function () {
+      countdown.left--;
+      if (countdown.left > 0) { showCount(); return; }
+      clearInterval(countdown.timer); countdown.timer = null;
+      $("countdown").hidden = true;
+      startSession();
+    }, 1000);
+    lockSettings(true);
+    setStatus("idle", "Get ready…");
+    $("countdown").hidden = false;
+    showCount();
+  }
+
+  function startSession() {
+    var s = state.settings, m = mode();
+    if (state.drilling) endDrill();
+    HST.audio.unlock();
+    state.running = true;
+    state.timeUp = false;
+    state.callsUsed = {};
+    state.score = 0;
+    var meta = { mode: m };
+    if (m === "find" || m === "builder") { meta.wpm = s.wpm; meta.fwpm = s.fwpm < s.wpm ? s.fwpm : 0; }
+    if (m === "sim") { meta.minWpm = Math.min(s.simMin, s.simMax); meta.maxWpm = Math.max(s.simMin, s.simMax); }
+    if (m === "run") {
+      meta.wpm = s.wpm; meta.runCalls = s.runCalls; meta.adapt = !!s.runAdapt; meta.completed = false;
+      state.run = { calls: s.runCalls, adapt: !!s.runAdapt, startWpm: s.wpm, wpm: s.wpm, items: [], score: 0, replays: 0, prevBest: -1, done: false };
+      var run = state.run;
+      // Best score so far at this run length (-1: no runs yet, so no "NEW BEST").
+      HST.history.all().then(function (rows) {
+        var prev = rows.filter(function (x) { return x.trainer === "call-signs" && x.mode === "run" && x.completed && x.runCalls === run.calls; });
+        run.prevBest = prev.length ? prev.reduce(function (b, x) { return Math.max(b, x.score || 0); }, 0) : -1;
+      });
+    }
+    practiceLog.start(meta);
+    els.sessionBtn.textContent = "Stop Session";
+    els.sessionBtn.classList.add("running");
+    els.tapHint.style.display = "none";
+    lockSettings(true);
+    clocks.start();
+    renderChips(0);
+    els.hiddenInput.focus({ preventScroll: true });
+    runLoop();
+  }
+
+  function stopSession(idleMessage, timerRanOut) {
+    var run = mode() === "run" ? state.run : null;
+    state.running = false;
+    state.timeUp = false;
+    if (run) practiceLog.set({ completed: !!run.done, score: run.score, topWpm: topCopied(run.items), items: run.items });
+    practiceLog.finish();
+    clocks.stop(!!timerRanOut);
+    if (state.acceptingInput) finishAnswer(false);
+    state.timerActive = false;
+    state.reviewing = false;
+    state.reviewResolver = null;
+    state.roundToken++;
+    els.nextBtn.hidden = true;
+    stopCall();
+    updateReplayBtn();
+    els.sessionBtn.textContent = "Start Session";
+    els.sessionBtn.classList.remove("running");
+    els.tapHint.style.display = "";
+    lockSettings(false);
+    setStatus("idle", idleMessage || "Idle");
+    updateMeter(0, " ", false);
+    renderBlanksIdle(idleBoxes());
+    if (run && run.items.length) renderRunCard();
+  }
+
+  /* =====================================================================
+     EVENT WIRING
+     ===================================================================== */
+  function preserveInputFocus(el) { el.addEventListener("mousedown", function (e) { e.preventDefault(); }); }
+  [els.sessionBtn, els.drillBtn, els.resetStatsBtn, els.headCopyBtn, els.replayBtn, els.nextBtn].forEach(preserveInputFocus);
+  els.nextBtn.addEventListener("click", leaveReview);
+  els.replayBtn.addEventListener("click", replayCall);
+
+  els.headCopyBtn.addEventListener("click", function () {
+    state.settings.headCopy = !state.settings.headCopy;
+    renderHeadCopyBtn();
+    saveSettings();
+    if (state.running && !state.reviewing) {
+      if (state.playing && mode() !== "find") setStatus("sending", state.settings.headCopy ? "Listen — head copy" : "Sending…");
+      renderBlanksTyping();
+    }
+  });
+
+  els.modeBar.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-mode]");
+    if (!b || b.disabled || b.dataset.mode === mode()) return;
+    if (state.drilling) endDrill();
+    state.settings.mode = b.dataset.mode;
+    saveSettings();
+    state.stats = freshStats();        // each mode keeps its own session statistics
+    state.score = 0;
+    state.round = null;
+    applySettingsToUI();
+    renderChips(0);
+    renderBlanksIdle(idleBoxes());
+    setStatus("idle", "Idle");
+    renderAll();
+    if (mode() === "run") renderRunCard();
+  });
+
+  els.timerBtn.addEventListener("click", openTimerDialog);
+  els.timerPresets.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-min]");
+    if (b) setTimerMinutes(parseInt(b.getAttribute("data-min"), 10));
+  });
+  function applyTypedTimer() {
+    var min = Math.round(parseFloat(els.timerInput.value));
+    if (!(min >= 1 && min <= 180)) { els.timerInput.focus(); els.timerInput.select(); return; }
+    setTimerMinutes(min);
+  }
+  els.timerSetBtn.addEventListener("click", applyTypedTimer);
+  els.timerInput.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); applyTypedTimer(); } });
+  els.timerOffBtn.addEventListener("click", function () { setTimerMinutes(0); });
+  els.timerCancelBtn.addEventListener("click", function () { els.timerDialog.close(); });
+  els.timerDialog.addEventListener("click", function (e) { if (e.target === els.timerDialog) els.timerDialog.close(); });
+  els.infoBtn.addEventListener("click", function () { els.infoDialog.showModal(); });
+  els.infoCloseBtn.addEventListener("click", function () { els.infoDialog.close(); });
+  els.infoDialog.addEventListener("click", function (e) { if (e.target === els.infoDialog) els.infoDialog.close(); });
+
+  els.sessionBtn.addEventListener("click", function () {
+    if (counting()) cancelCountdown();
+    else if (state.running) stopSession();
+    else beginCountdown();
+  });
+
+  els.blanksRow.addEventListener("click", function () { els.hiddenInput.focus({ preventScroll: true }); });
+  els.hiddenInput.addEventListener("blur", function () {
+    if (state.running) setTimeout(function () { els.hiddenInput.focus({ preventScroll: true }); }, 50);
+  });
+  function reviewKeyReady() { return state.reviewing && performance.now() - state.reviewStartTs >= REVIEW_KEY_GUARD_MS; }
+
+  els.hiddenInput.addEventListener("input", function () {
+    if (state.reviewing) {
+      var hadSpace = els.hiddenInput.value.indexOf(" ") !== -1;
+      els.hiddenInput.value = "";
+      if (hadSpace && reviewKeyReady()) leaveReview();
+      return;
+    }
+    if (!state.acceptingInput) { els.hiddenInput.value = ""; return; }
+    if (inputLocked()) { els.hiddenInput.value = state.typed.join(""); return; }
+    var r = state.round;
+    // Find the Number: only a digit counts, and the first one is the answer.
+    if (mode() === "find") {
+      var d = els.hiddenInput.value.replace(/[^0-9]/g, "");
+      els.hiddenInput.value = "";
+      if (!d) return;
+      state.typed = [d[0]];
+      r.answerPlays = r.plays;
+      renderBlanksTyping();
+      finishAnswer(false);
+      return;
+    }
+    var v = els.hiddenInput.value.toUpperCase().replace(/[^A-Z0-9\/]/g, "").slice(0, r.target.length);
+    els.hiddenInput.value = v;
+    state.typed = v.split("");
+    renderBlanksTyping();
+    if (state.typed.length === r.target.length) finishAnswer(false);
+  });
+
+  els.hiddenInput.addEventListener("keydown", function (e) {
+    if (state.reviewing && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      if (reviewKeyReady()) leaveReview();
+      return;
+    }
+    if (e.key === "F6") { e.preventDefault(); replayCall(); return; }
+    if (e.key === "Enter" && state.acceptingInput && !inputLocked() && mode() !== "find" && state.typed.length) finishAnswer(false);
+  });
+
+  els.runRows.addEventListener("click", function (e) {
+    var b = e.target.closest(".hear");
+    if (!b || !state.run || state.running) return;
+    var c = state.run.items[Number(b.dataset.i)], s = state.settings;
+    HST.audio.stop();
+    HST.audio.playMorse(c.sent.split(""), { wpm: c.wpm, toneHz: s.toneHz, volume: s.volume });
+  });
+
+  // Settings
+  function onSetting(el, ev, fn) { el.addEventListener(ev, function () { fn(); saveSettings(); }); }
+  onSetting(els.callMixSelect, "change", function () { state.settings.callMix = els.callMixSelect.value; });
+  onSetting(els.runCallsSelect, "change", function () { state.settings.runCalls = parseInt(els.runCallsSelect.value, 10); drawRunChart(); });
+  onSetting(els.runAdaptSelect, "change", function () { state.settings.runAdapt = els.runAdaptSelect.value === "1"; updateFieldsForMode(); });
+  els.wpmRange.addEventListener("input", function () { HST.shared.set({ wpm: parseInt(els.wpmRange.value, 10) }); });
+  onSetting(els.fwpmRange, "input", function () { state.settings.fwpm = parseInt(els.fwpmRange.value, 10); els.fwpmVal.textContent = state.settings.fwpm; });
+  // Slowest can't pass Fastest (and the other way round): the other one moves along.
+  onSetting(els.simMinRange, "input", function () {
+    var s = state.settings; s.simMin = parseInt(els.simMinRange.value, 10);
+    if (s.simMax < s.simMin) { s.simMax = s.simMin; els.simMaxRange.value = s.simMax; els.simMaxVal.textContent = s.simMax; }
+    els.simMinVal.textContent = s.simMin;
+  });
+  onSetting(els.simMaxRange, "input", function () {
+    var s = state.settings; s.simMax = parseInt(els.simMaxRange.value, 10);
+    if (s.simMin > s.simMax) { s.simMin = s.simMax; els.simMinRange.value = s.simMin; els.simMinVal.textContent = s.simMin; }
+    els.simMaxVal.textContent = s.simMax;
+  });
+  els.toneRange.addEventListener("input", function () { HST.shared.set({ toneHz: parseInt(els.toneRange.value, 10) }); });
+  els.volRange.addEventListener("input", function () { HST.shared.set({ volume: parseInt(els.volRange.value, 10) }); });
+  onSetting(els.replaySecRange, "input", function () { state.settings.replaySec = parseInt(els.replaySecRange.value, 10); els.replaySecVal.textContent = state.settings.replaySec + " s"; });
+  onSetting(els.maxPlaysSelect, "change", function () { state.settings.maxPlays = parseInt(els.maxPlaysSelect.value, 10); });
+  onSetting(els.maxTimeRange, "input", function () { state.settings.maxTimeSec = parseFloat(els.maxTimeRange.value); els.maxTimeVal.textContent = state.settings.maxTimeSec.toFixed(1) + " s"; });
+  onSetting(els.unlimitedCheck, "change", function () { state.settings.unlimited = els.unlimitedCheck.checked; els.maxTimeRange.disabled = state.settings.unlimited; });
+
+  els.resetStatsBtn.addEventListener("click", function () { state.stats = freshStats(); renderAll(); });
+  els.drillBtn.addEventListener("click", function () { if (state.drilling) endDrill(); else startDrill(); });
+
+  /* =====================================================================
+     INIT
+     ===================================================================== */
+  clocks = HST.createClocks({
+    elapsedVal: els.elapsedVal, elapsedChip: els.elapsedChip,
+    timerBtn: els.timerBtn, timerVal: els.timerVal,
+    getTimerMin: function () { return state.settings.timerMin; },
+    onExpire: timerExpired
+  });
+  function applyShared(shared) {
+    state.settings.wpm = shared.wpm;
+    state.settings.toneHz = shared.toneHz;
+    state.settings.volume = shared.volume;
+    if (state.settings.fwpm > shared.wpm) state.settings.fwpm = shared.wpm;
+  }
+  loadSettings();
+  function renderBuzz() {
+    els.buzzBtn.setAttribute("aria-pressed", String(state.settings.buzzer));
+    els.buzzVal.textContent = state.settings.buzzer ? "On" : "Off";
+  }
+  els.buzzBtn.addEventListener("click", function () { state.settings.buzzer = !state.settings.buzzer; saveSettings(); renderBuzz(); });
+  renderBuzz();
+  applyShared(HST.shared.get());
+  HST.shared.onChange(function (shared) { applyShared(shared); applySettingsToUI(); saveSettings(); });
+  HST.history.onChange(function () { if (mode() === "run") drawRunChart(); });
+  applySettingsToUI();
+  renderChips(0);
+  renderBlanksIdle(idleBoxes());
+  renderAll();
+  renderRunCard();
+})();
+</script>
+
+</body>
+</html>

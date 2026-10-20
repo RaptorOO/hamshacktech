@@ -94,19 +94,21 @@
   .tab:hover { color: var(--text); }
   .tab { flex: none; white-space: nowrap; }
   .tab .narrow { display: none; }      /* "Stats" replaces "Progress" on phones */
-  /* Seven tabs: if a small screen can't fit them, the tab row scrolls
+  /* Eight trainer tabs: if a small screen can't fit them, the tab row scrolls
      sideways rather than pushing the gear off the screen. */
   .tabs { min-width: 0; overflow-x: auto; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
   .tab[aria-selected="true"] { background: var(--lime); color: var(--lime-ink); }
   /* The selected tab takes that trainer's color from the Progress tab, so
      each trainer has one color everywhere: ICR lime, Code Groups emerald,
-     Keyer amber, QSO pink, Test Prep orange. (Progress and Jeopardy stay lime.) */
+     Keyer amber, QSO pink, Test Prep orange, Call Signs cyan. (Progress and
+     Jeopardy stay lime.) */
   #tab-icr[aria-selected="true"]         { background: #a3e635; }   /* lime-400 */
   #tab-code-groups[aria-selected="true"] { background: #34d399; }   /* emerald-400 */
   #tab-keyer[aria-selected="true"]       { background: #fbbf24; }   /* amber-400 */
   #tab-qso[aria-selected="true"]         { background: #f472b6; }   /* pink-400 */
   #tab-test-prep[aria-selected="true"]   { background: #fb923c; }   /* orange-400 */
+  #tab-call-signs[aria-selected="true"]  { background: #67e8f9; }   /* cyan-300 */
   .tab:focus-visible, .install:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 
   .spacer { flex: 1; }
@@ -330,17 +332,17 @@
   }
   main iframe[hidden] { display: none; }
 
-  /* ---------- narrower windows: six tabs need room ----------
+  /* ---------- narrower windows: nine tabs need room ----------
      Things give way in this order as the window narrows: the
      "HamShackTech" word, then the title (mascot only), short tab labels
      and an icon-only Install button, the Home button, the mascot, and
      finally tighter tabs. Below that the tab row scrolls sideways. */
-  @media (max-width: 1000px) { .brand h1 .site { display: none; } }   /* "CW Trainer" */
-  @media (max-width: 840px)  {
+  @media (max-width: 1200px) { .brand h1 .site { display: none; } }   /* "CW Trainer" */
+  @media (max-width: 1020px) {
     .brand h1 { display: none; }         /* mascot only */
     .tab { padding: 7px 12px; }
   }
-  @media (max-width: 760px) {
+  @media (max-width: 880px) {
     .tab .long { display: none; }        /* "Code Groups" -> "Groups" */
     .tab .wide { display: none; }        /* "Progress" -> "Stats" */
     .tab .narrow { display: inline; }
@@ -349,7 +351,7 @@
     .install .label { display: none; }
     .install svg { width: 18px; height: 18px; }
   }
-  @media (max-width: 620px) {
+  @media (max-width: 740px) {
     .bar { gap: 10px; padding-left: 10px; padding-right: 10px; }
     .tab { padding: 7px 10px; }
     .home { display: none; }             /* room is tight; the browser's Back works */
@@ -391,6 +393,8 @@
             aria-controls="frame-qso" aria-selected="false">QSO</button>
     <button class="tab" role="tab" id="tab-test-prep" data-tab="test-prep"
             aria-controls="frame-test-prep" aria-selected="false">Test<span class="long"> Prep</span></button>
+    <button class="tab" role="tab" id="tab-call-signs" data-tab="call-signs"
+            aria-controls="frame-call-signs" aria-selected="false"><span class="wide">Call Signs</span><span class="narrow">Calls</span></button>
     <button class="tab" role="tab" id="tab-progress" data-tab="progress"
             aria-controls="frame-progress" aria-selected="false"><span class="wide">Progress</span><span class="narrow">Stats</span></button>
     <button class="tab" role="tab" id="tab-jeopardy" data-tab="jeopardy"
@@ -637,6 +641,8 @@
           title="QSO Practice" data-src="qso/" hidden></iframe>
   <iframe id="frame-test-prep" role="tabpanel" aria-labelledby="tab-test-prep"
           title="Test Prep" data-src="test-prep/" hidden></iframe>
+  <iframe id="frame-call-signs" role="tabpanel" aria-labelledby="tab-call-signs"
+          title="Call Signs" data-src="call-signs/" hidden></iframe>
   <iframe id="frame-progress" role="tabpanel" aria-labelledby="tab-progress"
           title="Progress" data-src="progress/" hidden></iframe>
   <iframe id="frame-jeopardy" role="tabpanel" aria-labelledby="tab-jeopardy"
@@ -702,6 +708,9 @@
     } else if (slug === 'test-prep') {
       // Stop the code; the question waits with a Play button.
       try { frame.contentWindow.HSTTestPrep.pause(); } catch (e) {}
+    } else if (slug === 'call-signs') {
+      clickIfStop('drillBtn');           // same buttons as Code Groups
+      clickIfStop('sessionBtn');
     } else if (slug === 'jeopardy') {
       // The room keeps going (you're still in it); save the time played
       // so far to Practice History (Progress).
@@ -754,10 +763,10 @@
     });
   });
 
-  // Which tab to open: a ?tab=icr / code-groups / test-prep / progress / jeopardy link (the CW
+  // Which tab to open: a ?tab=icr / code-groups / test-prep / call-signs / progress / jeopardy link (the CW
   // Tools page and the old trainer addresses use these) wins; otherwise
   // the tab used last time; ICR the very first time.
-  var TABS = ['icr', 'code-groups', 'keyer', 'qso', 'test-prep', 'progress', 'jeopardy'];
+  var TABS = ['icr', 'code-groups', 'keyer', 'qso', 'test-prep', 'call-signs', 'progress', 'jeopardy'];
   var params = new URLSearchParams(location.search);
   var wanted = params.get('tab');
   // Jeopardy's host mode (the Content editor) is turned on with host=1;
@@ -1340,10 +1349,11 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-20-timer-finish';
+  var RELEASE = '2026-10-20-call-signs';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
-    '<strong>Practice Timer: your last one counts.</strong> In ICR and Code Groups, when the timer runs out part-way through a character or group, you can still finish it (with your usual Max Time to Answer). It&rsquo;s scored and saved like the rest, then the bell rings. Before, it was cut off.',
+    '<strong>New: Call Signs.</strong> A new tab with four ways to practice copying call signs, laid out like Code Groups with the same Tool Settings, Timer, statistics and weak-character drill.',
+    '<strong>Find the Number:</strong> a call repeats every few seconds until you type its number; the fewer plays you need, the more points. <strong>Call Sign Builder:</strong> short three-character calls (K4A, KA4). <strong>Call Sign Simulator:</strong> every call at a different speed, between the slowest and fastest you choose. <strong>Speed Run:</strong> each call you copy sends the next one faster; beat your best score.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
   var SEEN_KEY = 'hct-cw-seen-release';

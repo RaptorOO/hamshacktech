@@ -46,7 +46,7 @@ const MAX_CODE_ATTEMPTS = 5;
 const MAX_RECORD_BYTES = 16 * 1024;
 const MAX_UPLOAD = 500;
 const MAX_DOWNLOAD = 1000;
-const TRAINERS = ['icr', 'code-groups', 'keyer', 'qso', 'test-prep', 'jeopardy', 'manual'];   // manual: practice time added by hand
+const TRAINERS = ['icr', 'code-groups', 'keyer', 'qso', 'test-prep', 'call-signs', 'jeopardy', 'manual'];   // manual: practice time added by hand
 
 /* ---------------- small helpers ---------------- */
 function json(data, status = 200, headers = {}) {
