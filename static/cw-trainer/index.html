@@ -94,19 +94,21 @@
   .tab:hover { color: var(--text); }
   .tab { flex: none; white-space: nowrap; }
   .tab .narrow { display: none; }      /* "Stats" replaces "Progress" on phones */
-  /* Seven tabs: if a small screen can't fit them, the tab row scrolls
+  /* Eight trainer tabs: if a small screen can't fit them, the tab row scrolls
      sideways rather than pushing the gear off the screen. */
   .tabs { min-width: 0; overflow-x: auto; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
   .tab[aria-selected="true"] { background: var(--lime); color: var(--lime-ink); }
   /* The selected tab takes that trainer's color from the Progress tab, so
      each trainer has one color everywhere: ICR lime, Code Groups emerald,
-     Keyer amber, QSO pink, Test Prep orange. (Progress and Jeopardy stay lime.) */
+     Keyer amber, QSO pink, Test Prep orange, Call Signs cyan. (Progress and
+     Jeopardy stay lime.) */
   #tab-icr[aria-selected="true"]         { background: #a3e635; }   /* lime-400 */
   #tab-code-groups[aria-selected="true"] { background: #34d399; }   /* emerald-400 */
   #tab-keyer[aria-selected="true"]       { background: #fbbf24; }   /* amber-400 */
   #tab-qso[aria-selected="true"]         { background: #f472b6; }   /* pink-400 */
   #tab-test-prep[aria-selected="true"]   { background: #fb923c; }   /* orange-400 */
+  #tab-call-signs[aria-selected="true"]  { background: #67e8f9; }   /* cyan-300 */
   .tab:focus-visible, .install:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 
   .spacer { flex: 1; }
@@ -330,17 +332,17 @@
   }
   main iframe[hidden] { display: none; }
 
-  /* ---------- narrower windows: six tabs need room ----------
+  /* ---------- narrower windows: eight tabs need room ----------
      Things give way in this order as the window narrows: the
      "HamShackTech" word, then the title (mascot only), short tab labels
-     and an icon-only Install button, the Home button, the mascot, and
-     finally tighter tabs. Below that the tab row scrolls sideways. */
-  @media (max-width: 1000px) { .brand h1 .site { display: none; } }   /* "CW Trainer" */
-  @media (max-width: 840px)  {
+     and an icon-only Install button, the Home button, and tighter tabs.
+     At 660px and below the tab row becomes a menu (see "phones"). */
+  @media (max-width: 1200px) { .brand h1 .site { display: none; } }   /* "CW Trainer" */
+  @media (max-width: 1020px) {
     .brand h1 { display: none; }         /* mascot only */
     .tab { padding: 7px 12px; }
   }
-  @media (max-width: 760px) {
+  @media (max-width: 880px) {
     .tab .long { display: none; }        /* "Code Groups" -> "Groups" */
     .tab .wide { display: none; }        /* "Progress" -> "Stats" */
     .tab .narrow { display: inline; }
@@ -349,7 +351,7 @@
     .install .label { display: none; }
     .install svg { width: 18px; height: 18px; }
   }
-  @media (max-width: 620px) {
+  @media (max-width: 740px) {
     .bar { gap: 10px; padding-left: 10px; padding-right: 10px; }
     .tab { padding: 7px 10px; }
     .home { display: none; }             /* room is tight; the browser's Back works */
@@ -368,6 +370,42 @@
     .bar { gap: 6px; padding-left: 6px; padding-right: 6px; }
     .tab { padding: 6px 4px; font-size: 0.78rem; }
   }
+
+  /* ---------- phones: a menu instead of the tab row ----------
+     Eight trainers don't fit across a phone (Tim, 2026-10-20), so below
+     660px the tab row is replaced by one button naming the trainer you're
+     on; it opens a list of all of them. The tab buttons stay in the page
+     (hidden) and the menu clicks them, so switching works the same way. */
+  .menu-wrap { display: none; position: relative; }
+  .menu-btn {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 7px 14px 7px 11px; border-radius: 9px; cursor: pointer;
+    background: var(--well); border: 1px solid var(--border); color: var(--text);
+    font: 500 1rem/1 'Oswald', sans-serif; letter-spacing: 0.03em; white-space: nowrap;
+  }
+  .menu-btn svg { width: 18px; height: 18px; flex: none; color: var(--muted); }
+  .menu-btn .dot, .tab-menu .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .menu-btn[aria-expanded="true"] { border-color: var(--lime); }
+  .menu-btn:focus-visible, .tab-menu button:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+  .tab-menu {
+    position: absolute; left: 0; top: calc(100% + 6px); z-index: 50; min-width: 210px;
+    padding: 6px; background: var(--bar); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  }
+  .tab-menu[hidden] { display: none; }
+  .tab-menu button {
+    display: flex; align-items: center; gap: 11px; width: 100%; padding: 12px 14px;
+    background: transparent; border: 0; border-radius: 8px; color: var(--muted); text-align: left; cursor: pointer;
+    font: 500 1.05rem/1 'Oswald', sans-serif; letter-spacing: 0.03em;
+  }
+  .tab-menu button:hover { color: var(--text); background: var(--well); }
+  .tab-menu button[aria-current="true"] { color: var(--text); background: var(--well); }
+  @media (max-width: 660px) {
+    .tabs { display: none; }
+    .menu-wrap { display: block; }
+    .bar { position: relative; z-index: 20; }
+    .brand { display: flex; }            /* room again for the mascot */
+  }
 </style>
 </head>
 <body>
@@ -385,6 +423,8 @@
             aria-controls="frame-icr" aria-selected="true">ICR</button>
     <button class="tab" role="tab" id="tab-code-groups" data-tab="code-groups"
             aria-controls="frame-code-groups" aria-selected="false"><span class="long">Code </span>Groups</button>
+    <button class="tab" role="tab" id="tab-call-signs" data-tab="call-signs"
+            aria-controls="frame-call-signs" aria-selected="false"><span class="wide">Call Signs</span><span class="narrow">Calls</span></button>
     <button class="tab" role="tab" id="tab-keyer" data-tab="keyer"
             aria-controls="frame-keyer" aria-selected="false">Keyer</button>
     <button class="tab" role="tab" id="tab-qso" data-tab="qso"
@@ -396,6 +436,14 @@
     <button class="tab" role="tab" id="tab-jeopardy" data-tab="jeopardy"
             aria-controls="frame-jeopardy" aria-selected="false">Jeopardy</button>
   </nav>
+  <!-- Phones: the menu that replaces the tab row (see "phones" in the CSS). -->
+  <div class="menu-wrap">
+    <button class="menu-btn" id="menuBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="tabMenu" aria-label="Choose a trainer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      <span class="dot" id="menuDot"></span><span id="menuLabel">ICR</span>
+    </button>
+    <div class="tab-menu" id="tabMenu" hidden></div>
+  </div>
   <div class="spacer"></div>
   <button class="install" id="installBtn" type="button" aria-label="Install app" title="Install app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span class="label">Install app</span></button>
   <button class="gear" id="settingsBtn" type="button" aria-haspopup="dialog" aria-controls="settingsDialog" aria-label="Settings" title="Settings">
@@ -631,6 +679,8 @@
           title="ICR Trainer" src="icr/"></iframe>
   <iframe id="frame-code-groups" role="tabpanel" aria-labelledby="tab-code-groups"
           title="Code Groups Trainer" data-src="code-groups/" hidden></iframe>
+  <iframe id="frame-call-signs" role="tabpanel" aria-labelledby="tab-call-signs"
+          title="Call Signs" data-src="call-signs/" hidden></iframe>
   <iframe id="frame-keyer" role="tabpanel" aria-labelledby="tab-keyer"
           title="Keyer Practice" data-src="keyer/" hidden></iframe>
   <iframe id="frame-qso" role="tabpanel" aria-labelledby="tab-qso"
@@ -702,6 +752,9 @@
     } else if (slug === 'test-prep') {
       // Stop the code; the question waits with a Play button.
       try { frame.contentWindow.HSTTestPrep.pause(); } catch (e) {}
+    } else if (slug === 'call-signs') {
+      clickIfStop('drillBtn');           // same buttons as Code Groups
+      clickIfStop('sessionBtn');
     } else if (slug === 'jeopardy') {
       // The room keeps going (you're still in it); save the time played
       // so far to Practice History (Progress).
@@ -727,6 +780,7 @@
     });
 
     if (remember) { try { localStorage.setItem(TAB_KEY, slug); } catch (e) {} }
+    updateMenu(slug);
 
     // On a phone the tab row may scroll sideways; keep the chosen tab in view.
     var tabBtn = document.getElementById('tab-' + slug);
@@ -743,6 +797,42 @@
     setTimeout(function () { try { active.contentWindow.focus(); } catch (e) {} }, 0);
   }
 
+  // ---- Phones: the trainer menu --------------------------------------
+  // Full names (the tab row shortens some) and each trainer's color.
+  var MENU_NAMES = { icr: 'ICR', 'code-groups': 'Code Groups', 'call-signs': 'Call Signs', keyer: 'Keyer', qso: 'QSO',
+                     'test-prep': 'Test Prep', progress: 'Progress', jeopardy: 'Jeopardy' };
+  var MENU_COLORS = { icr: '#a3e635', 'code-groups': '#34d399', 'call-signs': '#67e8f9', keyer: '#fbbf24', qso: '#f472b6',
+                      'test-prep': '#fb923c', progress: '#a3e635', jeopardy: '#a3e635' };
+  var menuBtn = document.getElementById('menuBtn'), tabMenu = document.getElementById('tabMenu');
+  tabMenu.innerHTML = tabs.map(function (t) {
+    var slug = t.dataset.tab;
+    return '<button type="button" data-tab="' + slug + '"><span class="dot" style="background:' + (MENU_COLORS[slug] || '#a3e635') +
+           '"></span>' + (MENU_NAMES[slug] || t.textContent) + '</button>';
+  }).join('');
+  function updateMenu(slug) {
+    document.getElementById('menuLabel').textContent = MENU_NAMES[slug] || slug;
+    document.getElementById('menuDot').style.background = MENU_COLORS[slug] || '#a3e635';
+    tabMenu.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-current', String(b.dataset.tab === slug)); });
+  }
+  function closeMenu() { tabMenu.hidden = true; menuBtn.setAttribute('aria-expanded', 'false'); }
+  menuBtn.addEventListener('click', function () {
+    var open = tabMenu.hidden;
+    tabMenu.hidden = !open;
+    menuBtn.setAttribute('aria-expanded', String(open));
+    if (open) { var cur = tabMenu.querySelector('[aria-current="true"]'); if (cur) cur.focus(); }
+  });
+  tabMenu.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-tab]');
+    if (!b) return;
+    closeMenu();
+    document.getElementById('tab-' + b.dataset.tab).click();
+  });
+  // Close on Escape, a tap anywhere else, or a tap inside a trainer (that
+  // moves focus into its frame, which blurs this window).
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !tabMenu.hidden) { closeMenu(); menuBtn.focus(); } });
+  document.addEventListener('click', function (e) { if (!tabMenu.hidden && !e.target.closest('.menu-wrap')) closeMenu(); });
+  window.addEventListener('blur', closeMenu);
+
   tabs.forEach(function (t, i) {
     t.addEventListener('click', function () { showTab(t.dataset.tab, true); });
     // Left/right arrow keys switch tabs (standard tab-list keyboard behavior).
@@ -754,10 +844,10 @@
     });
   });
 
-  // Which tab to open: a ?tab=icr / code-groups / test-prep / progress / jeopardy link (the CW
+  // Which tab to open: a ?tab=icr / code-groups / test-prep / call-signs / progress / jeopardy link (the CW
   // Tools page and the old trainer addresses use these) wins; otherwise
   // the tab used last time; ICR the very first time.
-  var TABS = ['icr', 'code-groups', 'keyer', 'qso', 'test-prep', 'progress', 'jeopardy'];
+  var TABS = ['icr', 'code-groups', 'call-signs', 'keyer', 'qso', 'test-prep', 'progress', 'jeopardy'];
   var params = new URLSearchParams(location.search);
   var wanted = params.get('tab');
   // Jeopardy's host mode (the Content editor) is turned on with host=1;
@@ -1340,10 +1430,11 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-20-timer-finish';
+  var RELEASE = '2026-10-20-call-signs';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
-    '<strong>Practice Timer: your last one counts.</strong> In ICR and Code Groups, when the timer runs out part-way through a character or group, you can still finish it (with your usual Max Time to Answer). It&rsquo;s scored and saved like the rest, then the bell rings. Before, it was cut off.',
+    '<strong>New: Call Signs.</strong> A new tab with four ways to practice copying call signs, laid out like Code Groups with the same Tool Settings, Timer, statistics and weak-character drill.',
+    '<strong>Find the Number:</strong> a call repeats every few seconds until you type its number; the fewer plays you need, the more points. <strong>Call Sign Builder:</strong> short three-character calls (K4A, KA4). <strong>Call Sign Simulator:</strong> every call at a different speed, between the slowest and fastest you choose. <strong>Speed Run:</strong> each call you copy sends the next one faster; beat your best score.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
   var SEEN_KEY = 'hct-cw-seen-release';

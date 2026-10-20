@@ -369,7 +369,7 @@
      and survives restarts). Nothing leaves the device.
 
      A session record looks like:
-       { trainer: 'icr' | 'code-groups' | 'keyer' | 'qso' | 'test-prep' | 'jeopardy' | 'manual',
+       { trainer: 'icr' | 'code-groups' | 'keyer' | 'qso' | 'test-prep' | 'call-signs' | 'jeopardy' | 'manual',
          start, end, durationMs,            // wall-clock times (ms)
          group, wpm, fwpm, groupSize,       // what was practiced, at what speed
          rounds, roundsCorrect, timeouts,   // ICR: 1 character per round
@@ -391,6 +391,12 @@
      placement test each: format ('full' | 'quick'), questions, answered,
      right, score (%), passed, completed (false if quit part-way),
      replays, and items [{ cat, sent, picked, ok, ms }].
+     Call Signs records (call-signs/index.html) are recorder sessions
+     like Code Groups', plus mode ('find' | 'builder' | 'sim' | 'run'),
+     score (Find the Number / Speed Run points), topWpm (fastest call
+     copied), minWpm / maxWpm (Simulator), and for a Speed Run runCalls,
+     adapt, completed and items [{ sent, typed, wpm, ok, pts, replayed,
+     timedOut }].
      Manual records are practice added by hand on the Progress tab:
      kind ('zoom' | 'on-air' | 'other'), dateOnly (true when added for an
      earlier day), and only the time fields above.
