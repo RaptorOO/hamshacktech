@@ -1738,7 +1738,18 @@
   function startClocks() { clocks.start(); }
   function stopClocks(expired) { clocks.stop(expired); }   // no-op if already stopped
 
+  /* The Practice Timer ran out. The group in progress still counts (Tim,
+     2026-10-20): it plays out, gets its usual Max Time to Answer, and is
+     graded and saved like any other -- it used to be cut off. The timer
+     chip shows 0:00 right away; the session ends, with the bell, where
+     the next group would have started (runLoop checks timeUp). A missed
+     group's review (Replay / Next) still comes first. */
   function timerExpired() {
+    if (!state.running) return;
+    stopClocks(true);
+    state.timeUp = true;
+  }
+  function endTimedSession() {
     var practiced = state.settings.timerMin;
     stopSession("\u23f0 " + practiced + " min done", true);
     playBell(); // rung after stopSession() so nothing in the shutdown path can interfere with it
@@ -2157,6 +2168,7 @@
 
   function runLoop() {
     if (!state.running) return;
+    if (state.timeUp) { endTimedSession(); return; }   // the timer ran out during the last group
     var chars = buildRound();
 
     if (!chars) {
@@ -2538,6 +2550,7 @@
   // Timer chip can show that it expired.
   function stopSession(idleMessage, timerRanOut) {
     state.running = false;
+    state.timeUp = false;
     practiceLog.finish(); // save this session to Practice History (no-op if nothing was practiced)
     stopClocks(!!timerRanOut);
     if (state.acceptingInput) finishAnswer(false); // unblock a pending answer without scoring it

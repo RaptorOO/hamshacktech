@@ -976,6 +976,13 @@ function renderTimerIdle(){ clocks.renderIdle(); }
 function startClocks(){ clocks.start(); }
 function stopClocks(expired){ clocks.stop(expired); }   // no-op if already stopped
 
+/* The Practice Timer ran out. The character in progress still counts
+   (Tim, 2026-10-20): it plays out, gets its usual Max Time to Answer, and
+   is graded and saved like any other -- it used to be cut off. The timer
+   chip shows 0:00 right away; the session ends, with the bell, where the
+   next character would have started (startTrial checks timeUp). A drill
+   isn't scored, so it still stops at once. */
+let timeUp = false;
 function timerExpired(){
   stopClocks(true);
   if(drillActive){
@@ -983,7 +990,13 @@ function timerExpired(){
     // doesn't resume the practice session it had paused.
     sessionWasRunningBeforeDrill = false;
     stopDrill();
+    endTimedSession();
+    return;
   }
+  if(sessionRunning) timeUp = true;
+}
+function endTimedSession(){
+  timeUp = false;
   stopSession();
   if(oopsOpen) closeOops(); // after stopSession, so closing it can't queue another character
   els.keyStatus.textContent = '\u23f0 ' + settings.timerMin + ' min done';
@@ -992,7 +1005,7 @@ function timerExpired(){
 
 // ---- Practice Timer popup ----
 function openTimerDialog(){
-  if(clocks.running()) return; // locked while a session runs
+  if(clocks.running() || sessionRunning) return; // locked while a session runs (including its last character after time's up)
   els.timerBtn.classList.remove('expired');
   els.timerInput.value = settings.timerMin || '';
   els.timerDialog.showModal();
@@ -1165,6 +1178,7 @@ function setKeyState(mode){
 
 function startTrial(){
   if(!sessionRunning || drillActive || oopsOpen) return;
+  if(timeUp){ endTimedSession(); return; }   // the timer ran out during the last character
   const myTrial = ++trialId; // tag this trial so a cancelled one can't arm later
   currentChar = pickNextCharacter();
   answerPhaseActive = false;
@@ -1212,6 +1226,7 @@ function openAnswerFieldForSession(){
 
 function stopSession(){
   sessionRunning = false;
+  timeUp = false;
   practiceLog.finish(); // save this session to Practice History (no-op if nothing was practiced)
   stopClocks(false); // no-op if timerExpired() already stopped them
   answerPhaseActive = false;
