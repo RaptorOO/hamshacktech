@@ -7,6 +7,10 @@
  *   HST.content.word()       one word from a ham-flavored common-word list
  *   HST.content.callSign()   one random, realistic call sign
  *   HST.content.phrase()     one short QSO phrase, with a fresh call sign
+ *   HST.content.lists        practice lists sent line by line (pyramid,
+ *                            QSO exchanges, dits exercise, pangrams)
+ *   HST.content.readText()   someone's own text or Morserino-style file,
+ *                            split into chapters (see below)
  *
  * The word list and call sign rules follow the Code Groups trainer's
  * (code-groups/index.html), trimmed to what's useful for SENDING practice:
@@ -99,5 +103,112 @@
     qth: function () { var q = pick(QTHS); return { city: q[0], state: q[1] }; },
     state: function () { return pick(STATES); },
     park: function () { return 'US-' + (1000 + Math.floor(Math.random() * 8999)); }
+  };
+
+  /* ---------------------------------------------------------------------
+     PRACTICE LISTS (Tim, 2026-10-21), sent one line at a time, in order.
+     Each is { key, name, credit, lines() } -- lines() is a function so
+     QSO exchanges get fresh call signs, names and states each time.
+
+     The pyramid (Marie's Morse code pyramid practice): each line pairs one
+     letter with itself and every letter after it, run together --
+     AA AB AC ... AZ, then BB BC ... BZ, down to ZZ. Backwards runs the
+     other way: ZZ ZY ... ZA, down to AA. Built from the pattern, so the
+     typos in the handout (an extra W in the D line, an extra N in the N
+     line, a missing letter in Q, O and E) aren't copied.
+     --------------------------------------------------------------------- */
+  function pyramid(backwards) {
+    var order = backwards ? ALPHA.split('').reverse() : ALPHA.split('');
+    return order.map(function (x, i) { return order.slice(i).map(function (y) { return x + y; }).join(''); });
+  }
+  function qsoExchange() {
+    var a = usCall(), b, na = pick(NAMES), nb, sa = pick(STATES), sb;
+    do { b = callSign(); } while (b === a);
+    do { nb = pick(NAMES); } while (nb === na);
+    do { sb = pick(STATES); } while (sb === sa);
+    return [
+      'CQ CQ CQ DE ' + a + ' ' + a + ' K',
+      b + ' ' + b,
+      b + ' DE ' + a + ' GM TNX FER CALL <BT>',
+      'UR RST 599 5NN <BT> NAME ' + na + ' ' + na + ' <BT>',
+      'QTH ' + sa + ' ' + sa + ' <BT> HW CPY? ' + b + ' DE ' + a + ' <KN>',
+      'R R ' + a + ' DE ' + b + ' GM ' + na + ' TNX <BT>',
+      'UR RST 579 579 <BT> NAME ' + nb + ' ' + nb + ' <BT> QTH ' + sb + ' ' + sb + ' <BT>',
+      'HW? ' + a + ' DE ' + b + ' <KN>',
+      'R R FB ' + nb + ' TNX FER QSO <BT> 73 ES GL',
+      b + ' DE ' + a + ' <SK> TU',
+      'TU ES 73 <SK> E E'
+    ];
+  }
+  HST.content.lists = [
+    { key: 'pyr-az', name: 'Pyramid A to Z', credit: 'From Marie’s Morse code pyramid practice: AA AB AC … down to ZZ.',
+      lines: function () { return pyramid(false); } },
+    { key: 'pyr-za', name: 'Pyramid Z to A', credit: 'From Marie’s Morse code pyramid practice, backwards: ZZ ZY ZX … down to AA.',
+      lines: function () { return pyramid(true); } },
+    { key: 'qso-x', name: 'QSO exchanges', credit: 'A short contact, line by line, with new call signs, names and states each time.',
+      lines: qsoExchange },
+    { key: 'dits', name: 'Dits exercise', credit: 'Sentences built mostly from dit letters: E, I, S, H and 5.',
+      lines: function () { return ['DID SHE SEE HIS FEES?', 'IS N5SH HERE?', 'HE IS IN THESE TREES.', 'HIS TREE IS HERE.', 'THIS IS SHE.', 'SHE IS 55 AND SHE IS HIS SISTER']; } },
+    { key: 'pangrams', name: 'Pangrams', credit: 'Sentences that use every letter of the alphabet.',
+      lines: function () {
+        return ['FIVE WINE EXPERTS JOKINGLY QUIZZED SAMPLE CHABLIS', 'PACK MY BOX WITH FIVE DOZEN LIQUOR JUGS',
+                'SPHINX OF BLACK QUARTZ JUDGE MY VOW', 'HOW VEXINGLY QUICK DAFT ZEBRAS JUMP',
+                'THE FIVE BOXING WIZARDS JUMP QUICKLY', 'JACKDAWS LOVE MY BIG SPHINX OF QUARTZ'];
+      } }
+  ];
+
+  /* ---------------------------------------------------------------------
+     YOUR OWN TEXT -- typed, pasted, or a text file like the ones
+     Morserino plays. A line starting "<c>$" begins a chapter:
+         <c>$ QSO Elements
+     and each chapter is its own choice. Each line is made sendable:
+     capitals; prosigns as <SK> (written <SK>, /SK, or = for <BT>; <K> is
+     just K); Morserino commands (\p\, \t) dropped; characters Morse
+     doesn't have skipped and reported in `skipped`.
+       HST.content.readText(text, title, skipped) -> [{ title, lines }]
+     One file is kept for the whole app (both Copy this and Code Groups
+     use it), in localStorage:
+       HST.content.ownFile.get() -> { name, text } or null
+       HST.content.ownFile.set({ name, text })   (throws if storage is full)
+       HST.content.ownFile.clear()
+       HST.content.ownFile.chapters() -> [{ title, lines }]
+     --------------------------------------------------------------------- */
+  var PROSIGN_NAMES = ['AR', 'SK', 'KN', 'BT', 'BK', 'AS'];
+  function cleanLine(raw, skipped) {
+    var t = raw.replace(/\\[a-z]\\?/gi, ' ').toUpperCase().replace(/[‘’]/g, "'").replace(/[“”]/g, '"');
+    t = t.replace(/(^|\s)\/([A-Z]{2})(?=\s|$)/g, function (m, pre, p) { return PROSIGN_NAMES.indexOf(p) >= 0 ? pre + '<' + p + '>' : m; });
+    t = t.replace(/=/g, '<BT>');
+    var out = '';
+    t.replace(/<([A-Z]+)>|[\s\S]/g, function (m, p) {
+      if (p) out += PROSIGN_NAMES.indexOf(p) >= 0 ? m : p;
+      else if (/\s/.test(m)) out += ' ';
+      else if (HST.MORSE[m]) out += m;
+      else if (skipped) skipped[m] = true;
+      return m;
+    });
+    return out.replace(/ +/g, ' ').trim();
+  }
+  function readText(text, title, skipped) {
+    var chapters = [], cur = null;
+    String(text || '').split(/\r?\n/).forEach(function (raw) {
+      var c = /^\s*<c>\s*\$?\s*(.*)$/i.exec(raw);
+      if (c) { cur = { title: c[1].trim() || 'Chapter ' + (chapters.length + 1), lines: [] }; chapters.push(cur); return; }
+      var line = cleanLine(raw, skipped);
+      if (!line) return;
+      if (!cur) { cur = { title: title || 'My text', lines: [] }; chapters.push(cur); }
+      cur.lines.push(line);
+    });
+    return chapters.filter(function (ch) { return ch.lines.length; });
+  }
+  HST.content.readText = readText;
+
+  var OWN_KEY = 'hct-cw-own-text-v1';
+  HST.content.ownFile = {
+    MAX_BYTES: 200000,
+    get: function () { try { return JSON.parse(localStorage.getItem(OWN_KEY) || 'null'); } catch (e) { return null; } },
+    set: function (f) { localStorage.setItem(OWN_KEY, JSON.stringify({ name: f.name || '', text: String(f.text || '').slice(0, 200000) })); },
+    clear: function () { try { localStorage.removeItem(OWN_KEY); } catch (e) {} },
+    title: function (f) { return f && f.name ? f.name.replace(/\.[^.]+$/, '') : 'My text'; },
+    chapters: function () { var f = this.get(); return f ? readText(f.text, this.title(f)) : []; }
   };
 })();

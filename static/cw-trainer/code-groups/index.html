@@ -508,6 +508,14 @@
     flex-shrink: 0;
   }
   .blank-word { display: flex; gap: inherit; }
+  /* A prosign is one sound, so one box; you type its two letters (BT). */
+  .blank.pro { width: auto; min-width: clamp(52px, 12vw, 76px); padding: 0 6px; text-decoration: overline; }
+  /* Your file (Practice Group) */
+  .file-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .file-row .btn-secondary { width: auto; margin-top: 0; padding: 7px 12px; }
+  .file-name { font-size: 0.85rem; color: var(--text); word-break: break-all; }
+  .file-note { font-size: 0.78rem; color: var(--text-faint); margin: 6px 0 0; }
+  .file-note .warn { color: #fbbf24; }
 
   /* ---------------------------------------------------------------------
      Answer row — [Head Copy Mode] [character boxes] [Replay]
@@ -1014,7 +1022,43 @@
             <option value="phrases">Phrases &amp; Sayings</option>
             <option value="calls">Call Signs</option>
             <option value="custom">Custom</option>
+            <option value="file">Your File</option>
           </select>
+        </div>
+
+        <!-- Your File (Tim, 2026-10-21): a text file like the ones Morserino
+             plays, split into <c>$ chapters. Kept on this device; the
+             Keyer's Copy this uses the same file. -->
+        <div id="fileFields" style="display:none;">
+          <div class="field">
+            <label>Your File</label>
+            <div class="file-row">
+              <span class="file-name" id="fileName">No file yet</span>
+              <button type="button" class="btn-secondary" id="fileLoadBtn">Load a file&hellip;</button>
+              <input type="file" id="fileInput" accept=".txt,text/plain" hidden>
+            </div>
+            <p class="file-note" id="fileNote">A .txt file of words or lines to copy. Chapters start with a line like <code>&lt;c&gt;$ QSO Elements</code>, as in Morserino files.</p>
+          </div>
+          <div class="field">
+            <label for="fileChapterSelect">Chapter</label>
+            <select id="fileChapterSelect"></select>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="fileUnitSelect">Each Round</label>
+              <select id="fileUnitSelect">
+                <option value="word">One word</option>
+                <option value="line">One line</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="fileOrderSelect">Order</label>
+              <select id="fileOrderSelect">
+                <option value="order">In order</option>
+                <option value="shuffle">Shuffled</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <!-- Only shown for the Call Signs group. Call signs are generated
@@ -1143,6 +1187,7 @@
 </div>
 
 <script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-content.js"></script>
 <script src="../shared/hst-listen.js"></script>
 <script>
 (function () {
@@ -1566,7 +1611,11 @@
       timerMin: 0,       // Practice Timer length in minutes; 0 = off
       buzzer: true,      // buzz on a missed group or timeout (the Buzzer chip mutes it)
       walkMin: 15,       // Walk Mode: how long to play, in minutes
-      walkPlays: 2       // Walk Mode: plays per group before the voice spells it
+      walkPlays: 2,      // Walk Mode: plays per group before the voice spells it
+      fileChapter: 0,    // Your File: which chapter
+      fileUnit: "word",  // Your File: a round is one "word" or one "line" (Morserino plays word by word)
+      fileOrder: "order",// Your File: "order" (as in the file) or "shuffle"
+      filePos: {}        // Your File: where each chapter is up to, in order
     },
     running: false,
     drilling: false,
@@ -1681,7 +1730,8 @@
   function updateGroupSizeFieldUI(group) {
     els.callMixField.style.display = group === "calls" ? "" : "none";
     els.wordPoolField.style.display = group === "words" ? "" : "none";
-    if (group === "qso" || group === "calls" || group === "phrases") {
+    $("fileFields").style.display = group === "file" ? "" : "none";
+    if (group === "qso" || group === "calls" || group === "phrases" || group === "file") {
       els.groupSizeField.style.display = "none";
     } else {
       els.groupSizeField.style.display = "";
@@ -1706,6 +1756,7 @@
     els.maxTimeRange.disabled = s.unlimited;
     els.callMixSelect.value = s.callMix;
     els.wordPoolSelect.value = String(s.wordPool);
+    renderFileFields();
     renderHeadCopyBtn();
     renderTimerIdle();
   }
@@ -1843,6 +1894,27 @@
     return d.last;
   }
 
+  /* Your File: the chosen chapter as rounds -- one word or one line each,
+     in the file's order (picking up where you left off) or shuffled like
+     a deck. Prosigns (<BT>) are one cell. */
+  function fileItems() {
+    var s = state.settings, ch = HST.content.ownFile.chapters()[s.fileChapter];
+    if (!ch) return [];
+    if (s.fileUnit === "line") return ch.lines;
+    return ch.lines.join(" ").split(" ").filter(Boolean);
+  }
+  function nextFileItem() {
+    var s = state.settings, items = fileItems();
+    if (!items.length) return null;
+    var key = "file:" + s.fileChapter + ":" + s.fileUnit;
+    if (s.fileOrder === "shuffle") return drawFromDeck(key, items);
+    var i = Number(s.filePos[key]) || 0;
+    if (i >= items.length) i = 0;
+    s.filePos[key] = i + 1;
+    saveSettings();
+    return items[i];
+  }
+
   // Builds the array of "cells" (one entry per character, including the
   // one literal " " in "HW CPY?") for the next round to send/type, or
   // null if the current settings have nothing to draw from. Letters/
@@ -1859,6 +1931,10 @@
     }
     if (s.group === "calls") return generateCallSign().split("");
     if (s.group === "phrases") return drawFromDeck("phrases", PHRASES).split("");
+    if (s.group === "file") {
+      var item = nextFileItem();
+      return item ? item.match(/<[A-Z]+>|[\s\S]/g) : null;
+    }
     if (s.group === "words") {
       var pool = wordsOfLength(s.groupSize);
       if (!pool.length) return null;
@@ -1874,6 +1950,7 @@
   function emptyRoundMessage() {
     var s = state.settings;
     if (s.group === "custom") return "Add custom characters to continue";
+    if (s.group === "file") return HST.content.ownFile.get() ? "Nothing to send in this chapter" : "Load a file to continue";
     if (s.group === "words") return "No " + s.groupSize + "-letter words in the list";
     return "Nothing to practice — check settings";
   }
@@ -1921,7 +1998,7 @@
       var d = document.createElement("div");
       if (ch === " ") { d.className = "blank-gap"; els.blanksRow.appendChild(d); word = null; return; }
       if (!word) { word = document.createElement("div"); word.className = "blank-word"; els.blanksRow.appendChild(word); }
-      d.className = "blank";
+      d.className = ch.length > 1 ? "blank pro" : "blank";
       word.appendChild(d);
     });
   }
@@ -1958,16 +2035,17 @@
         cell.className = "blank-gap";
         continue;
       }
+      var pro = state.currentChars[i].length > 1 ? " pro" : "";
       if (i < nextIndex) {
-        cell.className = "blank filled";
+        cell.className = "blank filled" + pro;
         cell.textContent = state.typed[i];
       } else if (i === nextIndex && state.acceptingInput && inputLocked()) {
-        cell.className = "blank locked"; // Head Copy Mode: wait for the code to finish
+        cell.className = "blank locked" + pro; // Head Copy Mode: wait for the code to finish
       } else if (i === nextIndex && state.acceptingInput) {
-        cell.className = "blank active";
+        cell.className = "blank active" + pro;
         cell.appendChild(makeCaret());
       } else {
-        cell.className = "blank";
+        cell.className = "blank" + pro;
       }
     }
   }
@@ -1982,8 +2060,8 @@
         cell.className = "blank-gap";
         continue;
       }
-      cell.textContent = r.actual;
-      cell.className = "blank " + (r.correct ? "correct" : "incorrect");
+      cell.textContent = answerOf(r.actual);
+      cell.className = "blank " + (r.correct ? "correct" : "incorrect") + (r.actual.length > 1 ? " pro" : "");
     }
   }
 
@@ -2107,6 +2185,9 @@
     if (resolve) resolve(timedOut);
   }
 
+  // What you type for a cell: the character, or a prosign's letters (<BT> -> BT).
+  function answerOf(cell) { return cell.length > 1 ? cell.slice(1, -1) : cell; }
+
   function evaluateGroup(timedOut) {
     var results = [];
     var allCorrect = !timedOut;
@@ -2118,7 +2199,7 @@
     for (var i = 0; i < n; i++) {
       var actual = state.currentChars[i];
       var typedCh = state.typed[i] || null;
-      var correct = typedCh === actual;
+      var correct = typedCh === answerOf(actual);
       if (!correct) allCorrect = false;
       results.push({ actual: actual, typedCh: typedCh, correct: correct });
 
@@ -2262,7 +2343,7 @@
     // Phrases: half a second more for each character past five, so a
     // 30-character sentence isn't a race against the Max Time to Answer.
     else startTimer(state.settings.maxTimeSec +
-      (state.settings.group === "phrases" ? 0.5 * Math.max(0, state.currentChars.length - 5) : 0));
+      (state.settings.group === "phrases" || state.settings.group === "file" ? 0.5 * Math.max(0, state.currentChars.length - 5) : 0));
   }
 
   // ---- Review pause (after a missed or timed-out group) --------------
@@ -2324,7 +2405,7 @@
      ===================================================================== */
   var WALK_DRAFT_KEY = "hct-cw-run-cg-walk";
   var GROUP_NAMES = { letters: "Letters", numbers: "Numbers", mixed: "Mixed", qso: "QSO Elements",
-                      words: "Common Words", phrases: "Phrases & Sayings", calls: "Call Signs", custom: "Custom" };
+                      words: "Common Words", phrases: "Phrases & Sayings", calls: "Call Signs", custom: "Custom", file: "Your File" };
   var walk = { player: null, run: null, paused: false };
   var walkEls = {};
   ["walkBtn", "walkDialog", "walkSetup", "walkPlaying", "walkWhat", "walkPresets", "walkMinInput", "walkGroup",
@@ -2402,7 +2483,7 @@
       minutes: min,
       voice: true,
       next: function () {
-        var text = (buildRound() || ["E"]).join("");
+        var text = (buildRound() || ["E"]).map(answerOf).join("");
         return { text: text, plays: state.settings.walkPlays, gap: Math.max(2, 0.5 * text.replace(/ /g, "").length) };
       },
       sound: function () { var s = state.settings; return { wpm: s.wpm, fwpm: walkFw(), toneHz: s.toneHz, volume: s.volume }; },
@@ -2765,14 +2846,19 @@
     // whatever was typed is laid into the group's letter boxes in order,
     // skipping over its word gaps, so a missed (or extra) space never
     // shifts the rest of a sentence out of line. Typing the space works too.
-    var letters = els.hiddenInput.value.toUpperCase().replace(/[^A-Z0-9?/']/g, "").split("");
+    // A prosign's box (Your File) takes its two letters (BT for <BT>).
+    var letters = els.hiddenInput.value.toUpperCase().replace(/[^A-Z0-9?/'.,=()-]/g, "").split("");
     var cells = state.currentChars, out = [];
-    for (var ci = 0; ci < cells.length && letters.length; ci++) out.push(cells[ci] === " " ? " " : letters.shift());
-    var v = out.join("");
-    els.hiddenInput.value = v;
-    state.typed = v.split("");
+    for (var ci = 0; ci < cells.length && letters.length; ci++) {
+      if (cells[ci] === " ") out.push(" ");
+      else if (cells[ci].length > 1) out.push(letters.splice(0, cells[ci].length - 2).join(""));
+      else out.push(letters.shift());
+    }
+    els.hiddenInput.value = out.join("");
+    state.typed = out;
     renderBlanksTyping();
-    if (state.typed.length === state.currentChars.length) finishAnswer(false);
+    var lastCell = cells[cells.length - 1];
+    if (out.length === cells.length && out[out.length - 1].length === answerOf(lastCell).length) finishAnswer(false);
   });
 
   els.hiddenInput.addEventListener("keydown", function (e) {
@@ -2783,6 +2869,50 @@
     }
     if (e.key === "Enter" && state.acceptingInput && !inputLocked()) finishAnswer(false);
   });
+
+  // ---- Your File -----------------------------------------------------
+  function renderFileFields() {
+    var s = state.settings, f = HST.content.ownFile.get(), chs = HST.content.ownFile.chapters();
+    $("fileName").textContent = f ? (f.name || "Your text (from the Keyer)") : "No file yet";
+    $("fileLoadBtn").textContent = f ? "Load another\u2026" : "Load a file\u2026";
+    if (s.fileChapter >= chs.length) s.fileChapter = 0;
+    $("fileChapterSelect").innerHTML = chs.length ? chs.map(function (ch, i) {
+      return '<option value="' + i + '">' + ch.title.replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }) +
+             " (" + ch.lines.length + (ch.lines.length === 1 ? " line" : " lines") + ")</option>";
+    }).join("") : '<option value="0">\u2014</option>';
+    $("fileChapterSelect").value = String(s.fileChapter);
+    $("fileChapterSelect").disabled = !chs.length;
+    $("fileUnitSelect").value = s.fileUnit;
+    $("fileOrderSelect").value = s.fileOrder;
+  }
+  $("fileLoadBtn").addEventListener("click", function () { $("fileInput").click(); });
+  $("fileInput").addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    var note = $("fileNote");
+    if (f.size > HST.content.ownFile.MAX_BYTES) { note.innerHTML = '<span class="warn">That file is too big (over 200 KB).</span>'; return; }
+    var r = new FileReader();
+    r.onload = function () {
+      var text = String(r.result || ""), skipped = {};
+      var chs = HST.content.readText(text, HST.content.ownFile.title({ name: f.name }), skipped), sk = Object.keys(skipped);
+      if (!chs.length) { note.innerHTML = '<span class="warn">Nothing in that file can be sent in Morse.</span>'; return; }
+      try { HST.content.ownFile.set({ name: f.name, text: text }); }
+      catch (err) { note.innerHTML = '<span class="warn">This device couldn\u2019t save it (its storage is full).</span>'; return; }
+      state.settings.fileChapter = 0;
+      state.settings.filePos = {};
+      saveSettings();
+      renderFileFields();
+      note.textContent = (chs.length === 1 ? "1 chapter" : chs.length + " chapters") + " loaded." +
+        (sk.length ? " Not in Morse, so skipped: " + sk.join(" ") : "");
+    };
+    r.readAsText(f);
+  });
+  $("fileChapterSelect").addEventListener("change", function () { state.settings.fileChapter = parseInt($("fileChapterSelect").value, 10) || 0; saveSettings(); });
+  $("fileUnitSelect").addEventListener("change", function () { state.settings.fileUnit = $("fileUnitSelect").value; saveSettings(); });
+  $("fileOrderSelect").addEventListener("change", function () { state.settings.fileOrder = $("fileOrderSelect").value; saveSettings(); });
+  // The Keyer can change the file too (same app, another tab).
+  window.addEventListener("storage", function (e) { if (e.key === "hct-cw-own-text-v1") renderFileFields(); });
 
   els.groupSelect.addEventListener("change", function () {
     state.settings.group = els.groupSelect.value;

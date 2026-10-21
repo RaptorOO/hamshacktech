@@ -775,7 +775,7 @@
      keeps running averages of their dit and dah lengths and splits marks
      halfway between them.
      ===================================================================== */
-  var PROSIGNS = { '.-.-.': '<AR>', '...-.-': '<SK>', '-.--.': '<KN>', '-...-': '<BT>', '-...-.-': '<BK>', '........': '<HH>' };
+  var PROSIGNS = { '.-.-.': '<AR>', '...-.-': '<SK>', '-.--.': '<KN>', '-...-': '<BT>', '-...-.-': '<BK>', '.-...': '<AS>', '........': '<HH>' };
   var REVERSE = {};
   Object.keys(HST.MORSE).forEach(function (ch) { REVERSE[HST.MORSE[ch]] = ch; });
   HST.decodeSymbol = function (code) { return PROSIGNS[code] || REVERSE[code] || '*'; };
