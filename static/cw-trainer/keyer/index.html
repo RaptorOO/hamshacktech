@@ -1136,7 +1136,6 @@
     // rules, and this slider is only where the timing analysis starts.
     var ak = HST.adapterKeying.get(), follow = ak.on && !straight && cfg().adapter !== 'keyboard';
     var sync = follow && HST.vailSpeed.state().on;   // the app sets the adapter's speed
-    $('cWpmLabel').textContent = straight || (follow && !sync) ? 'Starting speed guess' : 'Keyer speed';
     $('followNote').hidden = !follow;
     if (follow) $('followNote').textContent = sync
       ? 'Your Vail adapter does the keying; the app sets it to this speed when you start sending.'
