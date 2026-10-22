@@ -91,6 +91,13 @@
   .tsp { width: 0.8em; }
   .tch.pro b { text-decoration: overline; text-decoration-thickness: 3px; }   /* prosigns: KN with a bar over it */
   .target.long .tch b { font-size: 1.9rem; }
+  /* As you send (like Warm Up, Tim 2026-10-22): green when right, red
+     when not, and the next one to send highlighted. */
+  .tch b { border-radius: 4px; padding: 0 2px; }
+  .tch.ok b { color: var(--good); }
+  .tch.bad b { color: var(--bad); text-decoration: underline wavy; text-underline-offset: 6px; }
+  .tch.pro.bad b { text-decoration-line: overline underline; }
+  .tch.next b { background: #3f6212; }
   .target.long .tch i { font-size: 0.85rem; }
   .list-info { text-align: center; color: var(--dim); font-size: 0.82rem; margin: -6px 0 10px; min-height: 1.2em; }
   .list-info b { color: var(--muted); font-weight: 500; }
@@ -328,7 +335,7 @@
     <details class="help">
       <summary>How this works</summary>
       <p><strong>Warm Up:</strong> a daily routine that works every letter, number and prosign, by Bob Carter, WR7Q. Send it top to bottom; each character turns green or red as you go. When you&rsquo;ve sent the last character and pause (or press <kbd>Enter</kbd>), you get the full timing report for your keyer speed. <kbd>Esc</kbd> starts over.</p>
-      <p><strong>Copy this:</strong> send what&rsquo;s shown, then pause. Under <strong>Send</strong>, the lists (the pyramid, QSO exchanges, the dits exercise, pangrams) go one line at a time, in order, and pick up where you left off. <strong>Your own text&hellip;</strong> lets you type, paste or load a text file; a Morserino-style file with <code>&lt;c&gt;$</code> chapters gives one choice per chapter. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
+      <p><strong>Copy this:</strong> send what&rsquo;s shown, then pause. As you send, each character turns green when you send it right and red when you don&rsquo;t, like the Warm Up. Under <strong>Send</strong>, the lists (the pyramid, QSO exchanges, the dits exercise, pangrams) go one line at a time, in order, and pick up where you left off. <strong>Your own text&hellip;</strong> lets you type, paste or load a text file; a Morserino-style file with <code>&lt;c&gt;$</code> chapters gives one choice per chapter. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
       <p><strong>The timing rules:</strong> a dah is 3 dits long; the gap inside a letter is 1 dit; between letters 3 dits; between words 7 dits. &ldquo;Character speed&rdquo; is how fast your dits and dahs go. &ldquo;Overall speed&rdquo; includes your spacing &mdash; what someone copying you actually hears. Extra space between letters (Farnsworth spacing) is fine while learning, but the closer you get to 3 and 7, the easier you are to copy.</p>
       <p><strong>With paddles</strong> the keyer makes perfect dits and dahs, so the useful feedback is spacing and which letters came out wrong. <strong>With a straight key or bug</strong> you form the elements yourself, so you&rsquo;ll also see your dah-to-dit ratio (ideally 3:1).</p>
       <p>Sessions are saved to Progress when you click End session or switch tabs.</p>
@@ -427,6 +434,7 @@
     if (down) {
       checkAudio();
       clearTimeout(waitTimer);
+      if (prefs.mode === 'copy') showNextNow();
       if ((prefs.mode === 'copy' || prefs.mode === 'warmup') && state !== 'sending') beginAttempt();
       if (prefs.mode === 'free' && !marks.length) beginLine();
       downAt = t;
@@ -504,16 +512,50 @@
       else target = src === 'letter' ? HST.content.letter() : src === 'call' ? HST.content.callSign()
              : src === 'phrase' ? HST.content.phrase() : HST.content.word();
     }
+    clearTimeout(holdTimer); holdTimer = null;
+    drawTarget(target, lineNo);
+    paintTarget([], 0);
+  }
+
+  function drawTarget(text, n) {
     var html = '';
-    (target.match(/<[A-Z]+>|[\s\S]/g) || []).forEach(function (ch) {
+    (text.match(/<[A-Z]+>|[\s\S]/g) || []).forEach(function (ch) {
       if (ch === ' ') { html += '<span class="tsp"></span>'; return; }
       var pro = ch.length > 1;
       html += '<span class="tch' + (pro ? ' pro' : '') + '"><b>' + esc(pro ? ch.slice(1, -1) : ch) + '</b>' + (prefs.showCode ? '<i>' + pretty(morseOf(ch)) + '</i>' : '') + '</span>';
     });
     $('target').innerHTML = html;
-    $('target').classList.toggle('long', toks(target).length > 16);
+    $('target').classList.toggle('long', toks(text).length > 16);
     var cur = listFor(prefs.source);
-    $('listInfo').innerHTML = cur ? esc(cur.credit) + ' &middot; <b>line ' + lineNo + ' of ' + cur.lines.length + '</b>' : '';
+    $('listInfo').innerHTML = cur ? esc(cur.credit) + ' &middot; <b>line ' + n + ' of ' + cur.lines.length + '</b>' : '';
+  }
+
+  /* After a line is graded it stays on screen, colored, for a moment
+     (HOLD_MS) before the next one shows -- or until you start keying,
+     whichever comes first. The next target is already chosen; this only
+     delays drawing it. */
+  var HOLD_MS = 2000, holdTimer = null;
+  function showNextNow() {
+    if (!holdTimer) return;
+    clearTimeout(holdTimer); holdTimer = null;
+    drawTarget(target, lineNo);
+    paintTarget([], 0);
+    $('targetLabel').textContent = 'Next \u2014 send when ready';
+  }
+
+  // Copy this, as you send: each character of the target turns green when
+  // you send it right and red when you don't, and the next one to send is
+  // highlighted -- the same as Warm Up (Tim, 2026-10-22).
+  function paintTarget(items, next) {
+    Array.prototype.forEach.call($('target').querySelectorAll('.tch'), function (el, k) {
+      el.className = 'tch' + (el.classList.contains('pro') ? ' pro' : '') +
+        (k < items.length ? (items[k].ok ? ' ok' : ' bad') : '') + (k === next ? ' next' : '');
+    });
+  }
+  function copyLive() {
+    if (state !== 'sending') return;
+    var al = alignStart(toks(target), live);
+    paintTarget(al.items, al.next);
   }
 
   function beginAttempt() {
@@ -564,6 +606,11 @@
     advanceList = true;
     newTarget(false);
     $('targetLabel').textContent = 'Next — send when ready';
+    // Keep the line just sent on screen, colored, for a moment.
+    drawTarget(prevTarget, prevLineNo);
+    paintTarget(g.items, -1);
+    $('targetLabel').textContent = 'You sent';
+    holdTimer = setTimeout(function () { holdTimer = 1; showNextNow(); }, HOLD_MS);
     setStatus(g.correct === g.total && !g.extra ? 'Nice! Send the next one whenever you’re ready.' : 'Have another go with Again, or send the next one.');
   }
 
@@ -625,11 +672,13 @@
     warmSpans = Array.prototype.slice.call($('warm').querySelectorAll('.t'));
   }
 
-  // Line up what's been sent so far with the START of the warm-up: the
-  // same edit-distance idea as HST.gradeSending, but the unsent rest of
-  // the text isn't counted as missing. Returns { items, next }.
-  function warmAlign(sentText) {
-    var T = WARM_T, S = toks(sentText), n = T.length, m = S.length, i, j, d = [];
+  // Line up what's been sent so far with the START of a text (its
+  // tokens T): the same edit-distance idea as HST.gradeSending, but the
+  // unsent rest of the text isn't counted as missing. Returns
+  // { items, next }. Used by Warm Up and, as you send, Copy this.
+  function warmAlign(sentText) { return alignStart(WARM_T, sentText); }
+  function alignStart(T, sentText) {
+    var S = toks(sentText), n = T.length, m = S.length, i, j, d = [];
     for (i = 0; i <= n; i++) { d.push([i]); for (j = 1; j <= m; j++) d[i].push(i ? 0 : j); }
     for (i = 1; i <= n; i++) for (j = 1; j <= m; j++) {
       d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (T[i - 1] === S[j - 1] ? 0 : 1));
@@ -692,7 +741,7 @@
   }
 
   function showLive() {
-    if (prefs.mode === 'copy') { $('sent').textContent = live; return; }
+    if (prefs.mode === 'copy') { $('sent').textContent = live; copyLive(); return; }
     if (prefs.mode === 'warmup') return warmLive();
     var lines = transcript.slice(-30);
     if (live) lines = lines.concat(live);
