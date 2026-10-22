@@ -33,6 +33,10 @@
     '.': '.-.-.-', ',': '--..--', '?': '..--..', '/': '-..-.', '=': '-...-',
     "'": '.----.', '-': '-....-', '(': '-.--.', ')': '-.--.-'
   };
+  // Prosigns: two letters sent run together, written <SK>. Kept apart from
+  // HST.MORSE (several share a pattern with a punctuation mark); the
+  // player sends them as one character.
+  HST.PROSIGN_CODE = { '<AR>': '.-.-.', '<SK>': '...-.-', '<KN>': '-.--.', '<BT>': '-...-', '<BK>': '-...-.-', '<AS>': '.-...' };
 
   /* =====================================================================
      TIMING (WPM + Farnsworth)
@@ -226,7 +230,7 @@
       for (var idx = 0; idx < chars.length; idx++) {
         var ch = chars[idx], isLast = idx === chars.length - 1;
         if (ch === ' ') { if (!isLast) cursor += (7 * t.ts) / 1000; continue; }
-        var code = HST.MORSE[ch] || '';
+        var code = HST.MORSE[ch] || HST.PROSIGN_CODE[ch] || '';
         for (var i = 0; i < code.length; i++) {
           var dur = (code[i] === '-' ? 3 * t.ta : t.ta) / 1000;
           live.push(tone(now + cursor, dur, opts.toneHz, peak));

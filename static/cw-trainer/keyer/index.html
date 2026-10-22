@@ -89,6 +89,32 @@
   .tch b { font: 600 3rem/1.1 'JetBrains Mono', monospace; letter-spacing: 0.02em; }
   .tch i { font: 600 1.15rem/1 'JetBrains Mono', monospace; font-style: normal; color: var(--muted); letter-spacing: 0.08em; margin-top: 6px; }
   .tsp { width: 0.8em; }
+  .tch.pro b { text-decoration: overline; text-decoration-thickness: 3px; }   /* prosigns: KN with a bar over it */
+  .target.long .tch b { font-size: 1.9rem; }
+  .target.long .tch i { font-size: 0.85rem; }
+  .list-info { text-align: center; color: var(--dim); font-size: 0.82rem; margin: -6px 0 10px; min-height: 1.2em; }
+  .list-info b { color: var(--muted); font-weight: 500; }
+  /* "Your own text" popup */
+  .own-dlg {
+    width: calc(100vw - 32px); max-width: 620px; margin: auto; padding: 20px 22px;
+    background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  }
+  .own-dlg::backdrop { background: rgba(0, 0, 0, 0.55); }
+  .own-dlg h2 { margin: 0 0 8px; font: 600 1.05rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+  .own-dlg p { margin: 0 0 10px; color: var(--muted); font-size: 0.88rem; line-height: 1.5; }
+  .own-dlg code { font: 0.82rem 'JetBrains Mono', monospace; color: var(--text); }
+  .own-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 10px; }
+  .own-row .fname { color: var(--muted); font-size: 0.85rem; word-break: break-all; }
+  .own-dlg textarea {
+    width: 100%; min-height: 220px; padding: 10px 12px; resize: vertical; box-sizing: border-box;
+    background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 9px;
+    font: 0.9rem/1.5 'JetBrains Mono', monospace;
+  }
+  .own-dlg .own-note { margin: 8px 0 12px; min-height: 1.4em; }
+  .own-dlg .own-note b { color: var(--text); font-weight: 600; }
+  .own-dlg .own-note .warn { color: #fbbf24; }
+  .own-actions { display: flex; flex-wrap: wrap; gap: 10px; }
   .next-label { text-align: center; }
 
   .sent {
@@ -202,13 +228,9 @@
       <button type="button" data-mode="free" aria-pressed="false">Free send</button>
     </div>
     <label class="inline" data-show="copy">Send
-      <select id="source">
-        <option value="letter">Letters &amp; numbers</option>
-        <option value="word">Words</option>
-        <option value="call">Call signs</option>
-        <option value="phrase">QSO phrases</option>
-      </select>
+      <select id="source"></select>
     </label>
+    <button class="btn" data-show="copy" id="ownBtn" type="button" title="Type, paste or load your own text to send">Your own text&hellip;</button>
     <label class="check" data-show="copy"><input type="checkbox" id="showCode"> Show Morse patterns</label>
   </div>
 
@@ -229,6 +251,7 @@
     </div>
     <div data-show="copy">
       <div class="label next-label" id="targetLabel">Send this</div>
+      <div class="list-info" id="listInfo"></div>
       <div class="target" id="target" aria-live="polite"></div>
       <div class="label">You sent</div>
       <div class="sent" id="sent" data-empty="Waiting for your key…" aria-live="polite"></div>
@@ -305,7 +328,7 @@
     <details class="help">
       <summary>How this works</summary>
       <p><strong>Warm Up:</strong> a daily routine that works every letter, number and prosign, by Bob Carter, WR7Q. Send it top to bottom; each character turns green or red as you go. When you&rsquo;ve sent the last character and pause (or press <kbd>Enter</kbd>), you get the full timing report for your keyer speed. <kbd>Esc</kbd> starts over.</p>
-      <p><strong>Copy this:</strong> send what&rsquo;s shown, then pause. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
+      <p><strong>Copy this:</strong> send what&rsquo;s shown, then pause. Under <strong>Send</strong>, the lists (the pyramid, QSO exchanges, the dits exercise, pangrams) go one line at a time, in order, and pick up where you left off. <strong>Your own text&hellip;</strong> lets you type, paste or load a text file; a Morserino-style file with <code>&lt;c&gt;$</code> chapters gives one choice per chapter. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
       <p><strong>The timing rules:</strong> a dah is 3 dits long; the gap inside a letter is 1 dit; between letters 3 dits; between words 7 dits. &ldquo;Character speed&rdquo; is how fast your dits and dahs go. &ldquo;Overall speed&rdquo; includes your spacing &mdash; what someone copying you actually hears. Extra space between letters (Farnsworth spacing) is fine while learning, but the closer you get to 3 and 7, the easier you are to copy.</p>
       <p><strong>With paddles</strong> the keyer makes perfect dits and dahs, so the useful feedback is spacing and which letters came out wrong. <strong>With a straight key or bug</strong> you form the elements yourself, so you&rsquo;ll also see your dah-to-dit ratio (ideally 3:1).</p>
       <p>Sessions are saved to Progress when you click End session or switch tabs.</p>
@@ -316,6 +339,28 @@
     <div class="hst-copy">&copy; HamShackTech LLC 2026</div>
   </footer>
 </div>
+
+<!-- Your own text for Copy this: typed, pasted or loaded from a file (Tim, 2026-10-21). -->
+<dialog class="own-dlg" id="ownDlg" aria-labelledby="ownTitle">
+  <h2 id="ownTitle">Your own text</h2>
+  <p>Type or paste what you want to send, or load a text file. It&rsquo;s sent one line at a time, in order.
+    To split a file into parts, start each part with a chapter line like <code>&lt;c&gt;$ QSO Elements</code>,
+    the way Morserino files do; each chapter becomes its own choice under <strong>Send</strong>.
+    Prosigns go in angle brackets (<code>&lt;SK&gt;</code>, <code>&lt;BT&gt;</code>, <code>&lt;KN&gt;</code>) or with a slash (<code>/AR</code>);
+    Morserino commands like <code>\p\</code> are ignored. It&rsquo;s kept on this device, and Code Groups can use it too.</p>
+  <div class="own-row">
+    <button class="btn" id="ownFileBtn" type="button">Load a file&hellip;</button>
+    <input type="file" id="ownFile" accept=".txt,text/plain" hidden>
+    <span class="fname" id="ownFileName"></span>
+  </div>
+  <textarea id="ownArea" spellcheck="false" aria-label="Your text"></textarea>
+  <p class="own-note" id="ownNote" aria-live="polite"></p>
+  <div class="own-actions">
+    <button class="btn primary" id="ownSave" type="button">Use this text</button>
+    <button class="btn" id="ownRemove" type="button">Remove my text</button>
+    <button class="btn" id="ownCancel" type="button">Cancel</button>
+  </div>
+</dialog>
 
 <script src="../shared/hst-engine.js"></script>
 <script src="../shared/hst-keyer.js"></script>
@@ -332,9 +377,10 @@
 
   /* ---------------- this tab's own saved choices ---------------- */
   var PREFS_KEY = 'hct-cw-keyer-practice-v1';
-  var prefs = { mode: 'copy', source: 'word', showCode: false, wpm: 0, fw: 0 };   // wpm 0 = not set yet; fw 0 = Farnsworth off
+  var prefs = { mode: 'copy', source: 'word', showCode: false, wpm: 0, fw: 0, listPos: {} };   // wpm 0 = not set yet; fw 0 = Farnsworth off
   try { var saved = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (saved) Object.keys(prefs).forEach(function (k) { if (k in saved) prefs[k] = saved[k]; }); } catch (e) {}
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
+  if (!prefs.listPos || typeof prefs.listPos !== 'object') prefs.listPos = {};
 
   var KEY_NAMES = { iambicB: 'Paddles (iambic B)', iambicA: 'Paddles (iambic A)', straight: 'Straight key', bug: 'Bug' };
   var ADAPTER_NAMES = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter' };
@@ -400,18 +446,74 @@
   /* ---------------- Copy this ---------------- */
   var target = '', prevTarget = '';
 
+  /* The Send list: random practice (letters, words, call signs, QSO
+     phrases), then lists sent one line at a time, in order (Tim,
+     2026-10-21): the pyramid, QSO exchanges, the dits exercise, pangrams,
+     and the chapters of your own text. Each list remembers its place. */
+  var RANDOM_SOURCES = [['letter', 'Letters & numbers'], ['word', 'Words'], ['call', 'Call signs'], ['phrase', 'QSO phrases']];
+  function renderSourcePicker() {
+    var html = '<optgroup label="Random">' + RANDOM_SOURCES.map(function (x) {
+      return '<option value="' + x[0] + '">' + esc(x[1]) + '</option>'; }).join('') + '</optgroup>' +
+      '<optgroup label="Lists, line by line">' + HST.content.lists.map(function (l) {
+        return '<option value="' + l.key + '">' + esc(l.name) + '</option>'; }).join('') + '</optgroup>';
+    var own = HST.content.ownFile.get(), chs = HST.content.ownFile.chapters();
+    if (chs.length) html += '<optgroup label="' + esc(own.name ? 'Your file: ' + own.name : 'Your text') + '">' + chs.map(function (ch, i) {
+      return '<option value="own:' + i + '">' + esc(ch.title) + '</option>'; }).join('') + '</optgroup>';
+    $('source').innerHTML = html;
+    if (!$('source').querySelector('option[value="' + prefs.source + '"]')) prefs.source = 'word';
+    $('source').value = prefs.source;
+  }
+
+  // The list behind a line-by-line source, or null for a random one.
+  var list = null;   // { key, name, credit, lines }
+  function listFor(src) {
+    if (list && list.key === src) return list;
+    var l = HST.content.lists.filter(function (x) { return x.key === src; })[0];
+    if (l) return (list = { key: src, name: l.name, credit: l.credit, make: l.lines, lines: l.lines() });
+    if (String(src).indexOf('own:') === 0) {
+      var ch = HST.content.ownFile.chapters()[Number(src.slice(4))];
+      if (ch) return (list = { key: src, name: ch.title, credit: 'Your own text.', make: null, lines: ch.lines });
+    }
+    return (list = null);
+  }
+  function sourceName() {
+    var l = listFor(prefs.source);
+    if (l) return l.name;
+    var r = RANDOM_SOURCES.filter(function (x) { return x[0] === prefs.source; })[0];
+    return r ? r[1] : prefs.source;
+  }
+  // A list's saved place is the line on screen. It moves on only when a
+  // line is sent (graded) or skipped -- not on a reload, a mode change or
+  // switching lists. Starting over at the top of QSO exchanges makes a
+  // new contact (new calls, names, states).
+  var advanceList = false;
+  function nextLine(l) {
+    var i = Number(prefs.listPos[l.key]) || 0;
+    if (advanceList) i++;
+    advanceList = false;
+    if (i >= l.lines.length) { i = 0; if (l.make) l.lines = l.make(); }
+    prefs.listPos[l.key] = i; savePrefs();
+    return { text: l.lines[i], n: i + 1 };
+  }
+  var lineNo = 0, prevLineNo = 0;
+
   function newTarget(same) {
     if (!same) {
-      var src = prefs.source;
-      target = src === 'letter' ? HST.content.letter() : src === 'call' ? HST.content.callSign()
+      var src = prefs.source, l = listFor(src);
+      if (l) { var nx = nextLine(l); target = nx.text; lineNo = nx.n; }
+      else target = src === 'letter' ? HST.content.letter() : src === 'call' ? HST.content.callSign()
              : src === 'phrase' ? HST.content.phrase() : HST.content.word();
     }
     var html = '';
-    target.split('').forEach(function (ch) {
+    (target.match(/<[A-Z]+>|[\s\S]/g) || []).forEach(function (ch) {
       if (ch === ' ') { html += '<span class="tsp"></span>'; return; }
-      html += '<span class="tch"><b>' + esc(ch) + '</b>' + (prefs.showCode ? '<i>' + pretty(HST.MORSE[ch]) + '</i>' : '') + '</span>';
+      var pro = ch.length > 1;
+      html += '<span class="tch' + (pro ? ' pro' : '') + '"><b>' + esc(pro ? ch.slice(1, -1) : ch) + '</b>' + (prefs.showCode ? '<i>' + pretty(morseOf(ch)) + '</i>' : '') + '</span>';
     });
     $('target').innerHTML = html;
+    $('target').classList.toggle('long', toks(target).length > 16);
+    var cur = listFor(prefs.source);
+    $('listInfo').innerHTML = cur ? esc(cur.credit) + ' &middot; <b>line ' + lineNo + ' of ' + cur.lines.length + '</b>' : '';
   }
 
   function beginAttempt() {
@@ -432,7 +534,7 @@
     // graded. Counting letters, not words, means wide (Farnsworth) letter
     // gaps never cut an attempt off early.
     var u = automatic() ? unitMs() : 1200 / decoder.speedWpm();
-    var lettersWanted = target.replace(/ /g, '').length;
+    var lettersWanted = toks(target).length;
     waitTimer = setTimeout(function () {
       var a = analyze();
       if (a && a.chars.length >= lettersWanted) return finishAttempt();
@@ -458,7 +560,8 @@
     showResult(a, g, target);
     recordAttempt(a, g);
     if (prefs.mode === 'warmup') return warmFinished(a, g);
-    prevTarget = target;
+    prevTarget = target; prevLineNo = lineNo;
+    advanceList = true;
     newTarget(false);
     $('targetLabel').textContent = 'Next — send when ready';
     setStatus(g.correct === g.total && !g.extra ? 'Nice! Send the next one whenever you’re ready.' : 'Have another go with Again, or send the next one.');
@@ -677,6 +780,9 @@
     drawTimeline(a);
   }
 
+  // A character's or prosign's pattern (prosigns aren't in HST.MORSE).
+  function morseOf(t) { return HST.MORSE[t] || HST.PROSIGN_CODE[t] || ''; }
+
   function tipsFor(a, g, want) {
     var tips = [];
     // Wrong letters: show the right pattern next to what was sent.
@@ -684,7 +790,7 @@
       var wrong = g.items.filter(function (it) { return !it.ok; });
       runTogether(want, a, g).forEach(function (x) { tips.push(x); });
       wrong.slice(0, 4).forEach(function (it) {
-        var right = HST.MORSE[it.want];
+        var right = morseOf(it.want);
         if (!it.got) tips.push('<b>' + esc(it.want) + '</b> was missing. It’s <code>' + pretty(right) + '</code>.');
         else {
           var sentCode = codeOf(a, it.got);
@@ -832,7 +938,8 @@
     if (!sess) {
       sess = { start: Date.now(), tries: 0, right: 0, total: 0, sent: 0,
                cgSum: 0, cgN: 0, wgSum: 0, wgN: 0, wpmW: 0, overallW: 0 };
-      rec.start({ mode: prefs.mode, source: prefs.mode === 'copy' ? prefs.source : prefs.mode, keyType: cfg().keyType, wpm: keyWpm(), fwpm: fwpm() });
+      rec.start({ mode: prefs.mode, source: prefs.mode === 'copy' ? prefs.source : prefs.mode, keyType: cfg().keyType, wpm: keyWpm(), fwpm: fwpm(),
+                  sourceName: prefs.mode === 'copy' ? sourceName() : undefined });
       $('endBtn').hidden = false;
       clockTimer = setInterval(renderSession, 1000);
     }
@@ -915,10 +1022,72 @@
   });
   $('showCode').addEventListener('change', function (e) { prefs.showCode = e.target.checked; savePrefs(); newTarget(true); });
 
+  // "Your own text" popup.
+  function ownSummary() {
+    var skipped = {}, own = $('ownArea').value;
+    var chs = HST.content.readText(own, HST.content.ownFile.title({ name: $('ownFileName').textContent }), skipped), sk = Object.keys(skipped);
+    if (!own.trim()) { $('ownNote').innerHTML = 'Nothing here yet.'; return chs; }
+    var n = chs.length;
+    $('ownNote').innerHTML = n ? (n === 1 ? 'One part: <b>' + esc(chs[0].title) + '</b>, ' + chs[0].lines.length + (chs[0].lines.length === 1 ? ' line.' : ' lines.') :
+        '<b>' + n + '</b> chapters: ' + chs.map(function (c) { return esc(c.title); }).join(', ') + '.') +
+        (sk.length ? ' <span class="warn">Not in Morse, so skipped: ' + esc(sk.join(' ')) + '</span>' : '')
+      : '<span class="warn">Nothing in this text can be sent in Morse.</span>';
+    return chs;
+  }
+  function useSource(src) {
+    endSession();
+    prefs.source = src; savePrefs();
+    list = null;
+    renderSourcePicker();
+    state = 'ready'; marks = []; live = ''; decoder.reset(); keyer.reset(); showLive(); $('result').hidden = true;
+    newTarget(false);
+    $('targetLabel').textContent = 'Send this';
+    setStatus('Send what\u2019s shown, then pause.');
+  }
+  $('ownBtn').addEventListener('click', function () {
+    var own = HST.content.ownFile.get();
+    $('ownArea').value = own ? own.text : '';
+    $('ownFileName').textContent = own && own.name ? own.name : '';
+    $('ownRemove').disabled = !own;
+    ownSummary();
+    $('ownDlg').showModal();
+  });
+  $('ownFileBtn').addEventListener('click', function () { $('ownFile').click(); });
+  $('ownFile').addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    if (f.size > HST.content.ownFile.MAX_BYTES) { $('ownNote').innerHTML = '<span class="warn">That file is too big (over 200 KB). Try a shorter one.</span>'; return; }
+    var r = new FileReader();
+    r.onload = function () { $('ownArea').value = String(r.result || ''); $('ownFileName').textContent = f.name; ownSummary(); };
+    r.readAsText(f);
+  });
+  $('ownArea').addEventListener('input', function () { ownSummary(); });
+  $('ownSave').addEventListener('click', function () {
+    if (!ownSummary().length) return;
+    try { HST.content.ownFile.set({ name: $('ownFileName').textContent, text: $('ownArea').value }); }
+    catch (e) { $('ownNote').innerHTML = '<span class="warn">This device couldn\u2019t save it (its storage is full).</span>'; return; }
+    // A new text starts each of its chapters from the top.
+    Object.keys(prefs.listPos).forEach(function (k) { if (k.indexOf('own:') === 0) delete prefs.listPos[k]; });
+    $('ownDlg').close();
+    useSource('own:0');
+  });
+  $('ownRemove').addEventListener('click', function () {
+    HST.content.ownFile.clear();
+    $('ownDlg').close();
+    useSource(String(prefs.source).indexOf('own:') === 0 ? 'word' : prefs.source);
+  });
+  $('ownCancel').addEventListener('click', function () { $('ownDlg').close(); });
+  $('ownDlg').addEventListener('click', function (e) { if (e.target === $('ownDlg')) $('ownDlg').close(); });
+
   function again() {
     clearTimeout(waitTimer);
     if (prefs.mode === 'warmup') { keyer.reset(); return warmReady('Start again from the first E.'); }
-    if (state === 'graded' && prevTarget) target = prevTarget;
+    if (state === 'graded' && prevTarget) {
+      target = prevTarget; lineNo = prevLineNo;
+      var l = listFor(prefs.source);
+      if (l) { prefs.listPos[l.key] = prevLineNo - 1; savePrefs(); }   // sending it again doesn't skip the next one
+    }
     newTarget(true);
     state = 'ready'; marks = []; live = ''; decoder.reset(); keyer.reset(); showLive();
     $('targetLabel').textContent = 'Send this';
@@ -927,6 +1096,7 @@
   function skip() {
     clearTimeout(waitTimer);
     state = 'ready'; marks = []; live = ''; decoder.reset(); keyer.reset(); showLive();
+    advanceList = true;
     newTarget(false);
     $('targetLabel').textContent = 'Send this';
     setStatus('Send what’s shown, then pause.');
@@ -941,7 +1111,7 @@
   });
   // Enter = grade now, Esc = start over (Copy this).
   window.addEventListener('keydown', function (e) {
-    if ((prefs.mode !== 'copy' && prefs.mode !== 'warmup') || e.target.tagName === 'SELECT') return;
+    if ((prefs.mode !== 'copy' && prefs.mode !== 'warmup') || e.target.tagName === 'SELECT' || $('ownDlg').open) return;
     if (e.key === 'Enter') { e.preventDefault(); if (state === 'sending') finishAttempt(); }
     if (e.key === 'Escape') { e.preventDefault(); again(); }
   });
@@ -966,7 +1136,6 @@
     // rules, and this slider is only where the timing analysis starts.
     var ak = HST.adapterKeying.get(), follow = ak.on && !straight && cfg().adapter !== 'keyboard';
     var sync = follow && HST.vailSpeed.state().on;   // the app sets the adapter's speed
-    $('cWpmLabel').textContent = straight || (follow && !sync) ? 'Starting speed guess' : 'Keyer speed';
     $('followNote').hidden = !follow;
     if (follow) $('followNote').textContent = sync
       ? 'Your Vail adapter does the keying; the app sets it to this speed when you start sending.'
@@ -1036,6 +1205,7 @@
   $('source').value = prefs.source;
   $('showCode').checked = prefs.showCode;
   renderSetup();
+  renderSourcePicker();
   applyMode();
 
   // The app shell clicks End session when you leave this tab; tests and the
