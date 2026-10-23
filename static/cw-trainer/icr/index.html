@@ -776,17 +776,17 @@
 <!-- PRACTICE TIMER POPUP. The countdown doesn't start here — it starts when
      Start Session is pressed, and the choice is remembered for next time. -->
 <!-- Car Mode and Walk Mode share this popup: hands-free listening. Each
-     character plays five times, with two seconds of quiet after each play,
+     character plays five times, with a gap of quiet after each play (2 s to start; set in the popup),
      until the time runs out. Walk Mode also speaks the character after the
      fifth play. Both keep playing with the screen off. -->
 <dialog class="timer-dialog car-dialog" id="carDialog" aria-labelledby="carTitle">
   <h2 id="carTitle">Car Mode</h2>
   <div id="carSetup">
     <p class="car-only">Listen only &mdash; nothing to type. Each character plays <strong>five times</strong>, with
-       two seconds after each play to say it out loud, then the next one. Keeps playing if the screen turns off.
+       a gap after each play to say it out loud (set it below), then the next one. Keeps playing if the screen turns off.
        Uses this page&rsquo;s tone and volume.</p>
-    <p class="walk-only">Car Mode for a walk or hike. Each character plays <strong>five times</strong>, with two seconds
-       after each play to say it; after the fifth, a voice <strong>says the character</strong> so you know if you got it.
+    <p class="walk-only">Car Mode for a walk or hike. Each character plays <strong>five times</strong>, with a gap
+       after each play to say it (set it below); after the fifth, a voice <strong>says the character</strong> so you know if you got it.
        It keeps playing with the screen off and the phone in your pocket. Earbuds recommended.</p>
     <div class="car-label">How long</div>
     <div class="timer-presets" id="carPresets">
@@ -819,6 +819,13 @@
     <button type="button" id="carSlower" aria-label="Slower">&minus;</button>
     <output id="carWpmVal" aria-live="polite"></output>
     <button type="button" id="carFaster" aria-label="Faster">+</button>
+  </div>
+  <!-- Quiet after each play, 1-10 seconds (Tim, 2026-10-23), changeable while playing. -->
+  <div class="car-label">Gap after each play</div>
+  <div class="car-speed" role="group" aria-label="Gap after each play">
+    <button type="button" id="carGapLess" aria-label="Shorter gap">&minus;</button>
+    <output id="carGapVal" aria-live="polite"></output>
+    <button type="button" id="carGapMore" aria-label="Longer gap">+</button>
   </div>
   <p class="car-status" id="carStatus" hidden></p>
   <div class="timer-actions">
@@ -887,7 +894,8 @@ let settings = {
   buzzer: true,      // buzz on a wrong answer or timeout (the Buzzer chip mutes it)
   carMin: 15,        // Car Mode: how long to play, in minutes
   carSet: 'letters', // Car Mode: 'letters' | 'numbers' | 'both'
-  carWpm: 0          // Car / Walk Mode speed; 0 = not set yet (starts from this page's speed)
+  carWpm: 0,         // Car / Walk Mode speed; 0 = not set yet (starts from this page's speed)
+  carGap: 2          // Car / Walk Mode: seconds of quiet after each play
 };
 
 // Per-character adaptive weighting data. Keyed by character.
@@ -1349,8 +1357,8 @@ function finishTrial(isCorrect){
 
 /* --------------------------- CAR + WALK MODE ----------------------------- */
 // Hands-free listening for the car. A random character (Letters, Numbers
-// or Both) plays five times; after EACH play there are two seconds of
-// quiet to say it out loud. Then the next character, until the chosen
+// or Both) plays five times; after EACH play there's a gap of quiet to
+// say it out loud (settings.carGap, 2 s to start, 1-10 s; Tim, 2026-10-23). Then the next character, until the chosen
 // minutes are up and the bell rings. Uses this page's tone and volume,
 // and its own speed (settings.carWpm, set in the popup and changeable
 // while playing; Tim, 2026-10-15). Nothing is typed or scored, but the
@@ -1358,7 +1366,7 @@ function finishTrial(isCorrect){
 // (mode: 'car' or 'walk', no characters graded). Tim, 2026-10-13.
 //
 // WALK MODE (Tim, 2026-10-15) is Car Mode for a walk: after the fifth
-// play's two seconds a voice says the character (only after the fifth,
+// play's gap a voice says the character (only after the fifth,
 // from 2026-10-16 -- users found it too much after every play).
 //
 // Both play through HST.listen (shared/hst-listen.js), which renders the
@@ -1368,7 +1376,7 @@ function finishTrial(isCorrect){
 // stopped with time still left. Fixed 2026-10-16.) Car Mode still asks
 // to keep the screen on, so you can glance at the character.
 const CAR_REPEATS = 5;      // plays per character
-const CAR_GAP_S = 2;        // quiet after each play
+const CAR_GAP_MIN = 1, CAR_GAP_MAX = 10;   // quiet after each play, in seconds (settings.carGap, default 2)
 const CAR_WPM_MIN = 5, CAR_WPM_MAX = 40;
 // Characters picked more often (Tim's list), 1.5x as likely as the rest.
 const CAR_EMPHASIS = { X: 1.5, P: 1.5, F: 1.5, L: 1.5, Y: 1.5, Q: 1.5, U: 1.5, V: 1.5 };
@@ -1434,6 +1442,20 @@ function renderCarSpeed(){
   els.carWpmVal.textContent = w + ' WPM';
   els.carSlower.disabled = w <= CAR_WPM_MIN;
   els.carFaster.disabled = w >= CAR_WPM_MAX;
+  const g = carGap();
+  els.carGapVal.textContent = g + (g === 1 ? ' second' : ' seconds');
+  els.carGapLess.disabled = g <= CAR_GAP_MIN;
+  els.carGapMore.disabled = g >= CAR_GAP_MAX;
+}
+function carGap(){
+  const g = Math.round(Number(settings.carGap));
+  return Math.min(CAR_GAP_MAX, Math.max(CAR_GAP_MIN, isFinite(g) && g ? g : 2));
+}
+// Shorter / longer gap: the next character uses it (the one playing finishes as it was).
+function carSetGap(delta){
+  const g = Math.min(CAR_GAP_MAX, Math.max(CAR_GAP_MIN, carGap() + delta));
+  if(g === carGap()) return;
+  settings.carGap = g; saveState(); renderCarSpeed();
 }
 // Faster / slower: starts a fresh character at the new speed right away.
 function carSetSpeed(delta){
@@ -1480,7 +1502,7 @@ function carStart(){
     title: () => car.mode === 'walk' ? 'Walk Mode' : 'Car Mode',
     minutes: min,
     voice: car.mode === 'walk',
-    next: () => ({ text: carPick(), plays: CAR_REPEATS, gap: CAR_GAP_S }),
+    next: () => ({ text: carPick(), plays: CAR_REPEATS, gap: carGap() }),
     sound: () => ({ wpm: carWpm(), fwpm: 0, toneHz: settings.toneHz, volume: settings.volume }),
     onShow: (ev) => {
       els.carChar.textContent = ev.text;
@@ -1546,6 +1568,8 @@ function wireCarMode(){
   }));
   els.carSlower.addEventListener('click', () => carSetSpeed(-1));
   els.carFaster.addEventListener('click', () => carSetSpeed(1));
+  els.carGapLess.addEventListener('click', () => carSetGap(-1));
+  els.carGapMore.addEventListener('click', () => carSetGap(1));
   els.carPlayBtn.addEventListener('click', carStart);
   els.carStopBtn.addEventListener('click', () => carStop());
   els.carCloseBtn.addEventListener('click', () => els.carDialog.close());
@@ -1919,7 +1943,7 @@ function init(){
    'elapsedChip','elapsedVal','timerBtn','timerVal',
    'timerDialog','timerPresets','timerInput','timerSetBtn','timerOffBtn','timerCancelBtn',
    'carBtn','carDialog','carSetup','carPlaying','carPresets','carMinInput','carChar','carPlayCount','carLeft',
-   'carPlayBtn','carStopBtn','carCloseBtn','walkBtn','carTitle','carSlower','carFaster','carWpmVal','carStatus'
+   'carPlayBtn','carStopBtn','carCloseBtn','walkBtn','carTitle','carSlower','carFaster','carWpmVal','carGapLess','carGapMore','carGapVal','carStatus'
   ].forEach(id => els[id] = document.getElementById(id));
 
   loadState();

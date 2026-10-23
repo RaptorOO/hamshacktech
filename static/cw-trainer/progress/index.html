@@ -729,7 +729,7 @@
                (s.clues ? pct(s.right || 0, s.clues) + '%' : '—') + '</td></tr>';
       }
       if (s.trainer === 'keyer') {
-        var kw = s.mode === 'free' ? 'Free send' : s.mode === 'warmup' ? 'Warm Up' : 'Copy this · ' + (SEND_SOURCES[s.source] || s.sourceName || s.source || '');
+        var kw = s.mode === 'free' ? 'Free send' : s.mode === 'warmup' ? 'Daily Scales \u00b7 ' + (s.scale || 'Warm Up') : 'Copy this · ' + (SEND_SOURCES[s.source] || s.sourceName || s.source || '');
         return '<tr><td>' + esc(when) + '</td><td><span class="tag key">Keyer</span></td><td>' + esc(kw) +
                '</td><td class="num">' + esc(s.wpm || '') + '</td><td class="num">' + HST.fmtClock(s.durationMs || 0) +
                '</td><td class="num">' + (s.sentChars || 0) + '</td><td class="num">' +

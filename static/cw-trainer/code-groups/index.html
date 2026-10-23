@@ -917,6 +917,14 @@
       <output id="walkWpmVal" aria-live="polite"></output>
       <button type="button" id="walkFaster" aria-label="Faster">+</button>
     </div>
+    <!-- Quiet after each play (Tim, 2026-10-23): 1-10 s to start with, plus
+         half a second per character past four for longer groups. -->
+    <div class="walk-label">Gap after each play</div>
+    <div class="walk-speed" role="group" aria-label="Gap after each play">
+      <button type="button" id="walkGapLess" aria-label="Shorter gap">&minus;</button>
+      <output id="walkGapVal" aria-live="polite"></output>
+      <button type="button" id="walkGapMore" aria-label="Longer gap">+</button>
+    </div>
     <p class="walk-status" id="walkStatus" hidden></p>
     <div class="timer-actions">
       <button type="button" class="btn-secondary btn-primary" id="walkPlayBtn">Play</button>
@@ -1612,6 +1620,7 @@
       buzzer: true,      // buzz on a missed group or timeout (the Buzzer chip mutes it)
       walkMin: 15,       // Walk Mode: how long to play, in minutes
       walkPlays: 2,      // Walk Mode: plays per group before the voice spells it
+      walkGap: 2,        // Walk Mode: seconds of quiet after each play (longer groups get more)
       fileChapter: 0,    // Your File: which chapter
       fileUnit: "word",  // Your File: a round is one "word" or one "line" (Morserino plays word by word)
       fileOrder: "order",// Your File: "order" (as in the file) or "shuffle"
@@ -2393,8 +2402,8 @@
      WALK MODE (Tim, 2026-10-16) -- ICR's Walk Mode, for code groups.
      Listen only: the practice group from Tool Settings (letters, words,
      call signs...) plays once, twice or three times, with a moment after
-     each play to say it out loud (2 s, or half a second per character
-     for longer groups), then a voice spells it out. Plays through
+     each play to say it out loud (the popup's Gap, 2 s to start, plus
+     half a second per character past four), then a voice spells it out. Plays through
      HST.listen (shared/hst-listen.js), which renders the practice into
      audio files so it keeps going with the screen off and the phone in a
      pocket. Uses this page's speed, Farnsworth, tone and volume; the
@@ -2410,7 +2419,12 @@
   var walkEls = {};
   ["walkBtn", "walkDialog", "walkSetup", "walkPlaying", "walkWhat", "walkPresets", "walkMinInput", "walkGroup",
    "walkPlayCount", "walkLeft", "walkSlower", "walkFaster", "walkWpmVal", "walkStatus", "walkPlayBtn",
-   "walkStopBtn", "walkCloseBtn"].forEach(function (id) { walkEls[id] = $(id); });
+   "walkStopBtn", "walkCloseBtn", "walkGapLess", "walkGapMore", "walkGapVal"].forEach(function (id) { walkEls[id] = $(id); });
+  var WALK_GAP_MIN = 1, WALK_GAP_MAX = 10;
+  function walkGap() {
+    var g = Math.round(Number(state.settings.walkGap));
+    return Math.min(WALK_GAP_MAX, Math.max(WALK_GAP_MIN, isFinite(g) && g ? g : 2));
+  }
 
   function walkRunning() { return !!(walk.player && walk.player.running()); }
   function walkFw() { var s = state.settings; return s.fwpm && s.fwpm < s.wpm ? s.fwpm : 0; }
@@ -2439,6 +2453,10 @@
     walkEls.walkWpmVal.textContent = walkSpeedText();
     walkEls.walkSlower.disabled = s.wpm <= 5;
     walkEls.walkFaster.disabled = s.wpm >= 40;
+    var g = walkGap();
+    walkEls.walkGapVal.textContent = g + (g === 1 ? " second" : " seconds");
+    walkEls.walkGapLess.disabled = g <= WALK_GAP_MIN;
+    walkEls.walkGapMore.disabled = g >= WALK_GAP_MAX;
   }
 
   function walkSaveDraft() { try { localStorage.setItem(WALK_DRAFT_KEY, JSON.stringify(walk.run)); } catch (e) {} }
@@ -2484,7 +2502,9 @@
       voice: true,
       next: function () {
         var text = (buildRound() || ["E"]).map(answerOf).join("");
-        return { text: text, plays: state.settings.walkPlays, gap: Math.max(2, 0.5 * text.replace(/ /g, "").length) };
+        // The chosen gap, plus half a second per character past four (at 2 s
+        // this is the old "2 s, or half a second per character").
+        return { text: text, plays: state.settings.walkPlays, gap: walkGap() + Math.max(0, 0.5 * text.replace(/ /g, "").length - 2) };
       },
       sound: function () { var s = state.settings; return { wpm: s.wpm, fwpm: walkFw(), toneHz: s.toneHz, volume: s.volume }; },
       onShow: function (ev) {
@@ -2550,6 +2570,14 @@
   });
   walkEls.walkSlower.addEventListener("click", function () { walkSetSpeed(-1); });
   walkEls.walkFaster.addEventListener("click", function () { walkSetSpeed(1); });
+  // - / +: the gap after each play; the next group uses it.
+  function walkSetGap(delta) {
+    var g = Math.min(WALK_GAP_MAX, Math.max(WALK_GAP_MIN, walkGap() + delta));
+    if (g === walkGap()) return;
+    state.settings.walkGap = g; saveSettings(); renderWalk();
+  }
+  walkEls.walkGapLess.addEventListener("click", function () { walkSetGap(-1); });
+  walkEls.walkGapMore.addEventListener("click", function () { walkSetGap(1); });
   walkEls.walkPlayBtn.addEventListener("click", walkStart);
   walkEls.walkStopBtn.addEventListener("click", walkStop);
   walkEls.walkCloseBtn.addEventListener("click", function () { walkEls.walkDialog.close(); });
