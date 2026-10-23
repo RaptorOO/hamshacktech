@@ -23,6 +23,7 @@ Everything for CW practice now lives in one free app: the **HamShackTech CW Trai
     <li><strong>QSO</strong>: work a complete contact (standard, POTA, SOTA or a CWops CWT) with a virtual station, using your key. Set separate copy and sending speeds.</li>
     <li><strong>Test Prep</strong>: practice the CW Academy placement test for Intermediate. Hear a call sign or short phrase at 25 WPM (Farnsworth 10), pick it from 4 choices, and see if you reach the 80% pass mark.</li>
     <li><strong>Call Signs</strong>: four ways to copy call signs. Find the Number (type the call's number in as few plays as you can), Call Sign Builder (short three-character calls), Call Sign Simulator (every call at a different speed, in the range you choose) and Speed Run (each call you copy sends the next one faster).</li>
+    <li><strong>My Course</strong>: for CW Academy students, your class schedule (all 16 classes, with dates once you enter your first class) and links to your curriculum and practice files. Choose your course and level in Settings.</li>
     <li><strong>Progress</strong>: your practice time, day streaks, accuracy and speed trends, and the characters you miss most.</li>
     <li><strong>Jeopardy</strong>: Morse Code Jeopardy for CW groups. Play online with up to 20 people, or on your own, each hearing the clues at their own speed and answering with their key. Everyone builds one group score together.</li>
   </ul>

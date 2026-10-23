@@ -11,3 +11,9 @@
 /cw-tools/morse-code-jeopardy    /cw-trainer/?tab=jeopardy     301
 /cw-tools/morse-code-jeopardy/   /cw-trainer/?tab=jeopardy     301
 /cw-tools/morse-code-jeopardy/*  /cw-trainer/?tab=jeopardy     301
+# The CW Tools page itself opens the app (Tim, 2026-10-23). The app stays at
+# /cw-trainer/ (its offline copy and installed-app scope live there). 302, not
+# 301, so the intro page (content/cw-tools.md, still built) can come back
+# without browsers remembering the old redirect.
+/cw-tools                        /cw-trainer/                  302
+/cw-tools/                       /cw-trainer/                  302
