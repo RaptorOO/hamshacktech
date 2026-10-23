@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Course — HamShackTech CW Trainer</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../shared/hst-chrome.css">
+<style>
+  /* Same avocado palette as the app shell and the other tabs. My Course's
+     own color (violet-300) is its tab color. */
+  :root {
+    --bg: #100e0c;
+    --panel: #1c1917;      /* stone-900 */
+    --well: #292524;       /* stone-800 */
+    --border: #44403c;     /* stone-700 */
+    --grid: #2f2a27;
+    --text: #fafaf9;       /* stone-50 */
+    --muted: #a8a29e;      /* stone-400 */
+    --dim: #78716c;        /* stone-500 */
+    --lime: #a3e635;       /* lime-400 */
+    --mc: #c4b5fd;         /* violet-300: My Course */
+    --mc-ink: #2e1065;     /* violet-950 */
+    --mc-soft: #2e1065;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.5 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 22px 18px 56px; }
+  button, input, select { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+  a { color: var(--mc); }
+
+  .head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-bottom: 16px; }
+  .head .sub { color: var(--muted); font-size: 0.95rem; }
+  /* Tim, 2026-10-23: this tab is still being built. */
+  .dev-badge { margin-left: auto; padding: 5px 12px; border-radius: 6px; background: var(--lime); color: #1a2e05;
+               font: 600 0.85rem/1.2 'Oswald', sans-serif; letter-spacing: 0.08em; white-space: nowrap; }
+  @media (max-width: 600px) { .dev-badge { font-size: 0.72rem; padding: 4px 9px; } }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+  .card h2 { margin: 0 0 10px; font: 600 1.05rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+  .desc { color: var(--muted); font-size: 0.92rem; margin: 0 0 12px; }
+  .desc b { color: var(--text); font-weight: 500; }
+  .hint { color: var(--dim); font-size: 0.82rem; line-height: 1.5; margin: 8px 0 0; }
+
+  .btn { border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; background: var(--well); color: var(--text); font: 500 0.9rem/1 'Inter', sans-serif; cursor: pointer; }
+  .btn:hover { border-color: var(--mc); }
+  .btn.primary { background: var(--mc); border-color: var(--mc); color: var(--mc-ink); }
+  .linkbtn { background: none; border: 0; padding: 0; color: var(--mc); font: inherit; font-size: 0.85rem; cursor: pointer; text-decoration: underline; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .tile { background: var(--well); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .tile .val { font: 600 1.15rem/1.2 'Oswald', sans-serif; }
+  .tile .lbl { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; }
+
+  /* class dates */
+  .when { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-bottom: 12px; }
+  .when label { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.9rem; }
+  .when input[type="date"] { padding: 6px 8px; background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 7px; font-size: 0.9rem; }
+  .days { display: inline-flex; gap: 4px; }
+  .days button { min-width: 40px; padding: 5px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--well); color: var(--muted); font-size: 0.8rem; cursor: pointer; }
+  .days button[aria-pressed="true"] { background: var(--mc); border-color: var(--mc); color: var(--mc-ink); font-weight: 600; }
+  .times { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: -4px 0 12px; }
+  .times label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 0.88rem; }
+  .times input[type="time"] { padding: 5px 6px; background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 7px; font-size: 0.88rem; }
+  .next .reg { display: block; margin-top: 6px; font-size: 0.88rem; }
+  .next { padding: 10px 14px; border-radius: 10px; background: var(--mc-soft); border: 1px solid var(--mc); margin-bottom: 12px; font-size: 0.95rem; }
+  .next b { color: var(--mc); font-weight: 600; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  th { color: var(--dim); font-weight: 500; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  td.n, td.date, td.speed { white-space: nowrap; }
+  td.speed { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+  tr.week-start td { border-top: 1px solid var(--border); }
+  tr.past td { color: var(--dim); }
+  tr.now td { background: rgba(196, 181, 253, 0.10); }
+  tr.now td:first-child { box-shadow: inset 3px 0 0 var(--mc); }
+
+  .links { list-style: none; margin: 0; padding: 0; }
+  .links li { padding: 9px 0; border-bottom: 1px solid var(--grid); }
+  .links li:last-child { border-bottom: 0; }
+  .links a { font-weight: 500; }
+  .links .what { color: var(--muted); font-size: 0.85rem; }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 16px 12px 40px; }
+    /* Phones: each class is a small card -- "Class 3 · Mon, Sep 21 · 7 WPM",
+       then what you'll practice underneath. */
+    thead { display: none; }
+    #sessions tr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; padding: 9px 8px; border-bottom: 1px solid var(--grid); }
+    #sessions tr.week-start { border-top: 1px solid var(--border); }
+    #sessions td { display: block; padding: 0; border: 0; }
+    #sessions td.wk { display: none; }
+    #sessions td.cls { font-weight: 600; }
+    #sessions td.cls::before { content: "Class "; }
+    #sessions td.focus { flex-basis: 100%; color: var(--muted); }
+    #sessions tr.past td.focus { color: var(--dim); }
+    #sessions tr.week-start td { border-top: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <img class="hst-mascot" src="../icons/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
+    <h1 class="hst-title">My Course</h1>
+    <span class="sub" id="courseName"></span>
+    <span class="dev-badge">UNDER DEVELOPMENT</span>
+  </div>
+
+  <!-- No course chosen yet -->
+  <section class="card" id="noneCard" hidden aria-labelledby="noneTitle">
+    <h2 id="noneTitle">Taking a Morse code course?</h2>
+    <p class="desc">If you&rsquo;re in a <b>CW Academy</b> or <b>LICW</b> class, choose it in Settings and this tab shows your
+      class schedule and a link to your curriculum.</p>
+    <button class="btn primary" type="button" data-open-settings>Choose my course in Settings</button>
+  </section>
+
+  <!-- A course whose content isn't here yet (LICW) -->
+  <section class="card" id="soonCard" hidden aria-labelledby="soonTitle">
+    <h2 id="soonTitle">Coming soon</h2>
+    <p class="desc" id="soonText"></p>
+    <button class="btn" type="button" data-open-settings>Change my course</button>
+  </section>
+
+  <div id="cwaContent" hidden>
+    <section class="card" aria-labelledby="aboutTitle">
+      <h2 id="aboutTitle">About your course</h2>
+      <p class="desc" id="about"></p>
+      <div class="tiles" id="tiles"></div>
+      <p class="hint" id="meets"></p>
+      <p class="hint"><button class="linkbtn" type="button" data-open-settings>Change my course</button></p>
+    </section>
+
+    <section class="card" aria-labelledby="schedTitle">
+      <h2 id="schedTitle">Class schedule</h2>
+      <div class="when">
+        <label for="firstClass">My first class <input type="date" id="firstClass"></label>
+        <span class="when-days"><span style="color:var(--muted);font-size:0.9rem;margin-right:8px">Meets on</span><span class="days" id="days" role="group" aria-label="Class days"></span></span>
+      </div>
+      <div class="times" id="times" aria-label="Class start times"></div>
+      <div class="next" id="nextClass" hidden></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Week</th><th>Class</th><th id="dateHead">Date</th><th>Speed</th><th>What you&rsquo;ll practice</th></tr></thead>
+          <tbody id="sessions"></tbody>
+        </table>
+      </div>
+      <p class="hint" id="speedNote"></p>
+      <p class="hint">Enter your first class date, your class days and their start times (from your advisor) to see when every class is. Holidays can move a class.
+        This is a summary; the curriculum below is the full plan, with each class&rsquo;s homework.</p>
+    </section>
+
+    <section class="card" aria-labelledby="currTitle">
+      <h2 id="currTitle">Curriculum</h2>
+      <ul class="links" id="links"></ul>
+      <p class="hint">From CWops, the home of CW Academy. These open on cwops.org and need an internet connection.</p>
+    </section>
+  </div>
+
+  <footer class="hst-foot">
+    <div class="hst-73"><b>73</b> Practice often, don&rsquo;t quit and have fun</div>
+    <div class="hst-copy">&copy; HamShackTech LLC 2026</div>
+  </footer>
+</div>
+
+<script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-course.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  // "Choose my course" buttons open the app's Settings panel.
+  Array.prototype.forEach.call(document.querySelectorAll('[data-open-settings]'), function (b) {
+    b.addEventListener('click', function () {
+      try { window.parent.document.getElementById('settingsBtn').click(); } catch (e) {}
+    });
+  });
+
+  function parseDate(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+    return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+  }
+  function fmt(d) { return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); }
+  // '19:00' -> "7:00 PM" (in this device's own style)
+  function fmtTime(hhmm) {
+    var m = /^(\d{2}):(\d{2})$/.exec(hhmm || '');
+    return m ? new Date(2000, 0, 1, Number(m[1]), Number(m[2])).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : '';
+  }
+  var CLASS_MINUTES = 60;   // a class still counts as "today's class" until an hour after it starts
+  // When a class starts (its day's time, or the start of the day if no time is set),
+  // and when it counts as over.
+  function startOf(d, times) {
+    var m = /^(\d{2}):(\d{2})$/.exec(times[d.getDay()] || '');
+    return m ? new Date(d.getFullYear(), d.getMonth(), d.getDate(), Number(m[1]), Number(m[2])) : d;
+  }
+  function overAt(d, times) {
+    var t = times[d.getDay()];
+    return t ? new Date(startOf(d, times).getTime() + CLASS_MINUTES * 60000) : new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+  }
+  function today() { var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+
+  // The date of each class: the first class, then every class day after it.
+  function classDates(first, days, count) {
+    var out = [first], d = new Date(first);
+    for (var i = 0; out.length < count && i < 400; i++) {
+      d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+      if (days.indexOf(d.getDay()) >= 0) out.push(d);
+    }
+    return out;
+  }
+
+  function speedText(sp) {
+    if (!sp) return '—';
+    return sp.indexOf('/') > 0 ? sp + ' WPM' : sp + ' WPM';
+  }
+
+  function render() {
+    var c = HST.course.get();
+    var progName = c.program ? HST.course.PROGRAMS[c.program].name : '';
+    var levelName = HST.course.levelName(c.program, c.level);
+    $('courseName').textContent = c.program ? progName + ' · ' + levelName : '';
+    var info = HST.course.info(c.program, c.level);
+    $('noneCard').hidden = !!c.program;
+    $('soonCard').hidden = !c.program || !!info;
+    $('cwaContent').hidden = !info;
+    if (c.program && !info) {
+      $('soonText').textContent = 'The class schedule and curriculum for ' + progName + ' ' + levelName + ' are coming to this tab soon.';
+      return;
+    }
+    if (!info) return;
+
+    $('about').textContent = info.about;
+    $('tiles').innerHTML = [
+      [info.entry, 'Speed to start'], [info.goal, 'Speed goal'], ['8 weeks · 16 classes', 'Length'], [info.semesters, 'Semesters']
+    ].map(function (t) { return '<div class="tile"><div class="val">' + esc(t[0]) + '</div><div class="lbl">' + esc(t[1]) + '</div></div>'; }).join('');
+    $('meets').textContent = info.meets;
+
+    // Class days and first class
+    $('firstClass').value = c.firstClass;
+    $('days').innerHTML = DAY_NAMES.map(function (n, i) {
+      return '<button type="button" data-day="' + i + '" aria-pressed="' + (c.days.indexOf(i) >= 0) + '">' + n + '</button>';
+    }).join('');
+    // A start time for each class day.
+    $('times').innerHTML = c.days.map(function (d) {
+      return '<label>' + DAY_NAMES[d] + ' at <input type="time" data-day="' + d + '" value="' + esc(c.times[d] || '') + '" aria-label="' + DAY_NAMES[d] + ' class start time"></label>';
+    }).join('');
+
+    var first = parseDate(c.firstClass);
+    var dates = first ? classDates(first, c.days, info.sessions.length) : [];
+    var t = today(), now = new Date(), nextIdx = -1;
+    dates.forEach(function (d, i) { if (nextIdx < 0 && overAt(d, c.times) > now) nextIdx = i; });
+    $('dateHead').hidden = !first;
+
+    $('sessions').innerHTML = info.sessions.map(function (s, i) {
+      var week = Math.floor(i / 2) + 1, cls = [];
+      if (i % 2 === 0) cls.push('week-start');
+      if (first && overAt(dates[i], c.times) <= now) cls.push('past');
+      if (i === nextIdx) cls.push('now');
+      return '<tr class="' + cls.join(' ') + '"><td class="n wk">' + (i % 2 === 0 ? week : '') + '</td><td class="n cls">' + (i + 1) + '</td>' +
+        (first ? '<td class="date">' + esc(fmt(dates[i])) + (c.times[dates[i].getDay()] ? ' \u00b7 ' + esc(fmtTime(c.times[dates[i].getDay()])) : '') + '</td>' : '') +
+        '<td class="speed">' + esc(speedText(s[0])) + '</td><td class="focus">' + esc(s[1]) + '</td></tr>';
+    }).join('');
+
+    var nx = $('nextClass');
+    if (!first) nx.hidden = true;
+    else {
+      nx.hidden = false;
+      var lastIdx = dates.length - 1;
+      if (nextIdx < 0) {
+        // The course is over: well done, and when the next one runs.
+        nx.innerHTML = 'Your course finished on <b>' + esc(fmt(dates[lastIdx])) + '</b>. Well done! Keep practicing every day.' +
+          '<span class="reg">CW Academy runs ' + esc(info.semesters) + '. Ready for the next level? ' +
+          '<a href="' + esc(info.register) + '" target="_blank" rel="noopener">Sign up for a class</a>, then choose your new level in Settings.</span>';
+      } else {
+        var d = dates[nextIdx], isToday = d.getTime() === t.getTime(), time = c.times[d.getDay()];
+        var started = isToday && time && startOf(d, c.times) <= now;
+        var label = started ? (nextIdx === lastIdx ? 'Last class now: ' : 'Class now: ') : nextIdx === lastIdx ? (isToday ? 'Last class today' : 'Last class') : (isToday ? 'Class today' : 'Next class');
+        if (!started) label += time ? (isToday ? ' at ' + fmtTime(time) + ': ' : ': ') : ': ';
+        nx.innerHTML = label + '<b>Class ' + (nextIdx + 1) + ' (week ' + (Math.floor(nextIdx / 2) + 1) + ')</b>' +
+          (isToday ? '' : ', <b>' + esc(fmt(d)) + (time ? ' at ' + esc(fmtTime(time)) : '') + '</b>') + ' \u2014 ' + esc(info.sessions[nextIdx][1]);
+      }
+    }
+    $('speedNote').textContent = info.speedNote;
+
+    // Curriculum links
+    var links = [[info.curriculum, levelName + ' curriculum', 'Practice and homework for every class (CW Academy)']];
+    if (info.practice) links.push([info.practice, levelName + ' practice files', 'The audio files the curriculum uses']);
+    links.push([info.resources, 'Student resources', 'Every level’s curriculum, translations, and guides to the practice tools']);
+    $('links').innerHTML = links.map(function (l) {
+      return '<li><a href="' + esc(l[0]) + '" target="_blank" rel="noopener">' + esc(l[1]) + '</a><div class="what">' + esc(l[2]) + '</div></li>';
+    }).join('');
+  }
+
+  $('firstClass').addEventListener('change', function (e) { HST.course.set({ firstClass: e.target.value }); });
+  $('days').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-day]');
+    if (!b) return;
+    var d = Number(b.dataset.day), days = HST.course.get().days.slice(), i = days.indexOf(d);
+    if (i >= 0) { if (days.length > 1) days.splice(i, 1); } else days.push(d);
+    HST.course.set({ days: days });
+  });
+  $('times').addEventListener('change', function (e) {
+    var inp = e.target.closest('input[data-day]');
+    if (!inp) return;
+    var times = HST.course.get().times;
+    if (inp.value) times[inp.dataset.day] = inp.value; else delete times[inp.dataset.day];
+    HST.course.set({ times: times });
+  });
+  HST.course.onChange(render);
+  render();
+  // Keep "next class" current while the tab stays open (a class can end while you watch).
+  setInterval(render, 60000);
+})();
+</script>
+</body>
+</html>

@@ -109,6 +109,7 @@
   #tab-qso[aria-selected="true"]         { background: #f472b6; }   /* pink-400 */
   #tab-test-prep[aria-selected="true"]   { background: #fb923c; }   /* orange-400 */
   #tab-call-signs[aria-selected="true"]  { background: #67e8f9; }   /* cyan-300 */
+  #tab-course[aria-selected="true"]      { background: #c4b5fd; }   /* violet-300 */
   .tab:focus-visible, .install:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 
   .spacer { flex: 1; }
@@ -153,6 +154,7 @@
   /* "How to install" dialog: steps for the browser in use come first. */
   .howto ol { margin: 0 0 4px; padding-left: 1.2em; line-height: 1.5; }
   .howto li { margin-bottom: 8px; }
+  .howto .howto-h { margin: 0 0 8px; font: 500 0.95rem/1.3 'Inter', sans-serif; }
   .howto .other { margin: 12px 0 0; font-size: 0.85rem; color: var(--muted); }
   .howto .other summary { cursor: pointer; color: var(--lime); }
   .howto .other ul { padding-left: 1.2em; line-height: 1.5; }
@@ -174,6 +176,13 @@
   .setting output { font-family: 'Oswald', sans-serif; font-weight: 500; color: var(--lime); }
   .setting input[type="range"] { width: 100%; accent-color: var(--lime); }
   .settings .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+  /* My Morse code course (Tim, 2026-10-23) */
+  .course-set h3 { margin: 0 0 8px; font: 500 0.95rem/1.3 'Inter', sans-serif; }
+  .course-pick { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 10px; }
+  .course-pick label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; }
+  .course-pick input { accent-color: var(--lime); width: 16px; height: 16px; margin: 0; }
+  .course-level { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; margin-bottom: 4px; }
+  .course-level select { padding: 7px 8px; background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 7px; font: 0.9rem 'Inter', sans-serif; }
   .btn {
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -332,17 +341,17 @@
   }
   main iframe[hidden] { display: none; }
 
-  /* ---------- narrower windows: eight tabs need room ----------
+  /* ---------- narrower windows: nine tabs need room ----------
      Things give way in this order as the window narrows: the
      "HamShackTech" word, then the title (mascot only), short tab labels
      and an icon-only Install button, the Home button, and tighter tabs.
-     At 660px and below the tab row becomes a menu (see "phones"). */
+     At 700px and below the tab row becomes a menu (see "phones"). */
   @media (max-width: 1200px) { .brand h1 .site { display: none; } }   /* "CW Trainer" */
-  @media (max-width: 1020px) {
+  @media (max-width: 1150px) {
     .brand h1 { display: none; }         /* mascot only */
     .tab { padding: 7px 12px; }
   }
-  @media (max-width: 880px) {
+  @media (max-width: 1030px) {
     .tab .long { display: none; }        /* "Code Groups" -> "Groups" */
     .tab .wide { display: none; }        /* "Progress" -> "Stats" */
     .tab .narrow { display: inline; }
@@ -351,7 +360,7 @@
     .install .label { display: none; }
     .install svg { width: 18px; height: 18px; }
   }
-  @media (max-width: 740px) {
+  @media (max-width: 800px) {
     .bar { gap: 10px; padding-left: 10px; padding-right: 10px; }
     .tab { padding: 7px 10px; }
     .home { display: none; }             /* room is tight; the browser's Back works */
@@ -372,8 +381,8 @@
   }
 
   /* ---------- phones: a menu instead of the tab row ----------
-     Eight trainers don't fit across a phone (Tim, 2026-10-20), so below
-     660px the tab row is replaced by one button naming the trainer you're
+     Nine tabs don't fit across a phone (Tim, 2026-10-20), so below
+     700px the tab row is replaced by one button naming the trainer you're
      on; it opens a list of all of them. The tab buttons stay in the page
      (hidden) and the menu clicks them, so switching works the same way. */
   .menu-wrap { display: none; position: relative; }
@@ -400,7 +409,7 @@
   }
   .tab-menu button:hover { color: var(--text); background: var(--well); }
   .tab-menu button[aria-current="true"] { color: var(--text); background: var(--well); }
-  @media (max-width: 660px) {
+  @media (max-width: 700px) {
     .tabs { display: none; }
     .menu-wrap { display: block; }
     .bar { position: relative; z-index: 20; }
@@ -431,6 +440,8 @@
             aria-controls="frame-qso" aria-selected="false">QSO</button>
     <button class="tab" role="tab" id="tab-test-prep" data-tab="test-prep"
             aria-controls="frame-test-prep" aria-selected="false">Test<span class="long"> Prep</span></button>
+    <button class="tab" role="tab" id="tab-course" data-tab="course"
+            aria-controls="frame-course" aria-selected="false"><span class="wide">My Course</span><span class="narrow">Course</span></button>
     <button class="tab" role="tab" id="tab-progress" data-tab="progress"
             aria-controls="frame-progress" aria-selected="false"><span class="wide">Progress</span><span class="narrow">Stats</span></button>
     <button class="tab" role="tab" id="tab-jeopardy" data-tab="jeopardy"
@@ -470,6 +481,18 @@
   <div class="experimental">
     <button class="btn" id="keyerSetupBtn" type="button">Keyer Setup&hellip;</button>
     <p class="hint">Your key or paddles, the adapter they&rsquo;re plugged into, and a place to test them. Used by the Keyer tab.</p>
+  </div>
+  <!-- My Morse code course (Tim, 2026-10-23): the My Course tab shows its
+       class schedule and curriculum. -->
+  <div class="experimental course-set" id="courseSection">
+    <h3>My Morse code course</h3>
+    <div class="course-pick" role="radiogroup" aria-label="Course">
+      <label><input type="radio" name="courseProgram" value=""> Not in a course</label>
+      <label><input type="radio" name="courseProgram" value="cwa"> CW Academy</label>
+      <label><input type="radio" name="courseProgram" value="licw"> LICW</label>
+    </div>
+    <label class="course-level" id="courseLevelRow" hidden>Level <select id="courseLevel"></select></label>
+    <p class="hint">The <strong>My Course</strong> tab shows your class schedule and a link to your curriculum.</p>
   </div>
   <!-- Account (Milestone 8). Hidden until the site's account service is
        set up (GET /api/config says accounts: true). -->
@@ -651,24 +674,23 @@
   </div>
 </dialog>
 
-<!-- "How to install": opened by the Install button when the browser can't
-     show its own install prompt (Safari, Firefox, or Chrome/Edge before
-     they've decided the app is installable). Filled in by the script. -->
+<!-- "How to install": opened by the Install button (Tim, 2026-10-23). The
+     steps are the ones from the old CW Tools intro page (which now opens
+     this app). When the browser is ready to install the app itself
+     (Chrome/Edge), "Install now" shows its own install prompt. -->
 <dialog class="settings howto" id="howtoDialog" aria-labelledby="howtoTitle">
   <h2 id="howtoTitle">Install the app</h2>
-  <p class="lede" id="howtoLede"></p>
-  <ol id="howtoSteps"></ol>
-  <details class="other">
-    <summary>Using a different browser or device?</summary>
-    <ul>
-      <li><strong>Chrome or Edge</strong> (Windows, Mac, ChromeOS, Android): click the install icon at the right end of the address bar, or open the browser menu (&#8942; or &#8943;) and choose <em>Install</em> / <em>Apps &rarr; Install this site as an app</em>.</li>
-      <li><strong>Safari on a Mac</strong> (macOS Sonoma or later): <em>File &rarr; Add to Dock</em>.</li>
-      <li><strong>iPhone or iPad</strong>: in Safari, tap <em>Share</em>, then <em>Add to Home Screen</em>.</li>
-      <li><strong>Firefox</strong> can't install apps &mdash; open this page in Chrome or Edge instead. Everything still works right here in the browser tab.</li>
-    </ul>
-  </details>
+  <p class="lede">Installed, the CW Trainer gets its own icon and its own window, and it works with no internet connection. Updates arrive automatically whenever you open it while you&rsquo;re online.</p>
+  <h3 class="howto-h">How to install it</h3>
+  <ol>
+    <li>Open the app in <strong>Microsoft Edge</strong> or <strong>Google Chrome</strong> (Windows, Mac, ChromeOS, or Android) and click <strong id="howtoInstallWord">Install app</strong> &mdash; or the install icon at the right end of the browser&rsquo;s address bar.</li>
+    <li>On an iPhone or iPad, open it in Safari, tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</li>
+    <li>On a Mac with Safari (macOS Sonoma or later), open it and choose <strong>File &rarr; Add to Dock</strong>.</li>
+    <li>Launch it from your Start menu, dock, or home screen like any other app.</li>
+  </ol>
   <div class="actions">
-    <button class="btn primary" id="howtoDone" type="button">Got it</button>
+    <button class="btn primary" id="howtoInstall" type="button" hidden>Install now</button>
+    <button class="btn" id="howtoDone" type="button">Got it</button>
   </div>
 </dialog>
 
@@ -687,6 +709,8 @@
           title="QSO Practice" data-src="qso/" hidden></iframe>
   <iframe id="frame-test-prep" role="tabpanel" aria-labelledby="tab-test-prep"
           title="Test Prep" data-src="test-prep/" hidden></iframe>
+  <iframe id="frame-course" role="tabpanel" aria-labelledby="tab-course"
+          title="My Course" data-src="course/" hidden></iframe>
   <iframe id="frame-progress" role="tabpanel" aria-labelledby="tab-progress"
           title="Progress" data-src="progress/" hidden></iframe>
   <iframe id="frame-jeopardy" role="tabpanel" aria-labelledby="tab-jeopardy"
@@ -705,6 +729,7 @@
 <script src="shared/hst-engine.js"></script>
 <script src="shared/hst-keyer.js"></script>
 <script src="shared/hst-account.js"></script>
+<script src="shared/hst-course.js"></script>
 <script>
 (function () {
   'use strict';
@@ -800,9 +825,9 @@
   // ---- Phones: the trainer menu --------------------------------------
   // Full names (the tab row shortens some) and each trainer's color.
   var MENU_NAMES = { icr: 'ICR', 'code-groups': 'Code Groups', 'call-signs': 'Call Signs', keyer: 'Keyer', qso: 'QSO',
-                     'test-prep': 'Test Prep', progress: 'Progress', jeopardy: 'Jeopardy' };
+                     'test-prep': 'Test Prep', course: 'My Course', progress: 'Progress', jeopardy: 'Jeopardy' };
   var MENU_COLORS = { icr: '#a3e635', 'code-groups': '#34d399', 'call-signs': '#67e8f9', keyer: '#fbbf24', qso: '#f472b6',
-                      'test-prep': '#fb923c', progress: '#a3e635', jeopardy: '#a3e635' };
+                      'test-prep': '#fb923c', course: '#c4b5fd', progress: '#a3e635', jeopardy: '#a3e635' };
   var menuBtn = document.getElementById('menuBtn'), tabMenu = document.getElementById('tabMenu');
   tabMenu.innerHTML = tabs.map(function (t) {
     var slug = t.dataset.tab;
@@ -847,7 +872,7 @@
   // Which tab to open: a ?tab=icr / code-groups / test-prep / call-signs / progress / jeopardy link (the CW
   // Tools page and the old trainer addresses use these) wins; otherwise
   // the tab used last time; ICR the very first time.
-  var TABS = ['icr', 'code-groups', 'call-signs', 'keyer', 'qso', 'test-prep', 'progress', 'jeopardy'];
+  var TABS = ['icr', 'code-groups', 'call-signs', 'keyer', 'qso', 'test-prep', 'course', 'progress', 'jeopardy'];
   var params = new URLSearchParams(location.search);
   var wanted = params.get('tab');
   // Jeopardy's host mode (the Content editor) is turned on with host=1;
@@ -885,6 +910,23 @@
       el.textContent = v.length ? 'App version ' + v.join(', ') : 'App version: web (not saved for offline yet)';
     }).catch(function () { el.textContent = ''; });
   }
+  // My Morse code course: CW Academy or LICW, and the level.
+  function renderCourse() {
+    var c = HST.course.get(), p = HST.course.PROGRAMS[c.program];
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="courseProgram"]'), function (r) { r.checked = r.value === c.program; });
+    document.getElementById('courseLevelRow').hidden = !p;
+    document.getElementById('courseLevel').innerHTML = p ? p.levels.map(function (l) {
+      return '<option value="' + l.key + '">' + l.name + '</option>';
+    }).join('') : '';
+    if (p) document.getElementById('courseLevel').value = c.level;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="courseProgram"]'), function (r) {
+    r.addEventListener('change', function () { if (r.checked) { HST.course.set({ program: r.value, level: '' }); renderCourse(); } });
+  });
+  document.getElementById('courseLevel').addEventListener('change', function (e) { HST.course.set({ level: e.target.value }); });
+  HST.course.onChange(renderCourse);
+  renderCourse();
+
   document.getElementById('settingsDone').addEventListener('click', function () { dlg.close(); });
   // Clicking the dimmed area outside the panel closes it too.
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
@@ -1430,11 +1472,12 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-22-copy-colors';
+  var RELEASE = '2026-10-23-my-course';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
-    '<strong>Keyer, Copy this: see each character as you send it.</strong> Like the Warm Up, each character turns <strong>green</strong> when you send it right and <strong>red</strong> when you don&rsquo;t, and the next one to send is highlighted. When you finish, the line stays on screen for a moment, colored, before the next one appears.',
-    '<strong>New lists in Copy this</strong> (from the last update): the letter pyramid, QSO exchanges, the dits exercise, pangrams and your own text, one line at a time.',
+    '<strong>New: My Course.</strong> Taking a CW Academy class? Choose your course and level under <strong>Settings</strong>, and the new <strong>My Course</strong> tab shows your class schedule, all 16 classes week by week with the speed and what you&rsquo;ll practice, plus links to your curriculum and practice files. Enter your first class date, class days and start times to see when every class is and when your next one starts.',
+    'LICW courses can be chosen too; their schedule and curriculum are coming soon.',
+    '<strong>Install app</strong> now shows how to install the CW Trainer on your computer, phone or tablet (with <strong>Install now</strong> when your browser can do it in one click). And the CW Trainer link on hamshacktech.com opens the app itself.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
   var SEEN_KEY = 'hct-cw-seen-release';
@@ -1466,13 +1509,10 @@
 
   // ------------------------------------------------------------------
   // Install button. Always shown in a browser tab (CSS hides it inside the
-  // installed app's own window).
-  //  - Chrome/Edge: when the browser has said the app is installable (the
-  //    early listener in <head> saved its prompt), the button opens the
-  //    browser's own install prompt.
-  //  - Everywhere else -- Safari, Firefox, or Chrome/Edge before they've
-  //    offered it (they can hold off until you've used the page a little) --
-  //    the button opens "How to install" with steps for this browser.
+  // installed app's own window). It opens "How to install" (Tim,
+  // 2026-10-23); when Chrome/Edge have said the app is installable (the
+  // early listener in <head> saved their prompt), the popup also offers
+  // "Install now", which shows the browser's own install prompt.
   // ------------------------------------------------------------------
   var installBtn = document.getElementById('installBtn');
   var howtoDlg = document.getElementById('howtoDialog');
@@ -1480,50 +1520,28 @@
                    window.navigator.standalone === true;   // iOS home-screen app
   if (!standalone) installBtn.classList.add('show');
 
-  // Best guess at the browser, just to put the right steps first.
-  function browserSteps() {
-    var ua = navigator.userAgent;
-    var iOS = /iPhone|iPad|iPod/.test(ua) ||
-              (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1); // iPadOS says "Mac"
-    if (iOS) return ['On an iPhone or iPad, using Safari:', [
-      'Tap the <strong>Share</strong> button (the square with an arrow).',
-      'Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.',
-      'Open <strong>CW Trainer</strong> from your home screen.']];
-    if (/Firefox\//.test(ua)) return ['Firefox can’t install web apps.', [
-      'Open <strong>hamshacktech.com/cw-trainer/</strong> in <strong>Chrome</strong> or <strong>Edge</strong> and click <strong>Install app</strong> there.',
-      'Or just keep using it here in the browser tab — everything works the same.']];
-    if (/Edg\//.test(ua)) return ['In Microsoft Edge:', [
-      'Click the <strong>App available</strong> icon at the right end of the address bar, then <strong>Install</strong>.',
-      'No icon? Open the <strong>&#8943;</strong> menu and choose <strong>Apps &rarr; Install this site as an app</strong>.',
-      'Launch <strong>CW Trainer</strong> from the Start menu or taskbar like any other app.']];
-    if (/Chrome\//.test(ua)) return ['In Google Chrome:', [
-      'Click the <strong>install</strong> icon at the right end of the address bar (a monitor with a down arrow), then <strong>Install</strong>.',
-      'No icon? Open the <strong>&#8942;</strong> menu and choose <strong>Cast, save, and share &rarr; Install page as app</strong>.',
-      'Already installed? Chrome shows an <strong>Open in app</strong> icon there instead.']];
-    if (/Safari\//.test(ua) && /Macintosh/.test(ua)) return ['In Safari on a Mac (macOS Sonoma or later):', [
-      'Choose <strong>File &rarr; Add to Dock</strong>, then <strong>Add</strong>.',
-      'Launch <strong>CW Trainer</strong> from the Dock like any other app.']];
-    return ['To install the app:', [
-      'Open this page in <strong>Chrome</strong> or <strong>Edge</strong> and click <strong>Install app</strong>.']];
+  function renderInstallNow() {
+    var ready = !!window.HCT_INSTALL_PROMPT;
+    document.getElementById('howtoInstall').hidden = !ready;
+    document.getElementById('howtoInstallWord').textContent = ready ? 'Install now' : 'Install app';
   }
-
   function showHowto() {
-    var s = browserSteps();
-    document.getElementById('howtoLede').textContent = s[0];
-    document.getElementById('howtoSteps').innerHTML =
-      s[1].map(function (n) { return '<li>' + n + '</li>'; }).join('');
+    renderInstallNow();
     if (dlg.open) dlg.close();
     howtoDlg.showModal();
   }
+  document.addEventListener('hct-install-ready', renderInstallNow);
   document.getElementById('howtoDone').addEventListener('click', function () { howtoDlg.close(); });
   howtoDlg.addEventListener('click', function (e) { if (e.target === howtoDlg) howtoDlg.close(); });
-
-  installBtn.addEventListener('click', function () {
+  document.getElementById('howtoInstall').addEventListener('click', function () {
     var p = window.HCT_INSTALL_PROMPT;
-    if (!p) { showHowto(); return; }           // browser hasn't offered: show the steps
+    if (!p) return;
+    howtoDlg.close();
     p.prompt();                                // the browser's own "Install?" box
-    p.userChoice.finally(function () { window.HCT_INSTALL_PROMPT = null; });  // usable once
+    p.userChoice.finally(function () { window.HCT_INSTALL_PROMPT = null; renderInstallNow(); });  // usable once
   });
+
+  installBtn.addEventListener('click', showHowto);
   // Installed from here (or from the address bar): no need for the button in this tab.
   window.addEventListener('appinstalled', function () {
     installBtn.classList.remove('show');
