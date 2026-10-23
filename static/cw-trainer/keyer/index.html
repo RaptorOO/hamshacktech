@@ -89,6 +89,13 @@
   .tch b { font: 600 3rem/1.1 'JetBrains Mono', monospace; letter-spacing: 0.02em; }
   .tch i { font: 600 1.15rem/1 'JetBrains Mono', monospace; font-style: normal; color: var(--muted); letter-spacing: 0.08em; margin-top: 6px; }
   .tsp { width: 0.8em; }
+  /* Each word's characters stay together, so a line wraps between words,
+     never inside one (Tim, 2026-10-23). A word too long for a whole line
+     (a pyramid line) still wraps inside itself. */
+  .tword { display: flex; flex-wrap: wrap; justify-content: center; gap: inherit; max-width: 100%; }
+  /* fitTarget() shrinks the letters when a word is too wide for one line. */
+  .target.fit .tword .tch b { font-size: var(--tch-size); }   /* beats .target.long and the phone size */
+  .target.fit .tword .tch i { font-size: calc(var(--tch-size) * 0.4); }
   .tch.pro b { text-decoration: overline; text-decoration-thickness: 3px; }   /* prosigns: KN with a bar over it */
   .target.long .tch b { font-size: 1.9rem; }
   /* As you send (like Warm Up, Tim 2026-10-22): green when right, red
@@ -230,7 +237,7 @@
 
   <div class="controls">
     <div class="seg" role="group" aria-label="Practice mode">
-      <button type="button" data-mode="warmup" aria-pressed="false">Warm Up</button>
+      <button type="button" data-mode="warmup" aria-pressed="false">Daily Scales</button>
       <button type="button" data-mode="copy" aria-pressed="true">Copy this</button>
       <button type="button" data-mode="free" aria-pressed="false">Free send</button>
     </div>
@@ -239,20 +246,28 @@
     </label>
     <button class="btn" data-show="copy" id="ownBtn" type="button" title="Type, paste or load your own text to send">Your own text&hellip;</button>
     <label class="check" data-show="copy"><input type="checkbox" id="showCode"> Show Morse patterns</label>
+    <!-- Daily Scales: which of Bob Carter's (WR7Q) three to send (Tim, 2026-10-23). -->
+    <label class="inline" data-show="warmup">Scale
+      <select id="scale">
+        <option value="warmup">Warm Up</option>
+        <option value="exercise">Exercise</option>
+        <option value="drill">Drill</option>
+      </select>
+    </label>
   </div>
 
   <!-- ===== What to send, and what was heard ===== -->
   <section class="card" aria-labelledby="stageTitle">
     <h2 id="stageTitle" class="sr" hidden>Practice</h2>
-    <!-- Warm Up: one fixed text that works every letter, number and
-         prosign, sent every day before anything else. List by Bob Carter,
-         WR7Q. Each character turns green or red as you send it. -->
+    <!-- Daily Scales: Bob Carter's (WR7Q) Warm Up, Exercise and Drill. Each
+         character turns green or red as you send it. -->
     <div data-show="warmup">
-      <p class="warm-intro"><strong>Do the Warm Up every day, before you send anything else.</strong>
+      <p class="warm-intro"><strong id="scaleWhen">Do the Warm Up every day, before you send anything else.</strong>
         Send the whole list below at your keyer speed, top to bottom; each character turns green when you send it right and red when you don&rsquo;t.
+        Send each group of five, or each word, without a mistake, or start it again.
         Pause when you&rsquo;re done, or press <kbd>Enter</kbd>.</p>
-      <p class="warm-credit">Warm-up list developed by Bob Carter, WR7Q.</p>
-      <div class="label">Warm Up</div>
+      <p class="warm-credit">Daily Morse Code &ldquo;Scales&rdquo; by Bob Carter, WR7Q.</p>
+      <div class="label" id="scaleLabel">Warm Up</div>
       <div class="warm" id="warm" aria-label="Warm-up text"></div>
       <div class="warm-progress" id="warmProgress" aria-live="polite"></div>
     </div>
@@ -334,8 +349,8 @@
     <p class="help audio-hint" id="audioHint" hidden>Click anywhere in this tab to turn on sidetone &mdash; browsers only allow sound after a click.</p>
     <details class="help">
       <summary>How this works</summary>
-      <p><strong>Warm Up:</strong> a daily routine that works every letter, number and prosign, by Bob Carter, WR7Q. Send it top to bottom; each character turns green or red as you go. When you&rsquo;ve sent the last character and pause (or press <kbd>Enter</kbd>), you get the full timing report for your keyer speed. <kbd>Esc</kbd> starts over.</p>
-      <p><strong>Copy this:</strong> send what&rsquo;s shown, then pause. As you send, each character turns green when you send it right and red when you don&rsquo;t, like the Warm Up. Under <strong>Send</strong>, the lists (the pyramid, QSO exchanges, the dits exercise, pangrams) go one line at a time, in order, and pick up where you left off. <strong>Your own text&hellip;</strong> lets you type, paste or load a text file; a Morserino-style file with <code>&lt;c&gt;$</code> chapters gives one choice per chapter. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
+      <p><strong>Daily Scales:</strong> Bob Carter&rsquo;s (WR7Q) sending scales. <strong>Warm Up</strong>, every day before you send anything else, works every letter, number and prosign; <strong>Exercise</strong> sends every letter and number five times; <strong>Drill</strong> builds sending skill with sentences, words and punctuation. Send it top to bottom; each character turns green or red as you go. When you&rsquo;ve sent the last character and pause (or press <kbd>Enter</kbd>), you get the full timing report for your keyer speed. <kbd>Esc</kbd> starts over.</p>
+      <p><strong>Copy this:</strong> send what&rsquo;s shown, then pause. As you send, each character turns green when you send it right and red when you don&rsquo;t, like Daily Scales. Under <strong>Send</strong>, the lists (the pyramid, QSO exchanges, the dits exercise, pangrams) go one line at a time, in order, and pick up where you left off. <strong>Your own text&hellip;</strong> lets you type, paste or load a text file; a Morserino-style file with <code>&lt;c&gt;$</code> chapters gives one choice per chapter. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
       <p><strong>The timing rules:</strong> a dah is 3 dits long; the gap inside a letter is 1 dit; between letters 3 dits; between words 7 dits. &ldquo;Character speed&rdquo; is how fast your dits and dahs go. &ldquo;Overall speed&rdquo; includes your spacing &mdash; what someone copying you actually hears. Extra space between letters (Farnsworth spacing) is fine while learning, but the closer you get to 3 and 7, the easier you are to copy.</p>
       <p><strong>With paddles</strong> the keyer makes perfect dits and dahs, so the useful feedback is spacing and which letters came out wrong. <strong>With a straight key or bug</strong> you form the elements yourself, so you&rsquo;ll also see your dah-to-dit ratio (ideally 3:1).</p>
       <p>Sessions are saved to Progress when you click End session or switch tabs.</p>
@@ -384,7 +399,7 @@
 
   /* ---------------- this tab's own saved choices ---------------- */
   var PREFS_KEY = 'hct-cw-keyer-practice-v1';
-  var prefs = { mode: 'copy', source: 'word', showCode: false, wpm: 0, fw: 0, listPos: {} };   // wpm 0 = not set yet; fw 0 = Farnsworth off
+  var prefs = { mode: 'copy', source: 'word', showCode: false, wpm: 0, fw: 0, listPos: {}, scale: 'warmup' };   // wpm 0 = not set yet; fw 0 = Farnsworth off
   try { var saved = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (saved) Object.keys(prefs).forEach(function (k) { if (k in saved) prefs[k] = saved[k]; }); } catch (e) {}
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
   if (!prefs.listPos || typeof prefs.listPos !== 'object') prefs.listPos = {};
@@ -518,17 +533,44 @@
   }
 
   function drawTarget(text, n) {
-    var html = '';
-    (text.match(/<[A-Z]+>|[\s\S]/g) || []).forEach(function (ch) {
-      if (ch === ' ') { html += '<span class="tsp"></span>'; return; }
-      var pro = ch.length > 1;
-      html += '<span class="tch' + (pro ? ' pro' : '') + '"><b>' + esc(pro ? ch.slice(1, -1) : ch) + '</b>' + (prefs.showCode ? '<i>' + pretty(morseOf(ch)) + '</i>' : '') + '</span>';
-    });
-    $('target').innerHTML = html;
+    // One .tword per word, so lines only wrap between words.
+    var words = text.split(' ').filter(Boolean);
+    $('target').innerHTML = words.map(function (w) {
+      return '<span class="tword">' + (w.match(/<[A-Z]+>|[\s\S]/g) || []).map(function (ch) {
+        var pro = ch.length > 1;
+        return '<span class="tch' + (pro ? ' pro' : '') + '"><b>' + esc(pro ? ch.slice(1, -1) : ch) + '</b>' + (prefs.showCode ? '<i>' + pretty(morseOf(ch)) + '</i>' : '') + '</span>';
+      }).join('') + '</span>';
+    }).join('<span class="tsp"></span>');
     $('target').classList.toggle('long', toks(text).length > 16);
     var cur = listFor(prefs.source);
     $('listInfo').innerHTML = cur ? esc(cur.credit) + ' &middot; <b>line ' + n + ' of ' + cur.lines.length + '</b>' : '';
+    fitTarget();
   }
+
+  // A word wider than the line (EXTRAORDINARY on a phone) would still
+  // break, so the letters shrink, a step at a time, until every word fits
+  // on one line. Only a single word longer than a whole line at the
+  // smallest size (a pyramid line) is left to wrap.
+  var FIT_SIZES = [2.6, 2.3, 2, 1.75, 1.5, 1.3];   // rem
+  function wordSplit() {
+    return Array.prototype.some.call($('target').querySelectorAll('.tword'), function (w) {
+      var a = w.firstElementChild, z = w.lastElementChild;
+      return a && z && Math.abs(a.getBoundingClientRect().top - z.getBoundingClientRect().top) > 2;
+    });
+  }
+  function fitTarget() {
+    var t = $('target');
+    t.classList.remove('fit');
+    t.style.removeProperty('--tch-size');
+    if (!t.offsetWidth || !wordSplit()) return;          // hidden, or everything fits
+    t.classList.add('fit');
+    for (var i = 0; i < FIT_SIZES.length; i++) {
+      t.style.setProperty('--tch-size', FIT_SIZES[i] + 'rem');
+      if (!wordSplit()) return;
+    }
+  }
+  var fitTimer = null;
+  window.addEventListener('resize', function () { clearTimeout(fitTimer); fitTimer = setTimeout(fitTarget, 120); });
 
   /* After a line is graded it stays on screen, colored, for a moment
      (HOLD_MS) before the next one shows -- or until you start keying,
@@ -651,14 +693,44 @@
     '/////  ,,,,,  .....  ?????  <SK><SK><SK><SK><SK>  <AR><AR><AR><AR><AR>  <BT><BT><BT><BT><BT>  <BK><BK><BK><BK><BK>',
     'THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS BACK   7 0 3 6 4 5 1 2 8 9'
   ];
-  var WARMUP_TARGET = WARMUP_LINES.join(' ').replace(/\s+/g, ' ');
+  /* Daily Scales (Tim, 2026-10-23): Bob Carter's (WR7Q) "Everyday Send
+     Code" page has three -- the Warm Up above, every day; the Exercise,
+     every letter and number five times; and the Drill. On that page the
+     Drill's last prosigns are written * + = (SK, AR, BT). */
+  var SCALES = {
+    warmup: { name: 'Warm Up', when: 'Do the Warm Up every day, before you send anything else.', lines: WARMUP_LINES },
+    exercise: { name: 'Exercise', when: 'Do the Exercise as needed, to get better at letters and numbers.', lines: [
+      'AAAAA  BBBBB  CCCCC  DDDDD  EEEEE  FFFFF  GGGGG  HHHHH  IIIII  JJJJJ',
+      'KKKKK  LLLLL  MMMMM  NNNNN  OOOOO  PPPPP  QQQQQ  RRRRR',
+      'SSSSS  TTTTT  UUUUU  VVVVV  WWWWW  XXXXX  YYYYY  ZZZZZ',
+      '11111  22222  33333  44444  55555  66666  77777  88888  99999  00000'
+    ] },
+    drill: { name: 'Drill', when: 'Do the Drill as needed, to build your sending skills.', lines: [
+      'THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS BACK   7 0 3 6 4 5 1 2 8 9',
+      'THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS BACK   7 0 3 6 4 5 1 2 8 9',
+      'BENS BEST BENT WIRE/5   BENS BEST BENT WIRE/5   BENS BEST BENT WIRE/5',
+      '/ / / / /   , , , , ,   . . . . .   ? ? ? ? ?',
+      '<SK> <SK> <SK> <SK> <SK>   <AR> <AR> <AR> <AR> <AR>   <BT> <BT> <BT> <BT> <BT>'
+    ] }
+  };
+  function scale() { return SCALES[prefs.scale] || SCALES.warmup; }
+  var WARMUP_TARGET = '', WARM_T = [];
   function toks(str) { return str.match(/<[A-Z]+>|\S/g) || []; }
-  var WARM_T = toks(WARMUP_TARGET);
   var warmSpans = [];
+  // Sets up the chosen scale's window and target.
+  function loadScale() {
+    var sc = scale();
+    WARMUP_TARGET = sc.lines.join(' ').replace(/\s+/g, ' ');
+    WARM_T = toks(WARMUP_TARGET);
+    $('scale').value = prefs.scale in SCALES ? prefs.scale : 'warmup';
+    $('scaleWhen').textContent = sc.when;
+    $('scaleLabel').textContent = sc.name;
+    buildWarm();
+  }
 
   // The window: the text exactly as written (spacing kept), one span per character.
   function buildWarm() {
-    var k = 0, html = WARMUP_LINES.map(function (line) {
+    var k = 0, html = scale().lines.map(function (line) {
       return line.replace(/(?:<[A-Z]+>)+|\S| +/g, function (m) {
         if (m.charAt(0) === ' ') return m;
         if (m.length === 1) return '<span class="t">' + esc(m) + '</span>';
@@ -714,11 +786,11 @@
 
   function warmReady(msg) {
     state = 'ready'; marks = []; live = ''; decoder.reset();
+    if (!warmSpans.length) loadScale();
     target = analyzedTarget = WARMUP_TARGET;
-    if (!warmSpans.length) buildWarm();
     paintWarm([], 0);
     $('warmProgress').innerHTML = 'Your keyer speed is <b>' + speedText() + '</b>' + (fwpm() ? ' (Farnsworth)' : '') + ' (Tool Settings, below). Start sending when you’re ready.';
-    setStatus(msg || 'Start with the first E.');
+    setStatus(msg || 'Start with the first ' + WARM_T[0] + '.');
   }
 
   // Graded when the last character is in and you pause for a word space;
@@ -988,7 +1060,8 @@
       sess = { start: Date.now(), tries: 0, right: 0, total: 0, sent: 0,
                cgSum: 0, cgN: 0, wgSum: 0, wgN: 0, wpmW: 0, overallW: 0 };
       rec.start({ mode: prefs.mode, source: prefs.mode === 'copy' ? prefs.source : prefs.mode, keyType: cfg().keyType, wpm: keyWpm(), fwpm: fwpm(),
-                  sourceName: prefs.mode === 'copy' ? sourceName() : undefined });
+                  sourceName: prefs.mode === 'copy' ? sourceName() : undefined,
+                  scale: prefs.mode === 'warmup' ? scale().name : undefined });
       $('endBtn').hidden = false;
       clockTimer = setInterval(renderSession, 1000);
     }
@@ -1070,6 +1143,14 @@
     newTarget(false);
   });
   $('showCode').addEventListener('change', function (e) { prefs.showCode = e.target.checked; savePrefs(); newTarget(true); });
+  // Daily Scales: another scale ends the session (like another Send choice).
+  $('scale').addEventListener('change', function (e) {
+    endSession();
+    prefs.scale = e.target.value; savePrefs();
+    clearTimeout(waitTimer); keyer.reset(); $('result').hidden = true;
+    loadScale();
+    warmReady();
+  });
 
   // "Your own text" popup.
   function ownSummary() {
@@ -1131,7 +1212,7 @@
 
   function again() {
     clearTimeout(waitTimer);
-    if (prefs.mode === 'warmup') { keyer.reset(); return warmReady('Start again from the first E.'); }
+    if (prefs.mode === 'warmup') { keyer.reset(); return warmReady('Start again from the first ' + WARM_T[0] + '.'); }
     if (state === 'graded' && prevTarget) {
       target = prevTarget; lineNo = prevLineNo;
       var l = listFor(prefs.source);
