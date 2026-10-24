@@ -817,12 +817,12 @@
      ===================================================================== */
   function startGame() {
     unlockAudio();
-    // Deal the board: 5 answers per category,
-    // one hidden Daily Double in each column.
+    // Deal the board: 5 answers per category (made fresh by rules, or from
+    // Ham Talk's list -- see dealCategory), one hidden Daily Double in each column.
     loadPools();
     const rows = 5, cats = state.categories.slice(0, 6), tiles = [];
     for (let c = 0; c < cats.length; c++) {
-      const pool = shuffle(parseLines(cats[c].lines)).slice(0, rows);
+      const pool = dealCategory(cats[c], rows);
       const dd = Math.floor(Math.random() * rows);
       for (let r = 0; r < rows && r < pool.length; r++) {
         tiles.push({ c, r, dollars: DOLLARS[r] || (r + 1) * 200, answer: pool[r], dd: r === dd });
