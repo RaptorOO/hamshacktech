@@ -1,5 +1,5 @@
 ---
-title: "Same Drill, Same Blank Stares: Bringing Game-Show Energy to Zoom CW Practice"
+title: "Bringing Game Show Energy to CW Practice"
 date: 2026-09-29
 categories: ["CW & Operating Skills"]
 tags: ["CW Tools", "Morse Code Jeopardy", "Morse Code", "Zoom"]
