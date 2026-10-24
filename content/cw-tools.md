@@ -37,7 +37,7 @@ Everything for CW practice now lives in one free app: the **HamShackTech CW Trai
     <li>Launch it from your Start menu, dock, or home screen like any other app.</li>
   </ol>
 
-  <a class="tool-card-button" href="/cw-trainer/">Open the CW Trainer App →</a>
+  <a class="tool-card-button" href="/cw-trainer/?tab=icr">Open the CW Trainer App →</a>
 </div>
 
 </div>

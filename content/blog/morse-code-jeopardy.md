@@ -14,8 +14,10 @@ showHero: false # see note in guides/vail-zoomer-zoom-setup.md
 [CW Trainer](/cw-trainer/?tab=jeopardy), and Zoom is no longer needed. Everyone
 joins a room from their own device, hears each clue at their own speed,
 answers with their own key and chats in the game. You can also host a game
-and play on your own. The screen-share version described below has been
-retired.
+and play on your own. The categories are now Numbers, Call Signs, Names,
+QTHs, Movies and Music, and the answers are made up fresh for every game, so
+you won't keep hearing the same ones. The screen-share version described
+below has been retired.
 {{< /alert >}}
 
 If you practice CW with a group on Zoom, you've been here. The canned QSO:
@@ -31,8 +33,8 @@ Silence. A dozen video squares, and not one idea among them.
 
 After enough of those silences, I decided our sessions needed something new.
 So I built a fun tool for our Zoom practice: **[Morse Code
-Jeopardy](/cw-tools/morse-code-jeopardy/)**, a free, browser-based game show
-for CW groups on Zoom. It's now live on the [CW Tools](/cw-tools/) page.
+Jeopardy](/cw-trainer/?tab=jeopardy)**, a free, browser-based game show
+for CW groups. It's now part of the [CW Trainer](/cw-trainer/?tab=icr).
 
 ![Morse Code Jeopardy mid-game: some tiles solved, one Daily Double showing, and a Q-Signals tile in play](/img/blog/morse-code-jeopardy/01-morse-code-jeopardy-board.png)
 
@@ -55,13 +57,15 @@ through 9, 12 and 16 WPM, all the way to 20 WPM for the $1,000 tiles.
 5. Still stumped? **Reveal** shows the answer, and clicking a revealed tile
    plays it again so everyone can hear what they missed.
 
-The categories are Numbers, Callsigns, Names, QTHs, Q-Signals and Ham Talk.
-They're full of the things you'll actually hear on the air: RST reports,
-POTA references, grid squares, real-world callsign formats, and a few
-answers that are there just to get a laugh when the group finally copies
-them. ("QRP 1500 WATTS" comes to mind.) Yes, that's my own call on the board
-in the screenshot. It's in the Callsigns list, so you might get to copy me
-too.
+The categories are Numbers, Call Signs, Names, QTHs, Movies and Music, and
+the game makes up fresh answers for every game. They're full of the things
+you'll actually hear on the air: RST reports, temperatures and times, grid
+squares, real-world call sign formats from the US and around the world, and
+names and places sent the way they come up in a contact (NAME BOB, QTH
+DENVER CO). Movies and Music are there for fun: actors, song titles and
+characters you'll recognize the moment the group finally copies them. (The
+screenshot is from the first version, which had Q-Signals and Ham Talk.
+Yes, that's my own call on the board.)
 
 ## The Daily Double: your turn on the key
 
@@ -106,7 +110,7 @@ for the same reason.
 The game is built to be run by one host and screen-shared to the group, so
 it's designed for a desktop or laptop browser, not a phone. To host:
 
-1. Open [Morse Code Jeopardy](/cw-tools/morse-code-jeopardy/) in a browser
+1. Open [Morse Code Jeopardy](/cw-trainer/?tab=jeopardy) in a browser
    window.
 2. In Zoom, click **Share Screen** and pick just that browser window.
 3. Turn on **Share Sound** before you click Share. **If you skip this step,
@@ -120,10 +124,10 @@ it and brag to your group.
 ## Give it a try
 
 Morse Code Jeopardy is free, runs in your browser with nothing to install,
-and sits alongside the [CW ICR Trainer](/cw-tools/icr-trainer/) and [CW Code
-Groups Trainer](/cw-tools/code-groups-trainer/) on the [CW Tools](/cw-tools/)
-page. Take it to your next Zoom practice session and see what happens to the
-energy on the call.
+and sits alongside the [ICR](/cw-trainer/?tab=icr) and [Code
+Groups](/cw-trainer/?tab=code-groups) trainers in the [CW
+Trainer](/cw-trainer/?tab=icr). Get your practice group into a room and see
+what happens to the energy.
 
 If your group plays it, I'd love to hear how it went, and I'd especially like
 to hear which answers had everyone stumped. [Drop me a

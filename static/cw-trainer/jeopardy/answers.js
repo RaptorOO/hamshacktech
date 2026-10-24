@@ -48,12 +48,18 @@
     return pairs[pairs.length - 1][1];
   }
   function words(s) { return s.split(/\s*,\s*/).filter(Boolean); }
+  // Each answer has a KIND (a 3-digit number, a signal report, a car...);
+  // a game deals at most two of one kind per column (Tim, 2026-10-23),
+  // so a column can't come out as four signal reports or three cars.
+  // The makers set it with as() as they return the answer.
+  var kind = '';
+  function as(k, text) { kind = k; return text; }
 
   /* ---------------- NUMBERS ---------------- */
   function plainNumber() {
-    return String(weighted([[4, function () { return between(100, 999); }],
-                            [3, function () { return between(1000, 9999); }],
-                            [2, function () { return between(10000, 99999); }]])());
+    return weighted([[4, function () { return as('3 digits', String(between(100, 999))); }],
+                     [3, function () { return as('4 digits', String(between(1000, 9999))); }],
+                     [2, function () { return as('5 digits', String(between(10000, 99999))); }]])();
   }
   // Signal reports: Readability 1-5, Strength 1-9, Tone 1-9, weighted the
   // way they're really given (mostly 5s and 9s, never a silly 111).
@@ -62,17 +68,17 @@
     var s = weighted([[5, 9], [4, 8], [4, 7], [3, 6], [3, 5], [2, 4], [1, 3]]);
     var t = weighted([[8, 9], [1, 8], [1, 7]]);
     var rep = '' + r + s + t;
-    return weighted([[3, rep], [4, 'RST ' + rep], [2, 'UR RST ' + rep], [1, 'UR ' + rep]]);
+    return as('report', weighted([[3, rep], [4, 'RST ' + rep], [2, 'UR RST ' + rep], [1, 'UR ' + rep]]));
   }
   function temperature() {
     var f = between(5, 104), c = between(1, 40);
-    return weighted([[3, f + 'F'], [2, c + 'C'], [2, 'TEMP ' + f], [2, 'TEMP IS ' + f],
-                     [2, 'WX ' + f + 'F'], [1, 'TEMP ' + f + 'F'], [1, 'TEMP ' + c + 'C']]);
+    return as('temperature', weighted([[3, f + 'F'], [2, c + 'C'], [2, 'TEMP ' + f], [2, 'TEMP IS ' + f],
+                     [2, 'WX ' + f + 'F'], [1, 'TEMP ' + f + 'F'], [1, 'TEMP ' + c + 'C']]));
   }
   function time() {
-    if (Math.random() < 0.7) return between(1, 12) + (Math.random() < 0.5 ? 'AM' : 'PM');
+    if (Math.random() < 0.7) return as('time', between(1, 12) + (Math.random() < 0.5 ? 'AM' : 'PM'));
     // UTC, as sent on the air: 4 digits and Z
-    return ('0' + between(0, 23)).slice(-2) + pick(['00', '00', '15', '30', '45']) + 'Z';
+    return as('time', ('0' + between(0, 23)).slice(-2) + pick(['00', '00', '15', '30', '45']) + 'Z');
   }
   function number() {
     return weighted([[9, plainNumber], [5, rst], [3, temperature], [3, time]])();
@@ -92,6 +98,7 @@
   var US_2X3 = range2('K', 'A', 'Z').concat(range2('N', 'A', 'Z'), range2('W', 'A', 'Z'));
   function usCallSign() {
     var fmt = pick(['1x2', '2x2', '2x3']), digit = pick(DIGITS);
+    kind = 'US ' + fmt;
     if (fmt === '1x2') return pick(['K', 'N', 'W']) + digit + letters(2);
     if (fmt === '2x2') return pick(US_2X2) + digit + letters(2);
     var first;                       // the FCC doesn't issue 2x3 suffixes starting with Q
@@ -102,6 +109,7 @@
   // 2E + 0/1 + 3, with a regional letter (M Scotland, W Wales, I N. Ireland,
   // D Isle of Man, J Jersey, U Guernsey) half the time.
   function ukCallSign() {
+    kind = 'UK';
     var region = Math.random() < 0.5 ? '' : pick(['M', 'W', 'I', 'D', 'J', 'U']);
     var series = pick(['G', 'M', '2']);
     if (series === 'G') {
@@ -127,7 +135,7 @@
   function intlCallSign() {
     if (Math.random() < 0.4) return ukCallSign();
     var f = pick(INTL);
-    return pick(f[0]) + pick(f[1].split('')) + letters(pick(f[2]));
+    return as('DX', pick(f[0]) + pick(f[1].split('')) + letters(pick(f[2])));
   }
   function callSign() {
     var call;
@@ -161,14 +169,14 @@
     'ROME, SPARTA, SPHINX, TAJ, TIKAL, TROY');
   function nameOnly(n) { return n.replace(/ /g, '').length <= 6; }
   function name() {
-    var kind = weighted([[7, 'person'], [2, 'car'], [1, 'place']]);
-    if (kind === 'car') return pick(CARS);
-    if (kind === 'place') return pick(PLACES);
+    var type = weighted([[7, 'person'], [2, 'car'], [1, 'place']]);
+    if (type === 'car') return as('car', pick(CARS));
+    if (type === 'place') return as('place', pick(PLACES));
     var man = Math.random() < 0.55, n = pick(man ? MEN : WOMEN);
     // About half the time, the way a name comes up in a contact.
-    if (Math.random() < 0.5) return n;
-    return weighted([[3, 'NAME ' + n], [2, 'OP IS ' + n], [2, 'OP ' + n], [1, 'NAME HR ' + n],
-                     [1, 'NAME IS ' + n], [2, (man ? 'OM ' : 'YL ') + n]]);
+    if (Math.random() < 0.5) return as('name', n);
+    return as('name phrase', weighted([[3, 'NAME ' + n], [2, 'OP IS ' + n], [2, 'OP ' + n], [1, 'NAME HR ' + n],
+                     [1, 'NAME IS ' + n], [2, (man ? 'OM ' : 'YL ') + n]]));
   }
 
   /* ---------------- QTHS ---------------- */
@@ -214,13 +222,13 @@
   function qth() {
     return weighted([
       [5, function () { var c = pick(US_CITIES);
-        return weighted([[3, c[0]], [3, c[0] + ' ' + c[1]], [2, 'QTH ' + c[0]], [2, 'QTH ' + c[0] + ' ' + c[1]], [1, 'NR ' + c[0]]]); }],
-      [2, function () { var s = pick(STATES); return weighted([[3, s], [2, 'QTH ' + s], [1, 'QTH IS ' + s]]); }],
-      [1, function () { return 'QTH ' + pick(STATE_ABBR); }],
-      [2, function () { var c = pick(COUNTRIES); return weighted([[3, c], [1, 'QTH ' + c]]); }],
-      [2, function () { var c = pick(WORLD_CITIES); return weighted([[3, c], [1, 'QTH ' + c], [1, 'NR ' + c]]); }],
-      [1, function () { return 'QTH ' + pick(PROVINCES); }],
-      [1, function () { return weighted([[2, grid()], [2, 'GRID ' + grid()], [1, 'QTH ' + grid()]]); }]
+        return as('US city', weighted([[3, c[0]], [3, c[0] + ' ' + c[1]], [2, 'QTH ' + c[0]], [2, 'QTH ' + c[0] + ' ' + c[1]], [1, 'NR ' + c[0]]])); }],
+      [2, function () { var s = pick(STATES); return as('state', weighted([[3, s], [2, 'QTH ' + s], [1, 'QTH IS ' + s]])); }],
+      [1, function () { return as('state code', 'QTH ' + pick(STATE_ABBR)); }],
+      [2, function () { var c = pick(COUNTRIES); return as('country', weighted([[3, c], [1, 'QTH ' + c]])); }],
+      [2, function () { var c = pick(WORLD_CITIES); return as('world city', weighted([[3, c], [1, 'QTH ' + c], [1, 'NR ' + c]])); }],
+      [1, function () { return as('province', 'QTH ' + pick(PROVINCES)); }],
+      [1, function () { return as('grid', weighted([[2, grid()], [2, 'GRID ' + grid()], [1, 'QTH ' + grid()]])); }]
     ])();
   }
 
@@ -264,7 +272,8 @@
     'PROP, RATING, REEL, REVIEW, ROLE, ROMANCE, SCORE, SET, SPOILER, STAR, STUDIO, STUNT, SUBTITLE, TAKE, TALKIE, THRILLER, USHER, ' +
     'VILLAIN, WESTERN, ZOOM');
   function movie() {
-    return pick(weighted([[4, MOVIE_TITLES], [2, ACTORS], [3, CHARACTERS], [1, MOVIE_WORDS]]));
+    var k = weighted([[4, 'title'], [2, 'actor'], [3, 'character'], [1, 'word']]);
+    return as(k, pick({ title: MOVIE_TITLES, actor: ACTORS, character: CHARACTERS, word: MOVIE_WORDS }[k]));
   }
 
   /* ---------------- MUSIC (12 letters and numbers at most) ----------------
@@ -321,21 +330,29 @@
     'NOTE, OPUS, PERCUSSION, PICCOLO, PLAYLIST, RECITAL, REFRAIN, RIFF, SERENADE, SITAR, SNARE, SOPRANO, STEREO, STRINGS, ' +
     'SYMPHONY, SYNTH, TAMBOURINE, TENOR, TIMPANI, TROMBONE, TUNE, TURNTABLE, VIOLA, VOCALS, WOODWIND, XYLOPHONE, YODEL');
   function music() {
-    return pick(weighted([[4, ARTISTS], [3, SONGS], [2, STYLES], [2, MUSIC_WORDS]]));
+    var k = weighted([[4, 'artist'], [3, 'song'], [2, 'style'], [2, 'word']]);
+    return as(k, pick({ artist: ARTISTS, song: SONGS, style: STYLES, word: MUSIC_WORDS }[k]));
   }
 
   /* ---------------- dealing ---------------- */
+  var dealtKinds = [];   // the kinds of the last deal, in order (for checking)
   var MAKERS = { numbers: number, callsigns: callSign, names: name, qths: qth, movies: movie, music: music };
   function deal(id, n) {
-    var make = MAKERS[id], out = [], seen = {};
-    for (var tries = 0; out.length < n && tries < 500; tries++) {
+    var make = MAKERS[id], out = [], seen = {}, kinds = {};
+    dealtKinds = [];
+    for (var tries = 0; out.length < n && tries < 1000; tries++) {
+      kind = '';
       var a = make();
+      // At most two of a kind (after many tries, any kind, so a deal always fills).
+      if (kind && (kinds[kind] || 0) >= 2 && tries < 800) continue;
       // One appearance per game: compare without spaces, so QTH OHIO and
       // OHIO count as the same place, and NAME BOB and BOB the same name.
       var key = a.replace(/^(QTH IS |QTH |NR |GRID |NAME HR |NAME IS |NAME |OP IS |OP |OM |YL |UR RST |RST |UR |TEMP IS |TEMP |WX )/, '').replace(/ /g, '');
       if (seen[key]) continue;
       seen[key] = true;
+      if (kind) kinds[kind] = (kinds[kind] || 0) + 1;
       out.push(a);
+      dealtKinds.push(kind);
     }
     return out;
   }
@@ -343,6 +360,7 @@
   window.JeopardyAnswers = {
     ids: Object.keys(MAKERS),
     make: function (id) { return MAKERS[id](); },
+    lastKinds: function () { return dealtKinds.slice(); },   // kinds of the last deal (for checking)
     deal: deal,
     // For checking the rules (see the note at the top).
     _lists: { MEN: MEN, WOMEN: WOMEN, CARS: CARS, PLACES: PLACES, US_CITIES: US_CITIES, STATES: STATES, COUNTRIES: COUNTRIES,

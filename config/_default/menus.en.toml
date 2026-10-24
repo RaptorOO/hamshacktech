@@ -15,6 +15,10 @@
   pageRef = "blog"
   weight = 30
 
+# Opens the app on the ICR tab (Tim, 2026-10-23): /cw-tools/ redirects to
+# /cw-trainer/?tab=icr (static/_redirects). Not url = "/cw-trainer/?tab=icr"
+# here: Hugo cleans menu URLs and drops the ? and = (it rendered as
+# /cw-trainer/tabicr).
 [[main]]
   name = "CW Trainer"
   pageRef = "cw-tools"
