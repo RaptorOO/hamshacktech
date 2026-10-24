@@ -172,8 +172,6 @@
     background: linear-gradient(180deg, #1c3a18, #102410); color: #e8ffc8;
     box-shadow: 0 2px 0 #061006, 0 6px 16px rgba(0,0,0,0.35);
   }
-  .host-only { display: none !important; }
-  body.host-mode .host-only { display: inline-block !important; }
   .stage-frame {
     position: relative;
     min-height: 0;
@@ -395,15 +393,6 @@
   }
   .modal-actions { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
   .modal.gameover .modal-actions { justify-content: center; }
-  .pools { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
-  .pool label { display: block; font-family: "Oswald", sans-serif; letter-spacing: 0.08em; margin-bottom: 4px; }
-  .pool textarea {
-    width: 100%; height: 160px; background: #070f07; color: #e8f8d8;
-    border: 1px solid #3d5a22; border-radius: 8px; padding: 8px;
-    font-family: ui-monospace, Consolas, monospace; font-size: 12px;
-  }
-  .error { color: #ffb4b4; background: rgba(80,20,20,0.45); border: 1px solid #a44; padding: 8px 10px; border-radius: 8px; margin: 8px 0; display: none; }
-  .error.show { display: block; }
 
   /* =================== Online rooms (online.js) =================== */
   [hidden] { display: none !important; }
@@ -412,7 +401,7 @@
   body.online .on-only[hidden] { display: none !important; }   /* host-only buttons stay hidden for players */
   body.online .on-only-b { display: block !important; }
   body.online-ok .online-ok-only { display: block !important; }
-  body.online #editContent, body.online #barStart { display: none !important; }
+  body.online #barStart { display: none !important; }
   body.online-ok .online-off-only { display: none !important; }
   .room-chip {
     align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px;
@@ -676,8 +665,6 @@
   <div class="hostbar">
     <!-- Pause: only the host sees it (online.js) -->
     <button class="btn ghost" id="pauseBtn" type="button" hidden>Pause</button>
-    <!-- Host mode (?host=1): edit the categories before hosting -->
-    <button class="btn ghost host-only" id="editContent">Content</button>
     <button class="btn" id="barStart" type="button">Host or Join a Game</button>
     <span class="room-chip on-only">Room <b id="roomCode"></b></span>
     <!-- Change your own copy speed mid-game (only you hear it) -->
@@ -943,313 +930,29 @@
   </div>
 </div>
 
-<div class="modal-back" id="contentModal">
-  <div class="modal">
-    <h2>Category content</h2>
-    <p>Host only. One answer per line. <code>#</code> comments and blank lines are ignored. Edits stay in this browser; they are not published to the website.</p>
-    <div class="error" id="contentError"></div>
-    <div class="pools" id="poolEditors"></div>
-    <div class="modal-actions">
-      <button class="btn" id="saveContent">Save</button>
-      <button class="btn ghost" id="resetContent">Restore defaults</button>
-      <button class="btn ghost" id="closeContent">Close</button>
-    </div>
-  </div>
-</div>
-
 <!-- Shared CW Trainer code: Morse audio, the keyer and decoder (online answers) -->
 <script src="../shared/hst-engine.js"></script>
 <script src="../shared/hst-keyer.js"></script>
+<!-- Answers made by rules for Numbers, Call Signs, Names, QTHs and Movies -->
+<script src="answers.js"></script>
 <script>
 // Reuse the site's existing square alien-mascot icon (same artwork, already served at the site root)
 const LOGO_SRC = "../icons/apple-touch-icon.png";
 const DOLLARS = [200, 400, 600, 800, 1000];
 
 const DEFAULT_CATEGORIES = [
-  { id:"numbers", name:"NUMBERS", lines:`5NN
-599
-449
-339
-73
-88
-599 73
-RST 599
-RST 579
-RST 445
-UR 5NN
-PWR 5W
-PWR 100W
-QRG 7030
-2456
-1265
-2245
-7543
-5326
-3567
-5444
-14025
-13321
-99898
-05051
-21050
-1 2 3 4 5
-5 4 3 2 1
-73 73
-1989
-1984
-1956
-1960
-1990
-1989
-2021
-2007
-2011
-2027
-AUG 17
-JUNE 15
-FEB 2
-NOV 3
-MAR 20
-AGE 21
-AGE 16
-AGE 62
-WC/SC023
-WC/SC044
-ANT 40M
-SKED 0100Z` },
-  { id:"callsigns", name:"CALLSIGNS", lines:`W1AW
-K1JT
-N0AX
-W3LPL
-K0CF
-K3RRP
-N6TR
-W4RIP
-K4PZU
-AG4CR
-NN9Z
-WA6YU
-W6OAT
-VE3NEA
-G4FON
-G4SAP
-PA0RDT
-JA1ABC
-VK2XYZ
-ZL1KDR
-G4MFQ
-DL1TNW
-EA7XYZ
-PY2RBC
-LU1HQA
-ZS6WLP
-VU2DKM
-HL2SJE
-OH2BTK
-CE3FRD
-4X4MLG
-EI5KDB
-5B4AHN
-A71QX
-3B8PKM
-VP8LDF
-KH6TWQ
-JA1NUT
-VK2GR
-ZL1AN
-N6NFL
-W7NBA
-AA4TO
-KI5YDI
-KC1BB
-K7TOE/6
-EA8OM
-F8PDR
-S53R
-N6WAX
-N0PE
-K1TTY
-N3RD
-G3EEK
-W1NE
-K0FEE
-N1CE
-W1ZRD
-M0OSE
-G0OSE
-N0SY
-W0RM
-K9DOG
-O0PS
-OK1RR
-K1ABC/4
-W1/G4ABC
-N7QMT
-AA5TB
-WB8IMY` },
-  { id:"names", name:"NAMES", lines:`BOB
-JIM
-TOM
-ANN
-MARY
-JOHN
-OP IS SUE
-MIKE
-YL PAT
-SPARKY
-BUBBA
-PICKLES
-NOODLES
-ZIPPY
-WALDO
-GUMBO
-DOODLES
-BINGO
-FUZZY
-LIZ
-DAVE
-JAMES
-MARY
-ROBERT
-LINDA
-MICHAEL
-SUSAN
-WILLIAM
-KAREN
-DAVID
-NANCY
-KATE
-OM BOB
-OM JIM
-YL ANN
-NAME BOB
-NAME IS ANN
-NAME HR TOM
-OP JIM
-OP IS SUE
-NAME MIKE
-NAME PAT` },
-  { id:"qths", name:"QTHS", lines:`CHICAGO IL
-BOSTON MA
-AUSTIN TX
-DENVER CO
-SEATTLE WA
-MIAMI FL
-PORTLAND OR
-PHOENIX AZ
-LONDON UK
-TOKYO JA
-SYDNEY AU
-TORONTO ON
-JA
-VK
-ZL
-DL
-EA
-PY
-LU
-ZS
-VU
-EI
-QTH OHIO
-QTH MAINE
-QTH TEXAS
-QTH CA
-QTH AZ
-QTH MA
-QTH FL
-QTH IL
-QTH WY
-QTH INDIA
-QTH UK
-QTH SERBIA
-NR BOSTON
-NR CHICAGO
-NR LAX
-GRID FN42
-GRID CM87
-GRID DM04
-GRID EM93
-RURAL IOWA
-UPSTATE NY` },
-  { id:"qsignals", name:"Q-SIGNALS", lines:`QTH?
-QTH IS
-QSL?
-QSL VIA BURO
-QRZ?
-QRM
-QRN
-QSB
-QSY
-QRT
-QRX
-QSO
-QRP
-QRO
-QRL?
-QRX 5
-QSY UP 1
-QSB BAD
-SRI QRM
-SRI QRN
-QTH GRID
-QSL UR 599` },
-  { id:"hamtalk", name:"HAM TALK", lines:`HW CPY?
-FB OM
-BACK HURTS
-SAW DR TODAY
-UR RST 111
-XYL SAYS QRT
-RIG IS 2 CANS
-ANT IS FENCE
-QRP 1500 WATTS
-NEED COFFEE QRX
-SRI ASLEEP
-QSL SENT
-TNX FER QSO
-TNX FER RPT
-TU FER CALL
-UR RST 599
-PSE RPT
-AGN PSE
-YAESU
-ICOM
-FLEX
-ELECRAFT
-KENWOOD
-TOWER
-HAMVENTION
-ARRL
-GE OM
-GA ES GL
-WX IS FB
-73 ES GL
-MORE SNOW
-SNOW HR
-NO RAIN NOW
-POTA
-SOTA
-IOTA
-BK
-SK
-CL
-R R
-SOLID CPY
-CPI FB
-HR RIG IS
-ANT IS DIPOLE
-VERTICAL
-ES
-TU
-NIL
-TNX FER INFO
-NAME HR IS
-SRI QRM` }
+  // Made fresh every game by the rules in answers.js (Tim, 2026-10-23).
+  { id:"numbers", name:"NUMBERS", gen:true },
+  { id:"callsigns", name:"CALL SIGNS", gen:true },
+  { id:"names", name:"NAMES", gen:true },
+  { id:"qths", name:"QTHS", gen:true },
+  { id:"movies", name:"MOVIES", gen:true },
+  { id:"music", name:"MUSIC", gen:true }
 ];
 
 const $ = (id) => document.getElementById(id);
 const state = {
-  categories: [], board: [], audio: null, host: false,
+  categories: [], board: [], audio: null,
   clueCell: null,   // the tile the clue card is currently showing (null = card hidden)
   clueTimer: null   // timer that hides the card once it has shrunk into its tile
 };
@@ -1264,9 +967,6 @@ function showPaused(on, canResume) {
   b.classList.toggle("paused", on);
 }
 
-function parseLines(text) {
-  return text.split(/\r?\n/).map(s => s.trim()).filter(s => s && !s.startsWith("#"));
-}
 function volumeLevel() {
   return Math.max(0, Math.min(1, Number($("volume").value) / 100));
 }
@@ -1292,22 +992,13 @@ function saveSettings() {
     localStorage.setItem("mcj-settings", JSON.stringify(raw));
   } catch {}
 }
-function loadPools() {
-  if (state.host) {
-    try {
-      const saved = JSON.parse(localStorage.getItem("mcj-pools") || "null");
-      if (saved && Array.isArray(saved) && saved.length) {
-        state.categories = saved;
-        return;
-      }
-    } catch {}
-  }
-  state.categories = DEFAULT_CATEGORIES.map(c => ({...c}));
-}
-function savePools() {
-  if (!state.host) return;
-  localStorage.setItem("mcj-pools", JSON.stringify(state.categories));
-}
+// n answers for a category, made fresh by its rules (answers.js).
+function dealCategory(cat, n) { return JeopardyAnswers.deal(cat.id, n); }
+// The board's categories. (Hosts used to be able to rename categories and
+// edit their answer lists, ?host=1 and Content; that went when every
+// category came to be made by rules, since a new name wouldn't match the
+// answers. An old "mcj-pools" save is simply ignored.)
+function loadPools() { state.categories = DEFAULT_CATEGORIES.map(c => ({...c})); }
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -1317,21 +1008,6 @@ function shuffle(arr) {
   return a;
 }
 function money(n) { return "$" + Math.round(n).toLocaleString("en-US"); }
-
-function setHostMode(on) {
-  state.host = !!on;
-  document.body.classList.toggle("host-mode", state.host);
-  if (state.host) sessionStorage.setItem("mcj-host", "1");
-  else sessionStorage.removeItem("mcj-host");
-}
-function tryUnlockHost() {
-  const params = new URLSearchParams(location.search);
-  if (params.get("host") === "1" || sessionStorage.getItem("mcj-host") === "1") {
-    setHostMode(true);
-    return;
-  }
-  setHostMode(false);
-}
 
 // ---- Clue card (the zoom effect) ----------------------------------------
 
@@ -1483,19 +1159,6 @@ function renderBoard() {
     const el = document.createElement("div");
     el.className = "cat";
     el.textContent = cat.name.toUpperCase();
-    if (state.host) {
-      el.contentEditable = "true";
-      el.spellcheck = false;
-      el.addEventListener("blur", () => {
-        const name = el.textContent.trim().toUpperCase() || cat.name;
-        state.categories[i].name = name;
-        el.textContent = name;
-        savePools();
-      });
-      el.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") { e.preventDefault(); el.blur(); }
-      });
-    }
     board.appendChild(el);
   });
   const tiers = [...new Set(state.board.map(t => t.row))].sort((a,b)=>a-b);
@@ -1530,39 +1193,6 @@ function renderTile(cell) {
   }
   el.addEventListener("click", () => Online.tileClicked(cell));
   return el;
-}
-
-function openContent() {
-  if (!state.host) return;
-  const wrap = $("poolEditors");
-  wrap.innerHTML = "";
-  state.categories.forEach((cat) => {
-    const box = document.createElement("div");
-    box.className = "pool";
-    box.innerHTML = `<label></label><textarea></textarea>`;
-    box.querySelector("label").textContent = cat.name;
-    box.querySelector("textarea").value = cat.lines;
-    wrap.appendChild(box);
-  });
-  $("contentModal").classList.add("show");
-}
-function saveContentFromEditor() {
-  if (!state.host) return;
-  const areas = [...document.querySelectorAll("#poolEditors textarea")];
-  const next = areas.map((ta, i) => ({
-    id: state.categories[i].id, name: state.categories[i].name, lines: ta.value
-  }));
-  const bad = next.find(c => parseLines(c.lines).length < DOLLARS.length);
-  const err = $("contentError");
-  if (bad) {
-    err.textContent = `“${bad.name}” needs at least ${DOLLARS.length} answers.`;
-    err.classList.add("show");
-    return;
-  }
-  err.classList.remove("show");
-  state.categories = next;
-  savePools();
-  $("contentModal").classList.remove("show");
 }
 
 (function initLogo() {
@@ -1650,7 +1280,6 @@ window.addEventListener("pagehide", practiceEnd);
 window.HSTJeopardy = { endPractice: practiceEnd };
 
 state.audio = new MorseAudio();
-tryUnlockHost();
 loadSettings();
 loadPools();
 showIdleBoard();
@@ -1677,17 +1306,6 @@ window.addEventListener("resize", () => { if (state.clueCell) placeClue(fullRect
 function togglePause() { if (window.Online && Online.active) Online.togglePause(); }
 $("pauseBtn").addEventListener("click", togglePause);
 $("pauseResume").addEventListener("click", togglePause);
-$("editContent").addEventListener("click", openContent);
-$("closeContent").addEventListener("click", () => $("contentModal").classList.remove("show"));
-$("saveContent").addEventListener("click", saveContentFromEditor);
-$("resetContent").addEventListener("click", () => {
-  state.categories = DEFAULT_CATEGORIES.map(c => ({...c}));
-  savePools();
-  openContent();
-});
-$("contentModal").addEventListener("click", (e) => {
-  if (e.target.id === "contentModal") $("contentModal").classList.remove("show");
-});
 </script>
 <script src="online.js"></script>
 </body>
