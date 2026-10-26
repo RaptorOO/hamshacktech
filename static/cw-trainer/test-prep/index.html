@@ -87,26 +87,33 @@
   @keyframes bounce { 0%, 100% { height: 8px; } 50% { height: 26px; } }
   @media (prefers-reduced-motion: reduce) { .playing .wave i { animation: none; height: 18px; } }
 
-  /* The answer: one group of letter boxes per word (or call sign), side by side. */
-  .qwrap { position: relative; }
-  .qboxes { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 26px; margin: 6px 0 12px; cursor: text; min-height: 70px; }
+  /* The answer: one column per word (or call sign), side by side: its
+     letter boxes, then its suggested answers. */
+  .qboxes { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 14px 26px; margin: 6px 0 12px; min-height: 70px; }
+  .qboxes.two { flex-wrap: nowrap; gap: 16px; }
   .item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .cells { display: flex; gap: 6px; }
   .cell { width: clamp(34px, 8vw, 48px); height: clamp(44px, 10vw, 58px); border-radius: 8px; background: #140f0d;
           border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
           font: 600 clamp(1.2rem, 4vw, 1.6rem) 'JetBrains Mono', monospace; color: var(--text); }
-  .cell.q { color: var(--dim); font-weight: 500; }
-  .cell.cur { border-color: var(--tp); box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.3); }
   .cell.filled { border-color: var(--muted); }
   .cell.good { background: #14532d; border-color: var(--good); color: #dcfce7; }
   .cell.bad { background: #7f1d1d; border-color: var(--bad); color: #fee2e2; }
   .item .right { font: 600 0.95rem 'JetBrains Mono', monospace; letter-spacing: 0.1em; color: var(--good); min-height: 1.3em; }
   .item .tag { font-size: 0.72rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
-  /* The five suggested answers under the word or call sign you're typing. */
-  .sugg { list-style: none; margin: 0; padding: 0; width: 100%; min-width: 9em; display: flex; flex-direction: column; gap: 4px; }
-  .sugg li { background: var(--well); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px;
-             font: 500 1rem 'JetBrains Mono', monospace; letter-spacing: 0.08em; text-align: center; color: var(--text); }
-  .typein { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; }
+  /* The five suggested answers under each word or call sign: click one. */
+  .opts { width: 100%; min-width: 8.5em; display: flex; flex-direction: column; gap: 6px; }
+  .opt { background: var(--well); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; cursor: pointer;
+         font: 600 1.05rem 'JetBrains Mono', monospace; letter-spacing: 0.08em; text-align: center; color: var(--text); }
+  .opt:hover:not(:disabled) { border-color: var(--tp); background: #3a2a1c; }
+  .opt:disabled { cursor: default; opacity: 0.55; }
+  .opt.picked { opacity: 1; border-color: var(--tp); }
+  .opt.picked.good { background: #14532d; border-color: var(--good); color: #dcfce7; }
+  .opt.picked.bad { background: #7f1d1d; border-color: var(--bad); color: #fee2e2; }
+  .opt.answer { opacity: 1; border-color: var(--good); color: var(--good); }
+  /* Next: large, under the answers. */
+  .next-row { display: flex; justify-content: center; margin: 4px 0 14px; }
+  .next-big { width: min(100%, 360px); padding: 14px 22px; font-size: 1.15rem; }
 
   .meter { height: 6px; background: var(--well); border-radius: 3px; overflow: hidden; margin: 2px 0 6px; }
   .meter i { display: block; height: 100%; width: 100%; background: var(--tp); transform-origin: left; }
@@ -154,6 +161,12 @@
     .speed-row label { grid-column: 1 / -1; }
     .qboxes { gap: 12px 18px; }
     .cells { gap: 4px; }
+    /* two words side by side on a phone: smaller boxes */
+    .qboxes.two { gap: 12px; }
+    .qboxes.two .cells { gap: 3px; }
+    .qboxes.two .cell { width: clamp(20px, 5.4vw, 34px); height: clamp(30px, 8vw, 44px); font-size: clamp(0.9rem, 3.4vw, 1.2rem); border-radius: 6px; }
+    .qboxes.two .opts { min-width: 0; }
+    .qboxes.two .opt { font-size: 0.92rem; padding: 9px 4px; letter-spacing: 0.04em; }
   }
 </style>
 </head>
@@ -171,9 +184,9 @@
     <p class="desc">At the end of Fundamental, CW Academy checks your copy before placing you in Intermediate.
       The test isn&rsquo;t published; this copies it as closely as we can, from a classmate who took it.
       There are <b>8 questions</b>: <b>5 with two words</b> and <b>3 US call signs</b>. Each is sent <b>once</b>
-      at <b>25 WPM characters, 10 WPM overall</b> (Farnsworth). Then you get <b>20 seconds</b> to type what you copied
-      into the letter boxes. For each word and call sign, <b>five suggested answers</b> appear; type the one you heard.
-      Each word and call sign counts on its own, <b>13 in all</b>, and has to be exactly right. You see your score at the end.</p>
+      at <b>25 WPM characters, 10 WPM overall</b> (Farnsworth). Blank boxes show the length of each word first.
+      When the code ends, <b>five suggested answers</b> appear under each word (or the call sign): <b>click the one you heard</b>
+      in each column, within <b>20 seconds</b>. Each word and call sign counts on its own, <b>13 in all</b>. You see your score at the end.</p>
 
     <fieldset class="speeds">
       <legend class="label">Speed, tone and volume</legend>
@@ -213,24 +226,26 @@
       <h2 id="qTitle">Question 1 of 8</h2>
       <div class="dots" id="dots" aria-hidden="true"></div>
     </div>
+    <!-- Blank boxes for each word (or the call sign) show as soon as the
+         question starts; its suggested answers appear under them when the
+         code has played. -->
+    <div class="qboxes" id="qboxes" aria-label="Your answer"></div>
     <div class="listen" id="listen" aria-live="polite">
       <span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
       <span id="listenText">Listen&hellip;</span>
     </div>
-    <div class="qwrap">
-      <div class="qboxes" id="qboxes" aria-label="Type what you copied"></div>
-      <input class="typein" id="typeIn" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Type what you copied">
-    </div>
     <div class="meter" id="meter" aria-hidden="true"><i id="meterFill"></i></div>
     <div class="meter-label" id="meterLabel"></div>
     <p class="verdict" id="verdict" aria-live="polite"></p>
+    <div class="next-row" id="nextRow" hidden>
+      <button class="btn primary next-big" id="nextBtn" type="button">Next <kbd>Enter</kbd></button>
+    </div>
     <div class="actions">
       <button class="btn" id="playBtn" type="button" hidden>Play question</button>
-      <button class="btn primary" id="nextBtn" type="button" hidden>Next <kbd>Enter</kbd></button>
       <span style="flex:1"></span>
       <button class="btn" id="quitBtn" type="button">Quit test</button>
     </div>
-    <p class="hint">The code plays once. Then type what you copied (the suggestions are a guide; you type the answer). A space between words isn&rsquo;t needed. Tap the boxes if your keyboard isn&rsquo;t showing.</p>
+    <p class="hint">The code plays once. Then pick what you heard from the suggestions under each word, one per column, within 20 seconds.</p>
   </section>
 
   <!-- ================= Results ================= -->
@@ -243,7 +258,7 @@
     <div class="tiles" id="tiles"></div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Q</th><th>Type</th><th>Sent</th><th>You typed</th><th></th><th></th></tr></thead>
+        <thead><tr><th>Q</th><th>Type</th><th>Sent</th><th>Your answer</th><th></th><th></th></tr></thead>
         <tbody id="review"></tbody>
       </table>
     </div>
@@ -280,14 +295,14 @@
      THE TEST, as a classmate who took it described it (Tim, 2026-10-26):
      8 questions, in random order -- 5 with two everyday words and 3 US
      call signs. Each is sent ONCE (25 WPM characters, Farnsworth 10).
-     When the code ends, one box per letter appears for each word and a
-     20-second answer clock starts. You TYPE what you copied; as soon as
-     a word or call sign's last box is filled, each of its letters turns
-     green (right) or red (wrong) -- letter by letter, Tim, 2026-10-26 --
-     and a wrong one shows the right answer. It scores only if every
-     letter is right. Five suggested answers appear under the word or
-     call sign you're on -- in a two-word question the first word, then
-     the second -- and you still type your answer (Tim, 2026-10-26).
+     The blank boxes (one per letter, per word) show as soon as the
+     question starts. When the code ends, five suggested answers appear
+     under each word -- or the call sign -- and a 20-second clock starts.
+     You answer like multiple choice: click one suggestion in each column
+     (Tim, after his classmate's test drive, 2026-10-26; typing was an
+     earlier guess). The pick fills the boxes, each letter green (right)
+     or red (wrong), and a wrong pick shows the right answer. A word
+     scores only if it's right.
      Next moves on; nothing advances by itself. The score is out of 13
      (each word and call sign counts on its own), e.g. "8 of 13 · 62%".
      The pass mark isn't published, so only the score is shown -- no
@@ -492,17 +507,12 @@
     var sh = HST.shared.get();
     return { wpm: test.wpm, fwpm: test.fwpm, toneHz: sh.toneHz, volume: sh.volume };
   }
-  function focusTyping() { try { $('typeIn').focus({ preventScroll: true }); } catch (e) { $('typeIn').focus(); } }
-
   function startTest() {
-    HST.audio.unlock();          // from the tap, so phones allow sound...
-    focusTyping();               // ...and bring up the keyboard
+    HST.audio.unlock();          // from the tap, so phones allow sound
     test = { wpm: prefs.wpm, fwpm: fwpm(), feedback: prefs.feedback, start: Date.now(), questions: makeQuestions(), i: 0 };
     show('testCard');
     askQuestion();
   }
-
-  function itemsAll() { var n = []; test.questions.forEach(function (q) { q.items.forEach(function (x, k) { n.push({ q: q, k: k }); }); }); return n; }
 
   function renderDots() {
     $('dots').innerHTML = test.questions.map(function (q, i) {
@@ -514,18 +524,20 @@
     }).join('');
   }
 
+  // A new question: the blank boxes show straight away, so you know before
+  // the code starts whether it's two words or a call sign, and how long
+  // each is (Tim, 2026-10-26). The suggestions come when the code ends.
   function askQuestion() {
     var q = test.questions[test.i];
-    q.typed = q.items.map(function () { return ''; });
-    q.ok = q.items.map(function () { return null; });   // null = not marked yet
+    q.typed = q.items.map(function () { return ''; });  // the suggestion picked for each word
+    q.ok = q.items.map(function () { return null; });   // null = not answered yet
     q.marked = false;
     $('qTitle').textContent = 'Question ' + (test.i + 1) + ' of ' + test.questions.length;
     $('verdict').textContent = ''; $('verdict').className = 'verdict';
-    $('qboxes').innerHTML = ''; $('qboxes').hidden = true;
     $('meter').hidden = true; $('meterLabel').textContent = '';
-    $('nextBtn').hidden = true; $('playBtn').hidden = true;
-    $('typeIn').value = '';
+    $('nextRow').hidden = true; $('playBtn').hidden = true;
     state = 'playing';
+    drawBoxes();
     renderDots();
     play(700);
   }
@@ -547,16 +559,12 @@
     }, delay || 0);
   }
 
-  // The code has finished: letter boxes appear and the 20 s clock starts.
+  // The code has finished: the suggestions appear and the 20 s clock starts.
   function openAnswer() {
-    var q = test.questions[test.i];
     state = 'answer';
     $('listen').classList.remove('playing');
     $('listen').hidden = true;
-    $('qboxes').hidden = false;
-    $('typeIn').value = '';
     drawBoxes();
-    focusTyping();
     clock.end = Date.now() + ANSWER_SEC * 1000;
     $('meter').hidden = false;
     clearInterval(clock.timer);
@@ -571,60 +579,50 @@
     if (left <= 0 && state === 'answer') finishQuestion(true);
   }
 
-  // The boxes, one group per word / call sign. Unanswered boxes show "?".
+  /* One column per word (or the call sign): its letter boxes on top, and
+     under them, once the code has played, its five suggested answers.
+     You answer like multiple choice: click one in each column (Tim,
+     2026-10-26). The pick fills the boxes, each letter green if right and
+     red if wrong, and a wrong pick also shows the right answer. A column
+     is locked once picked. */
   function drawBoxes() {
     var q = test.questions[test.i];
-    var cursorItem = q.typed.findIndex(function (t, k) { return q.ok[k] === null; });
+    $('qboxes').classList.toggle('two', q.items.length > 1);
     $('qboxes').innerHTML = q.items.map(function (word, k) {
-      var t = q.typed[k], marked = q.ok[k] !== null && (test.feedback || state === 'done');
-      var cls = 'item' + (marked && test.feedback ? (q.ok[k] ? ' ok' : ' no') : '');
-      // Once a word is marked, each letter is green if it's right and red if
-      // it's wrong (or missing) -- letter by letter (Tim, 2026-10-26). The
-      // word still only scores if every letter is right.
+      var t = q.typed[k], marked = q.ok[k] !== null;
       var cells = word.split('').map(function (_, c) {
-        var ch = t.charAt(c), cur = state === 'answer' && k === cursorItem && c === t.length;
+        var ch = t.charAt(c);
         var mark = marked && test.feedback ? (ch === word.charAt(c) ? ' good' : ' bad') : '';
-        return '<span class="cell' + (ch ? ' filled' : ' q') + (cur ? ' cur' : '') + mark + '">' + (ch ? esc(ch) : '?') + '</span>';
+        return '<span class="cell' + (ch ? ' filled' : '') + mark + '">' + (ch ? esc(ch) : '') + '</span>';
       }).join('');
       var right = marked && test.feedback && !q.ok[k] ? esc(word) : '';
-      // The five suggestions for the word or call sign you're on.
-      var sugg = q.sugg && state === 'answer' && k === cursorItem
-        ? '<ul class="sugg" aria-label="Suggested answers">' + q.sugg[k].map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>'
-        : '';
-      return '<div class="' + cls + '"><div class="cells">' + cells + '</div><div class="right">' + right + '</div>' + sugg + '</div>';
+      var opts = '';
+      if (state === 'answer' || state === 'done') {
+        opts = '<div class="opts" role="group" aria-label="Pick ' + (q.items.length > 1 ? (k ? 'the second word' : 'the first word') : 'the call sign') + '">' +
+          q.sugg[k].map(function (w) {
+            var cls = 'opt';
+            if (marked && w === t) cls += test.feedback ? (q.ok[k] ? ' picked good' : ' picked bad') : ' picked';
+            else if (marked && test.feedback && w === word) cls += ' answer';
+            return '<button type="button" class="' + cls + '" data-k="' + k + '" data-w="' + esc(w) + '"' +
+                   (marked || state !== 'answer' ? ' disabled' : '') + '>' + esc(w) + '</button>';
+          }).join('') + '</div>';
+      }
+      return '<div class="item"><div class="cells">' + cells + '</div><div class="right">' + right + '</div>' + opts + '</div>';
     }).join('');
   }
 
-  /* Typing: letters go into the boxes in order, skipping the gap between
-     the words (no space needed). A word is marked the moment its last box
-     is filled, and then it's locked -- Backspace can't reach into it. */
-  $('typeIn').addEventListener('input', function () {
-    if (state !== 'answer') { $('typeIn').value = ''; return; }
-    var q = test.questions[test.i];
-    var raw = $('typeIn').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    var lockedLen = 0;
-    q.items.forEach(function (w, k) { if (q.ok[k] !== null) lockedLen += w.length; });
-    var all = q.typed.join('');
-    if (raw.length < lockedLen) raw = all.slice(0, lockedLen);      // no deleting into a marked word
-    var pos = 0;
-    q.items.forEach(function (w, k) {
-      if (q.ok[k] !== null) { pos += w.length; return; }
-      q.typed[k] = raw.slice(pos, pos + w.length);
-      pos += w.length;
-      if (q.typed[k].length === w.length) q.ok[k] = q.typed[k] === w;   // all or nothing
-    });
-    // later words can't start until the one before is complete
-    for (var k = 1; k < q.items.length; k++) if (q.typed[k - 1].length < q.items[k - 1].length) q.typed[k] = '';
-    $('typeIn').value = q.typed.join('');
+  $('qboxes').addEventListener('click', function (e) {
+    var b = e.target.closest('.opt');
+    if (!b || b.disabled || state !== 'answer') return;
+    var q = test.questions[test.i], k = Number(b.dataset.k);
+    if (q.ok[k] !== null) return;
+    q.typed[k] = b.dataset.w;
+    q.ok[k] = q.typed[k] === q.items[k];
     drawBoxes();
     if (q.ok.every(function (x) { return x !== null; })) finishQuestion(false);
   });
-  $('typeIn').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); if (state === 'done') nextQuestion(); }
-  });
-  $('qboxes').addEventListener('click', focusTyping);
 
-  // Everything answered, or the 20 s ran out: anything unfinished is wrong.
+  // Everything answered, or the 20 s ran out: anything not picked is wrong.
   function finishQuestion(timedOut) {
     var q = test.questions[test.i];
     clearInterval(clock.timer);
@@ -643,15 +641,14 @@
       $('verdict').textContent = 'Answer saved';
       $('verdict').className = 'verdict';
     }
-    $('nextBtn').textContent = '';
     $('nextBtn').innerHTML = (test.i + 1 < test.questions.length ? 'Next' : 'See your score') + ' <kbd>Enter</kbd>';
-    $('nextBtn').hidden = false;
+    $('nextRow').hidden = false;
+    $('nextBtn').focus({ preventScroll: true });
     renderDots();
   }
 
   function nextQuestion() {
     if (state !== 'done') return;
-    focusTyping();                // keep the phone keyboard up (this is a tap)
     test.i++;
     if (test.i < test.questions.length) askQuestion();
     else finishTest();
@@ -749,10 +746,9 @@
   document.addEventListener('keydown', function (e) {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     var t = e.target;
-    if (t && t.id === 'typeIn') return;            // handled on the input
     if (t && /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName) && t.type !== 'checkbox') return;
-    if (e.key !== 'Enter' || (t && t.tagName === 'BUTTON')) return;
-    if (state === 'done') { e.preventDefault(); nextQuestion(); }
+    if (e.key !== 'Enter' || (t && t.tagName === 'BUTTON' && t.id !== 'nextBtn')) return;
+    if (state === 'done') { e.preventDefault(); if (t && t.id === 'nextBtn') return; nextQuestion(); }   // a focused Next clicks itself
     else if (state === 'setup' || state === 'results') { e.preventDefault(); HST.audio.stop(); startTest(); }
   });
 
