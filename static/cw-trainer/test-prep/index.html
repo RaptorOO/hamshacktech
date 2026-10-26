@@ -102,7 +102,7 @@
   .cell.bad { background: #7f1d1d; border-color: var(--bad); color: #fee2e2; }
   .item .right { font: 600 0.95rem 'JetBrains Mono', monospace; letter-spacing: 0.1em; color: var(--good); min-height: 1.3em; }
   .item .tag { font-size: 0.72rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
-  /* The five suggested answers under the word you're typing (two-word questions). */
+  /* The five suggested answers under the word or call sign you're typing. */
   .sugg { list-style: none; margin: 0; padding: 0; width: 100%; min-width: 9em; display: flex; flex-direction: column; gap: 4px; }
   .sugg li { background: var(--well); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px;
              font: 500 1rem 'JetBrains Mono', monospace; letter-spacing: 0.08em; text-align: center; color: var(--text); }
@@ -172,7 +172,7 @@
       The test isn&rsquo;t published; this copies it as closely as we can, from a classmate who took it.
       There are <b>8 questions</b>: <b>5 with two words</b> and <b>3 US call signs</b>. Each is sent <b>once</b>
       at <b>25 WPM characters, 10 WPM overall</b> (Farnsworth). Then you get <b>20 seconds</b> to type what you copied
-      into the letter boxes. For each word of a two-word question, <b>five suggested answers</b> appear; type the one you heard.
+      into the letter boxes. For each word and call sign, <b>five suggested answers</b> appear; type the one you heard.
       Each word and call sign counts on its own, <b>13 in all</b>, and has to be exactly right. You see your score at the end.</p>
 
     <fieldset class="speeds">
@@ -285,9 +285,9 @@
      a word or call sign's last box is filled, each of its letters turns
      green (right) or red (wrong) -- letter by letter, Tim, 2026-10-26 --
      and a wrong one shows the right answer. It scores only if every
-     letter is right. In a two-word question, five
-     suggested answers appear under the word you're on -- the first word,
-     then the second -- and you still type your answer (Tim, 2026-10-26).
+     letter is right. Five suggested answers appear under the word or
+     call sign you're on -- in a two-word question the first word, then
+     the second -- and you still type your answer (Tim, 2026-10-26).
      Next moves on; nothing advances by itself. The score is out of 13
      (each word and call sign counts on its own), e.g. "8 of 13 · 62%".
      The pass mark isn't published, so only the score is shown -- no
@@ -403,6 +403,33 @@
     return pick('KNW') + pick(ALPHA) + d + first + letters(2);
   }
 
+  /* Suggested call signs (Tim, 2026-10-26): the right call plus four that
+     look and sound like it -- same format and length, with one or two
+     characters changed to ones whose Morse differs by one element (a
+     letter for a letter, a digit for a digit; the first letter stays K, N
+     or W, or A for an A prefix, so each one is still a real US format). */
+  function nearChars(ch, pos, call) {
+    var pool = /[0-9]/.test(ch) ? DIGITS.split('') : pos === 0 ? (ch === 'A' ? ['A'] : 'KNW'.split('')) : ALPHA.split('');
+    if (pos === 1 && call[0] === 'A' && /[A-Z]/.test(call[1]) && /[0-9]/.test(call[2])) pool = 'ABCDEFGHIJKL'.split('');   // AA-AL
+    var near = pool.filter(function (c) { return c !== ch && morseNear(ch, c); });
+    return near.length ? near : pool.filter(function (c) { return c !== ch; });
+  }
+  function callSuggestions(call) {
+    var out = [], tries = 0;
+    while (out.length < SUGGESTIONS - 1 && tries++ < 100) {
+      var c = call.split(''), spots = shuffle(c.map(function (_, i) { return i; }));
+      var changes = Math.random() < 0.6 ? 1 : 2, done = 0;
+      for (var s = 0; s < spots.length && done < changes; s++) {
+        var opts = nearChars(c[spots[s]], spots[s], call);
+        if (!opts.length) continue;
+        c[spots[s]] = pick(opts); done++;
+      }
+      var cand = c.join('');
+      if (cand !== call && out.indexOf(cand) < 0) out.push(cand);
+    }
+    return shuffle([call].concat(out));
+  }
+
   function makeQuestions() {
     var qs = [], used = {};
     function fresh(make) { var x, n = 0; do { x = make(); } while (used[x] && n++ < 50); used[x] = true; return x; }
@@ -410,7 +437,10 @@
       var pair = [fresh(function () { return pick(WORDS); }), fresh(function () { return pick(WORDS); })];
       qs.push({ cat: 'words', items: pair, sugg: pair.map(suggestions) });
     }
-    for (var j = 0; j < CALL_QUESTIONS; j++) qs.push({ cat: 'call', items: [fresh(usCall)] });
+    for (var j = 0; j < CALL_QUESTIONS; j++) {
+      var call = fresh(usCall);
+      qs.push({ cat: 'call', items: [call], sugg: [callSuggestions(call)] });
+    }
     return shuffle(qs);
   }
 
@@ -557,7 +587,7 @@
         return '<span class="cell' + (ch ? ' filled' : ' q') + (cur ? ' cur' : '') + mark + '">' + (ch ? esc(ch) : '?') + '</span>';
       }).join('');
       var right = marked && test.feedback && !q.ok[k] ? esc(word) : '';
-      // Two-word questions: the five suggestions for the word you're on.
+      // The five suggestions for the word or call sign you're on.
       var sugg = q.sugg && state === 'answer' && k === cursorItem
         ? '<ul class="sugg" aria-label="Suggested answers">' + q.sugg[k].map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>'
         : '';
