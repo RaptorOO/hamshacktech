@@ -31,6 +31,7 @@ const MAX_CLEARS = 2;           // ...this many times per clue (so one person ca
 const CHAT_KEEP = 50;           // chat messages a room keeps (new joiners see these)
 const CHAT_GAP_MS = 1000;       // at most one chat message a second from each player
 const IDLE_DELETE_MS = 2 * 60 * 60 * 1000;   // a room forgets everything 2 hours after the last activity
+const RECONNECT_MS = 4000;      // after a room restarts, time for the apps to reconnect before a clue plays again
 
 export default {
   // Nothing is served from this Worker's own address; the site talks to
@@ -77,10 +78,50 @@ export class Room {
       if (this.s) {
         if (!this.s.chat) this.s.chat = [];   // saved before rooms had chat
         this.s.players.forEach((p) => { p.on = false; });   // nobody is connected after a restart
-        // A clue or reveal in progress can't be resumed exactly; move on to the next pick.
-        if (this.s.phase === 'clue' || this.s.phase === 'reveal') { this.s.clue = null; this.s.phase = 'pick'; }
+        this.afterRestart();
       }
     });
+  }
+
+  /* Cloudflare restarts a room when the rooms Worker is deployed (every
+     merge to main) and now and then on its own. The apps reconnect by
+     themselves within a few seconds. Timers don't survive a restart, so
+     pick up where the game was:
+       clue    -> play it again from "Stand by" once the apps are back
+                  (they get it as they reconnect); answers already sent
+                  are kept. Before 2026-10-25 a restart dropped the clue,
+                  so the tile showed its answer with +$0 and nobody got to
+                  hear or answer it (Tim's game: two Music tiles).
+       reveal  -> the tile is already scored: on to the next player's turn
+                  (it used to give the same player another pick).
+       pick    -> start the 30 s reminder again.
+     While paused, nothing restarts until the host resumes (resume() plays
+     a clue that hadn't finished from "Stand by"). */
+  afterRestart() {
+    const s = this.s, cl = s.clue;
+    if (s.phase === 'clue' && cl) {
+      if (s.paused) { cl.deadline = null; cl.lens = {}; this.save(); return; }
+      cl.startAt = Date.now() + RECONNECT_MS + COUNTDOWN_MS;
+      cl.deadline = null;
+      cl.lens = {};
+      this.save();
+      this.timer('lens', RECONNECT_MS + LEN_WAIT_MS, () => this.setDeadline());
+      return;
+    }
+    if (s.phase === 'reveal') {
+      s.clue = null;
+      if (s.tiles.every((t) => t.used)) { s.phase = 'over'; this.save(); return; }
+      // Nobody is connected yet, so nextTurn() can't tell who's here: just
+      // the next player in join order who wasn't removed.
+      const n = s.players.length;
+      for (let k = 1; k <= n; k++) {
+        const i = (s.turn + k) % n;
+        if (!s.players[i].removed) { s.turn = i; break; }
+      }
+      s.phase = 'pick';
+      this.save();
+    }
+    if (s.phase === 'pick' && !s.paused) this.timer('pick', RECONNECT_MS, () => this.startPickTimer());
   }
 
   blank(code, hostKey) {

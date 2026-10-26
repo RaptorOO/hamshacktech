@@ -14,7 +14,7 @@
      * keying your answer, the 60-second countdown, and the reveal
      * Replay (hear the clue again) and Clear (+15 s to send it again)
      * chat under the players list
-     * the host's Pause / Resume, and Your Score (only you see yours)
+     * the host's Pause / Resume, and Tiles You Copied (only you see yours)
 
    It uses the board, tiles and zoom card from
    index.html (renderBoard, openClue, closeClue...) and the CW Trainer's

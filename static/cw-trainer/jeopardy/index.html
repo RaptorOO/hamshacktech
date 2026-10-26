@@ -142,7 +142,9 @@
     color: var(--gold);
     text-shadow: 0 2px 0 #5a4300, 0 0 18px rgba(244,211,94,0.45);
   }
-  /* Your Score (online): next to the Group Score, only on your screen. */
+  /* Tiles You Copied (online): next to the Group Score, only on your screen.
+     It's the full value of each tile you copy, so it isn't part of the Group
+     Score and can be bigger than it (Tim, 2026-10-25: was "Your Score"). */
   .bank.mine {
     margin-left: 10px; min-width: 170px;
     border-color: var(--lime);
@@ -657,8 +659,8 @@
       <div class="bank-value" id="bankValue">$0</div>
     </div>
     <!-- Online: your own score. Only your screen shows it. -->
-    <div class="bank mine on-only-b" title="Only you can see your score">
-      <div class="bank-label">Your Score</div>
+    <div class="bank mine on-only-b" title="The full value of every tile you copied. Only you can see this.">
+      <div class="bank-label">Tiles You Copied</div>
       <div class="bank-value" id="myScoreValue">$0</div>
     </div>
   </header>
@@ -765,7 +767,7 @@
     <h3>Background</h3>
     <ul>
       <li>The game was designed not to be competitive as players are at different stages of their morse code journey. It is about having fun.</li>
-      <li>The game displays a Group Score and Your Score. Your score is only visible to you.</li>
+      <li>The game displays a Group Score and Tiles You Copied. Tiles You Copied is only visible to you.</li>
     </ul>
     <h3>How to play</h3>
     <ul>
@@ -776,7 +778,7 @@
       <li>Everyone gets 60 seconds, counted from when the slowest player's clue ends. The answer is shown when time runs out or when everyone has answered.</li>
       <li>The letters must be exact, but spacing between words isn't marked wrong.</li>
       <li>The group earns the tile's value times the share of players who copied it. For example, 2 of 4 correct earns half.</li>
-      <li>Your Score, next to the Group Score, adds the full tile value for each one you get right. Only you can see it.</li>
+      <li>Tiles You Copied, next to the Group Score, adds the full value of each tile you get right. It isn&rsquo;t part of the Group Score, so it can be bigger. Only you can see it.</li>
       <li>Each column hides one Daily Double, worth double points.</li>
       <li>Use My speed to change your listening and sending speeds during the game.</li>
       <li>The host can Pause and Resume the game, skip a turn or end the game. While paused, the clock stops. A clue that was still playing starts over from Stand by.</li>
@@ -805,8 +807,8 @@
     <p>Group Score:</p>
     <div class="go-score" id="gameOverScore">$0</div>
     <p style="font-size:28px;color:var(--lime);margin:10px 0;">Great Job!</p>
-    <p class="on-only-b">Your score: <b id="goMineValue" style="color:var(--lime)">$0</b> <span style="color:var(--muted);font-size:15px">(only you see this)</span></p>
-    <p>Post your score on your group's WhatsApp and/or Groups.io account!</p>
+    <p class="on-only-b">Tiles you copied: <b id="goMineValue" style="color:var(--lime)">$0</b> <span style="color:var(--muted);font-size:15px">(only you see this)</span></p>
+    <p>Post your Group Score on your group's WhatsApp and/or Groups.io account!</p>
     <div class="modal-actions">
       <button class="btn" id="playAgain">New Game</button>
       <button class="btn ghost on-only" id="goLeave">Leave room</button>
