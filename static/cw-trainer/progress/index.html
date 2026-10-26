@@ -718,7 +718,7 @@
       // Test Prep: one practice test, its score and whether it passed.
       if (s.trainer === 'test-prep') {
         var tw = (s.format === 'quick' ? 'Quick test' : 'CWA test') + ' · ' + (s.right || 0) + '/' + (s.questions || 0) +
-                 (s.completed ? (s.passed ? ' · Passed' : ' · Not yet') : ' (quit early)');
+                 (s.completed ? (s.format === 'cwa13' ? '' : s.passed ? ' · Passed' : ' · Not yet') : ' (quit early)');   // cwa13: no published pass mark
         return '<tr><td>' + esc(when) + '</td><td><span class="tag tp">Test Prep</span></td><td>' + esc(tw) +
                '</td><td class="num">' + esc((s.wpm || '') + (s.fwpm && s.fwpm < s.wpm ? '/' + s.fwpm : '')) +
                '</td><td class="num">' + HST.fmtClock(s.durationMs || 0) + '</td><td class="num">—</td><td class="num">' +

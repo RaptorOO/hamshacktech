@@ -42,7 +42,7 @@ This is where it all comes together. QSO Practice lets you practice the flow of 
 ## Test Prep
 
 
-Test Prep is built for current CW Academy students preparing for the entrance test to Intermediate. If that test is on your calendar, this tool was made with you in mind. The actual test isn't published, so Test Prep copies it as closely as we can, from a classmate who took it: 8 questions, five with two everyday words and three US call signs, each sent once at 25 WPM characters with Farnsworth spacing (about 10 WPM overall). You then have 20 seconds to type what you copied, and each word and call sign is marked right or wrong on its own, out of 13. The pass mark isn't published either; we use 60%. Your scores are saved so you can watch them climb.
+Test Prep is built for current CW Academy students preparing for the entrance test to Intermediate. If that test is on your calendar, this tool was made with you in mind. The actual test isn't published, so Test Prep copies it as closely as we can, from a classmate who took it: 8 questions, five with two everyday words and three US call signs, each sent once at 25 WPM characters with Farnsworth spacing (about 10 WPM overall). You then have 20 seconds to type what you copied, with five suggested answers for each word, and each word and call sign is marked right or wrong on its own, out of 13. The pass mark isn't published, so you just see your score. Your scores are saved so you can watch them climb.
 
 ## My Course
 

@@ -102,6 +102,10 @@
   .item.no .cell { background: #7f1d1d; border-color: var(--bad); color: #fee2e2; }
   .item .right { font: 600 0.95rem 'JetBrains Mono', monospace; letter-spacing: 0.1em; color: var(--good); min-height: 1.3em; }
   .item .tag { font-size: 0.72rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
+  /* The five suggested answers under the word you're typing (two-word questions). */
+  .sugg { list-style: none; margin: 0; padding: 0; width: 100%; min-width: 9em; display: flex; flex-direction: column; gap: 4px; }
+  .sugg li { background: var(--well); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px;
+             font: 500 1rem 'JetBrains Mono', monospace; letter-spacing: 0.08em; text-align: center; color: var(--text); }
   .typein { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; }
 
   .meter { height: 6px; background: var(--well); border-radius: 3px; overflow: hidden; margin: 2px 0 6px; }
@@ -168,7 +172,8 @@
       The test isn&rsquo;t published; this copies it as closely as we can, from a classmate who took it.
       There are <b>8 questions</b>: <b>5 with two words</b> and <b>3 US call signs</b>. Each is sent <b>once</b>
       at <b>25 WPM characters, 10 WPM overall</b> (Farnsworth). Then you get <b>20 seconds</b> to type what you copied
-      into the letter boxes. Each word and call sign counts on its own, <b>13 in all</b>, and has to be exactly right.</p>
+      into the letter boxes. For each word of a two-word question, <b>five suggested answers</b> appear; type the one you heard.
+      Each word and call sign counts on its own, <b>13 in all</b>, and has to be exactly right. You see your score at the end.</p>
 
     <fieldset class="speeds">
       <legend class="label">Speed, tone and volume</legend>
@@ -225,7 +230,7 @@
       <span style="flex:1"></span>
       <button class="btn" id="quitBtn" type="button">Quit test</button>
     </div>
-    <p class="hint">The code plays once. Then type what you copied; a space between words isn&rsquo;t needed. Tap the boxes if your keyboard isn&rsquo;t showing.</p>
+    <p class="hint">The code plays once. Then type what you copied (the suggestions are a guide; you type the answer). A space between words isn&rsquo;t needed. Tap the boxes if your keyboard isn&rsquo;t showing.</p>
   </section>
 
   <!-- ================= Results ================= -->
@@ -233,7 +238,6 @@
     <h2 id="resultTitle">Your result</h2>
     <div class="score">
       <span class="big" id="scoreBig"></span>
-      <span class="badge" id="scoreBadge"></span>
       <span class="why" id="scoreWhy"></span>
     </div>
     <div class="tiles" id="tiles"></div>
@@ -252,7 +256,7 @@
   <!-- ================= Score history ================= -->
   <section class="card" id="historyCard" aria-labelledby="historyTitle">
     <h2 id="historyTitle">Your test scores</h2>
-    <div class="legend" id="historyLegend"><span class="pass">Passed</span><span class="fail">Not yet</span><span class="line">60% pass mark (our guess)</span></div>
+    <div class="legend" id="historyLegend" hidden></div>
     <div id="chart"></div>
     <p class="summary" id="historySummary"></p>
   </section>
@@ -280,16 +284,19 @@
      20-second answer clock starts. You TYPE what you copied; each word
      or call sign turns all green or all red as soon as its last box is
      filled (all or nothing -- one wrong letter makes it wrong), and a
-     wrong one shows the right answer. Next moves on; nothing advances
-     by itself. The score is out of 13 (each word and call sign counts
-     on its own), e.g. "8 of 13 · 62%". The pass mark isn't published:
-     he scored 62% and was placed, so 60% is our guess.
+     wrong one shows the right answer. In a two-word question, five
+     suggested answers appear under the word you're on -- the first word,
+     then the second -- and you still type your answer (Tim, 2026-10-26).
+     Next moves on; nothing advances by itself. The score is out of 13
+     (each word and call sign counts on its own), e.g. "8 of 13 · 62%".
+     The pass mark isn't published, so only the score is shown -- no
+     pass/fail (Tim, 2026-10-26).
      (Earlier version, 2026-10-14: single words / short phrases picked
      from 4 multiple-choice answers, 80% to pass.)
      ===================================================================== */
   var WORD_QUESTIONS = 5, CALL_QUESTIONS = 3;
   var ANSWER_SEC = 20;
-  var PASS = 60;               // percent; our best guess
+  var SUGGESTIONS = 5;         // suggested answers shown for each word of a two-word question
   var FORMAT = 'cwa13';        // saved with each test, so the chart compares like with like
   var CHART_TESTS = 20;
 
@@ -351,6 +358,31 @@
     ' MILES NEARLY REGION SORT SPEED TRAVEL DROP FAIR FEET KID LINK SALE TOUR BEYOND EXTRA FORCES'
   ).split(' ');
 
+  /* Suggested answers: the right word plus four others of the same
+     length that look and sound like it -- the most letters in the same
+     places, a letter whose Morse differs by one element (A .- / M --)
+     counting half. Picked at random from the closest few, so the same
+     word doesn't always get the same list. */
+  function morseNear(a, b) {
+    var x = HST.MORSE[a], y = HST.MORSE[b];
+    if (!x || !y || a === b) return false;
+    if (x.length === y.length) { var d = 0; for (var i = 0; i < x.length; i++) if (x[i] !== y[i]) d++; return d === 1; }
+    if (Math.abs(x.length - y.length) !== 1) return false;
+    var s = x.length < y.length ? x : y, l = x.length < y.length ? y : x;
+    for (var k = 0; k < l.length; k++) if (l.slice(0, k) + l.slice(k + 1) === s) return true;
+    return false;
+  }
+  function likeness(a, b) {
+    var s = 0;
+    for (var i = 0; i < a.length; i++) s += a[i] === b[i] ? 2 : morseNear(a[i], b[i]) ? 1 : 0;
+    return s + Math.random();                         // random tie-break
+  }
+  function suggestions(word) {
+    var c = WORDS.filter(function (x) { return x.length === word.length && x !== word; });
+    c.sort(function (a, b) { return likeness(word, b) - likeness(word, a); });
+    return shuffle([word].concat(shuffle(c.slice(0, 8)).slice(0, SUGGESTIONS - 1)));
+  }
+
   // US call signs in every format the FCC issues: 1x2 (K4AB), 2x1 (KW4A),
   // 2x2 (KA4AB), 1x3 (K4ABC), 2x3 (KA4ABC). The test had US calls only,
   // including a 2x1 and a 2x3.
@@ -374,7 +406,8 @@
     var qs = [], used = {};
     function fresh(make) { var x, n = 0; do { x = make(); } while (used[x] && n++ < 50); used[x] = true; return x; }
     for (var i = 0; i < WORD_QUESTIONS; i++) {
-      qs.push({ cat: 'words', items: [fresh(function () { return pick(WORDS); }), fresh(function () { return pick(WORDS); })] });
+      var pair = [fresh(function () { return pick(WORDS); }), fresh(function () { return pick(WORDS); })];
+      qs.push({ cat: 'words', items: pair, sugg: pair.map(suggestions) });
     }
     for (var j = 0; j < CALL_QUESTIONS; j++) qs.push({ cat: 'call', items: [fresh(usCall)] });
     return shuffle(qs);
@@ -519,7 +552,11 @@
         return '<span class="cell' + (ch ? ' filled' : ' q') + (cur ? ' cur' : '') + '">' + (ch ? esc(ch) : '?') + '</span>';
       }).join('');
       var right = marked && test.feedback && !q.ok[k] ? esc(word) : '';
-      return '<div class="' + cls + '"><div class="cells">' + cells + '</div><div class="right">' + right + '</div></div>';
+      // Two-word questions: the five suggestions for the word you're on.
+      var sugg = q.sugg && state === 'answer' && k === cursorItem
+        ? '<ul class="sugg" aria-label="Suggested answers">' + q.sugg[k].map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>'
+        : '';
+      return '<div class="' + cls + '"><div class="cells">' + cells + '</div><div class="right">' + right + '</div>' + sugg + '</div>';
     }).join('');
   }
 
@@ -612,7 +649,7 @@
      RESULTS + SAVING
      A test is one Progress session: { trainer: 'test-prep', format:
      'cwa13', wpm, fwpm, questions: 13 (answers scored), answered, right,
-     score, passed, completed, items: [{ cat: 'word' | 'call', q, sent,
+     score, completed, items: [{ cat: 'word' | 'call', q, sent,
      typed, ok }] } plus start / end / durationMs. Quitting part-way saves
      what was answered with completed: false (practice time only).
      ===================================================================== */
@@ -633,7 +670,7 @@
     return HST.history.add({
       trainer: 'test-prep', uid: HST.history.newUid(), start: test.start, end: end, durationMs: end - test.start,
       format: FORMAT, wpm: test.wpm, fwpm: test.fwpm || 0, questions: n, answered: items.length,
-      right: right, score: score, completed: completed, passed: completed && score >= PASS, items: items
+      right: right, score: score, completed: completed, items: items
     });
   }
 
@@ -641,14 +678,10 @@
     state = 'results';
     var items = scored(), n = totalItems();
     var right = items.filter(function (x) { return x.ok; }).length;
-    var score = Math.round(right / n * 100), passed = score >= PASS;
+    var score = Math.round(right / n * 100);
     show('resultCard');
     $('scoreBig').innerHTML = right + '/' + n + '<small>' + score + '%</small>';
-    $('scoreBadge').textContent = passed ? 'PASS' : 'NOT YET';
-    $('scoreBadge').className = 'badge ' + (passed ? 'pass' : 'fail');
-    var need = Math.ceil(n * PASS / 100);
-    $('scoreWhy').textContent = (passed ? 'You copied ' + right + ' of ' + n + '. ' : 'You copied ' + right + ' of ' + n + '; ' + need + ' (60%) would pass. ') +
-      'The real pass mark isn’t published; 60% is our best guess.';
+    $('scoreWhy').textContent = 'You copied ' + right + ' of ' + n + ' words and call signs.';
     function tally(cat) {
       var t = items.filter(function (x) { return x.cat === cat; });
       return t.filter(function (x) { return x.ok; }).length + '/' + t.length;
@@ -690,15 +723,14 @@
 
   /* =====================================================================
      SCORE HISTORY CHART -- the last 20 completed tests in this format,
-     oldest on the left. Green bars passed, red didn't; the dashed line is
-     the 60% pass mark. (Tests in the earlier multiple-choice format are
+     oldest on the left, each bar its score. No pass line: the pass mark
+     isn't published. (Tests in the earlier multiple-choice format are
      left out: a different test.)
      ===================================================================== */
   function drawHistory() {
     return HST.history.all().then(function (rows) {
       var tests = rows.filter(function (s) { return s.trainer === 'test-prep' && s.completed && s.format === FORMAT; });
       var shown = tests.slice(-CHART_TESTS);
-      $('historyLegend').hidden = !shown.length;
       if (!shown.length) {
         $('chart').innerHTML = '<div class="nodata">Take a test and your scores will show up here.</div>';
         $('historySummary').textContent = '';
@@ -714,7 +746,7 @@
       });
       shown.forEach(function (s, i) {
         var x = L + cw * i + (cw - bw) / 2, h = Math.max(2, y(0) - y(s.score));
-        var color = s.passed ? '#4ade80' : '#f87171';
+        var color = '#fb923c';
         var when = new Date(s.start).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         svg.push('<rect x="' + x.toFixed(1) + '" y="' + (y(0) - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) +
                  '" rx="3" fill="' + color + '"' + (i === shown.length - 1 ? '' : ' opacity="0.75"') + '><title>' +
@@ -724,14 +756,11 @@
           svg.push('<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + esc(when) + '</text>');
         }
       });
-      svg.push('<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(PASS) + '" y2="' + y(PASS) + '" stroke="#fb923c" stroke-width="2" stroke-dasharray="6 5"/>');
       svg.push('</svg>');
       $('chart').innerHTML = svg.join('');
-      var passes = tests.filter(function (s) { return s.passed; }).length;
       var best = Math.max.apply(null, tests.map(function (s) { return s.score; }));
       var last5 = tests.slice(-5), avg5 = Math.round(last5.reduce(function (a, s) { return a + s.score; }, 0) / last5.length);
-      $('historySummary').textContent = tests.length + (tests.length === 1 ? ' test' : ' tests') + ' taken · passed ' + passes +
-        ' · best ' + best + '% · average of the last ' + last5.length + ': ' + avg5 + '%' +
+      $('historySummary').textContent = tests.length + (tests.length === 1 ? ' test' : ' tests') + ' taken · best ' + best + '% · average of the last ' + last5.length + ': ' + avg5 + '%' +
         (tests.length > CHART_TESTS ? ' (the chart shows the last ' + CHART_TESTS + ')' : '');
     });
   }
