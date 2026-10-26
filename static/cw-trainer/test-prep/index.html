@@ -98,8 +98,8 @@
   .cell.q { color: var(--dim); font-weight: 500; }
   .cell.cur { border-color: var(--tp); box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.3); }
   .cell.filled { border-color: var(--muted); }
-  .item.ok .cell { background: #14532d; border-color: var(--good); color: #dcfce7; }
-  .item.no .cell { background: #7f1d1d; border-color: var(--bad); color: #fee2e2; }
+  .cell.good { background: #14532d; border-color: var(--good); color: #dcfce7; }
+  .cell.bad { background: #7f1d1d; border-color: var(--bad); color: #fee2e2; }
   .item .right { font: 600 0.95rem 'JetBrains Mono', monospace; letter-spacing: 0.1em; color: var(--good); min-height: 1.3em; }
   .item .tag { font-size: 0.72rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
   /* The five suggested answers under the word you're typing (two-word questions). */
@@ -281,10 +281,11 @@
      8 questions, in random order -- 5 with two everyday words and 3 US
      call signs. Each is sent ONCE (25 WPM characters, Farnsworth 10).
      When the code ends, one box per letter appears for each word and a
-     20-second answer clock starts. You TYPE what you copied; each word
-     or call sign turns all green or all red as soon as its last box is
-     filled (all or nothing -- one wrong letter makes it wrong), and a
-     wrong one shows the right answer. In a two-word question, five
+     20-second answer clock starts. You TYPE what you copied; as soon as
+     a word or call sign's last box is filled, each of its letters turns
+     green (right) or red (wrong) -- letter by letter, Tim, 2026-10-26 --
+     and a wrong one shows the right answer. It scores only if every
+     letter is right. In a two-word question, five
      suggested answers appear under the word you're on -- the first word,
      then the second -- and you still type your answer (Tim, 2026-10-26).
      Next moves on; nothing advances by itself. The score is out of 13
@@ -547,9 +548,13 @@
     $('qboxes').innerHTML = q.items.map(function (word, k) {
       var t = q.typed[k], marked = q.ok[k] !== null && (test.feedback || state === 'done');
       var cls = 'item' + (marked && test.feedback ? (q.ok[k] ? ' ok' : ' no') : '');
+      // Once a word is marked, each letter is green if it's right and red if
+      // it's wrong (or missing) -- letter by letter (Tim, 2026-10-26). The
+      // word still only scores if every letter is right.
       var cells = word.split('').map(function (_, c) {
         var ch = t.charAt(c), cur = state === 'answer' && k === cursorItem && c === t.length;
-        return '<span class="cell' + (ch ? ' filled' : ' q') + (cur ? ' cur' : '') + '">' + (ch ? esc(ch) : '?') + '</span>';
+        var mark = marked && test.feedback ? (ch === word.charAt(c) ? ' good' : ' bad') : '';
+        return '<span class="cell' + (ch ? ' filled' : ' q') + (cur ? ' cur' : '') + mark + '">' + (ch ? esc(ch) : '?') + '</span>';
       }).join('');
       var right = marked && test.feedback && !q.ok[k] ? esc(word) : '';
       // Two-word questions: the five suggestions for the word you're on.
