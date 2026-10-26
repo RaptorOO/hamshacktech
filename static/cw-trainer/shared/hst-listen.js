@@ -93,11 +93,16 @@
     osc.connect(g).connect(octx.destination);
     osc.start(when); osc.stop(when + dur + 0.01);
   }
-  // The Practice Timer bell (same recipe as HST.audio.bell). 5.5 s long.
+  // The end-of-time bell: the Practice Timer bell's recipe (HST.audio.bell),
+  // but about 2.5 times as loud and struck four times, for the car (Tim,
+  // 2026-10-25: "the timer did not buzz"; at the old level it measured
+  // about a third as loud as the Morse, easy to miss over road noise).
+  // Peaks at about 0.75 at full volume. BELL_S long.
+  var BELL_S = 7;
   function bell(octx, t0, volume) {
     var P = [[0.5, 0.35, 1.6], [1.0, 0.60, 1.2], [1.19, 0.40, 0.9], [1.5, 0.25, 0.7], [2.0, 0.45, 0.6], [2.74, 0.20, 0.35], [3.76, 0.12, 0.25], [5.4, 0.06, 0.15]];
-    var level = Math.max(volume, 40) / 100 * 0.16;
-    [0, 1.1, 2.2].forEach(function (s) {
+    var level = Math.max(volume, 50) / 100 * 0.42;
+    [0, 1.1, 2.2, 3.3].forEach(function (s) {
       P.forEach(function (p) {
         var osc = octx.createOscillator(); osc.frequency.value = 523.25 * p[0];
         var g = octx.createGain(), t = t0 + s;
@@ -209,7 +214,7 @@
             }
           }
         }
-        var last = t >= left, dur = t + (last ? 6 : 0);
+        var last = t >= left, dur = t + (last ? BELL_S + 0.3 : 0);
         var octx = new OfflineAudioContext(1, Math.ceil(dur * RATE), RATE);
         plan.forEach(function (x) {
           morse(x[1].text, tm, octx, x[0], snd.toneHz, peak);
@@ -259,7 +264,15 @@
         if (!running || g !== gen) return;
         var n = next; next = null;
         URL.revokeObjectURL(done.url); cur = null;
-        if (n) play(n); else finish();
+        if (n) { play(n); return; }
+        // The next stretch isn't there (its render failed, or a speed change
+        // dropped it). This used to end the run right here, with no bell.
+        // Render again from now: more practice if there's time left,
+        // otherwise just the bell.
+        render(Date.now()).then(function (c) {
+          if (!running || g !== gen || cur) { URL.revokeObjectURL(c.url); return; }
+          play(c);
+        }, function () { if (running && g === gen) finish(); });
       });
     }
     function onEvent(e) {
