@@ -552,8 +552,9 @@
       }
       function commit(r) {
         // Nothing practiced: don't record. (Keyer Practice's Free send has
-        // no right answers, so it counts characters sent instead.)
-        if (!r || !(r.charsTotal || r.sentChars)) { dropDraft(r && r.uid); return Promise.resolve(); }
+        // no right answers, so it counts characters sent instead; ICR with
+        // Spacebar Mode off grades nothing and counts characters heard.)
+        if (!r || !(r.charsTotal || r.sentChars || r.heard)) { dropDraft(r && r.uid); return Promise.resolve(); }
         r.end = r.end || r.start;            // a recovered draft ends at its last saved moment
         r.durationMs = Math.max(0, r.end - r.start);
         if (!r.uid) r.uid = HST.history.newUid();
