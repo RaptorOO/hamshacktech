@@ -596,6 +596,7 @@
      dashed border instead of the blinking caret, so it's clear typing
      isn't open yet. */
   .blank.locked { border-style: dashed; }
+  .blank.skipped { border-color: var(--border-strong); background: var(--recess); }   /* passed over with Space */
 
   /* ---------------------------------------------------------------------
      Lower grid: settings / stats / drill
@@ -2046,7 +2047,7 @@
       }
       var pro = state.currentChars[i].length > 1 ? " pro" : "";
       if (i < nextIndex) {
-        cell.className = "blank filled" + pro;
+        cell.className = "blank filled" + pro + (state.typed[i] === "" ? " skipped" : "");   // space skipped it
         cell.textContent = state.typed[i];
       } else if (i === nextIndex && state.acceptingInput && inputLocked()) {
         cell.className = "blank locked" + pro; // Head Copy Mode: wait for the code to finish
@@ -2866,7 +2867,7 @@
     if (!state.acceptingInput) { els.hiddenInput.value = ""; return; }
     // Head Copy Mode while code is playing: throw the new keystroke away
     // but keep whatever was already typed (e.g. before pressing Replay).
-    if (inputLocked()) { els.hiddenInput.value = state.typed.join(""); return; }
+    if (inputLocked()) { els.hiddenInput.value = typedAsInput(); return; }
     // A-Z0-9 as before, plus the punctuation QSO Elements/Common Words can
     // contain: "?" (the bare "?" element, "HW CPY?"), "/" ("/P", "/AR" etc.)
     // and "'" ("THAT'S").
@@ -2875,19 +2876,39 @@
     // skipping over its word gaps, so a missed (or extra) space never
     // shifts the rest of a sentence out of line. Typing the space works too.
     // A prosign's box (Your File) takes its two letters (BT for <BT>).
-    var letters = els.hiddenInput.value.toUpperCase().replace(/[^A-Z0-9?/'.,=()-]/g, "").split("");
+    // SPACE SKIPS A BOX (Tim, 2026-10-28): a space where a letter box comes
+    // next leaves that box empty and moves on (type D, space, then the
+    // third character). A space where a word gap comes next is that gap,
+    // as before. A skipped box is kept in the input as "_", is shown empty
+    // and counts as a miss.
+    var tokens = [];
+    els.hiddenInput.value.toUpperCase().split("").forEach(function (ch) {
+      if (ch === " " || ch === "_") tokens.push(ch);
+      else if (/[A-Z0-9?/'.,=()-]/.test(ch)) tokens.push(ch);
+    });
     var cells = state.currentChars, out = [];
-    for (var ci = 0; ci < cells.length && letters.length; ci++) {
-      if (cells[ci] === " ") out.push(" ");
-      else if (cells[ci].length > 1) out.push(letters.splice(0, cells[ci].length - 2).join(""));
-      else out.push(letters.shift());
+    for (var ci = 0; ci < cells.length && tokens.length; ci++) {
+      if (cells[ci] === " ") {                        // a word gap fills itself in
+        out.push(" ");
+        if (tokens[0] === " ") tokens.shift();        // ...and a space typed there is that gap
+        continue;
+      }
+      var t = tokens.shift();
+      if (t === " " || t === "_") { out.push(""); continue; }   // skipped
+      if (cells[ci].length > 1) {                     // prosign: its letters, up to a skip
+        var need = cells[ci].length - 2, got = t;
+        while (got.length < need && tokens.length && tokens[0] !== " " && tokens[0] !== "_") got += tokens.shift();
+        out.push(got);
+      } else out.push(t);
     }
-    els.hiddenInput.value = out.join("");
     state.typed = out;
+    els.hiddenInput.value = typedAsInput();
     renderBlanksTyping();
-    var lastCell = cells[cells.length - 1];
-    if (out.length === cells.length && out[out.length - 1].length === answerOf(lastCell).length) finishAnswer(false);
+    var lastCell = cells[cells.length - 1], lastTyped = out[out.length - 1];
+    if (out.length === cells.length && (lastTyped === "" || lastTyped.length === answerOf(lastCell).length)) finishAnswer(false);
   });
+  // What's been typed, as the hidden input holds it (a skipped box as "_").
+  function typedAsInput() { return state.typed.map(function (x) { return x === "" ? "_" : x; }).join(""); }
 
   els.hiddenInput.addEventListener("keydown", function (e) {
     if (state.reviewing && (e.key === "Enter" || e.key === " ")) {
