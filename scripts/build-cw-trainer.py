@@ -77,6 +77,22 @@ def build_icons():
         shutil.copyfile(STATIC / name, icon_dir / name)
 
 
+# Fingerprint of a file as the server will send it: SHA-256, first 16 hex
+# digits. Text files are hashed with their line endings as "\n" (a Windows
+# checkout has "\r\n", the deployed copy from git has "\n"); the service
+# worker hashes what it downloads the same way, after removing the
+# analytics script Cloudflare Pages adds to every page. Binary files
+# (fonts, images) are hashed as they are.
+TEXT_TYPES = {".html", ".js", ".css", ".json", ".webmanifest", ".svg", ".txt", ".xml", ".md"}
+
+
+def fingerprint(path):
+    data = path.read_bytes()
+    if path.suffix.lower() in TEXT_TYPES:
+        data = data.decode("utf-8").replace("\r", "").encode("utf-8")
+    return hashlib.sha256(data).hexdigest()[:16]
+
+
 def build_service_worker():
     # Every file the app needs, as the URL the browser will request.
     # Folder pages are listed by folder URL ("/cw-trainer/icr/"), which is how
@@ -87,11 +103,17 @@ def build_service_worker():
     for p in files:
         rel = p.relative_to(STATIC).as_posix()
         url = "/" + (rel[: -len("index.html")] if rel.endswith("index.html") else rel)
-        urls.append(url)
+        urls.append((url, fingerprint(p)))
         digest.update(rel.encode() + b"\0" + p.read_bytes())
     template = (ROOT / "scripts" / "cw-trainer-sw.template.js").read_text()
+    # The service worker's own code counts too: a change to how it installs
+    # gets a new version, so every installed app re-downloads (and checks)
+    # everything into fresh storage instead of reusing the old version's.
+    digest.update(b"sw-template\0" + template.replace("\r", "").encode("utf-8"))
     sw = template.replace("__VERSION__", digest.hexdigest()[:12])
-    sw = sw.replace("__PRECACHE__", ",\n  ".join(f"'{u}'" for u in urls))
+    # Each file with its fingerprint, which the service worker checks every
+    # downloaded copy against (see the template's install step).
+    sw = sw.replace("__PRECACHE__", ",\n  ".join(f"['{u}', '{h}']" for u, h in urls))
     (APP / "sw.js").write_text(sw, encoding="utf-8")
     print(f"sw.js: {len(urls)} files, version {digest.hexdigest()[:12]}")
 

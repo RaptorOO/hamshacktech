@@ -17,105 +17,124 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = 'ac5ecedcb3ac';
+const VERSION = '2543871848f4';
 const CACHE = 'cw-trainer-' + VERSION;
 
-// Every file the app needs to run offline.
+// Every file the app needs to run offline, each with its fingerprint (see
+// fingerprint() in the build script).
 const PRECACHE = [
-  '/cw-trainer/call-signs/',
-  '/cw-trainer/code-groups/',
-  '/cw-trainer/course/',
-  '/cw-trainer/fonts/bebas-neue-latin-400-normal.woff2',
-  '/cw-trainer/fonts/fonts.css',
-  '/cw-trainer/fonts/ibm-plex-mono-latin-400-normal.woff2',
-  '/cw-trainer/fonts/ibm-plex-mono-latin-500-normal.woff2',
-  '/cw-trainer/fonts/ibm-plex-mono-latin-600-normal.woff2',
-  '/cw-trainer/fonts/ibm-plex-mono-latin-700-normal.woff2',
-  '/cw-trainer/fonts/ibm-plex-sans-latin-400-normal.woff2',
-  '/cw-trainer/fonts/ibm-plex-sans-latin-500-normal.woff2',
-  '/cw-trainer/fonts/ibm-plex-sans-latin-600-normal.woff2',
-  '/cw-trainer/fonts/inter-latin-400-normal.woff2',
-  '/cw-trainer/fonts/inter-latin-500-normal.woff2',
-  '/cw-trainer/fonts/inter-latin-600-normal.woff2',
-  '/cw-trainer/fonts/jetbrains-mono-latin-400-normal.woff2',
-  '/cw-trainer/fonts/jetbrains-mono-latin-500-normal.woff2',
-  '/cw-trainer/fonts/jetbrains-mono-latin-700-normal.woff2',
-  '/cw-trainer/fonts/oswald-latin-400-normal.woff2',
-  '/cw-trainer/fonts/oswald-latin-500-normal.woff2',
-  '/cw-trainer/fonts/oswald-latin-600-normal.woff2',
-  '/cw-trainer/fonts/oswald-latin-700-normal.woff2',
-  '/cw-trainer/fonts/russo-one-latin-400-normal.woff2',
-  '/cw-trainer/fonts/source-sans-3-latin-400-normal.woff2',
-  '/cw-trainer/fonts/source-sans-3-latin-600-normal.woff2',
-  '/cw-trainer/fonts/source-sans-3-latin-700-normal.woff2',
-  '/cw-trainer/icons/android-chrome-192x192.png',
-  '/cw-trainer/icons/android-chrome-512x512.png',
-  '/cw-trainer/icons/apple-touch-icon.png',
-  '/cw-trainer/icons/favicon-32x32.png',
-  '/cw-trainer/icr/',
-  '/cw-trainer/',
-  '/cw-trainer/jeopardy/answers.js',
-  '/cw-trainer/jeopardy/',
-  '/cw-trainer/jeopardy/online.js',
-  '/cw-trainer/keyer/',
-  '/cw-trainer/manifest.webmanifest',
-  '/cw-trainer/progress/',
-  '/cw-trainer/qso/',
-  '/cw-trainer/shared/hst-account.js',
-  '/cw-trainer/shared/hst-chrome.css',
-  '/cw-trainer/shared/hst-content.js',
-  '/cw-trainer/shared/hst-course.js',
-  '/cw-trainer/shared/hst-engine.js',
-  '/cw-trainer/shared/hst-keyer.js',
-  '/cw-trainer/shared/hst-listen.js',
-  '/cw-trainer/shared/hst-qso.js',
-  '/cw-trainer/test-prep/',
-  '/cw-trainer/voice/0.mp3',
-  '/cw-trainer/voice/1.mp3',
-  '/cw-trainer/voice/2.mp3',
-  '/cw-trainer/voice/3.mp3',
-  '/cw-trainer/voice/4.mp3',
-  '/cw-trainer/voice/5.mp3',
-  '/cw-trainer/voice/6.mp3',
-  '/cw-trainer/voice/7.mp3',
-  '/cw-trainer/voice/8.mp3',
-  '/cw-trainer/voice/9.mp3',
-  '/cw-trainer/voice/A.mp3',
-  '/cw-trainer/voice/apos.mp3',
-  '/cw-trainer/voice/B.mp3',
-  '/cw-trainer/voice/C.mp3',
-  '/cw-trainer/voice/comma.mp3',
-  '/cw-trainer/voice/D.mp3',
-  '/cw-trainer/voice/dash.mp3',
-  '/cw-trainer/voice/E.mp3',
-  '/cw-trainer/voice/equals.mp3',
-  '/cw-trainer/voice/F.mp3',
-  '/cw-trainer/voice/G.mp3',
-  '/cw-trainer/voice/H.mp3',
-  '/cw-trainer/voice/I.mp3',
-  '/cw-trainer/voice/J.mp3',
-  '/cw-trainer/voice/K.mp3',
-  '/cw-trainer/voice/L.mp3',
-  '/cw-trainer/voice/lparen.mp3',
-  '/cw-trainer/voice/M.mp3',
-  '/cw-trainer/voice/N.mp3',
-  '/cw-trainer/voice/O.mp3',
-  '/cw-trainer/voice/P.mp3',
-  '/cw-trainer/voice/period.mp3',
-  '/cw-trainer/voice/Q.mp3',
-  '/cw-trainer/voice/qmark.mp3',
-  '/cw-trainer/voice/R.mp3',
-  '/cw-trainer/voice/rparen.mp3',
-  '/cw-trainer/voice/S.mp3',
-  '/cw-trainer/voice/slash.mp3',
-  '/cw-trainer/voice/T.mp3',
-  '/cw-trainer/voice/U.mp3',
-  '/cw-trainer/voice/V.mp3',
-  '/cw-trainer/voice/W.mp3',
-  '/cw-trainer/voice/X.mp3',
-  '/cw-trainer/voice/Y.mp3',
-  '/cw-trainer/voice/Z.mp3'
+  ['/cw-trainer/call-signs/', '0dd09c85ac548899'],
+  ['/cw-trainer/code-groups/', '9ffd9dd5dbd6da09'],
+  ['/cw-trainer/course/', '152525c63c5b9ad5'],
+  ['/cw-trainer/fonts/bebas-neue-latin-400-normal.woff2', 'a7c90c89240c134f'],
+  ['/cw-trainer/fonts/fonts.css', '25c4ec75fe307c29'],
+  ['/cw-trainer/fonts/ibm-plex-mono-latin-400-normal.woff2', '08949f728dc52d52'],
+  ['/cw-trainer/fonts/ibm-plex-mono-latin-500-normal.woff2', '01d285447409c8a5'],
+  ['/cw-trainer/fonts/ibm-plex-mono-latin-600-normal.woff2', '0d1f0b8d0722224e'],
+  ['/cw-trainer/fonts/ibm-plex-mono-latin-700-normal.woff2', '4f84d86cfd060f4d'],
+  ['/cw-trainer/fonts/ibm-plex-sans-latin-400-normal.woff2', '3b646991d30055a9'],
+  ['/cw-trainer/fonts/ibm-plex-sans-latin-500-normal.woff2', '0717336fb31fcdcd'],
+  ['/cw-trainer/fonts/ibm-plex-sans-latin-600-normal.woff2', '8960851d691c054e'],
+  ['/cw-trainer/fonts/inter-latin-400-normal.woff2', '8909904ab6c872eb'],
+  ['/cw-trainer/fonts/inter-latin-500-normal.woff2', 'f3779f1efccc4bdc'],
+  ['/cw-trainer/fonts/inter-latin-600-normal.woff2', 'f9a06e79cd3a2a20'],
+  ['/cw-trainer/fonts/jetbrains-mono-latin-400-normal.woff2', '14425ba9c695763c'],
+  ['/cw-trainer/fonts/jetbrains-mono-latin-500-normal.woff2', 'cb182feeed4d798f'],
+  ['/cw-trainer/fonts/jetbrains-mono-latin-700-normal.woff2', 'd0d4e818808f2a0b'],
+  ['/cw-trainer/fonts/oswald-latin-400-normal.woff2', 'e902b779e43944c3'],
+  ['/cw-trainer/fonts/oswald-latin-500-normal.woff2', '541b12882301dc44'],
+  ['/cw-trainer/fonts/oswald-latin-600-normal.woff2', 'f6cb541f4d9794b8'],
+  ['/cw-trainer/fonts/oswald-latin-700-normal.woff2', 'aae665c75af89ea7'],
+  ['/cw-trainer/fonts/russo-one-latin-400-normal.woff2', '8a6b754cd3bc5ad2'],
+  ['/cw-trainer/fonts/source-sans-3-latin-400-normal.woff2', '0f73f35e08cde0a2'],
+  ['/cw-trainer/fonts/source-sans-3-latin-600-normal.woff2', '14527d193b0e30bc'],
+  ['/cw-trainer/fonts/source-sans-3-latin-700-normal.woff2', 'ae35266f2ab0d531'],
+  ['/cw-trainer/icons/android-chrome-192x192.png', '2876ba447f3fad3c'],
+  ['/cw-trainer/icons/android-chrome-512x512.png', '0af384dbeded6f44'],
+  ['/cw-trainer/icons/apple-touch-icon.png', '6877a92df205dbd5'],
+  ['/cw-trainer/icons/favicon-32x32.png', '5cc015c2d45188f7'],
+  ['/cw-trainer/icr/', 'c139da74b76c3b34'],
+  ['/cw-trainer/', 'dde1af80b774d023'],
+  ['/cw-trainer/jeopardy/answers.js', '4afd4de2da8d724a'],
+  ['/cw-trainer/jeopardy/', 'c06455c0b845ce66'],
+  ['/cw-trainer/jeopardy/online.js', '92e793388fd7f83c'],
+  ['/cw-trainer/keyer/', 'b096a0511c68d1c5'],
+  ['/cw-trainer/manifest.webmanifest', '5379bb24c9d39b06'],
+  ['/cw-trainer/progress/', '00a14091dc0b7058'],
+  ['/cw-trainer/qso/', 'fdbd2b3774a64a98'],
+  ['/cw-trainer/shared/hst-account.js', '2c569a86f4ee499c'],
+  ['/cw-trainer/shared/hst-chrome.css', '0c03daf49d8cadc3'],
+  ['/cw-trainer/shared/hst-content.js', '98f9e954ad3f2732'],
+  ['/cw-trainer/shared/hst-course.js', '12dbe8111753b78d'],
+  ['/cw-trainer/shared/hst-engine.js', '93001a4e73f01360'],
+  ['/cw-trainer/shared/hst-keyer.js', 'bf7ebb5db5d48776'],
+  ['/cw-trainer/shared/hst-listen.js', '4c935286e20ee334'],
+  ['/cw-trainer/shared/hst-qso.js', '4e96bd2ce0383e93'],
+  ['/cw-trainer/test-prep/', 'f6dbbc9ad36426aa'],
+  ['/cw-trainer/voice/0.mp3', 'ea20ba8761f91986'],
+  ['/cw-trainer/voice/1.mp3', '39ea752ce884db07'],
+  ['/cw-trainer/voice/2.mp3', '145cb64916e2b576'],
+  ['/cw-trainer/voice/3.mp3', '7778fc43b996c75c'],
+  ['/cw-trainer/voice/4.mp3', '8449128f24302da7'],
+  ['/cw-trainer/voice/5.mp3', '801252a46c994088'],
+  ['/cw-trainer/voice/6.mp3', '607e66f726f6b5a7'],
+  ['/cw-trainer/voice/7.mp3', 'a458dc8d2875cb4b'],
+  ['/cw-trainer/voice/8.mp3', 'a4bf3cf57862410e'],
+  ['/cw-trainer/voice/9.mp3', 'abfd6552b819177a'],
+  ['/cw-trainer/voice/A.mp3', '0679bc55ad62d208'],
+  ['/cw-trainer/voice/apos.mp3', 'fc47915aa686b574'],
+  ['/cw-trainer/voice/B.mp3', '015d79bd50de00ac'],
+  ['/cw-trainer/voice/C.mp3', 'f760f6700acfe324'],
+  ['/cw-trainer/voice/comma.mp3', '0abe78aba67e4a51'],
+  ['/cw-trainer/voice/D.mp3', '6f04863cbb327531'],
+  ['/cw-trainer/voice/dash.mp3', 'ec0af5ded513fde2'],
+  ['/cw-trainer/voice/E.mp3', 'f9999805079d111f'],
+  ['/cw-trainer/voice/equals.mp3', '8068ef60185d8025'],
+  ['/cw-trainer/voice/F.mp3', '45edfad071d66fe2'],
+  ['/cw-trainer/voice/G.mp3', '88e8b2460ecd9da3'],
+  ['/cw-trainer/voice/H.mp3', '4f49eec59bb2815b'],
+  ['/cw-trainer/voice/I.mp3', '2884b26004229937'],
+  ['/cw-trainer/voice/J.mp3', '33a5ee43f4081db0'],
+  ['/cw-trainer/voice/K.mp3', '72716436b62d5176'],
+  ['/cw-trainer/voice/L.mp3', '88b57801876c0d98'],
+  ['/cw-trainer/voice/lparen.mp3', '2a3a46756e314811'],
+  ['/cw-trainer/voice/M.mp3', '76459acd6a24216c'],
+  ['/cw-trainer/voice/N.mp3', 'e187fd57e3b72f6c'],
+  ['/cw-trainer/voice/O.mp3', '69b9f56731293347'],
+  ['/cw-trainer/voice/P.mp3', '538e52ad549b7903'],
+  ['/cw-trainer/voice/period.mp3', 'e4b7283a60982f2b'],
+  ['/cw-trainer/voice/Q.mp3', '656a2aed90d2e3d4'],
+  ['/cw-trainer/voice/qmark.mp3', '1e0bc0c372468b08'],
+  ['/cw-trainer/voice/R.mp3', 'c81722262968385e'],
+  ['/cw-trainer/voice/rparen.mp3', '0685a69734e44961'],
+  ['/cw-trainer/voice/S.mp3', 'eedb378b40b4f4cf'],
+  ['/cw-trainer/voice/slash.mp3', 'd4cc398c97ffbe00'],
+  ['/cw-trainer/voice/T.mp3', '3b253d07f0d55a41'],
+  ['/cw-trainer/voice/U.mp3', '86858663dbeb4c21'],
+  ['/cw-trainer/voice/V.mp3', '41214b4fd18741f7'],
+  ['/cw-trainer/voice/W.mp3', '0b85a189ac0b75b0'],
+  ['/cw-trainer/voice/X.mp3', '87a1e6b0cabbc633'],
+  ['/cw-trainer/voice/Y.mp3', 'faa8dd5c724ed58f'],
+  ['/cw-trainer/voice/Z.mp3', '2bb7b3abb3dee47b']
 ];
+
+// The fingerprint of a downloaded file, worked out the way the build does:
+// SHA-256 (first 16 hex digits); for a text file, with "\n" line endings and
+// without the analytics script Cloudflare Pages adds to every page.
+const TEXT_EXT = /\.(html|js|css|json|webmanifest|svg|txt|xml|md)$/i;
+const CF_ANALYTICS = /<!-- Cloudflare Pages Analytics -->[\s\S]*?<!-- Cloudflare Pages Analytics -->/g;
+async function fingerprint(url, res) {
+  let bytes;
+  if (url.endsWith('/') || TEXT_EXT.test(url)) {
+    const text = (await res.text()).replace(/\r/g, '').replace(CF_ANALYTICS, '');
+    bytes = new TextEncoder().encode(text);
+  } else {
+    bytes = await res.arrayBuffer();
+  }
+  const hash = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Install: download and save every file. If any one fails, the install fails
 // and the previous version keeps working -- never a half-updated app.
@@ -128,17 +147,33 @@ const PRECACHE = [
 // before, so no server has a stale copy of it -- every file comes fresh.
 // It's saved under the plain URL, which is what the app asks for.
 // cache: 'reload' also skips the browser's own HTTP cache.
+//
+// That still wasn't enough (2026-10-28): while Cloudflare rolls out a new
+// version, some of its servers still serve the OLD one, query string or
+// not, and an install then saved new pages next to old ones (Tim's app kept
+// the old ICR and Code Groups pages under the new version). So every file
+// is now checked against its fingerprint from the build. A file that comes
+// back as some other version is fetched again, up to 4 tries 15 s apart;
+// if it still doesn't match, the install fails and the current version
+// keeps working until the next try, never a mix.
+const TRIES = 4, RETRY_MS = 15000;
+async function download(url, want, attempt) {
+  const fresh = url + (url.includes('?') ? '&' : '?') + 'v=' + VERSION + (attempt ? '&try=' + attempt : '');
+  const res = await fetch(new Request(fresh, { cache: 'reload' }));
+  if (!res.ok) throw new Error('Could not download ' + url + ' (' + res.status + ')');
+  const got = await fingerprint(url, res.clone());
+  if (got === want) return res;
+  if (attempt + 1 >= TRIES) throw new Error(url + ' is still an older copy (' + got + ', want ' + want + ')');
+  await sleep(RETRY_MS);
+  return download(url, want, attempt + 1);
+}
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) =>
-      Promise.all(PRECACHE.map((url) => {
-        const fresh = url + (url.includes('?') ? '&' : '?') + 'v=' + VERSION;
-        return fetch(new Request(fresh, { cache: 'reload' })).then((res) => {
-          if (!res.ok) throw new Error('Could not download ' + url + ' (' + res.status + ')');
-          return cache.put(url, res);
-        });
-      }))
-    )
+      Promise.all(PRECACHE.map(([url, want]) =>
+        download(url, want, 0).then((res) => cache.put(url, res))
+      ))
+    ).catch((err) => caches.delete(CACHE).then(() => { throw err; }))   // nothing half-saved is kept
   );
 });
 
