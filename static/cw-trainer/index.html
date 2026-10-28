@@ -1225,16 +1225,25 @@
   var restarting = false;
 
   function watchForUpdates(reg) {
-    // Already downloaded on an earlier visit and waiting?
-    if (reg.waiting && hadController) updateBar.hidden = false;
-    // Downloaded while the app is open?
-    reg.addEventListener('updatefound', function () {
-      var incoming = reg.installing;
-      if (!incoming) return;
+    // Show the banner once a downloading version has finished installing.
+    var tracked = [];
+    function track(incoming) {
+      if (!incoming || tracked.indexOf(incoming) !== -1) return;
+      tracked.push(incoming);
+      if (incoming.state === 'installed' && navigator.serviceWorker.controller) { updateBar.hidden = false; return; }
       incoming.addEventListener('statechange', function () {
         if (incoming.state === 'installed' && navigator.serviceWorker.controller) updateBar.hidden = false;
       });
-    });
+    }
+    // Already downloaded on an earlier visit and waiting?
+    if (reg.waiting && hadController) updateBar.hidden = false;
+    // Already downloading as the app starts? The browser checks for a new
+    // version while it registers, so the "updatefound" event below can fire
+    // before this code is listening, and the banner never showed for an
+    // update that finished during startup (Tim, 2026-10-28).
+    track(reg.installing);
+    // Downloaded while the app is open?
+    reg.addEventListener('updatefound', function () { track(reg.installing); });
     // The browser checks for a new version each time the app opens. Also
     // check when you come back to it, at most every 30 minutes, so an app
     // that stays open for days still hears about updates.
