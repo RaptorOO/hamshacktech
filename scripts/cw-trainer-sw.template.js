@@ -20,10 +20,29 @@
 const VERSION = '__VERSION__';
 const CACHE = 'cw-trainer-' + VERSION;
 
-// Every file the app needs to run offline.
+// Every file the app needs to run offline, each with its fingerprint (see
+// fingerprint() in the build script).
 const PRECACHE = [
   __PRECACHE__
 ];
+
+// The fingerprint of a downloaded file, worked out the way the build does:
+// SHA-256 (first 16 hex digits); for a text file, with "\n" line endings and
+// without the analytics script Cloudflare Pages adds to every page.
+const TEXT_EXT = /\.(html|js|css|json|webmanifest|svg|txt|xml|md)$/i;
+const CF_ANALYTICS = /<!-- Cloudflare Pages Analytics -->[\s\S]*?<!-- Cloudflare Pages Analytics -->/g;
+async function fingerprint(url, res) {
+  let bytes;
+  if (url.endsWith('/') || TEXT_EXT.test(url)) {
+    const text = (await res.text()).replace(/\r/g, '').replace(CF_ANALYTICS, '');
+    bytes = new TextEncoder().encode(text);
+  } else {
+    bytes = await res.arrayBuffer();
+  }
+  const hash = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Install: download and save every file. If any one fails, the install fails
 // and the previous version keeps working -- never a half-updated app.
@@ -36,17 +55,33 @@ const PRECACHE = [
 // before, so no server has a stale copy of it -- every file comes fresh.
 // It's saved under the plain URL, which is what the app asks for.
 // cache: 'reload' also skips the browser's own HTTP cache.
+//
+// That still wasn't enough (2026-10-28): while Cloudflare rolls out a new
+// version, some of its servers still serve the OLD one, query string or
+// not, and an install then saved new pages next to old ones (Tim's app kept
+// the old ICR and Code Groups pages under the new version). So every file
+// is now checked against its fingerprint from the build. A file that comes
+// back as some other version is fetched again, up to 4 tries 15 s apart;
+// if it still doesn't match, the install fails and the current version
+// keeps working until the next try, never a mix.
+const TRIES = 4, RETRY_MS = 15000;
+async function download(url, want, attempt) {
+  const fresh = url + (url.includes('?') ? '&' : '?') + 'v=' + VERSION + (attempt ? '&try=' + attempt : '');
+  const res = await fetch(new Request(fresh, { cache: 'reload' }));
+  if (!res.ok) throw new Error('Could not download ' + url + ' (' + res.status + ')');
+  const got = await fingerprint(url, res.clone());
+  if (got === want) return res;
+  if (attempt + 1 >= TRIES) throw new Error(url + ' is still an older copy (' + got + ', want ' + want + ')');
+  await sleep(RETRY_MS);
+  return download(url, want, attempt + 1);
+}
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) =>
-      Promise.all(PRECACHE.map((url) => {
-        const fresh = url + (url.includes('?') ? '&' : '?') + 'v=' + VERSION;
-        return fetch(new Request(fresh, { cache: 'reload' })).then((res) => {
-          if (!res.ok) throw new Error('Could not download ' + url + ' (' + res.status + ')');
-          return cache.put(url, res);
-        });
-      }))
-    )
+      Promise.all(PRECACHE.map(([url, want]) =>
+        download(url, want, 0).then((res) => cache.put(url, res))
+      ))
+    ).catch((err) => caches.delete(CACHE).then(() => { throw err; }))   // nothing half-saved is kept
   );
 });
 

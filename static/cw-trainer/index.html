@@ -618,7 +618,7 @@
   <form id="signinStep2" hidden>
     <p class="ok" id="si2Sent"></p>
     <!-- New sending domains often land in junk at first; say so plainly. -->
-    <p class="hint" id="si2Junk"><strong>Not in your inbox?</strong> Check your Junk or Spam folder. The email comes from signin@hamshacktech.com. Marking it &ldquo;Not junk&rdquo; helps future codes arrive normally.</p>
+    <p class="hint" id="si2Junk"><strong>Not in your inbox?</strong> Check your Junk or Spam folder. The email comes from <span class="si-from">signin at hamshacktech.com</span>. Marking it &ldquo;Not junk&rdquo; helps future codes arrive normally.</p>
     <div class="field">
       <label for="siCode">6-digit code</label>
       <input type="text" class="code" id="siCode" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required>
@@ -1271,6 +1271,11 @@
   // history syncs in the background (shared/hst-account.js). The Settings
   // section only appears once the site's account service is set up.
   // ------------------------------------------------------------------
+  // The sign-in emails' From address, put in here rather than written in the
+  // page: Cloudflare's email obfuscation rewrote it in the HTML, which showed
+  // "[email protected]" offline and changed the page so the app's update
+  // check (sw.js fingerprints) couldn't match it. (2026-10-28)
+  Array.prototype.forEach.call(document.querySelectorAll('.si-from'), function (el) { el.textContent = 'signin' + '@' + 'hamshacktech.com'; });
   var acctAvailable = false, turnstileKey = '';
   var siDlg = $('signinDialog'), acDlg = $('accountDialog');
 
@@ -1469,9 +1474,10 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-28-round-12';
+  var RELEASE = '2026-10-28-round-12b';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
+    '<strong>Updates arrive in full.</strong> An update could save some pages from the new version and some from the old one, so a few changes didn’t show (an installed app kept the old Car Mode panel). Every file is now checked as it downloads.',
     '<strong>Code Groups: Space skips a box.</strong> Don’t know a character? Press Space to leave its box empty and type the next one (in Phrases & Sayings, a space at a word break is still just the word break).',
     '<strong>Car and Walk Mode</strong> (ICR, and Walk Mode in Code Groups): “Gap after each play” is now <strong>Max Time To Answer</strong>, a slider from 0 to 3000 ms.',
     '<strong>My Course:</strong> classes meet twice a week on Zoom at times set by your Master Advisor.',
