@@ -64,7 +64,7 @@
      --------------------------------------------------------------------- */
   var CWA = {
     semesters: 'Jan\u2013Feb, May\u2013Jun, Sep\u2013Oct',
-    meets: 'Twice a week, Monday and Thursday, online with your advisor (usually in the evening; your advisor sets the time). Plan on about an hour of practice every day.',
+    meets: 'Classes meet twice a week on Zoom at times set by your Master Advisor. Plan on about an hour of practice every day.',
     resources: 'https://cwops.org/cw-academy/cw-academy-student-resources/',
     register: 'https://cwa.cwops.org/register/',
     levels: {

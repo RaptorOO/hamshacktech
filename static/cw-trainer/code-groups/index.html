@@ -283,6 +283,9 @@
   .walk-speed { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; }
   .walk-speed button { width: 52px; height: 44px; padding: 0; font-size: 1.3rem; line-height: 1; }
   .walk-speed button:disabled { opacity: 0.4; cursor: default; }
+  .walk-gap-label { display: flex; justify-content: space-between; align-items: baseline; }
+  .walk-gap-label output { font-family: var(--font-mono); font-weight: 700; color: var(--accent); text-transform: none; letter-spacing: 0; }
+  input[type="range"].walk-gap { margin: 6px 0 18px; }
   .walk-speed output { flex: 1; text-align: center; font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--accent); }
   .walk-group { font-family: var(--font-mono); font-size: clamp(2.2rem, 9vw, 3.6rem); font-weight: 700; text-align: center;
                 color: var(--accent); letter-spacing: 0.08em; margin: 6px 0; min-height: 1.3em; word-break: break-all; }
@@ -596,6 +599,7 @@
      dashed border instead of the blinking caret, so it's clear typing
      isn't open yet. */
   .blank.locked { border-style: dashed; }
+  .blank.skipped { border-color: var(--border-strong); background: var(--recess); }   /* passed over with Space */
 
   /* ---------------------------------------------------------------------
      Lower grid: settings / stats / drill
@@ -917,14 +921,11 @@
       <output id="walkWpmVal" aria-live="polite"></output>
       <button type="button" id="walkFaster" aria-label="Faster">+</button>
     </div>
-    <!-- Quiet after each play (Tim, 2026-10-23): 1-10 s to start with, plus
-         half a second per character past four for longer groups. -->
-    <div class="walk-label">Gap after each play</div>
-    <div class="walk-speed" role="group" aria-label="Gap after each play">
-      <button type="button" id="walkGapLess" aria-label="Shorter gap">&minus;</button>
-      <output id="walkGapVal" aria-live="polite"></output>
-      <button type="button" id="walkGapMore" aria-label="Longer gap">+</button>
-    </div>
+    <!-- Max Time To Answer: quiet after each play, 0-3000 ms on a slider
+         (Tim, 2026-10-28; was 1-10 s with - / +), plus half a second per
+         character past four for longer groups. -->
+    <label class="walk-label walk-gap-label" for="walkGap">Max Time To Answer <output id="walkGapVal" aria-live="polite"></output></label>
+    <input type="range" class="walk-gap" id="walkGap" min="0" max="3000" step="100">
     <p class="walk-status" id="walkStatus" hidden></p>
     <div class="timer-actions">
       <button type="button" class="btn-secondary btn-primary" id="walkPlayBtn">Play</button>
@@ -1620,7 +1621,8 @@
       buzzer: true,      // buzz on a missed group or timeout (the Buzzer chip mutes it)
       walkMin: 15,       // Walk Mode: how long to play, in minutes
       walkPlays: 2,      // Walk Mode: plays per group before the voice spells it
-      walkGap: 2,        // Walk Mode: seconds of quiet after each play (longer groups get more)
+      walkGap: 2,        // Walk Mode: the old gap setting, in seconds (read once into walkGapMs)
+      walkGapMs: null,   // Walk Mode: Max Time To Answer, 0-3000 ms (null = not set yet; longer groups get more)
       fileChapter: 0,    // Your File: which chapter
       fileUnit: "word",  // Your File: a round is one "word" or one "line" (Morserino plays word by word)
       fileOrder: "order",// Your File: "order" (as in the file) or "shuffle"
@@ -2046,7 +2048,7 @@
       }
       var pro = state.currentChars[i].length > 1 ? " pro" : "";
       if (i < nextIndex) {
-        cell.className = "blank filled" + pro;
+        cell.className = "blank filled" + pro + (state.typed[i] === "" ? " skipped" : "");   // space skipped it
         cell.textContent = state.typed[i];
       } else if (i === nextIndex && state.acceptingInput && inputLocked()) {
         cell.className = "blank locked" + pro; // Head Copy Mode: wait for the code to finish
@@ -2419,12 +2421,19 @@
   var walkEls = {};
   ["walkBtn", "walkDialog", "walkSetup", "walkPlaying", "walkWhat", "walkPresets", "walkMinInput", "walkGroup",
    "walkPlayCount", "walkLeft", "walkSlower", "walkFaster", "walkWpmVal", "walkStatus", "walkPlayBtn",
-   "walkStopBtn", "walkCloseBtn", "walkGapLess", "walkGapMore", "walkGapVal"].forEach(function (id) { walkEls[id] = $(id); });
-  var WALK_GAP_MIN = 1, WALK_GAP_MAX = 10;
-  function walkGap() {
-    var g = Math.round(Number(state.settings.walkGap));
-    return Math.min(WALK_GAP_MAX, Math.max(WALK_GAP_MIN, isFinite(g) && g ? g : 2));
+   "walkStopBtn", "walkCloseBtn", "walkGap", "walkGapVal"].forEach(function (id) { walkEls[id] = $(id); });
+  // Max Time To Answer: 0-3000 ms (settings.walkGapMs). A gap saved before
+  // 2026-10-28 (settings.walkGap, whole seconds) carries over.
+  var WALK_GAP_MAX_MS = 3000;
+  function walkGapMs() {
+    var ms = Number(state.settings.walkGapMs);
+    if (state.settings.walkGapMs == null || !isFinite(ms)) {
+      var sec = Number(state.settings.walkGap);
+      ms = isFinite(sec) && sec > 0 ? sec * 1000 : 2000;
+    }
+    return Math.min(WALK_GAP_MAX_MS, Math.max(0, Math.round(ms / 100) * 100));
   }
+  function walkGap() { return walkGapMs() / 1000; }   // seconds, for HST.listen
 
   function walkRunning() { return !!(walk.player && walk.player.running()); }
   function walkFw() { var s = state.settings; return s.fwpm && s.fwpm < s.wpm ? s.fwpm : 0; }
@@ -2453,10 +2462,9 @@
     walkEls.walkWpmVal.textContent = walkSpeedText();
     walkEls.walkSlower.disabled = s.wpm <= 5;
     walkEls.walkFaster.disabled = s.wpm >= 40;
-    var g = walkGap();
-    walkEls.walkGapVal.textContent = g + (g === 1 ? " second" : " seconds");
-    walkEls.walkGapLess.disabled = g <= WALK_GAP_MIN;
-    walkEls.walkGapMore.disabled = g >= WALK_GAP_MAX;
+    var ms = walkGapMs();
+    walkEls.walkGap.value = ms;
+    walkEls.walkGapVal.textContent = ms + " ms";
   }
 
   function walkSaveDraft() { try { localStorage.setItem(WALK_DRAFT_KEY, JSON.stringify(walk.run)); } catch (e) {} }
@@ -2502,8 +2510,8 @@
       voice: true,
       next: function () {
         var text = (buildRound() || ["E"]).map(answerOf).join("");
-        // The chosen gap, plus half a second per character past four (at 2 s
-        // this is the old "2 s, or half a second per character").
+        // Max Time To Answer, plus half a second per character past four
+        // (at 2000 ms this is the old "2 s, or half a second per character").
         return { text: text, plays: state.settings.walkPlays, gap: walkGap() + Math.max(0, 0.5 * text.replace(/ /g, "").length - 2) };
       },
       sound: function () { var s = state.settings; return { wpm: s.wpm, fwpm: walkFw(), toneHz: s.toneHz, volume: s.volume }; },
@@ -2570,14 +2578,10 @@
   });
   walkEls.walkSlower.addEventListener("click", function () { walkSetSpeed(-1); });
   walkEls.walkFaster.addEventListener("click", function () { walkSetSpeed(1); });
-  // - / +: the gap after each play; the next group uses it.
-  function walkSetGap(delta) {
-    var g = Math.min(WALK_GAP_MAX, Math.max(WALK_GAP_MIN, walkGap() + delta));
-    if (g === walkGap()) return;
-    state.settings.walkGap = g; saveSettings(); renderWalk();
-  }
-  walkEls.walkGapLess.addEventListener("click", function () { walkSetGap(-1); });
-  walkEls.walkGapMore.addEventListener("click", function () { walkSetGap(1); });
+  // Max Time To Answer slider; the next group uses it.
+  walkEls.walkGap.addEventListener("input", function () {
+    state.settings.walkGapMs = Number(walkEls.walkGap.value); saveSettings(); renderWalk();
+  });
   walkEls.walkPlayBtn.addEventListener("click", walkStart);
   walkEls.walkStopBtn.addEventListener("click", walkStop);
   walkEls.walkCloseBtn.addEventListener("click", function () { walkEls.walkDialog.close(); });
@@ -2866,7 +2870,7 @@
     if (!state.acceptingInput) { els.hiddenInput.value = ""; return; }
     // Head Copy Mode while code is playing: throw the new keystroke away
     // but keep whatever was already typed (e.g. before pressing Replay).
-    if (inputLocked()) { els.hiddenInput.value = state.typed.join(""); return; }
+    if (inputLocked()) { els.hiddenInput.value = typedAsInput(); return; }
     // A-Z0-9 as before, plus the punctuation QSO Elements/Common Words can
     // contain: "?" (the bare "?" element, "HW CPY?"), "/" ("/P", "/AR" etc.)
     // and "'" ("THAT'S").
@@ -2875,19 +2879,39 @@
     // skipping over its word gaps, so a missed (or extra) space never
     // shifts the rest of a sentence out of line. Typing the space works too.
     // A prosign's box (Your File) takes its two letters (BT for <BT>).
-    var letters = els.hiddenInput.value.toUpperCase().replace(/[^A-Z0-9?/'.,=()-]/g, "").split("");
+    // SPACE SKIPS A BOX (Tim, 2026-10-28): a space where a letter box comes
+    // next leaves that box empty and moves on (type D, space, then the
+    // third character). A space where a word gap comes next is that gap,
+    // as before. A skipped box is kept in the input as "_", is shown empty
+    // and counts as a miss.
+    var tokens = [];
+    els.hiddenInput.value.toUpperCase().split("").forEach(function (ch) {
+      if (ch === " " || ch === "_") tokens.push(ch);
+      else if (/[A-Z0-9?/'.,=()-]/.test(ch)) tokens.push(ch);
+    });
     var cells = state.currentChars, out = [];
-    for (var ci = 0; ci < cells.length && letters.length; ci++) {
-      if (cells[ci] === " ") out.push(" ");
-      else if (cells[ci].length > 1) out.push(letters.splice(0, cells[ci].length - 2).join(""));
-      else out.push(letters.shift());
+    for (var ci = 0; ci < cells.length && tokens.length; ci++) {
+      if (cells[ci] === " ") {                        // a word gap fills itself in
+        out.push(" ");
+        if (tokens[0] === " ") tokens.shift();        // ...and a space typed there is that gap
+        continue;
+      }
+      var t = tokens.shift();
+      if (t === " " || t === "_") { out.push(""); continue; }   // skipped
+      if (cells[ci].length > 1) {                     // prosign: its letters, up to a skip
+        var need = cells[ci].length - 2, got = t;
+        while (got.length < need && tokens.length && tokens[0] !== " " && tokens[0] !== "_") got += tokens.shift();
+        out.push(got);
+      } else out.push(t);
     }
-    els.hiddenInput.value = out.join("");
     state.typed = out;
+    els.hiddenInput.value = typedAsInput();
     renderBlanksTyping();
-    var lastCell = cells[cells.length - 1];
-    if (out.length === cells.length && out[out.length - 1].length === answerOf(lastCell).length) finishAnswer(false);
+    var lastCell = cells[cells.length - 1], lastTyped = out[out.length - 1];
+    if (out.length === cells.length && (lastTyped === "" || lastTyped.length === answerOf(lastCell).length)) finishAnswer(false);
   });
+  // What's been typed, as the hidden input holds it (a skipped box as "_").
+  function typedAsInput() { return state.typed.map(function (x) { return x === "" ? "_" : x; }).join(""); }
 
   els.hiddenInput.addEventListener("keydown", function (e) {
     if (state.reviewing && (e.key === "Enter" || e.key === " ")) {
