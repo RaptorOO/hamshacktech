@@ -10,6 +10,9 @@
  *   HST.course.onChange(fn)     fn(course) -- also when another tab/frame changes it
  *   HST.course.PROGRAMS         { cwa: { name, levels: [{ key, name }] }, licw: {...} }
  *   HST.course.info(program, level)  -> that level's details, or null
+ *   HST.course.ORDERS           { cwaBeginner: { name, classes: [['A','E','N','T'], ...] } } -- the order
+ *                               a course teaches characters, class by class; prosigns written '<AR>'
+ *   HST.course.charsThrough(order, n)  -> every character taught in classes 1..n, in order
  *
  * Kept on this device only (localStorage). Loaded after hst-engine.js.
  *
@@ -74,6 +77,8 @@
         curriculum: 'https://cwa.cwops.org/wp-content/uploads/Beginner-curriculum-ver-4.8.htm',
         practice: '',
         speedNote: 'Characters are sent at 18–25 WPM with extra space between them (Farnsworth), for an overall speed of 4–6 WPM.',
+        // Classes 1-10 below as character lists, for ICR's and Code Groups'
+        // Course order choice (ORDERS.cwaBeginner). Keep the two in step.
         sessions: [
           ['18/4', 'New characters: A E N T'],
           ['', 'New: S I O 1 4'],
@@ -171,8 +176,35 @@
     }
   };
 
+  /* The order courses teach characters, class by class (Tim, 2026-10-29).
+     ICR and Code Groups offer "through class N" under Custom. */
+  var ORDERS = {
+    cwaBeginner: {
+      name: 'CW Academy Beginner',
+      classes: [
+        ['A', 'E', 'N', 'T'],
+        ['S', 'I', 'O', '1', '4'],
+        ['D', 'H', 'L', 'R', '2', '5'],
+        ['C', 'U'],
+        ['M', 'W', '3', '6', '?'],
+        ['F', 'Y', ','],
+        ['G', 'P', 'Q', '7', '9', '/'],
+        ['B', 'V', '<AR>'],
+        ['J', 'K', '0', '8', '<BT>'],
+        ['X', 'Z', '.', '<BK>', '<SK>']
+      ]
+    }
+  };
+
   HST.course = {
     PROGRAMS: PROGRAMS,
+    ORDERS: ORDERS,
+    charsThrough: function (order, n) {
+      var o = ORDERS[order], out = [];
+      if (!o) return out;
+      o.classes.slice(0, n).forEach(function (c) { out = out.concat(c); });
+      return out;
+    },
     get: copy,
     set: function (patch) {
       var next = copy();

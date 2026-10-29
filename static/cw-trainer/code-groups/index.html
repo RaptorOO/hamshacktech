@@ -1097,8 +1097,11 @@
         </div>
 
         <div class="field" id="customField" style="display:none;">
-          <label for="customInput">Custom Characters</label>
+          <label for="courseOrderSelect">Course order</label>
+          <select id="courseOrderSelect" aria-describedby="courseOrderHint"></select>
+          <label for="customInput" style="margin-top:12px">Custom Characters</label>
           <input type="text" id="customInput" placeholder="e.g. KMRSAT" />
+          <p class="file-note" id="courseOrderHint">Pick your class and every character taught so far is filled in. Prosigns are written &lt;AR&gt;; type their two letters.</p>
         </div>
 
         <!-- Doubles as "Characters per Group" (Letters/Numbers/Mixed/Custom)
@@ -1196,6 +1199,7 @@
 </div>
 
 <script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-course.js"></script>
 <script src="../shared/hst-content.js"></script>
 <script src="../shared/hst-listen.js"></script>
 <script>
@@ -1607,6 +1611,7 @@
     settings: {
       group: "letters",
       custom: "",
+      courseOrder: "",   // Custom: "cwaBeginner:3" = CW Academy Beginner through class 3 ("" = typed by hand)
       groupSize: 3,
       wpm: 20,
       fwpm: 15,
@@ -1692,7 +1697,7 @@
 
     infoBtn: $("infoBtn"), infoDialog: $("infoDialog"), infoCloseBtn: $("infoCloseBtn"),
 
-    groupSelect: $("groupSelect"), customField: $("customField"), customInput: $("customInput"),
+    groupSelect: $("groupSelect"), customField: $("customField"), customInput: $("customInput"), courseOrderSelect: $("courseOrderSelect"),
     callMixField: $("callMixField"), callMixSelect: $("callMixSelect"),
     wordPoolField: $("wordPoolField"), wordPoolSelect: $("wordPoolSelect"),
     groupSizeField: $("groupSizeField"), groupSizeLabel: $("groupSizeLabel"), groupSizeSelect: $("groupSizeSelect"),
@@ -1754,6 +1759,7 @@
     var s = state.settings;
     els.groupSelect.value = s.group;
     els.customInput.value = s.custom;
+    els.courseOrderSelect.value = s.courseOrder;
     els.customField.style.display = s.group === "custom" ? "" : "none";
     updateGroupSizeFieldUI(s.group);
     els.groupSizeSelect.value = String(s.groupSize);
@@ -1843,13 +1849,14 @@
     if (s.group === "letters") return ALPHA;
     if (s.group === "numbers") return DIGITS;
     if (s.group === "mixed") return ALPHA.concat(DIGITS);
-    // custom: unique, valid, uppercased characters from the free-text field
-    var seen = {};
-    var out = [];
-    (s.custom || "").toUpperCase().split("").forEach(function (c) {
-      if (MORSE[c] && !seen[c]) { seen[c] = true; out.push(c); }
-    });
-    return out;
+    // custom: unique, valid characters from the free-text field (<AR> is one)
+    return HST.charsFromText(s.custom);
+  }
+
+  // "cwaBeginner:3" -> "A E N T S I O 1 4 D H L R 2 5" for Custom Characters.
+  function courseOrderText(choice) {
+    var p = choice.split(":");
+    return HST.course.charsThrough(p[0], Number(p[1])).join(" ");
   }
 
   function randomGroup(n, charset) {
@@ -2135,7 +2142,7 @@
         var ch = e[0], s = e[1];
         var acc = Math.round((s.correct / s.played) * 100);
         return '<li class="drill-row">' +
-          '<span class="drill-char">' + ch + "</span>" +
+          '<span class="drill-char">' + HST.charLabel(ch) + "</span>" +
           '<span class="drill-bar-track"><span class="drill-bar-fill" style="width:' + acc + '%;"></span></span>' +
           '<span class="drill-pct">' + acc + "% (" + s.correct + "/" + s.played + ")</span>" +
           "</li>";
@@ -2509,14 +2516,16 @@
       minutes: min,
       voice: true,
       next: function () {
-        var text = (buildRound() || ["E"]).map(answerOf).join("");
+        // Prosigns stay as <BT> so the player sends them as one sound.
+        var cells = buildRound() || ["E"], text = cells.join("");
         // Max Time To Answer, plus half a second per character past four
         // (at 2000 ms this is the old "2 s, or half a second per character").
-        return { text: text, plays: state.settings.walkPlays, gap: walkGap() + Math.max(0, 0.5 * text.replace(/ /g, "").length - 2) };
+        var n = cells.filter(function (c) { return c !== " "; }).length;
+        return { text: text, plays: state.settings.walkPlays, gap: walkGap() + Math.max(0, 0.5 * n - 2) };
       },
       sound: function () { var s = state.settings; return { wpm: s.wpm, fwpm: walkFw(), toneHz: s.toneHz, volume: s.volume }; },
       onShow: function (ev) {
-        walkEls.walkGroup.textContent = ev.text;
+        walkEls.walkGroup.textContent = ev.text.replace(/[<>]/g, "");
         if (!walk.paused) walkEls.walkPlayCount.textContent = ev.plays > 1 ? "Play " + ev.play + " of " + ev.plays : "Listen";
       },
       onTick: function (left) {
@@ -2739,7 +2748,7 @@
     state.drillReps = 0;
     state.drilling = true;
     els.drillingBadge.classList.add("show");
-    els.drillingBadge.textContent = "Drilling: " + worst.join(" ");
+    els.drillingBadge.textContent = "Drilling: " + worst.map(HST.charLabel).join(" ");
     renderDrillPanel();
     renderBlanksIdle(1); // no answer is expected during a drill, so just show it's not the group-practice display
     drillLoop();
@@ -2982,6 +2991,28 @@
   });
   els.customInput.addEventListener("input", function () {
     state.settings.custom = els.customInput.value;
+    // Typed by hand now, unless it's still exactly the course's list.
+    if (state.settings.courseOrder && state.settings.custom !== courseOrderText(state.settings.courseOrder)) {
+      state.settings.courseOrder = "";
+      els.courseOrderSelect.value = "";
+    }
+    saveSettings();
+  });
+  // Course order: fills Custom Characters with every character taught
+  // through the chosen class (HST.course.ORDERS, Tim 2026-10-29).
+  (function () {
+    var o = HST.course.ORDERS.cwaBeginner;
+    els.courseOrderSelect.innerHTML = '<option value="">None (type your own)</option>' + o.classes.map(function (c, i) {
+      return '<option value="cwaBeginner:' + (i + 1) + '">' + o.name + ", through class " + (i + 1) + "</option>";
+    }).join("");
+    els.courseOrderSelect.value = state.settings.courseOrder;
+  })();
+  els.courseOrderSelect.addEventListener("change", function () {
+    state.settings.courseOrder = els.courseOrderSelect.value;
+    if (state.settings.courseOrder) {
+      state.settings.custom = courseOrderText(state.settings.courseOrder);
+      els.customInput.value = state.settings.custom;
+    }
     saveSettings();
   });
   els.groupSizeSelect.addEventListener("change", function () {

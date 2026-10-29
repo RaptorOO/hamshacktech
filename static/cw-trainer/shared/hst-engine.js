@@ -37,6 +37,17 @@
   // HST.MORSE (several share a pattern with a punctuation mark); the
   // player sends them as one character.
   HST.PROSIGN_CODE = { '<AR>': '.-.-.', '<SK>': '...-.-', '<KN>': '-.--.', '<BT>': '-...-', '<BK>': '-...-.-', '<AS>': '.-...' };
+  // Custom Characters text (ICR, Code Groups) -> its characters, each once,
+  // in order. A prosign is written <AR> and counts as one character.
+  HST.charsFromText = function (text) {
+    var seen = {}, out = [];
+    (String(text || '').toUpperCase().match(/<[A-Z]+>|\S/g) || []).forEach(function (c) {
+      if ((HST.MORSE[c] || HST.PROSIGN_CODE[c]) && !seen[c]) { seen[c] = true; out.push(c); }
+    });
+    return out;
+  };
+  // How a character is shown and typed: a prosign as its letters (<AR> -> AR).
+  HST.charLabel = function (c) { return c.length > 1 ? c.slice(1, -1) : c; };
 
   /* =====================================================================
      TIMING (WPM + Farnsworth)
