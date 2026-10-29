@@ -95,7 +95,7 @@
   .logo-kicker {
     font-family: "Oswald", sans-serif;
     letter-spacing: 0.42em;
-    font-size: 11px;
+    font-size: 12.5px;
     color: var(--lime);
     text-transform: uppercase;
     text-shadow: 0 0 10px var(--lime-glow);
@@ -113,7 +113,7 @@
     margin-top: 2px;
     font-family: "Oswald", sans-serif;
     letter-spacing: 0.28em;
-    font-size: 12px;
+    font-size: 13px;
     color: #c6d6b0;
     text-transform: uppercase;
   }
@@ -131,7 +131,7 @@
   .bank-label {
     font-family: "Oswald", sans-serif;
     letter-spacing: 0.22em;
-    font-size: 11px;
+    font-size: 12.5px;
     color: #d8c070;
     text-transform: uppercase;
   }
@@ -347,13 +347,14 @@
     .clue.listening .clue-dot { animation: none; }
   }
 
-  .status { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--muted); padding: 0 4px; height: 22px; }
+  .status { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); padding: 0 4px; height: 22px; }
   .status code { color: var(--lime); font-family: "Oswald", sans-serif; }
   .modal-back {
     position: fixed; inset: 0; z-index: 20; background: rgba(4,10,4,0.82);
     display: none; align-items: center; justify-content: center; padding: 16px;
   }
   .modal-back.show { display: flex; }
+  .app-dialog-open .modal-back.show { display: none; }   /* see "A window from the CW Trainer" in the script */
   .modal {
     width: min(860px, 100%); max-height: 92vh; overflow: auto;
     background: linear-gradient(180deg, #152414, #0c160c);
@@ -394,6 +395,15 @@
     font-family: "Oswald", sans-serif; font-size: 17px;
   }
   .modal-actions { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+  /* Start card: small, with the board showing behind it. */
+  .modal-back.launch { background: rgba(4,10,4,0.45); }
+  .modal.launch-card { width: min(440px, 100%); box-shadow: 0 18px 50px rgba(0,0,0,0.6); }
+  .launch-card h2 { font-size: 24px; }
+  .launch-card .steps { padding-left: 22px; margin: 4px 0 0; }
+  .launch-card .steps li { margin: 7px 0; padding-left: 2px; }
+  .launch-card .steps li::marker { color: var(--gold); font-family: "Oswald", sans-serif; font-weight: 600; }
+  .launch-card .steps b { color: var(--cream); }
+  .launch-card .modal-actions.launch-more { margin-top: 10px; }
   .modal.gameover .modal-actions { justify-content: center; }
 
   /* =================== Online rooms (online.js) =================== */
@@ -436,7 +446,7 @@
   .pl.turn { background: linear-gradient(180deg, #e8ff7a, var(--lime-deep)); color: #142000; box-shadow: 0 0 16px var(--lime-glow); }
   .pl.turn .n { color: #2a4000; }
   .pl.off { opacity: 0.45; }
-  .pl .tag { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; }
+  .pl .tag { font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; }
   .pl.turn .tag { color: #3a3000; }
   .pl .done { color: #7dff7a; font-weight: 700; }
   .pl.turn .done { color: #0a4a00; }
@@ -536,7 +546,7 @@
   button.btn.paused { background: linear-gradient(180deg, #ffe9a8, #e0b33a); color: #1a1400; box-shadow: 0 2px 0 #8a6808, 0 6px 16px rgba(0,0,0,0.35); }
   .ans-note { font-size: 14px; color: rgba(215,231,255,0.8); }
   .ans-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-  .btn kbd { font-size: 11px; opacity: 0.7; margin-left: 4px; }
+  .btn kbd { font-size: 12.5px; opacity: 0.7; margin-left: 4px; }
   .opads { display: flex; gap: 10px; width: 100%; margin-top: 4px; }
   .opad {
     flex: 1; height: 64px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.3);
@@ -754,23 +764,41 @@
   </footer>
 </div>
 
-<div class="modal-back show" id="launchModal">
-  <div class="modal">
-    <h2>Morse Code Jeopardy</h2>
-    <div class="online-intro">
-      <p>Everyone joins from their own CW Trainer, hears each clue on their own device at their own speed, and answers with their key. To play by yourself, host a game and start it with just you.</p>
-      <div class="modal-actions online-ok-only">
-        <button class="btn" id="openHost" type="button">Host a Game</button>
-        <button class="btn" id="openJoin" type="button">Join a Game</button>
-      </div>
-      <p class="ol-error online-off-only" id="offlineNote">Checking the connection…</p>
+<!-- Start card: small, so the board shows behind it. The full rules and
+     the sound settings are behind "How to play" (Tim, 2026-10-29). -->
+<div class="modal-back launch show" id="launchModal">
+  <div class="modal launch-card" role="dialog" aria-labelledby="launchTitle">
+    <h2 id="launchTitle">Morse Code Jeopardy</h2>
+    <ol class="steps">
+      <li><b>Connect your Vail Adapter.</b> Close any other programs using Vail like Vail Zoomer.</li>
+      <li><b>Go to Settings</b> to test your keyer.</li>
+      <li><b>Host a game</b> and invite friends, or <b>join</b> with a room code. To play alone, host and start with just you.</li>
+      <li>On your turn, <b>pick a tile</b>. Everyone hears the answer in Morse on their own device, at their own speed.</li>
+      <li><b>Send what you heard</b> with your key, then tap Done.</li>
+    </ol>
+    <div class="modal-actions online-ok-only">
+      <button class="btn" id="openHost" type="button">Host a Game</button>
+      <button class="btn" id="openJoin" type="button">Join a Game</button>
     </div>
+    <p class="ol-error online-off-only" id="offlineNote">Checking the connection…</p>
+    <div class="modal-actions launch-more">
+      <button class="btn ghost" id="openRules" type="button">How to play</button>
+      <button class="btn ghost" id="launchClose" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- The full rules and sound settings (from the start card's "How to play"). -->
+<div class="modal-back" id="rulesModal">
+  <div class="modal" role="dialog" aria-labelledby="rulesTitle">
+    <h2 id="rulesTitle">How to play</h2>
+    <p>Everyone joins from their own CW Trainer, hears each clue on their own device at their own speed, and answers with their key. To play by yourself, host a game and start it with just you.</p>
     <h3>Background</h3>
     <ul>
       <li>The game was designed not to be competitive as players are at different stages of their morse code journey. It is about having fun.</li>
       <li>The game displays a Group Score and Tiles You Copied. Tiles You Copied is only visible to you.</li>
     </ul>
-    <h3>How to play</h3>
+    <h3>Turns and scoring</h3>
     <ul>
       <li>Turns go in the order people joined, host first. When it's yours, you'll see "It's your turn" and hear your call sign in Morse. Pick any tile. After 30 seconds you get a reminder.</li>
       <li>The tile zooms out to fill the screen. After "Stand by · 3, 2, 1" you hear VVV, then the answer in Morse. Everyone hears it on their own device at their own speed. Each dollar row is a little faster than the one above it.</li>
@@ -797,7 +825,7 @@
     </div>
     <p class="small">Your listening and sending speeds are set when you host or join, and with My speed during the game.</p>
     <div class="modal-actions">
-      <button class="btn ghost" id="launchClose" type="button">Close</button>
+      <button class="btn ghost" id="rulesClose" type="button">Close</button>
     </div>
   </div>
 </div>
@@ -1303,6 +1331,19 @@ $("volume").addEventListener("change", () => {
   state.audio.setVolume(volumeLevel());
   saveSettings(); syncSidetone();
 });
+// A window from the CW Trainer around this page (Settings, What's new, Keyer
+// Setup, sign in) opened on top of this game's own windows, stacking two
+// (Tim, 2026-10-29). While one is open, this game's windows are hidden; they
+// come back as they were when it closes.
+(function () {
+  let dialogs = [];
+  try { if (window.parent !== window) dialogs = Array.from(window.parent.document.querySelectorAll("dialog")); } catch (e) {}
+  if (!dialogs.length) return;
+  const check = () => document.documentElement.classList.toggle("app-dialog-open", dialogs.some((d) => d.open));
+  const watch = new MutationObserver(check);
+  dialogs.forEach((d) => watch.observe(d, { attributes: true, attributeFilter: ["open"] }));
+  check();
+})();
 // Keep the card filling the board if the window is resized while it's up.
 window.addEventListener("resize", () => { if (state.clueCell) placeClue(fullRect()); });
 // Pause / Resume: the host's; the room pauses everyone.
