@@ -873,6 +873,18 @@
     // The start screen (instructions, Host / Join) and its toolbar button.
     el('barStart').addEventListener('click', () => el('launchModal').classList.add('show'));
     el('launchClose').addEventListener('click', () => el('launchModal').classList.remove('show'));
+    // "How to play": the full rules and sound settings, back to the start
+    // card on Close if that's where they were opened from.
+    let rulesFromCard = false;
+    el('openRules').addEventListener('click', () => {
+      rulesFromCard = el('launchModal').classList.contains('show');
+      el('launchModal').classList.remove('show');
+      el('rulesModal').classList.add('show');
+    });
+    el('rulesClose').addEventListener('click', () => {
+      el('rulesModal').classList.remove('show');
+      if (rulesFromCard && !O.active) el('launchModal').classList.add('show');
+    });
 
     el('lobbyStart').addEventListener('click', startGame);
     el('lobbyInvite').addEventListener('click', (e) => shareInvite(e.currentTarget));

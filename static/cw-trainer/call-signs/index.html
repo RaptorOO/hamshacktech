@@ -34,8 +34,8 @@
     --border: #44403c;      /* avocado neutral-700 */
     --border-strong: #57534e;/* avocado neutral-600 */
     --text: #fafaf9;        /* avocado neutral-50 */
-    --text-dim: #a8a29e;    /* avocado neutral-400 */
-    --text-faint: #78716c;  /* avocado neutral-500 */
+    --text-dim: #c7c2be;    /* lighter than neutral-400, easier to read (2026-10-29) */
+    --text-faint: #a8a29e;  /* neutral-400 (was neutral-500), easier to read (2026-10-29) */
     --accent: #a3e635;      /* avocado lime-400 */
     --accent-soft: #365314; /* avocado lime-900 */
     --accent-ink: #ecfccb;  /* avocado lime-100 */
@@ -187,7 +187,7 @@
     border: 1px solid var(--border);
     color: var(--text-dim);
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
@@ -221,7 +221,7 @@
   /* Phones: tighten the chips so both stay on one line, even past an hour. */
   @media (max-width: 600px) {
     .clock-row { gap: 6px; }
-    .clock-chip { padding: 5px 9px; gap: 6px; font-size: 0.68rem; letter-spacing: 0.03em; }
+    .clock-chip { padding: 5px 9px; gap: 6px; font-size: 0.76rem; letter-spacing: 0.03em; }
     .clock-chip .clock-val { font-size: 0.95rem; }
     .clock-chip svg { width: 14px; height: 14px; }
   }
@@ -235,7 +235,7 @@
   }
   .timer-presets button {
     font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     padding: 6px 12px;
     border-radius: 999px;
     background: var(--panel-2);
@@ -295,7 +295,7 @@
   }
   .status-pill {
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     padding: 4px 12px;
@@ -381,7 +381,7 @@
   .meter-fill.low { background: linear-gradient(90deg, var(--warn), var(--bad)); }
   .meter-label {
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     color: var(--text-faint);
     margin-bottom: 20px;
     min-height: 1em;
@@ -467,7 +467,7 @@
     pointer-events: none;
   }
   .tap-hint {
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     color: var(--text-faint);
     margin-top: 4px;
   }
@@ -532,7 +532,7 @@
     border-radius: 8px;
     color: var(--text-dim);
     font-family: var(--font-display);
-    font-size: 0.82rem;
+    font-size: 0.88rem;
     font-weight: 500;
     letter-spacing: 0.05em;
     line-height: 1.15;
@@ -554,7 +554,7 @@
   }
   .side-btn .toggle-state {
     font-family: var(--font-mono);
-    font-size: 0.66rem;
+    font-size: 0.76rem;
     letter-spacing: 0.08em;
     opacity: 0.85;
   }
@@ -586,7 +586,7 @@
     margin: 0 0 4px;
   }
   .card .sub {
-    font-size: 0.82rem;
+    font-size: 0.88rem;
     color: var(--text-dim);
     margin: 0 0 16px;
   }
@@ -596,7 +596,7 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    font-size: 0.82rem;
+    font-size: 0.88rem;
     color: var(--text-dim);
     margin-bottom: 6px;
   }
@@ -628,7 +628,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--text-dim);
     margin-top: 8px;
   }
@@ -637,7 +637,7 @@
   fieldset { border: none; padding: 0; margin: 0; }
   fieldset:disabled { opacity: 0.5; }
   .lock-note {
-    font-size: 0.76rem;
+    font-size: 0.82rem;
     color: var(--accent-ink);
     background: var(--accent-soft);
     border: 1px solid var(--accent);
@@ -686,20 +686,20 @@
     font-variant-numeric: tabular-nums;
   }
   .tile .l {
-    font-size: 0.68rem;
+    font-size: 0.76rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;   /* tighter, so the bigger labels still fit on one line */
     color: var(--text-faint);
   }
 
   table.size-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
   }
   table.size-table caption {
     text-align: left;
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-faint);
@@ -712,7 +712,7 @@
     font-variant-numeric: tabular-nums;
   }
   table.size-table th { color: var(--text-dim); font-weight: 500; }
-  .empty-note { color: var(--text-faint); font-size: 0.85rem; }
+  .empty-note { color: var(--text-faint); font-size: 0.9rem; }
 
   /* Drill card */
   .drill-list { list-style: none; margin: 0 0 16px; padding: 0; }
@@ -742,14 +742,14 @@
   }
   .drill-pct {
     font-family: var(--font-mono);
-    font-size: 0.8rem;
+    font-size: 0.88rem;
     color: var(--text-dim);
     min-width: 3.2em;
     text-align: right;
   }
   .drilling-badge {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     color: var(--accent2);
     border: 1px solid var(--accent2);
     border-radius: 6px;
@@ -782,7 +782,7 @@
   .clock-chip.up .clock-val { color: var(--good); }
   .clock-chip.down .clock-val { color: var(--bad); }
   @media (max-width: 600px) {
-    .mode-bar button { padding: 7px 11px; font-size: 0.8rem; }
+    .mode-bar button { padding: 7px 11px; font-size: 0.88rem; }
   }
 
   /* Speed Run results */
@@ -790,7 +790,7 @@
   .run-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; margin: 4px 0 14px; }
   .run-score { font-family: var(--font-display); font-size: 2.6rem; font-weight: 600; line-height: 1; color: var(--accent); }
   .run-score small { font-size: 1rem; color: var(--text-dim); margin-left: 6px; letter-spacing: 0.05em; }
-  .run-best { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; padding: 4px 12px; border-radius: 999px;
+  .run-best { font-family: var(--font-mono); font-size: 0.85rem; letter-spacing: 0.08em; padding: 4px 12px; border-radius: 999px;
               color: var(--accent-ink); background: var(--accent-soft); border: 1px solid var(--accent); }
   .run-why { color: var(--text-dim); font-size: 0.9rem; flex-basis: 100%; }
   .run-card .stat-tiles { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
@@ -806,11 +806,11 @@
   table.size-table thead th { position: sticky; top: 0; background: var(--panel); }
   .typed-x { color: var(--bad); text-decoration: underline; }
   .hear { border: 1px solid var(--border-strong); background: var(--panel-2); color: var(--text-dim); border-radius: 6px;
-          padding: 2px 8px; font-size: 0.75rem; cursor: pointer; }
+          padding: 2px 8px; font-size: 0.82rem; cursor: pointer; }
   .hear:hover { color: var(--accent2); border-color: var(--accent2); }
   svg.chart { display: block; width: 100%; height: auto; overflow: visible; }
-  svg.chart text { fill: var(--text-faint); font: 11px var(--font-body); }
-  .chart-sum { color: var(--text-dim); font-size: 0.85rem; margin: 8px 0 0; }
+  svg.chart text { fill: var(--text-faint); font: 12.5px var(--font-body); }
+  .chart-sum { color: var(--text-dim); font-size: 0.9rem; margin: 8px 0 0; }
 </style>
 </head>
 <body>

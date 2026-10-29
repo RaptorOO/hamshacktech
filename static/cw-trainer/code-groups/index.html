@@ -34,8 +34,8 @@
     --border: #44403c;      /* avocado neutral-700 */
     --border-strong: #57534e;/* avocado neutral-600 */
     --text: #fafaf9;        /* avocado neutral-50 */
-    --text-dim: #a8a29e;    /* avocado neutral-400 */
-    --text-faint: #78716c;  /* avocado neutral-500 */
+    --text-dim: #c7c2be;    /* lighter than neutral-400, easier to read (2026-10-29) */
+    --text-faint: #a8a29e;  /* neutral-400 (was neutral-500), easier to read (2026-10-29) */
     --accent: #a3e635;      /* avocado lime-400 */
     --accent-soft: #365314; /* avocado lime-900 */
     --accent-ink: #ecfccb;  /* avocado lime-100 */
@@ -187,7 +187,7 @@
     border: 1px solid var(--border);
     color: var(--text-dim);
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
@@ -221,7 +221,7 @@
   /* Phones: tighten the chips so both stay on one line, even past an hour. */
   @media (max-width: 600px) {
     .clock-row { gap: 6px; }
-    .clock-chip { padding: 5px 9px; gap: 6px; font-size: 0.68rem; letter-spacing: 0.03em; }
+    .clock-chip { padding: 5px 9px; gap: 6px; font-size: 0.76rem; letter-spacing: 0.03em; }
     .clock-chip .clock-val { font-size: 0.95rem; }
     .clock-chip svg { width: 14px; height: 14px; }
   }
@@ -235,7 +235,7 @@
   }
   .timer-presets button {
     font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     padding: 6px 12px;
     border-radius: 999px;
     background: var(--panel-2);
@@ -270,12 +270,12 @@
     font-family: var(--font-display); font-size: 0.9rem; letter-spacing: 0.03em; text-transform: uppercase;
   }
   .walk-btn:hover { border-color: var(--accent2); color: var(--accent2); }
-  .walk-label { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 8px; }
-  .walk-what { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent2); margin: -4px 0 14px; }
+  .walk-label { font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 8px; }
+  .walk-what { font-family: var(--font-mono); font-size: 0.9rem; color: var(--accent2); margin: -4px 0 14px; }
   .walk-seg { display: flex; gap: 6px; margin: 0 0 16px; }
   .walk-seg button, .walk-speed button {
     padding: 9px 0; border-radius: 8px; cursor: pointer; background: var(--panel-2);
-    border: 1px solid var(--border-strong); color: var(--text); font-family: var(--font-mono); font-size: 0.85rem;
+    border: 1px solid var(--border-strong); color: var(--text); font-family: var(--font-mono); font-size: 0.9rem;
   }
   .walk-seg button { flex: 1; }
   .walk-seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #14200a; font-weight: 700; }
@@ -289,8 +289,8 @@
   .walk-speed output { flex: 1; text-align: center; font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--accent); }
   .walk-group { font-family: var(--font-mono); font-size: clamp(2.2rem, 9vw, 3.6rem); font-weight: 700; text-align: center;
                 color: var(--accent); letter-spacing: 0.08em; margin: 6px 0; min-height: 1.3em; word-break: break-all; }
-  .walk-meta { text-align: center; font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-dim); margin: 0 0 16px; }
-  .walk-status { font-size: 0.85rem; color: var(--text-dim); margin: -6px 0 14px; }
+  .walk-meta { text-align: center; font-family: var(--font-mono); font-size: 0.88rem; color: var(--text-dim); margin: 0 0 16px; }
+  .walk-status { font-size: 0.9rem; color: var(--text-dim); margin: -6px 0 14px; }
   .timer-actions .btn-secondary { margin-top: 0; }
   .timer-actions .btn-primary { border-color: var(--accent); color: var(--accent); }
 
@@ -323,7 +323,7 @@
   }
   .status-pill {
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     padding: 4px 12px;
@@ -409,7 +409,7 @@
   .meter-fill.low { background: linear-gradient(90deg, var(--warn), var(--bad)); }
   .meter-label {
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     color: var(--text-faint);
     margin-bottom: 20px;
     min-height: 1em;
@@ -495,7 +495,7 @@
     pointer-events: none;
   }
   .tap-hint {
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     color: var(--text-faint);
     margin-top: 4px;
   }
@@ -516,8 +516,8 @@
   /* Your file (Practice Group) */
   .file-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
   .file-row .btn-secondary { width: auto; margin-top: 0; padding: 7px 12px; }
-  .file-name { font-size: 0.85rem; color: var(--text); word-break: break-all; }
-  .file-note { font-size: 0.78rem; color: var(--text-faint); margin: 6px 0 0; }
+  .file-name { font-size: 0.9rem; color: var(--text); word-break: break-all; }
+  .file-note { font-size: 0.85rem; color: var(--text-faint); margin: 6px 0 0; }
   .file-note .warn { color: #fbbf24; }
 
   /* ---------------------------------------------------------------------
@@ -568,7 +568,7 @@
     border-radius: 8px;
     color: var(--text-dim);
     font-family: var(--font-display);
-    font-size: 0.82rem;
+    font-size: 0.88rem;
     font-weight: 500;
     letter-spacing: 0.05em;
     line-height: 1.15;
@@ -590,7 +590,7 @@
   }
   .side-btn .toggle-state {
     font-family: var(--font-mono);
-    font-size: 0.66rem;
+    font-size: 0.76rem;
     letter-spacing: 0.08em;
     opacity: 0.85;
   }
@@ -623,7 +623,7 @@
     margin: 0 0 4px;
   }
   .card .sub {
-    font-size: 0.82rem;
+    font-size: 0.88rem;
     color: var(--text-dim);
     margin: 0 0 16px;
   }
@@ -633,7 +633,7 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    font-size: 0.82rem;
+    font-size: 0.88rem;
     color: var(--text-dim);
     margin-bottom: 6px;
   }
@@ -665,7 +665,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--text-dim);
     margin-top: 8px;
   }
@@ -674,7 +674,7 @@
   fieldset { border: none; padding: 0; margin: 0; }
   fieldset:disabled { opacity: 0.5; }
   .lock-note {
-    font-size: 0.76rem;
+    font-size: 0.82rem;
     color: var(--accent-ink);
     background: var(--accent-soft);
     border: 1px solid var(--accent);
@@ -723,20 +723,20 @@
     font-variant-numeric: tabular-nums;
   }
   .tile .l {
-    font-size: 0.68rem;
+    font-size: 0.76rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;   /* tighter, so the bigger labels still fit on one line */
     color: var(--text-faint);
   }
 
   table.size-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
   }
   table.size-table caption {
     text-align: left;
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-faint);
@@ -749,7 +749,7 @@
     font-variant-numeric: tabular-nums;
   }
   table.size-table th { color: var(--text-dim); font-weight: 500; }
-  .empty-note { color: var(--text-faint); font-size: 0.85rem; }
+  .empty-note { color: var(--text-faint); font-size: 0.9rem; }
 
   /* Drill card */
   .drill-list { list-style: none; margin: 0 0 16px; padding: 0; }
@@ -779,14 +779,14 @@
   }
   .drill-pct {
     font-family: var(--font-mono);
-    font-size: 0.8rem;
+    font-size: 0.88rem;
     color: var(--text-dim);
     min-width: 3.2em;
     text-align: right;
   }
   .drilling-badge {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     color: var(--accent2);
     border: 1px solid var(--accent2);
     border-radius: 6px;
