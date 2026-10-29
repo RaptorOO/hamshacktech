@@ -403,7 +403,6 @@
   .launch-card .steps li { margin: 7px 0; padding-left: 2px; }
   .launch-card .steps li::marker { color: var(--gold); font-family: "Oswald", sans-serif; font-weight: 600; }
   .launch-card .steps b { color: var(--cream); }
-  .launch-card .modal-actions.launch-more { margin-top: 10px; }
   .modal.gameover .modal-actions { justify-content: center; }
 
   /* =================== Online rooms (online.js) =================== */
@@ -413,7 +412,7 @@
   body.online .on-only[hidden] { display: none !important; }   /* host-only buttons stay hidden for players */
   body.online .on-only-b { display: block !important; }
   body.online-ok .online-ok-only { display: block !important; }
-  body.online #barStart { display: none !important; }
+  body.online #barStart, body.online #openRules { display: none !important; }
   body.online-ok .online-off-only { display: none !important; }
   .room-chip {
     align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px;
@@ -678,7 +677,8 @@
   <div class="hostbar">
     <!-- Pause: only the host sees it (online.js) -->
     <button class="btn ghost" id="pauseBtn" type="button" hidden>Pause</button>
-    <button class="btn" id="barStart" type="button">Host or Join a Game</button>
+    <button class="btn online-ok-only" id="barStart" type="button">Host or Join a Game</button>
+    <button class="btn ghost" id="openRules" type="button">How to play</button>
     <span class="room-chip on-only">Room <b id="roomCode"></b></span>
     <!-- Change your own copy speed mid-game (only you hear it) -->
     <button class="btn ghost on-only" id="mySpeed">My speed</button>
@@ -764,31 +764,26 @@
   </footer>
 </div>
 
-<!-- Start card: small, so the board shows behind it. The full rules and
-     the sound settings are behind "How to play" (Tim, 2026-10-29). -->
+<!-- Setup card: shown when Jeopardy opens, small so the board shows behind
+     it. Only the setup; Host / Join and How to play are in the bar above the
+     board (Tim, 2026-10-29). -->
 <div class="modal-back launch show" id="launchModal">
   <div class="modal launch-card" role="dialog" aria-labelledby="launchTitle">
     <h2 id="launchTitle">Morse Code Jeopardy</h2>
     <ol class="steps">
       <li><b>Connect your Vail Adapter.</b> Close any other programs using Vail like Vail Zoomer.</li>
-      <li><b>Go to Settings</b> to test your keyer.</li>
-      <li><b>Host a game</b> and invite friends, or <b>join</b> with a room code. To play alone, host and start with just you.</li>
-      <li>On your turn, <b>pick a tile</b>. Everyone hears the answer in Morse on their own device, at their own speed.</li>
-      <li><b>Send what you heard</b> with your key, then tap Done.</li>
+      <li><b>Adjust your computer sound settings</b> to select your headphones or speakers as output (not VB Cable).</li>
+      <li><b>Click Test Keyer</b> below to test your keyer before starting the game.</li>
     </ol>
-    <div class="modal-actions online-ok-only">
-      <button class="btn" id="openHost" type="button">Host a Game</button>
-      <button class="btn" id="openJoin" type="button">Join a Game</button>
-    </div>
     <p class="ol-error online-off-only" id="offlineNote">Checking the connection…</p>
-    <div class="modal-actions launch-more">
-      <button class="btn ghost" id="openRules" type="button">How to play</button>
+    <div class="modal-actions">
+      <button class="btn" id="launchKeyer" type="button">Test Keyer</button>
       <button class="btn ghost" id="launchClose" type="button">Close</button>
     </div>
   </div>
 </div>
 
-<!-- The full rules and sound settings (from the start card's "How to play"). -->
+<!-- The full rules and sound settings (the bar's "How to play"). -->
 <div class="modal-back" id="rulesModal">
   <div class="modal" role="dialog" aria-labelledby="rulesTitle">
     <h2 id="rulesTitle">How to play</h2>
