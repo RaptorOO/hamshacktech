@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>HamShackTech CW Trainer</title>
-<meta name="description" content="ICR and Code Groups Morse code trainers in one installable app that works offline.">
+<meta name="description" content="Morse code trainer for copying, sending and QSO practice, with CW Academy and LICW course tools, progress tracking and multiplayer Jeopardy. Installs and works offline.">
 <meta name="theme-color" content="#1c1917">
 <link rel="manifest" href="manifest.webmanifest">
 <script>
@@ -1357,6 +1357,9 @@
     $('siEmail').focus();
     loadTurnstile();
   }
+  // For the tool pages (frames), like HCT.openKeyerSetup: Progress's
+  // empty-history message has a sign-in line (2026-10-29).
+  window.HCT.openSignIn = function () { if (dlg.open) dlg.close(); openSignIn(); };
   // Cloudflare Turnstile: the "are you human?" check, usually invisible.
   // Loaded only when the sign-in form opens (needs internet anyway).
   function loadTurnstile() {
