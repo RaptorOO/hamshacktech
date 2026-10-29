@@ -1483,15 +1483,23 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-28-round-13';
+  var RELEASE = '2026-10-28-round-13b';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
+    '<strong>Release notes in the installed app.</strong> If you also opened the app in a browser tab (the website’s CW Tools link does that), the tab could take the update and these notes first, so the installed app updated silently. The installed app now always shows the notes for each new version.',
     '<strong>Keyer:</strong> the tabs are now <strong>Daily Scales</strong>, <strong>Send This</strong> and <strong>Free Sending</strong>.',
     '<strong>Jeopardy chat</strong> is 25% wider and always scrolls to the newest message.',
     '<strong>Most Missed Characters</strong> is the new name for the Your Worst Characters panel in ICR, Code Groups and Call Signs.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
-  var SEEN_KEY = 'hct-cw-seen-release';
+  // The installed app keeps its own "seen" record (Tim, 2026-10-28). The
+  // website's CW Tools link opens the app in a browser TAB (since
+  // 2026-10-23), and a tab shares storage and the offline copy with the
+  // installed app: opened first, it took the update and marked the notes
+  // seen, so the app then opened straight into the new version with no
+  // banner and no notes. Now the app window shows them itself.
+  var APP_WINDOW = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var SEEN_KEY = APP_WINDOW ? 'hct-cw-seen-release:app' : 'hct-cw-seen-release';
   var wnDlg = document.getElementById('whatsNewDialog');
 
   function showWhatsNew() {
