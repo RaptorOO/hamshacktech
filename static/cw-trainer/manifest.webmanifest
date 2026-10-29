@@ -2,7 +2,7 @@
   "id": "/cw-trainer/",
   "name": "HamShackTech CW Trainer",
   "short_name": "CW Trainer",
-  "description": "ICR and Code Groups Morse code trainers in one app that works offline.",
+  "description": "Morse code trainer for copying, sending and QSO practice, with CW Academy and LICW course tools, progress tracking and multiplayer Jeopardy. Installs and works offline.",
   "start_url": "/cw-trainer/",
   "scope": "/cw-trainer/",
   "display": "standalone",
