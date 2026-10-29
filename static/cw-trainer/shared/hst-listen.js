@@ -118,13 +118,15 @@
   // How long `text` takes to send, and (with draw) render it starting at t0.
   // Farnsworth: elements and the gaps inside a letter at the character
   // speed, the gaps between letters (3) and words (7) at the spacing unit.
+  // A prosign in the text, written <BT>, is sent as one character.
   function morse(text, tm, octx, t0, hz, peak) {
     t0 = t0 || 0;
     var t = t0, ta = tm.ta / 1000, ts = tm.ts / 1000;
+    text = text.match(/<[A-Z]+>|[\s\S]/g) || [];
     for (var k = 0; k < text.length; k++) {
       var ch = text[k];
       if (ch === ' ') continue;
-      var code = HST.MORSE[ch] || '';
+      var code = HST.MORSE[ch] || HST.PROSIGN_CODE[ch] || '';
       for (var i = 0; i < code.length; i++) {
         var d = (code[i] === '-' ? 3 : 1) * ta;
         if (octx) tone(octx, t, d, hz, peak);
@@ -135,9 +137,11 @@
     return t - t0;
   }
   // How long spelling `text` takes, and (with draw) render it starting at t0.
+  // A prosign (<BT>) is spelled as its letters.
   function spell(text, voice, octx, t0, gain) {
     t0 = t0 || 0;
     var t = t0;
+    text = text.replace(/[<>]/g, '');
     for (var k = 0; k < text.length; k++) {
       var ch = text[k];
       if (ch === ' ') { t += WORD_GAP_S; continue; }

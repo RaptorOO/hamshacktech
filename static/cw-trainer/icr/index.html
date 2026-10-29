@@ -664,7 +664,7 @@
       <div class="reaction-readout" id="reactionReadout">— ms</div>
 
       <div class="answer-row" id="answerRow" style="display:none;">
-        <input type="text" maxlength="1" class="answer-input waiting" id="answerInput" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <input type="text" maxlength="2" class="answer-input waiting" id="answerInput" autocomplete="off" autocapitalize="characters" spellcheck="false">
       </div>
 
       <!-- Phones practicing numbers: tap the digit (see numberPadMode). -->
@@ -706,8 +706,16 @@
             <option value="punctuation">Punctuation</option>
             <option value="dits">Dits Exercise</option>
             <option value="all">All</option>
+            <option value="cwa-beginner">CW Academy Beginners</option>
             <option value="custom">Custom</option>
           </select>
+        </div>
+
+        <div class="control-row" id="cwaRow" style="display:none;">
+          <div class="control-head"><span>Characters Learned</span></div>
+          <select id="cwaClassSelect" aria-describedby="cwaChars"></select>
+          <p class="nospace-note" id="cwaChars"></p>
+          <p class="nospace-note">Prosigns (AR, BT, BK, SK) play as one sound; type their two letters.</p>
         </div>
 
         <div class="control-row" id="customRow" style="display:none;">
@@ -892,6 +900,7 @@
 </dialog>
 
 <script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-course.js"></script>
 <script src="../shared/hst-listen.js"></script>
 <script>
 /* =====================================================================
@@ -921,6 +930,7 @@ const STORAGE_KEY = 'cwIcrTrainer';
 let settings = {
   group: 'letters',
   customChars: '',
+  cwaClass: 1,       // CW Academy Beginners group: practice the characters taught through this class (1-10)
   wpm: 20,
   toneHz: 600,
   volume: 70,       // 0-100 %. WPM, tone and volume are SHARED with the Code
@@ -1136,11 +1146,10 @@ function computeActiveSet(){
     case 'punctuation': return PUNCT.slice();
     case 'dits': return DITS.slice();
     case 'all': return [...LETTERS, ...NUMBERS, ...PUNCT];
-    case 'custom': {
-      const chars = settings.customChars.toUpperCase().split('')
-        .filter(c => MORSE[c]);
-      return [...new Set(chars)];
-    }
+    // CW Academy Beginner, the characters taught through the chosen class
+    // (HST.course.ORDERS, Tim 2026-10-29); prosigns are one character each.
+    case 'cwa-beginner': return HST.course.charsThrough('cwaBeginner', settings.cwaClass);
+    case 'custom': return HST.charsFromText(settings.customChars);   // <AR> counts as one
     default: return LETTERS.slice();
   }
 }
@@ -1374,7 +1383,7 @@ function submitAnswer(){
   if(!guess) return;
   answerPhaseActive = false;
   const reactionTime = Number(els.answerInput.dataset.reactionTime || 0);
-  const correct = guess === currentChar;
+  const correct = guess === HST.charLabel(currentChar);   // a prosign is typed as its letters
 
   recordResult(currentChar, correct, reactionTime);
   practiceLog.char(currentChar, correct);
@@ -1402,10 +1411,10 @@ function showFeedback(correct, char, wasTimeout){
     els.feedback.textContent = '✓ Correct';
     els.feedback.classList.add('correct');
   }else if(wasTimeout){
-    els.feedback.textContent = 'Timed Out — Answer: ' + char;
+    els.feedback.textContent = 'Timed Out — Answer: ' + HST.charLabel(char);
     els.feedback.classList.add('wrong');
   }else{
-    els.feedback.textContent = 'Answer: ' + char;
+    els.feedback.textContent = 'Answer: ' + HST.charLabel(char);
     els.feedback.classList.add('wrong');
   }
 }
@@ -1458,7 +1467,7 @@ function sayItPause(myTrial){
     setKeyState('idle');
     els.feedback.classList.remove('correct','wrong');
     els.feedback.classList.add('reveal');
-    els.feedback.textContent = 'Answer: ' + currentChar;
+    els.feedback.textContent = 'Answer: ' + HST.charLabel(currentChar);
     const sayMs = speakAnswer(currentChar);
     sayHeard += 1;
     practiceLog.set({ heard: sayHeard });
@@ -1864,16 +1873,30 @@ function renderWeakList(){
   const maxW = Math.max(...weak.map(weightFor));
   els.weakList.innerHTML = weak.map(ch => {
     const pct = Math.round((weightFor(ch) / maxW) * 100);
-    return '<span class="weak-chip">' + ch +
+    return '<span class="weak-chip">' + HST.charLabel(ch) +
       '<span class="bar"><i style="width:' + pct + '%"></i></span></span>';
   }).join('');
   els.drillBtn.disabled = drillActive;
+}
+
+// CW Academy Beginners: "Through class 1".."Through class 10", and the
+// characters that adds up to (prosigns shown as their letters).
+function showCwaChars(){
+  if(!els.cwaClassSelect.options.length){
+    els.cwaClassSelect.innerHTML = HST.course.ORDERS.cwaBeginner.classes.map((c, i) =>
+      '<option value="' + (i + 1) + '">Through class ' + (i + 1) + '</option>').join('');
+    els.cwaClassSelect.value = String(settings.cwaClass);
+  }
+  els.cwaChars.textContent = HST.course.charsThrough('cwaBeginner', settings.cwaClass).map(HST.charLabel).join(' ');
 }
 
 function refreshSettingsUI(){
   els.groupSelect.value = settings.group;
   els.customRow.style.display = settings.group === 'custom' ? 'block' : 'none';
   els.customInput.value = settings.customChars;
+  els.cwaRow.style.display = settings.group === 'cwa-beginner' ? 'block' : 'none';
+  els.cwaClassSelect.value = String(settings.cwaClass);
+  showCwaChars();
   els.wpmSlider.value = settings.wpm;
   els.wpmVal.textContent = settings.wpm;
   els.toneSlider.value = settings.toneHz;
@@ -2008,7 +2031,8 @@ function wireEvents(){
       showOops();
       return;
     }
-    if(els.answerInput.value.length >= 1) submitAnswer();
+    // One key, or a prosign's two letters (A, R for <AR>); Enter also submits.
+    if(els.answerInput.value.length >= HST.charLabel(currentChar || 'X').length) submitAnswer();
   });
 
   els.oopsCloseBtn.addEventListener('click', closeOops);
@@ -2020,12 +2044,18 @@ function wireEvents(){
   els.groupSelect.addEventListener('change', () => {
     settings.group = els.groupSelect.value;
     els.customRow.style.display = settings.group === 'custom' ? 'block' : 'none';
+    els.cwaRow.style.display = settings.group === 'cwa-beginner' ? 'block' : 'none';
     applyGroupChange();
   });
   els.customInput.addEventListener('change', () => {
     settings.customChars = els.customInput.value;
     applyGroupChange();
     saveState();
+  });
+  els.cwaClassSelect.addEventListener('change', () => {
+    settings.cwaClass = Number(els.cwaClassSelect.value);
+    showCwaChars();
+    applyGroupChange();
   });
 
   // WPM, tone and volume are shared with the Code Groups Trainer: write them
@@ -2095,7 +2125,7 @@ function init(){
    'keyStatus','reactionReadout','answerRow','answerInput','digitPad',
    'feedback','startRow','startBtn','stopRow','stopSessionBtn',
    'weakList','drillBtn','stopDrillBtn','drillStatus',
-   'groupSelect','customRow','customInput','wpmSlider','wpmVal',
+   'groupSelect','customRow','customInput','cwaRow','cwaClassSelect','cwaChars','wpmSlider','wpmVal',
    'toneSlider','toneVal','volSlider','volVal',
    'ttaSlider','ttaVal','ttaOffToggle','resetSessionBtn',
    'oopsOverlay','oopsCloseBtn','buzzBtn','buzzVal',

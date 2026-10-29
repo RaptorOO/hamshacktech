@@ -1030,6 +1030,7 @@
             <option value="words">Common Words</option>
             <option value="phrases">Phrases &amp; Sayings</option>
             <option value="calls">Call Signs</option>
+            <option value="cwa-beginner">CW Academy Beginners</option>
             <option value="custom">Custom</option>
             <option value="file">Your File</option>
           </select>
@@ -1094,6 +1095,13 @@
             <option value="1000">Top 1000 words + ham terms</option>
             <option value="2000">Top 2000 words + ham terms</option>
           </select>
+        </div>
+
+        <div class="field" id="cwaField" style="display:none;">
+          <label for="cwaClassSelect">Characters Learned</label>
+          <select id="cwaClassSelect" aria-describedby="cwaChars"></select>
+          <p class="file-note" id="cwaChars"></p>
+          <p class="file-note">Prosigns (AR, BT, BK, SK) play as one sound; type their two letters.</p>
         </div>
 
         <div class="field" id="customField" style="display:none;">
@@ -1196,6 +1204,7 @@
 </div>
 
 <script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-course.js"></script>
 <script src="../shared/hst-content.js"></script>
 <script src="../shared/hst-listen.js"></script>
 <script>
@@ -1607,6 +1616,7 @@
     settings: {
       group: "letters",
       custom: "",
+      cwaClass: 1,       // CW Academy Beginners group: the characters taught through this class (1-10)
       groupSize: 3,
       wpm: 20,
       fwpm: 15,
@@ -1693,6 +1703,7 @@
     infoBtn: $("infoBtn"), infoDialog: $("infoDialog"), infoCloseBtn: $("infoCloseBtn"),
 
     groupSelect: $("groupSelect"), customField: $("customField"), customInput: $("customInput"),
+    cwaField: $("cwaField"), cwaClassSelect: $("cwaClassSelect"), cwaChars: $("cwaChars"),
     callMixField: $("callMixField"), callMixSelect: $("callMixSelect"),
     wordPoolField: $("wordPoolField"), wordPoolSelect: $("wordPoolSelect"),
     groupSizeField: $("groupSizeField"), groupSizeLabel: $("groupSizeLabel"), groupSizeSelect: $("groupSizeSelect"),
@@ -1755,6 +1766,8 @@
     els.groupSelect.value = s.group;
     els.customInput.value = s.custom;
     els.customField.style.display = s.group === "custom" ? "" : "none";
+    els.cwaField.style.display = s.group === "cwa-beginner" ? "" : "none";
+    showCwaChars();
     updateGroupSizeFieldUI(s.group);
     els.groupSizeSelect.value = String(s.groupSize);
     els.wpmRange.value = s.wpm; els.wpmVal.textContent = s.wpm;
@@ -1843,13 +1856,24 @@
     if (s.group === "letters") return ALPHA;
     if (s.group === "numbers") return DIGITS;
     if (s.group === "mixed") return ALPHA.concat(DIGITS);
-    // custom: unique, valid, uppercased characters from the free-text field
-    var seen = {};
-    var out = [];
-    (s.custom || "").toUpperCase().split("").forEach(function (c) {
-      if (MORSE[c] && !seen[c]) { seen[c] = true; out.push(c); }
-    });
-    return out;
+    // CW Academy Beginner, the characters taught through the chosen class
+    // (HST.course.ORDERS, Tim 2026-10-29); a prosign is one character.
+    if (s.group === "cwa-beginner") return HST.course.charsThrough("cwaBeginner", s.cwaClass);
+    // custom: unique, valid characters from the free-text field (<AR> is one)
+    return HST.charsFromText(s.custom);
+  }
+
+  // CW Academy Beginners: "Through class 1".."Through class 10", and the
+  // characters that adds up to (prosigns shown as their letters).
+  function showCwaChars() {
+    var s = state.settings;
+    if (!els.cwaClassSelect.options.length) {
+      els.cwaClassSelect.innerHTML = HST.course.ORDERS.cwaBeginner.classes.map(function (c, i) {
+        return '<option value="' + (i + 1) + '">Through class ' + (i + 1) + "</option>";
+      }).join("");
+    }
+    els.cwaClassSelect.value = String(s.cwaClass);
+    els.cwaChars.textContent = HST.course.charsThrough("cwaBeginner", s.cwaClass).map(HST.charLabel).join(" ");
   }
 
   function randomGroup(n, charset) {
@@ -2135,7 +2159,7 @@
         var ch = e[0], s = e[1];
         var acc = Math.round((s.correct / s.played) * 100);
         return '<li class="drill-row">' +
-          '<span class="drill-char">' + ch + "</span>" +
+          '<span class="drill-char">' + HST.charLabel(ch) + "</span>" +
           '<span class="drill-bar-track"><span class="drill-bar-fill" style="width:' + acc + '%;"></span></span>' +
           '<span class="drill-pct">' + acc + "% (" + s.correct + "/" + s.played + ")</span>" +
           "</li>";
@@ -2416,7 +2440,8 @@
      ===================================================================== */
   var WALK_DRAFT_KEY = "hct-cw-run-cg-walk";
   var GROUP_NAMES = { letters: "Letters", numbers: "Numbers", mixed: "Mixed", qso: "QSO Elements",
-                      words: "Common Words", phrases: "Phrases & Sayings", calls: "Call Signs", custom: "Custom", file: "Your File" };
+                      words: "Common Words", phrases: "Phrases & Sayings", calls: "Call Signs", "cwa-beginner": "CW Academy Beginners",
+                      custom: "Custom", file: "Your File" };
   var walk = { player: null, run: null, paused: false };
   var walkEls = {};
   ["walkBtn", "walkDialog", "walkSetup", "walkPlaying", "walkWhat", "walkPresets", "walkMinInput", "walkGroup",
@@ -2441,7 +2466,7 @@
   function walkWhatText() {
     var s = state.settings, g = GROUP_NAMES[s.group] || s.group;
     if (s.group === "words") g += " \u00b7 " + s.groupSize + " letters";
-    else if (["letters", "numbers", "mixed", "custom"].indexOf(s.group) >= 0) g += " \u00b7 " + s.groupSize + " per group";
+    else if (["letters", "numbers", "mixed", "cwa-beginner", "custom"].indexOf(s.group) >= 0) g += " \u00b7 " + s.groupSize + " per group";
     return g + " \u00b7 " + walkSpeedText();
   }
   function walkStatus(text) { walkEls.walkStatus.textContent = text || ""; walkEls.walkStatus.hidden = !text; }
@@ -2509,14 +2534,16 @@
       minutes: min,
       voice: true,
       next: function () {
-        var text = (buildRound() || ["E"]).map(answerOf).join("");
+        // Prosigns stay as <BT> so the player sends them as one sound.
+        var cells = buildRound() || ["E"], text = cells.join("");
         // Max Time To Answer, plus half a second per character past four
         // (at 2000 ms this is the old "2 s, or half a second per character").
-        return { text: text, plays: state.settings.walkPlays, gap: walkGap() + Math.max(0, 0.5 * text.replace(/ /g, "").length - 2) };
+        var n = cells.filter(function (c) { return c !== " "; }).length;
+        return { text: text, plays: state.settings.walkPlays, gap: walkGap() + Math.max(0, 0.5 * n - 2) };
       },
       sound: function () { var s = state.settings; return { wpm: s.wpm, fwpm: walkFw(), toneHz: s.toneHz, volume: s.volume }; },
       onShow: function (ev) {
-        walkEls.walkGroup.textContent = ev.text;
+        walkEls.walkGroup.textContent = ev.text.replace(/[<>]/g, "");
         if (!walk.paused) walkEls.walkPlayCount.textContent = ev.plays > 1 ? "Play " + ev.play + " of " + ev.plays : "Listen";
       },
       onTick: function (left) {
@@ -2739,7 +2766,7 @@
     state.drillReps = 0;
     state.drilling = true;
     els.drillingBadge.classList.add("show");
-    els.drillingBadge.textContent = "Drilling: " + worst.join(" ");
+    els.drillingBadge.textContent = "Drilling: " + worst.map(HST.charLabel).join(" ");
     renderDrillPanel();
     renderBlanksIdle(1); // no answer is expected during a drill, so just show it's not the group-practice display
     drillLoop();
@@ -2969,6 +2996,7 @@
   els.groupSelect.addEventListener("change", function () {
     state.settings.group = els.groupSelect.value;
     els.customField.style.display = state.settings.group === "custom" ? "" : "none";
+    els.cwaField.style.display = state.settings.group === "cwa-beginner" ? "" : "none";
     updateGroupSizeFieldUI(state.settings.group);
     saveSettings();
   });
@@ -2984,9 +3012,9 @@
     state.settings.custom = els.customInput.value;
     saveSettings();
   });
-  els.groupSizeSelect.addEventListener("change", function () {
-    state.settings.groupSize = parseInt(els.groupSizeSelect.value, 10);
-    renderBlanksIdle(state.settings.groupSize);
+  els.cwaClassSelect.addEventListener("change", function () {
+    state.settings.cwaClass = Number(els.cwaClassSelect.value);
+    showCwaChars();
     saveSettings();
   });
   // WPM, tone and volume are shared with the ICR Trainer: write them to
