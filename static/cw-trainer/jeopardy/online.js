@@ -750,9 +750,13 @@
      while it exists; you get them when you join or reload.
      ===================================================================== */
   let lastChat = 0;
+  // The chat always shows its newest message (Tim, 2026-10-28; it used to
+  // follow only if you were already at the bottom or had sent it).
+  function chatToBottom() { const log = el('chatLog'); log.scrollTop = log.scrollHeight; }
+  // ...also when the window (and so the chat box) changes size.
+  if (window.ResizeObserver) new ResizeObserver(chatToBottom).observe(el('chatLog'));
   function addChat(m) {
     const log = el('chatLog');
-    const atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 20;
     const empty = log.querySelector('.empty');
     if (empty) empty.remove();
     const li = document.createElement('li');
@@ -762,7 +766,7 @@
     try { li.title = new Date(m.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); } catch (e) {}
     log.appendChild(li);
     while (log.children.length > 50) log.removeChild(log.firstChild);
-    if (atEnd || mine) log.scrollTop = log.scrollHeight;
+    chatToBottom();
   }
   function renderChatEmpty() {
     const log = el('chatLog');
