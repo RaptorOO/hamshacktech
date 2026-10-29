@@ -328,7 +328,6 @@
     loadPools();
     showIdleBoard();
     if (msg) { el('noticeText').textContent = msg; el('noticeModal').classList.add('show'); }
-    else el('launchModal').classList.add('show');
   }
 
   function setConn(text) { el('connNote').textContent = text; el('connNote').hidden = !text; }
@@ -866,25 +865,18 @@
     el('olJoinBtn').addEventListener('click', () => joinRoom());
     el('olCode').addEventListener('keydown', (e) => { if (e.key === 'Enter') joinRoom(); });
     el('olCode').addEventListener('input', () => { el('olCode').value = el('olCode').value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); });
-    el('olCancel').addEventListener('click', () => { el('onlineModal').classList.remove('show'); if (!O.active) el('launchModal').classList.add('show'); });
+    el('olCancel').addEventListener('click', () => el('onlineModal').classList.remove('show'));
     el('olKeySetup').addEventListener('click', () => { try { window.parent.HCT.openKeyerSetup(); } catch (e) {} });
-    el('openHost').addEventListener('click', () => openOnlineDialog('host'));
-    el('openJoin').addEventListener('click', () => openOnlineDialog('join'));
-    // The start screen (instructions, Host / Join) and its toolbar button.
-    el('barStart').addEventListener('click', () => el('launchModal').classList.add('show'));
+    // The bar above the board: Host or Join (the dialog switches between
+    // the two) and How to play (the full rules and sound settings).
+    el('barStart').addEventListener('click', () => openOnlineDialog('join'));
+    el('openRules').addEventListener('click', () => el('rulesModal').classList.add('show'));
+    el('rulesClose').addEventListener('click', () => el('rulesModal').classList.remove('show'));
+    // The setup card shown on opening: Test Keyer opens the app's Keyer
+    // Setup (the card comes back when it closes); Close closes the card.
+    el('launchKeyer').addEventListener('click', () => { try { window.parent.HCT.openKeyerSetup(); } catch (e) {} });
+    try { if (!window.parent.HCT || !window.parent.HCT.openKeyerSetup) el('launchKeyer').hidden = true; } catch (e) { el('launchKeyer').hidden = true; }
     el('launchClose').addEventListener('click', () => el('launchModal').classList.remove('show'));
-    // "How to play": the full rules and sound settings, back to the start
-    // card on Close if that's where they were opened from.
-    let rulesFromCard = false;
-    el('openRules').addEventListener('click', () => {
-      rulesFromCard = el('launchModal').classList.contains('show');
-      el('launchModal').classList.remove('show');
-      el('rulesModal').classList.add('show');
-    });
-    el('rulesClose').addEventListener('click', () => {
-      el('rulesModal').classList.remove('show');
-      if (rulesFromCard && !O.active) el('launchModal').classList.add('show');
-    });
 
     el('lobbyStart').addEventListener('click', startGame);
     el('lobbyInvite').addEventListener('click', (e) => shareInvite(e.currentTarget));
@@ -933,7 +925,7 @@
       b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
       b.addEventListener('contextmenu', (e) => e.preventDefault());
     });
-    el('noticeOk').addEventListener('click', () => { el('noticeModal').classList.remove('show'); el('launchModal').classList.add('show'); });
+    el('noticeOk').addEventListener('click', () => el('noticeModal').classList.remove('show'));
     el('soundHint').addEventListener('click', unlockAudio);
     // Any tap turns sound on (browsers block it until the first tap).
     document.addEventListener('pointerdown', () => { if (O.active) unlockAudio(); }, true);
