@@ -414,7 +414,8 @@
 
   /* The board and (online) the players panel beside it. */
   .stage-row { min-height: 0; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
-  body.online .stage-row { grid-template-columns: minmax(0, 1fr) 210px; }
+  /* Players + chat column: 210px was too narrow for chatting; 25% wider (Tim, 2026-10-28). */
+  body.online .stage-row { grid-template-columns: minmax(0, 1fr) 263px; }
   .players {
     min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px;
     border-radius: 14px; background: linear-gradient(180deg, rgba(18,36,16,0.92), rgba(8,16,8,0.82));
