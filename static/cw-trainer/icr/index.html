@@ -706,16 +706,21 @@
             <option value="punctuation">Punctuation</option>
             <option value="dits">Dits Exercise</option>
             <option value="all">All</option>
+            <option value="cwa-beginner">CW Academy Beginners</option>
             <option value="custom">Custom</option>
           </select>
         </div>
 
+        <div class="control-row" id="cwaRow" style="display:none;">
+          <div class="control-head"><span>Characters Learned</span></div>
+          <select id="cwaClassSelect" aria-describedby="cwaChars"></select>
+          <p class="nospace-note" id="cwaChars"></p>
+          <p class="nospace-note">Prosigns (AR, BT, BK, SK) play as one sound; type their two letters.</p>
+        </div>
+
         <div class="control-row" id="customRow" style="display:none;">
-          <div class="control-head"><span>Course order</span></div>
-          <select id="courseOrderSelect" aria-describedby="courseOrderHint"></select>
-          <div class="control-head" style="margin-top:12px"><span>Custom Characters</span></div>
+          <div class="control-head"><span>Custom Characters</span></div>
           <input type="text" id="customInput" placeholder="e.g. A E I S T N 5 .">
-          <p class="nospace-note" id="courseOrderHint">Pick your class and every character taught so far is filled in. Prosigns are written &lt;AR&gt;; type their two letters.</p>
         </div>
 
         <div class="control-row">
@@ -925,7 +930,7 @@ const STORAGE_KEY = 'cwIcrTrainer';
 let settings = {
   group: 'letters',
   customChars: '',
-  courseOrder: '',  // Custom: 'cwaBeginner:3' = CW Academy Beginner through class 3 ('' = typed by hand)
+  cwaClass: 1,       // CW Academy Beginners group: practice the characters taught through this class (1-10)
   wpm: 20,
   toneHz: 600,
   volume: 70,       // 0-100 %. WPM, tone and volume are SHARED with the Code
@@ -1134,12 +1139,6 @@ function weakestCharacters(n){
 
 /* ----------------------------- CHAR SETS -------------------------------- */
 
-// 'cwaBeginner:3' -> "A E N T S I O 1 4 D H L R 2 5" for Custom Characters.
-function courseOrderText(choice){
-  const [order, n] = choice.split(':');
-  return HST.course.charsThrough(order, Number(n)).join(' ');
-}
-
 function computeActiveSet(){
   switch(settings.group){
     case 'letters': return LETTERS.slice();
@@ -1147,6 +1146,9 @@ function computeActiveSet(){
     case 'punctuation': return PUNCT.slice();
     case 'dits': return DITS.slice();
     case 'all': return [...LETTERS, ...NUMBERS, ...PUNCT];
+    // CW Academy Beginner, the characters taught through the chosen class
+    // (HST.course.ORDERS, Tim 2026-10-29); prosigns are one character each.
+    case 'cwa-beginner': return HST.course.charsThrough('cwaBeginner', settings.cwaClass);
     case 'custom': return HST.charsFromText(settings.customChars);   // <AR> counts as one
     default: return LETTERS.slice();
   }
@@ -1877,11 +1879,24 @@ function renderWeakList(){
   els.drillBtn.disabled = drillActive;
 }
 
+// CW Academy Beginners: "Through class 1".."Through class 10", and the
+// characters that adds up to (prosigns shown as their letters).
+function showCwaChars(){
+  if(!els.cwaClassSelect.options.length){
+    els.cwaClassSelect.innerHTML = HST.course.ORDERS.cwaBeginner.classes.map((c, i) =>
+      '<option value="' + (i + 1) + '">Through class ' + (i + 1) + '</option>').join('');
+    els.cwaClassSelect.value = String(settings.cwaClass);
+  }
+  els.cwaChars.textContent = HST.course.charsThrough('cwaBeginner', settings.cwaClass).map(HST.charLabel).join(' ');
+}
+
 function refreshSettingsUI(){
   els.groupSelect.value = settings.group;
   els.customRow.style.display = settings.group === 'custom' ? 'block' : 'none';
   els.customInput.value = settings.customChars;
-  els.courseOrderSelect.value = settings.courseOrder;
+  els.cwaRow.style.display = settings.group === 'cwa-beginner' ? 'block' : 'none';
+  els.cwaClassSelect.value = String(settings.cwaClass);
+  showCwaChars();
   els.wpmSlider.value = settings.wpm;
   els.wpmVal.textContent = settings.wpm;
   els.toneSlider.value = settings.toneHz;
@@ -2029,32 +2044,18 @@ function wireEvents(){
   els.groupSelect.addEventListener('change', () => {
     settings.group = els.groupSelect.value;
     els.customRow.style.display = settings.group === 'custom' ? 'block' : 'none';
+    els.cwaRow.style.display = settings.group === 'cwa-beginner' ? 'block' : 'none';
     applyGroupChange();
   });
   els.customInput.addEventListener('change', () => {
     settings.customChars = els.customInput.value;
-    // Typed by hand now, unless it's still exactly the course's list.
-    if(settings.courseOrder && settings.customChars !== courseOrderText(settings.courseOrder)){
-      settings.courseOrder = '';
-      els.courseOrderSelect.value = '';
-    }
     applyGroupChange();
     saveState();
   });
-  // Course order: fills Custom Characters with every character taught
-  // through the chosen class (HST.course.ORDERS, Tim 2026-10-29).
-  els.courseOrderSelect.innerHTML = '<option value="">None (type your own)</option>' +
-    HST.course.ORDERS.cwaBeginner.classes.map((c, i) =>
-      '<option value="cwaBeginner:' + (i + 1) + '">' + HST.course.ORDERS.cwaBeginner.name + ', through class ' + (i + 1) + '</option>').join('');
-  els.courseOrderSelect.value = settings.courseOrder;
-  els.courseOrderSelect.addEventListener('change', () => {
-    settings.courseOrder = els.courseOrderSelect.value;
-    if(settings.courseOrder){
-      settings.customChars = courseOrderText(settings.courseOrder);
-      els.customInput.value = settings.customChars;
-    }
+  els.cwaClassSelect.addEventListener('change', () => {
+    settings.cwaClass = Number(els.cwaClassSelect.value);
+    showCwaChars();
     applyGroupChange();
-    saveState();
   });
 
   // WPM, tone and volume are shared with the Code Groups Trainer: write them
@@ -2124,7 +2125,7 @@ function init(){
    'keyStatus','reactionReadout','answerRow','answerInput','digitPad',
    'feedback','startRow','startBtn','stopRow','stopSessionBtn',
    'weakList','drillBtn','stopDrillBtn','drillStatus',
-   'groupSelect','customRow','customInput','courseOrderSelect','wpmSlider','wpmVal',
+   'groupSelect','customRow','customInput','cwaRow','cwaClassSelect','cwaChars','wpmSlider','wpmVal',
    'toneSlider','toneVal','volSlider','volVal',
    'ttaSlider','ttaVal','ttaOffToggle','resetSessionBtn',
    'oopsOverlay','oopsCloseBtn','buzzBtn','buzzVal',

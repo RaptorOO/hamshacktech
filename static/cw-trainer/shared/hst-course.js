@@ -77,8 +77,8 @@
         curriculum: 'https://cwa.cwops.org/wp-content/uploads/Beginner-curriculum-ver-4.8.htm',
         practice: '',
         speedNote: 'Characters are sent at 18–25 WPM with extra space between them (Farnsworth), for an overall speed of 4–6 WPM.',
-        // Classes 1-10 below as character lists, for ICR's and Code Groups'
-        // Course order choice (ORDERS.cwaBeginner). Keep the two in step.
+        // Classes 1-10 below as character lists, for the CW Academy Beginners
+        // practice group in ICR and Code Groups (ORDERS.cwaBeginner). Keep the two in step.
         sessions: [
           ['18/4', 'New characters: A E N T'],
           ['', 'New: S I O 1 4'],
@@ -177,7 +177,7 @@
   };
 
   /* The order courses teach characters, class by class (Tim, 2026-10-29).
-     ICR and Code Groups offer "through class N" under Custom. */
+     ICR and Code Groups practice "through class N" (the CW Academy Beginners group). */
   var ORDERS = {
     cwaBeginner: {
       name: 'CW Academy Beginner',

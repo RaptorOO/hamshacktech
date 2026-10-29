@@ -1030,6 +1030,7 @@
             <option value="words">Common Words</option>
             <option value="phrases">Phrases &amp; Sayings</option>
             <option value="calls">Call Signs</option>
+            <option value="cwa-beginner">CW Academy Beginners</option>
             <option value="custom">Custom</option>
             <option value="file">Your File</option>
           </select>
@@ -1096,12 +1097,16 @@
           </select>
         </div>
 
+        <div class="field" id="cwaField" style="display:none;">
+          <label for="cwaClassSelect">Characters Learned</label>
+          <select id="cwaClassSelect" aria-describedby="cwaChars"></select>
+          <p class="file-note" id="cwaChars"></p>
+          <p class="file-note">Prosigns (AR, BT, BK, SK) play as one sound; type their two letters.</p>
+        </div>
+
         <div class="field" id="customField" style="display:none;">
-          <label for="courseOrderSelect">Course order</label>
-          <select id="courseOrderSelect" aria-describedby="courseOrderHint"></select>
-          <label for="customInput" style="margin-top:12px">Custom Characters</label>
+          <label for="customInput">Custom Characters</label>
           <input type="text" id="customInput" placeholder="e.g. KMRSAT" />
-          <p class="file-note" id="courseOrderHint">Pick your class and every character taught so far is filled in. Prosigns are written &lt;AR&gt;; type their two letters.</p>
         </div>
 
         <!-- Doubles as "Characters per Group" (Letters/Numbers/Mixed/Custom)
@@ -1611,7 +1616,7 @@
     settings: {
       group: "letters",
       custom: "",
-      courseOrder: "",   // Custom: "cwaBeginner:3" = CW Academy Beginner through class 3 ("" = typed by hand)
+      cwaClass: 1,       // CW Academy Beginners group: the characters taught through this class (1-10)
       groupSize: 3,
       wpm: 20,
       fwpm: 15,
@@ -1697,7 +1702,8 @@
 
     infoBtn: $("infoBtn"), infoDialog: $("infoDialog"), infoCloseBtn: $("infoCloseBtn"),
 
-    groupSelect: $("groupSelect"), customField: $("customField"), customInput: $("customInput"), courseOrderSelect: $("courseOrderSelect"),
+    groupSelect: $("groupSelect"), customField: $("customField"), customInput: $("customInput"),
+    cwaField: $("cwaField"), cwaClassSelect: $("cwaClassSelect"), cwaChars: $("cwaChars"),
     callMixField: $("callMixField"), callMixSelect: $("callMixSelect"),
     wordPoolField: $("wordPoolField"), wordPoolSelect: $("wordPoolSelect"),
     groupSizeField: $("groupSizeField"), groupSizeLabel: $("groupSizeLabel"), groupSizeSelect: $("groupSizeSelect"),
@@ -1759,8 +1765,9 @@
     var s = state.settings;
     els.groupSelect.value = s.group;
     els.customInput.value = s.custom;
-    els.courseOrderSelect.value = s.courseOrder;
     els.customField.style.display = s.group === "custom" ? "" : "none";
+    els.cwaField.style.display = s.group === "cwa-beginner" ? "" : "none";
+    showCwaChars();
     updateGroupSizeFieldUI(s.group);
     els.groupSizeSelect.value = String(s.groupSize);
     els.wpmRange.value = s.wpm; els.wpmVal.textContent = s.wpm;
@@ -1849,14 +1856,24 @@
     if (s.group === "letters") return ALPHA;
     if (s.group === "numbers") return DIGITS;
     if (s.group === "mixed") return ALPHA.concat(DIGITS);
+    // CW Academy Beginner, the characters taught through the chosen class
+    // (HST.course.ORDERS, Tim 2026-10-29); a prosign is one character.
+    if (s.group === "cwa-beginner") return HST.course.charsThrough("cwaBeginner", s.cwaClass);
     // custom: unique, valid characters from the free-text field (<AR> is one)
     return HST.charsFromText(s.custom);
   }
 
-  // "cwaBeginner:3" -> "A E N T S I O 1 4 D H L R 2 5" for Custom Characters.
-  function courseOrderText(choice) {
-    var p = choice.split(":");
-    return HST.course.charsThrough(p[0], Number(p[1])).join(" ");
+  // CW Academy Beginners: "Through class 1".."Through class 10", and the
+  // characters that adds up to (prosigns shown as their letters).
+  function showCwaChars() {
+    var s = state.settings;
+    if (!els.cwaClassSelect.options.length) {
+      els.cwaClassSelect.innerHTML = HST.course.ORDERS.cwaBeginner.classes.map(function (c, i) {
+        return '<option value="' + (i + 1) + '">Through class ' + (i + 1) + "</option>";
+      }).join("");
+    }
+    els.cwaClassSelect.value = String(s.cwaClass);
+    els.cwaChars.textContent = HST.course.charsThrough("cwaBeginner", s.cwaClass).map(HST.charLabel).join(" ");
   }
 
   function randomGroup(n, charset) {
@@ -2423,7 +2440,8 @@
      ===================================================================== */
   var WALK_DRAFT_KEY = "hct-cw-run-cg-walk";
   var GROUP_NAMES = { letters: "Letters", numbers: "Numbers", mixed: "Mixed", qso: "QSO Elements",
-                      words: "Common Words", phrases: "Phrases & Sayings", calls: "Call Signs", custom: "Custom", file: "Your File" };
+                      words: "Common Words", phrases: "Phrases & Sayings", calls: "Call Signs", "cwa-beginner": "CW Academy Beginners",
+                      custom: "Custom", file: "Your File" };
   var walk = { player: null, run: null, paused: false };
   var walkEls = {};
   ["walkBtn", "walkDialog", "walkSetup", "walkPlaying", "walkWhat", "walkPresets", "walkMinInput", "walkGroup",
@@ -2448,7 +2466,7 @@
   function walkWhatText() {
     var s = state.settings, g = GROUP_NAMES[s.group] || s.group;
     if (s.group === "words") g += " \u00b7 " + s.groupSize + " letters";
-    else if (["letters", "numbers", "mixed", "custom"].indexOf(s.group) >= 0) g += " \u00b7 " + s.groupSize + " per group";
+    else if (["letters", "numbers", "mixed", "cwa-beginner", "custom"].indexOf(s.group) >= 0) g += " \u00b7 " + s.groupSize + " per group";
     return g + " \u00b7 " + walkSpeedText();
   }
   function walkStatus(text) { walkEls.walkStatus.textContent = text || ""; walkEls.walkStatus.hidden = !text; }
@@ -2978,6 +2996,7 @@
   els.groupSelect.addEventListener("change", function () {
     state.settings.group = els.groupSelect.value;
     els.customField.style.display = state.settings.group === "custom" ? "" : "none";
+    els.cwaField.style.display = state.settings.group === "cwa-beginner" ? "" : "none";
     updateGroupSizeFieldUI(state.settings.group);
     saveSettings();
   });
@@ -2991,33 +3010,11 @@
   });
   els.customInput.addEventListener("input", function () {
     state.settings.custom = els.customInput.value;
-    // Typed by hand now, unless it's still exactly the course's list.
-    if (state.settings.courseOrder && state.settings.custom !== courseOrderText(state.settings.courseOrder)) {
-      state.settings.courseOrder = "";
-      els.courseOrderSelect.value = "";
-    }
     saveSettings();
   });
-  // Course order: fills Custom Characters with every character taught
-  // through the chosen class (HST.course.ORDERS, Tim 2026-10-29).
-  (function () {
-    var o = HST.course.ORDERS.cwaBeginner;
-    els.courseOrderSelect.innerHTML = '<option value="">None (type your own)</option>' + o.classes.map(function (c, i) {
-      return '<option value="cwaBeginner:' + (i + 1) + '">' + o.name + ", through class " + (i + 1) + "</option>";
-    }).join("");
-    els.courseOrderSelect.value = state.settings.courseOrder;
-  })();
-  els.courseOrderSelect.addEventListener("change", function () {
-    state.settings.courseOrder = els.courseOrderSelect.value;
-    if (state.settings.courseOrder) {
-      state.settings.custom = courseOrderText(state.settings.courseOrder);
-      els.customInput.value = state.settings.custom;
-    }
-    saveSettings();
-  });
-  els.groupSizeSelect.addEventListener("change", function () {
-    state.settings.groupSize = parseInt(els.groupSizeSelect.value, 10);
-    renderBlanksIdle(state.settings.groupSize);
+  els.cwaClassSelect.addEventListener("change", function () {
+    state.settings.cwaClass = Number(els.cwaClassSelect.value);
+    showCwaChars();
     saveSettings();
   });
   // WPM, tone and volume are shared with the ICR Trainer: write them to
