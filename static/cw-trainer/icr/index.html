@@ -3,7 +3,7 @@
 <head><meta charset="UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-<title>HamShackTech — ICR Trainer</title>
+<title>HamShackTech — ICR</title>
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="../shared/hst-chrome.css">
 <style>
@@ -85,6 +85,14 @@
      hamshacktech.com header and the Code Groups Trainer's masthead,
      served from /apple-touch-icon.png (a pre-existing square, transparent
      crop of that artwork) so no new image asset is needed here. */
+  /* "Instant Character Recognition" under the title, for beginners who
+     haven't met the abbreviation (Tim, 2026-10-29). */
+  .masthead .subtitle{
+    margin: 2px 0 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+  }
   .masthead .mascot{
     width: 40px;
     height: 40px;
@@ -629,7 +637,10 @@
 
   <div class="masthead">
     <img class="mascot" src="../icons/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
-    <h1>CW ICR Trainer</h1>
+    <div>
+      <h1>CW ICR</h1>
+      <p class="subtitle">Instant Character Recognition</p>
+    </div>
   </div>
 
   <!-- PRACTICE STAGE -->

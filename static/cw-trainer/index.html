@@ -483,7 +483,7 @@
        HST.experimental store in hst-keyer.js is kept for future tools.) -->
   <div class="experimental">
     <button class="btn" id="keyerSetupBtn" type="button">Keyer Setup&hellip;</button>
-    <p class="hint">Your key or paddles, the adapter they&rsquo;re plugged into, and a place to test them. Used by Keyer and QSO (under Send) and by Jeopardy.</p>
+    <p class="hint">Your key or paddles, the adapter they&rsquo;re plugged into, and a place to test them. Used by Keyer Practice and QSO Practice (under Send) and by Jeopardy.</p>
   </div>
   <!-- My Morse code course (Tim, 2026-10-23): the My Course tab shows its
        class schedule and curriculum. -->
@@ -702,9 +702,9 @@
        load the first time they're opened (data-src), so only one starts up
        at launch. The script labels each by its tool card or tab. -->
   <iframe id="frame-icr" role="tabpanel"
-          title="ICR Trainer" src="icr/"></iframe>
+          title="ICR" src="icr/"></iframe>
   <iframe id="frame-code-groups" role="tabpanel"
-          title="Code Groups Trainer" data-src="code-groups/" hidden></iframe>
+          title="Code Groups" data-src="code-groups/" hidden></iframe>
   <iframe id="frame-call-signs" role="tabpanel"
           title="Call Signs" data-src="call-signs/" hidden></iframe>
   <iframe id="frame-keyer" role="tabpanel"
@@ -718,7 +718,7 @@
   <iframe id="frame-progress" role="tabpanel"
           title="Progress" data-src="progress/" hidden></iframe>
   <iframe id="frame-jeopardy" role="tabpanel"
-          title="Morse Code Jeopardy" data-src="jeopardy/" hidden></iframe>
+          title="Jeopardy" data-src="jeopardy/" hidden></iframe>
 </main>
 
 <!-- Phones: the same five tabs, along the bottom (see "phones" in the CSS). -->
@@ -761,8 +761,8 @@
     icr:           { name: 'ICR',         color: '#a3e635', blurb: 'Name each character the instant you hear it' },
     'code-groups': { name: 'Code Groups', color: '#34d399', blurb: 'Copy random groups before the clock runs out' },
     'call-signs':  { name: 'Call Signs',  color: '#67e8f9', blurb: 'Copy made-up calls in real formats' },
-    keyer:         { name: 'Keyer',       color: '#fbbf24', blurb: 'Send with your key and see your timing' },
-    qso:           { name: 'QSO',         color: '#f472b6', blurb: 'Work a full contact with a virtual station' },
+    keyer:         { name: 'Keyer Practice', color: '#fbbf24', blurb: 'Send with your key and see your timing' },
+    qso:           { name: 'QSO Practice',   color: '#f472b6', blurb: 'Work a full contact with a virtual station' },
     course:        { name: 'My Course',   color: '#c4b5fd', blurb: 'Your class schedule and curriculum' },
     'test-prep':   { name: 'Test Prep',   color: '#fb923c', blurb: 'Practice the CW Academy placement test' },
     jeopardy:      { name: 'Jeopardy' },
@@ -1599,7 +1599,7 @@
   var RELEASE = '2026-10-29-five-tabs';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
-    '<strong>Five tabs instead of nine.</strong> <strong>Copy</strong> has ICR, Code Groups and Call Signs; <strong>Send</strong> has Keyer and QSO; <strong>Course</strong> has My Course and Test Prep; <strong>Play</strong> is Jeopardy; and <strong>Progress</strong> has your stats. Choose a tool from the cards under the tabs. Each tab remembers the tool you used last.',
+    '<strong>Five tabs instead of nine.</strong> <strong>Copy</strong> has ICR, Code Groups and Call Signs; <strong>Send</strong> has Keyer Practice and QSO Practice; <strong>Course</strong> has My Course and Test Prep; <strong>Play</strong> is Jeopardy; and <strong>Progress</strong> has your stats. Choose a tool from the cards under the tabs. Each tab remembers the tool you used last.',
     '<strong>On phones</strong>, the tabs are in a bar along the bottom of the screen, in place of the menu button.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
