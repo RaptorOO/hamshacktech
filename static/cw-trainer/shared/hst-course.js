@@ -13,6 +13,7 @@
  *   HST.course.ORDERS           { cwaBeginner: { name, classes: [['A','E','N','T'], ...] } } -- the order
  *                               a course teaches characters, class by class; prosigns written '<AR>'
  *   HST.course.charsThrough(order, n)  -> every character taught in classes 1..n, in order
+ *   HST.course.progress         each class's Done date, redo count and note (see CLASS PROGRESS)
  *
  * Kept on this device only (localStorage). Loaded after hst-engine.js.
  *
@@ -129,23 +130,28 @@
         curriculum: 'https://cwa.cwops.org/wp-content/uploads/Practice-Instructions-Intermediate-ver.2.3.htm',
         practice: 'https://cwops.org/intermediate-practice-files/',
         speedNote: '',
+        // From the Intermediate curriculum v2.3 (July 2026), session by session
+        // (Tim, 2026-10-30): the word/phrase set, the prefix and suffix sounds,
+        // the QSO and POTA files, and what's new. Every session also has the
+        // routine in `every` below.
+        every: 'Every session: the sending warm-up, drill and exercise from the Daily Morse Code Scales; copying that session’s word, phrase, sound, QSO and POTA files; ICR practice on LCWO or MorseCode.World; and 15 minutes of Morse Runner.',
         sessions: [
-          ['10', 'Word files and prefix sounds; QSO and POTA exchanges; ICR; Morse Runner'],
-          ['10', 'Word files and suffix sounds; QSO and POTA exchanges; Morse Runner'],
-          ['13', 'Word files, prefix and suffix sounds; QSO and POTA exchanges; ICR'],
-          ['13', 'Word files, prefix and suffix sounds; QSO and POTA exchanges; Morse Runner'],
-          ['13', 'Word files, prefix and suffix sounds; QSO and POTA exchanges'],
-          ['13', 'Word files, prefix and suffix sounds; QSO and POTA exchanges'],
-          ['15', 'Word files, prefix and suffix sounds; QSO and POTA exchanges'],
-          ['15', 'Word files, prefix and suffix sounds; QSO and POTA exchanges'],
-          ['15', 'Word files, prefix and suffix sounds; QSO and POTA exchanges'],
-          ['15', 'Word files, prefix and suffix sounds; QSO and POTA exchanges'],
-          ['18', 'Head copy of a short story (SS 101); QSO and POTA exchanges'],
-          ['18', 'A short story (SS 103); Morse Runner in WPX contest mode'],
-          ['18', 'CWT contest practice (CWT 201)'],
-          ['20', 'CWT practice; listen to a live CWT'],
-          ['20', 'CWT practice; Morse Runner in WPX contest mode'],
-          ['25', 'CWT practice at 25 WPM; work a live CWT']
+          ['10', 'Words and phrases 101; sounds -ING -ES IR- RE-; QSO 101, POTA 102; Morse Runner single calls'],
+          ['10', 'Words and phrases 102; sounds -ED -LY IM- UN-; QSO 103, POTA 104'],
+          ['13', 'Words and phrases 103; sounds -ING -ES IN-; QSO 105, POTA 106'],
+          ['13', 'Words and phrases 202; sounds -ED -LY IR-; QSO 107, POTA 108'],
+          ['13', 'Words and phrases 203; sounds -ING DIS- IM-; QSO 201, POTA 110'],
+          ['13', 'Words and phrases 205; sounds -ES RE- IN-; QSO 203, POTA 202'],
+          ['15', 'Words and phrases 301; sounds -ED -LY IR-; QSO 205, POTA 204'],
+          ['15', 'Words and phrases 302; sounds -ING DIS- IM-; QSO 207, POTA 206'],
+          ['15', 'Words and phrases 303; sounds -ES UN- IN-; QSO 301, POTA 208'],
+          ['15', 'Words and phrases 304; sounds -ED RE- IR-; QSO 303, POTA 210'],
+          ['18', 'Words and phrases 305; sounds -LY DIS- IM-; QSO 305, POTA 301; first short story for head copy (SS 101)'],
+          ['18', 'Words and phrases 401; sounds -ING UN- IN-; QSO 307, POTA 302; short story SS 103; Morse Runner in WPX contest mode'],
+          ['18', 'Words and phrases 402; sounds -ES RE- IR-; QSO 401, POTA 304; first CWT practice file (CWT 201)'],
+          ['20', 'Words and phrases 403; sounds -ES DIS- IM-; QSO 403, POTA 306; CWT 202; copy five stations in a live CWT'],
+          ['20', 'Words and phrases 404; sounds -LY UN- IN-; QSO 405, POTA 308; CWT 208; Morse Runner in WPX contest mode'],
+          ['25', 'A taste of 25 WPM: words and phrases 405; sounds UN- DIS- RE-; QSO 407, POTA 310; CWT 212; work five stations in a live CWT']
         ]
       },
       advanced: {
@@ -196,6 +202,51 @@
     }
   };
 
+  /* ---------------------------------------------------------------------
+     CLASS PROGRESS (Tim, 2026-10-30): for each class in My Course, the date
+     it was ticked Done, how many times it was redone, and a note. Kept per
+     course level ('cwa:intermediate'), so switching levels and back loses
+     nothing. Classes are numbered from 1.
+       HST.course.progress.get(courseKey)  { '3': { done: 'YYYY-MM-DD', redo: 2, note: '...' }, ... }
+       HST.course.progress.set(courseKey, n, patch)
+       HST.course.progress.onChange(fn)    fn() -- also when another window changes it
+     --------------------------------------------------------------------- */
+  var PKEY = 'hct-cw-course-progress-v1';
+  function cleanEntry(e) {
+    e = e || {};
+    var out = {};
+    if (/^\d{4}-\d{2}-\d{2}$/.test(e.done || '')) out.done = e.done;
+    var r = Math.floor(Number(e.redo) || 0);
+    if (r > 0) out.redo = Math.min(r, 999);
+    if (typeof e.note === 'string' && e.note) out.note = e.note.slice(0, 2000);
+    return out;
+  }
+  function loadProgress() {
+    try { var o = JSON.parse(localStorage.getItem(PKEY) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; }
+  }
+  var progListeners = [];
+  window.addEventListener('storage', function (e) {
+    if (e.key !== PKEY) return;
+    progListeners.forEach(function (fn) { try { fn(); } catch (err) { console.error(err); } });
+  });
+  var progress = {
+    get: function (courseKey) {
+      var all = loadProgress(), mine = all[courseKey] || {}, out = {};
+      Object.keys(mine).forEach(function (n) { var e = cleanEntry(mine[n]); if (Object.keys(e).length) out[n] = e; });
+      return out;
+    },
+    set: function (courseKey, n, patch) {
+      var all = loadProgress(), mine = all[courseKey] || {}, e = mine[n] || {};
+      Object.keys(patch).forEach(function (k) { e[k] = patch[k]; });
+      e = cleanEntry(e);
+      if (Object.keys(e).length) mine[n] = e; else delete mine[n];
+      all[courseKey] = mine;
+      try { localStorage.setItem(PKEY, JSON.stringify(all)); } catch (err) {}
+      progListeners.forEach(function (fn) { try { fn(); } catch (err) { console.error(err); } });
+    },
+    onChange: function (fn) { progListeners.push(fn); }
+  };
+
   HST.course = {
     PROGRAMS: PROGRAMS,
     ORDERS: ORDERS,
@@ -205,6 +256,7 @@
       o.classes.slice(0, n).forEach(function (c) { out = out.concat(c); });
       return out;
     },
+    progress: progress,
     get: copy,
     set: function (patch) {
       var next = copy();

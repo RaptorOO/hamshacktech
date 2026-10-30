@@ -42,6 +42,9 @@
 
   .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
   .card h2 { margin: 0 0 10px; font: 600 1.05rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+  /* A card title with a link at its right end (the course card's "Change my course"). */
+  .card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; margin-bottom: 10px; }
+  .card-head h2 { margin: 0; }
   .desc { color: var(--muted); font-size: 0.92rem; margin: 0 0 12px; }
   .desc b { color: var(--text); font-weight: 500; }
   .hint { color: var(--dim); font-size: 0.88rem; line-height: 1.5; margin: 8px 0 0; }
@@ -76,10 +79,30 @@
   th { color: var(--dim); font-weight: 500; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
   td.n, td.date, td.speed { white-space: nowrap; }
   td.speed { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
-  tr.week-start td { border-top: 1px solid var(--border); }
   tr.past td { color: var(--dim); }
   tr.now td { background: rgba(196, 181, 253, 0.10); }
   tr.now td:first-child { box-shadow: inset 3px 0 0 var(--mc); }
+
+  /* Your progress (Tim, 2026-10-30): Done with its date, Redo +1 with a
+     count, and a note, for each class. */
+  .tally { margin: 0 0 6px; font-weight: 500; }
+  .tally b { color: var(--mc); font-weight: 600; }
+  #everyNote { margin: 0 0 10px; }
+  th.prog, td.prog { width: 210px; }
+  td.prog { white-space: normal; }
+  .prog-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  .done-box { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text); }
+  .done-box input { width: 17px; height: 17px; margin: 0; accent-color: var(--mc); cursor: pointer; }
+  .done-date { color: var(--mc); font-size: 0.85rem; white-space: nowrap; }
+  .redo { padding: 3px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--well); color: var(--text); font: 500 0.82rem/1.3 'Inter', sans-serif; cursor: pointer; white-space: nowrap; }
+  .redo:hover { border-color: var(--mc); }
+  .redo-count { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+  .note { display: block; width: 100%; margin-top: 6px; padding: 5px 7px; min-height: 2.1em; resize: vertical;
+          background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 7px; font: 0.85rem/1.35 'Inter', sans-serif; }
+  .note::placeholder { color: var(--dim); }
+  .note:focus { border-color: var(--mc); outline: none; }
+  tr.done td.n { color: var(--mc); }
+  .nw { white-space: nowrap; }
 
   .links { list-style: none; margin: 0; padding: 0; }
   .links li { padding: 9px 0; border-bottom: 1px solid var(--grid); }
@@ -89,18 +112,16 @@
 
   @media (max-width: 600px) {
     .wrap { padding: 16px 12px 40px; }
-    /* Phones: each class is a small card -- "Class 3 · Mon, Sep 21 · 7 WPM",
-       then what you'll practice underneath. */
+    /* Phones: each class is a small card -- "Session 3 · Mon, Sep 21 · 7 WPM",
+       then what you'll practice, then your progress. */
     thead { display: none; }
     #sessions tr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; padding: 9px 8px; border-bottom: 1px solid var(--grid); }
-    #sessions tr.week-start { border-top: 1px solid var(--border); }
     #sessions td { display: block; padding: 0; border: 0; }
-    #sessions td.wk { display: none; }
-    #sessions td.cls { font-weight: 600; }
-    #sessions td.cls::before { content: "Class "; }
+    #sessions td.ses { font-weight: 600; }
+    #sessions td.ses::before { content: "Session "; }
     #sessions td.focus { flex-basis: 100%; color: var(--muted); }
     #sessions tr.past td.focus { color: var(--dim); }
-    #sessions tr.week-start td { border-top: 0; }
+    #sessions td.prog { flex-basis: 100%; width: auto; margin-top: 6px; }
   }
 </style>
 </head>
@@ -109,7 +130,6 @@
   <div class="head">
     <img class="hst-mascot" src="../icons/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
     <h1 class="hst-title">My Course</h1>
-    <span class="sub" id="courseName"></span>
     <span class="dev-badge">UNDER DEVELOPMENT</span>
   </div>
 
@@ -130,11 +150,14 @@
 
   <div id="cwaContent" hidden>
     <section class="card" aria-labelledby="aboutTitle">
-      <h2 id="aboutTitle">About your course</h2>
+      <!-- The course's name is this card's title (Tim, 2026-10-30). -->
+      <div class="card-head">
+        <h2 id="aboutTitle"></h2>
+        <button class="linkbtn" type="button" data-open-settings>Change my course</button>
+      </div>
       <p class="desc" id="about"></p>
       <div class="tiles" id="tiles"></div>
       <p class="hint" id="meets"></p>
-      <p class="hint"><button class="linkbtn" type="button" data-open-settings>Change my course</button></p>
     </section>
 
     <section class="card" aria-labelledby="schedTitle">
@@ -145,9 +168,11 @@
       </div>
       <div class="times" id="times" aria-label="Class start times"></div>
       <div class="next" id="nextClass" hidden></div>
+      <p class="tally" id="tally"></p>
+      <p class="hint" id="everyNote" hidden></p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Week</th><th>Class</th><th id="dateHead">Date</th><th>Speed</th><th>What you&rsquo;ll practice</th></tr></thead>
+          <thead><tr><th>Session</th><th id="dateHead">Date</th><th>Speed</th><th>What you&rsquo;ll practice</th><th class="prog">Your progress</th></tr></thead>
           <tbody id="sessions"></tbody>
         </table>
       </div>
@@ -219,16 +244,50 @@
     return out;
   }
 
+  // "What you'll practice" text, with each sound (-ING, IR-) kept on one line.
+  function focusHtml(t) { return esc(t).replace(/(^|\s)(-[A-Z]+|[A-Z]+-)(?=[\s,;.]|$)/g, '$1<span class="nw">$2</span>'); }
+
   function speedText(sp) {
     if (!sp) return '—';
     return sp.indexOf('/') > 0 ? sp + ' WPM' : sp + ' WPM';
   }
 
+  // Your progress: each class's Done date, redo count and note, kept per
+  // course level (HST.course.progress).
+  function isoToday() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function fmtDone(iso) { var d = parseDate(iso); return d ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''; }
+  function redoText(r) { return r ? 'Redone ' + r + (r === 1 ? ' time' : ' times') : ''; }
+  var courseKey = '';
+  function progCell(n, e) {
+    return '<td class="prog"><div class="prog-row">' +
+      '<label class="done-box"><input type="checkbox" data-act="done" data-n="' + n + '"' + (e.done ? ' checked' : '') + '> Done</label>' +
+      '<span class="done-date">' + esc(e.done ? fmtDone(e.done) : '') + '</span></div>' +
+      '<div class="prog-row" style="margin-top:6px"><button class="redo" type="button" data-act="redo" data-n="' + n + '" aria-label="Redo session ' + n + ': add one">Redo +1</button>' +
+      '<span class="redo-count">' + esc(redoText(e.redo || 0)) + '</span></div>' +
+      '<textarea class="note" rows="1" data-act="note" data-n="' + n + '" placeholder="Notes" aria-label="Notes for session ' + n + '">' + esc(e.note || '') + '</textarea></td>';
+  }
+
   function render() {
+    // Redrawing replaces the table, so keep keyboard focus (and a note
+    // being typed) where it was.
+    var act = document.activeElement, keep = null;
+    if (act && act.dataset && act.dataset.act) {
+      keep = { act: act.dataset.act, n: act.dataset.n, value: act.value, start: act.selectionStart, end: act.selectionEnd };
+    }
+    renderPage();
+    if (keep) {
+      var el = document.querySelector('[data-act="' + keep.act + '"][data-n="' + keep.n + '"]');
+      if (el) {
+        if (keep.act === 'note') { el.value = keep.value; try { el.setSelectionRange(keep.start, keep.end); } catch (e) {} }
+        el.focus();
+      }
+    }
+  }
+
+  function renderPage() {
     var c = HST.course.get();
     var progName = c.program ? HST.course.PROGRAMS[c.program].name : '';
     var levelName = HST.course.levelName(c.program, c.level);
-    $('courseName').textContent = c.program ? progName + ' · ' + levelName : '';
     var info = HST.course.info(c.program, c.level);
     $('noneCard').hidden = !!c.program;
     $('soonCard').hidden = !c.program || !!info;
@@ -239,6 +298,7 @@
     }
     if (!info) return;
 
+    $('aboutTitle').textContent = progName + ' \u00b7 ' + levelName;
     $('about').textContent = info.about;
     $('tiles').innerHTML = [
       [info.entry, 'Speed to start'], [info.goal, 'Speed goal'], ['8 weeks · 16 classes', 'Length'], [info.semesters, 'Semesters']
@@ -261,14 +321,21 @@
     dates.forEach(function (d, i) { if (nextIdx < 0 && overAt(d, c.times) > now) nextIdx = i; });
     $('dateHead').hidden = !first;
 
+    courseKey = c.program + ':' + c.level;
+    var prog = HST.course.progress.get(courseKey);
+    var doneCount = info.sessions.filter(function (s, i) { return prog[i + 1] && prog[i + 1].done; }).length;
+    $('tally').innerHTML = '<b>' + doneCount + '</b> of ' + info.sessions.length + ' classes done';
+    $('everyNote').hidden = !info.every;
+    $('everyNote').textContent = info.every || '';
+
     $('sessions').innerHTML = info.sessions.map(function (s, i) {
-      var week = Math.floor(i / 2) + 1, cls = [];
-      if (i % 2 === 0) cls.push('week-start');
+      var cls = [], e = prog[i + 1] || {};
       if (first && overAt(dates[i], c.times) <= now) cls.push('past');
       if (i === nextIdx) cls.push('now');
-      return '<tr class="' + cls.join(' ') + '"><td class="n wk">' + (i % 2 === 0 ? week : '') + '</td><td class="n cls">' + (i + 1) + '</td>' +
+      if (e.done) cls.push('done');
+      return '<tr class="' + cls.join(' ') + '"><td class="n ses">' + (i + 1) + '</td>' +
         (first ? '<td class="date">' + esc(fmt(dates[i])) + (c.times[dates[i].getDay()] ? ' \u00b7 ' + esc(fmtTime(c.times[dates[i].getDay()])) : '') + '</td>' : '') +
-        '<td class="speed">' + esc(speedText(s[0])) + '</td><td class="focus">' + esc(s[1]) + '</td></tr>';
+        '<td class="speed">' + esc(speedText(s[0])) + '</td><td class="focus">' + focusHtml(s[1]) + '</td>' + progCell(i + 1, e) + '</tr>';
     }).join('');
 
     var nx = $('nextClass');
@@ -286,8 +353,8 @@
         var started = isToday && time && startOf(d, c.times) <= now;
         var label = started ? (nextIdx === lastIdx ? 'Last class now: ' : 'Class now: ') : nextIdx === lastIdx ? (isToday ? 'Last class today' : 'Last class') : (isToday ? 'Class today' : 'Next class');
         if (!started) label += time ? (isToday ? ' at ' + fmtTime(time) + ': ' : ': ') : ': ';
-        nx.innerHTML = label + '<b>Class ' + (nextIdx + 1) + ' (week ' + (Math.floor(nextIdx / 2) + 1) + ')</b>' +
-          (isToday ? '' : ', <b>' + esc(fmt(d)) + (time ? ' at ' + esc(fmtTime(time)) : '') + '</b>') + ' \u2014 ' + esc(info.sessions[nextIdx][1]);
+        nx.innerHTML = label + '<b>Session ' + (nextIdx + 1) + '</b>' +
+          (isToday ? '' : ', <b>' + esc(fmt(d)) + (time ? ' at ' + esc(fmtTime(time)) : '') + '</b>') + ' \u2014 ' + focusHtml(info.sessions[nextIdx][1]);
       }
     }
     $('speedNote').textContent = info.speedNote;
@@ -316,6 +383,36 @@
     if (inp.value) times[inp.dataset.day] = inp.value; else delete times[inp.dataset.day];
     HST.course.set({ times: times });
   });
+  // Your progress: Done (today's date, or cleared), Redo +1, and notes
+  // (saved as you type, a moment after you stop).
+  $('sessions').addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.dataset.act === 'done') HST.course.progress.set(courseKey, t.dataset.n, { done: t.checked ? isoToday() : '' });
+  });
+  $('sessions').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-act="redo"]');
+    if (!b) return;
+    var cur = HST.course.progress.get(courseKey)[b.dataset.n] || {};
+    HST.course.progress.set(courseKey, b.dataset.n, { redo: (cur.redo || 0) + 1 });
+  });
+  var noteTimers = {}, savingNote = false;
+  function saveNote(t) {
+    clearTimeout(noteTimers[t.dataset.n]);
+    savingNote = true;                  // the table is already up to date here
+    HST.course.progress.set(courseKey, t.dataset.n, { note: t.value });
+    savingNote = false;
+  }
+  $('sessions').addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.dataset.act !== 'note') return;
+    clearTimeout(noteTimers[t.dataset.n]);
+    noteTimers[t.dataset.n] = setTimeout(function () { saveNote(t); }, 500);
+  });
+  $('sessions').addEventListener('focusout', function (e) {
+    if (e.target.dataset && e.target.dataset.act === 'note') saveNote(e.target);
+  });
+  // Changes here, and in another window of the app, redraw the list.
+  HST.course.progress.onChange(function () { if (!savingNote) render(); });
   HST.course.onChange(render);
   render();
   // Keep "next class" current while the tab stays open (a class can end while you watch).
