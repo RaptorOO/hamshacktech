@@ -104,18 +104,47 @@
   td.date .time { display: block; color: var(--dim); font-size: 0.85rem; }
   /* The three practice days before each session (Tim, 2026-10-30), each
      with its audio files as links that play them. */
-  /* With days, the practice cell also spans the progress column: each day
-     is a row with its practice on the left and its Done / Redo on the right. */
-  .day-row { display: grid; grid-template-columns: 1fr 250px; gap: 4px 20px; align-items: start; padding: 3px 0; }
-  .day-row + .day-row { border-top: 1px dashed var(--grid); }
-  .day { line-height: 1.6; }
-  .day .dl { display: inline-block; min-width: 3.4em; color: var(--dim); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  /* With days, the practice cell also spans the progress column. Each day
+     is a list of tasks (Tim, 2026-10-30), each a row with the task on the
+     left and its Done / Redo on the right. */
+  .day { padding: 4px 0 6px; }
+  .day + .day { border-top: 1px dashed var(--grid); }
+  .day .dl { margin: 0 0 2px; color: var(--dim); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .day .dl .day-done { margin-left: 6px; color: var(--mc); text-transform: none; letter-spacing: 0; font-weight: 500; }
+  .task { display: grid; grid-template-columns: 1fr 320px; gap: 2px 16px; align-items: center; padding: 2px 0; line-height: 1.6; color: var(--text); }
+  .ses-bar.past .task { color: var(--muted); }
+  .task .reps { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+  .task select.sp { margin: 0 0 0 6px; padding: 1px 4px; border: 1px solid var(--border); border-radius: 6px; background: var(--well); color: var(--text); font: 0.8rem 'Inter', sans-serif; }
   .file { display: inline-block; margin: 1px 3px 1px 0; padding: 0 7px; border: 1px solid var(--border); border-radius: 999px;
           color: var(--mc); font: 500 0.8rem/1.6 'JetBrains Mono', monospace; text-decoration: none; white-space: nowrap; }
   .file:hover { border-color: var(--mc); background: rgba(196, 181, 253, 0.10); }
-  .day .also { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
-  tr.past .day .also { color: var(--dim); }
+  .task .also { color: var(--muted); font-size: 0.85rem; }
+  .ses-bar.past .task .also { color: var(--dim); }
   .curr { display: inline-block; margin-top: 2px; font-size: 0.85rem; }
+
+  /* Courses that list their days (Tim, 2026-10-30): one header bar per
+     session -- "Session 1  Monday, Oct 19  7:00 PM  Speed: 10 WPM" -- with
+     a disclosure triangle that opens that session's practice days. */
+  .ses-bar { border: 1px solid var(--border); border-radius: 10px; margin: 0 0 8px; background: var(--well); }
+  .ses-bar > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 22px; padding: 9px 14px; cursor: pointer; list-style: none; border-radius: 10px; }
+  .ses-bar > summary::-webkit-details-marker { display: none; }
+  .ses-bar > summary::before { content: "\25B6"; color: var(--muted); font-size: 0.7rem; width: 1em; margin-right: -12px; transition: transform 0.15s; }
+  .ses-bar[open] > summary::before { transform: rotate(90deg); }
+  .ses-bar > summary:hover { background: rgba(196, 181, 253, 0.06); }
+  .ses-bar .sb-n { font-weight: 600; color: var(--text); }
+  .ses-bar .sb-date, .ses-bar .sb-time { color: var(--text); }
+  .ses-bar .sb-sp { color: var(--muted); }
+  .ses-bar .sb-sp b { font: 500 0.9rem 'JetBrains Mono', monospace; color: var(--text); }
+  /* Fixed slots, so the dates, times and speeds line up from bar to bar. */
+  .ses-bar .sb-n { min-width: 5.6em; }
+  .ses-bar .sb-date { min-width: 10.5em; }
+  .ses-bar .sb-time { min-width: 4.8em; }
+  .ses-bar .sb-prog { margin-left: auto; color: var(--dim); font-size: 0.85rem; }
+  .ses-bar .sb-date .s, .ses-bar .sb-br { display: none; }
+  .ses-bar.past > summary span { color: var(--dim); }
+  .ses-bar.now { border-color: var(--mc); box-shadow: inset 3px 0 0 var(--mc); }
+  .ses-bar.done .sb-n, .ses-bar.done .sb-prog { color: var(--mc); }
+  .ses-body { padding: 2px 14px 10px; border-top: 1px solid var(--grid); }
 
   .links { list-style: none; margin: 0; padding: 0; }
   .links li { padding: 9px 0; border-bottom: 1px solid var(--grid); }
@@ -135,7 +164,17 @@
     #sessions td.focus { flex-basis: 100%; color: var(--muted); }
     #sessions tr.past td.focus { color: var(--dim); }
     #sessions td.prog { flex-basis: 100%; width: auto; margin-top: 6px; }
-    .day-row { grid-template-columns: 1fr; gap: 2px; padding: 6px 0; }
+    .task { grid-template-columns: 1fr; gap: 2px; padding: 5px 0; }
+    .ses-bar > summary { gap: 2px 14px; padding: 9px 10px; }
+    .ses-bar .sb-n, .ses-bar .sb-date, .ses-bar .sb-time { min-width: 0; }
+    .days { flex-wrap: wrap; }
+    .days button { min-width: 36px; padding: 5px 4px; }
+    /* Phones: "Session 3  Mon, Oct 26  7:00 PM", then speed and progress. */
+    .ses-bar .sb-date .l { display: none; }
+    .ses-bar .sb-date .s { display: inline; }
+    .ses-bar .sb-br { display: block; flex-basis: 100%; height: 0; }
+    .ses-bar .sb-sp { padding-left: 1em; }
+    .ses-body { padding: 2px 10px 8px; }
     #sessions td.date .time { display: inline; }
     #sessions td.date .time::before { content: " \00b7\00a0"; }
   }
@@ -186,11 +225,14 @@
       <div class="next" id="nextClass" hidden></div>
       <p class="tally" id="tally"></p>
       <p class="hint" id="everyNote" hidden></p>
-      <div class="table-wrap">
+      <div id="schedule">
+      <div id="sessionBars" hidden></div>
+      <div class="table-wrap" id="sessionTable">
         <table>
           <thead><tr><th>Session</th><th id="dateHead">Date</th><th>Speed</th><th>What you&rsquo;ll practice</th><th class="prog">Your progress</th></tr></thead>
           <tbody id="sessions"></tbody>
         </table>
+      </div>
       </div>
       <p class="hint" id="speedNote"></p>
       <p class="hint">Enter your first class date, your class days and their start times (from your advisor) to see when every class is. Holidays can move a class.
@@ -231,6 +273,7 @@
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
     return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
   }
+  function fmtLong(d) { return d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }); }
   function fmt(d) { return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); }
   // '19:00' -> "7:00 PM" (in this device's own style)
   function fmtTime(hhmm) {
@@ -263,20 +306,68 @@
   // "What you'll practice" text, with each sound (-ING, IR-) kept on one line.
   function focusHtml(t) { return esc(t).replace(/(^|\s)(-[A-Z]+|[A-Z]+-)(?=[\s,;.]|$)/g, '$1<span class="nw">$2</span>'); }
 
-  // A session's three practice days, when the course lists them: each
-  // day's audio files as links, then its other practice, with that day's
-  // Done and Redo beside it; then a link to that session in the online
-  // curriculum.
+  // A session's three practice days, when the course lists them (Tim,
+  // 2026-10-30): each day is a list of tasks -- send a Daily Scale, copy
+  // the audio files, then LCWO or Morse Runner -- each with its own Done and
+  // Redo. Then a link to that session in the online curriculum.
+  var SCALE_NAMES = { warmup: 'Warm Up', drill: 'Drill', exercise: 'Exercise' };
+  var TIMES = { '1': 'once', '1-2': 'once or twice', '2': '2 times', '3': '3 times', n: 'several times' };
+  var LCWO_ICR = 'https://lcwo.net/icr', MCW_ICR = 'https://morsecode.world/international/trainer/adaptive-icr.html';
+  var MORSE_RUNNER = 'https://github.com/w7sst/MorseRunner/releases', CWT = 'https://cwops.org/cwops-tests/';
+  function ext(href, text) { return '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(text) + '</a>'; }
+  // One task token ('warmup', 'WD101-10*2', 'icr:10'; see hst-course.js)
+  // -> { id, html, what } (what names it for screen readers). e is its
+  // progress, for the speed picked.
+  function task(tok, key, e) {
+    if (SCALE_NAMES[tok]) {
+      return { what: 'send the ' + SCALE_NAMES[tok],
+        html: 'Send the <a class="scale" href="../?tab=keyer&amp;scale=' + tok + '" target="_top" data-scale="' + tok + '">' + SCALE_NAMES[tok] + '</a> <span class="also">Daily Scales</span>' };
+    }
+    var f = /^([A-Z]+\d+)-(\d+)\*(.+)$/.exec(tok);
+    if (f) {
+      // The assigned speed, or the one picked.
+      var speeds = HST.course.fileSpeeds(f[1]), set = Number(f[2]), sp = speeds.indexOf(e.sp) >= 0 ? e.sp : set;
+      var code = f[1] + '-' + sp, u = HST.course.fileUrl(code);
+      return { what: 'copy ' + f[1],
+        html: 'Copy ' + (u ? '<a class="file" href="' + esc(u) + '" target="_blank" rel="noopener" title="Play ' + esc(code) + '">' + esc(code) + '</a>' : '<span class="file">' + esc(code) + '</span>') +
+          ' <span class="reps">(' + (TIMES[f[3]] || f[3]) + ')</span>' +
+          (speeds.length > 1 ? '<select class="sp" data-act="sp" data-n="' + key + '" aria-label="Speed for ' + esc(f[1]) + ' (assigned ' + set + ' WPM)">' + speeds.map(function (v) {
+            return '<option value="' + v + '"' + (v === sp ? ' selected' : '') + '>' + v + ' WPM</option>';
+          }).join('') + '</select>' : '') };
+    }
+    var a = tok.split(':');
+    if (a[0] === 'icr') return { what: 'LCWO ICR',
+      html: ext(LCWO_ICR, 'LCWO ICR') + ' exercise, ' + a[1] + ' WPM <span class="also">(or ' + ext(MCW_ICR, 'MorseCode.World ICR') + ')</span>' };
+    if (a[0] === 'mr') return { what: 'Morse Runner',
+      html: ext(MORSE_RUNNER, 'Morse Runner') + ': single calls, ' + a[1] + ' WPM, 15 minutes' };
+    if (a[0] === 'wpx') return { what: 'Morse Runner WPX contest',
+      html: ext(MORSE_RUNNER, 'Morse Runner') + ': WPX contest, ' + a[1] + ' WPM, activity ' + a[2] + ', 15 minutes <span class="also">(be sure to send CQ)</span>' };
+    if (a[0] === 'cwt') return { what: 'live CWT',
+      html: ext(CWT, 'Live CWT') + ': ' + (a[1] === 'work5' ? 'work 5 stations, or at least copy their info' : 'copy the call, name and number of 5 running stations') +
+        ' <span class="also">(Wednesday 1300 or 1900 UTC, Thursday 0300 or 0700 UTC)</span>' };
+    return { what: tok, html: esc(tok) };
+  }
+  // A day's tasks, each with its progress key ('3.1.WD103': the token
+  // without its speed, so picking another speed keeps the ticks).
+  function dayTasks(day, n, j, prog) {
+    return day.split(' ').map(function (tok) {
+      var key = n + '.' + (j + 1) + '.' + tok.replace(/[-*:].*$/, '');
+      var t = task(tok, key, prog[key] || {});
+      t.key = key;
+      return t;
+    });
+  }
+  function dayDone(day, n, j, prog) {
+    return dayTasks(day, n, j, prog).every(function (t) { return prog[t.key] && prog[t.key].done; });
+  }
   function practiceHtml(info, s, n, prog) {
     if (!s[2]) return focusHtml(s[1]);
     return s[2].map(function (day, j) {
-      var parts = day.split('|'), files = parts[0].trim() ? parts[0].trim().split(/\s+/) : [];
-      var key = n + '.' + (j + 1);
-      return '<div class="day-row"><div class="day"><span class="dl">Day ' + (j + 1) + '</span> ' + files.map(function (f) {
-        var u = HST.course.fileUrl(f);
-        return u ? '<a class="file" href="' + esc(u) + '" target="_blank" rel="noopener" title="Play ' + esc(f) + '">' + esc(f) + '</a>' : '<span class="file">' + esc(f) + '</span>';
-      }).join('') + (parts[1] ? ' <span class="also">' + esc(parts[1].trim()).split('; ').join('</span> <span class="also">') + '</span>' : '') + '</div>' +
-        progControls(key, prog[key] || {}, 'session ' + n + ' day ' + (j + 1)) + '</div>';
+      return '<div class="day"><div class="dl">Day ' + (j + 1) + (dayDone(day, n, j, prog) ? '<span class="day-done">\u2713 done</span>' : '') + '</div>' +
+        dayTasks(day, n, j, prog).map(function (t) {
+          return '<div class="task"><div>' + t.html + '</div>' +
+            progControls(t.key, prog[t.key] || {}, 'session ' + n + ' day ' + (j + 1) + ', ' + t.what) + '</div>';
+        }).join('') + '</div>';
     }).join('') + (info.sessionAnchor ? '<a class="curr" href="' + esc(info.curriculum + info.sessionAnchor(n)) + '" target="_blank" rel="noopener">Session ' + n + ' in the curriculum \u2197</a>' : '');
   }
 
@@ -285,13 +376,14 @@
     return sp.indexOf('/') > 0 ? sp + ' WPM' : sp + ' WPM';
   }
 
-  // Your progress: the Done date and redo count of each practice day
-  // ('3.1' = session 3, day 1), or of each class when a course doesn't list
-  // its days ('3'). Kept per course level (HST.course.progress).
+  // Your progress: the Done date and redo count of each task ('3.1.WD103'
+  // = session 3, day 1, copy WD103), or of each class when a course doesn't
+  // list its days ('3'). Kept per course level (HST.course.progress).
   function isoToday() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function fmtDone(iso) { var d = parseDate(iso); return d ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''; }
   function redoText(r) { return r ? 'Redone ' + r + (r === 1 ? ' time' : ' times') : ''; }
   var courseKey = '';
+  var openSessions = null;   // { 3: true }: the session bars that are open
   // Done (with the date ticked), then Redo +1 (with the count).
   function progControls(key, e, what) {
     return '<div class="prog-row">' +
@@ -351,26 +443,51 @@
 
     courseKey = c.program + ':' + c.level;
     var prog = HST.course.progress.get(courseKey);
-    // A class is done when it's ticked, or when all its days are.
+    // A class is done when it's ticked, or when all its days' tasks are.
     function classDone(s, n) {
       if (!s[2]) return !!(prog[n] && prog[n].done);
-      return s[2].every(function (d, j) { return prog[n + '.' + (j + 1)] && prog[n + '.' + (j + 1)].done; });
+      return s[2].every(function (d, j) { return dayDone(d, n, j, prog); });
     }
     var doneCount = info.sessions.filter(function (s, i) { return classDone(s, i + 1); }).length;
     var tally = '<b>' + doneCount + '</b> of ' + info.sessions.length + ' classes done';
     var withDays = info.sessions.filter(function (s) { return s[2]; });
     if (withDays.length) {
-      var dayTotal = 0, dayDone = 0;
+      var dayTotal = 0, daysDone = 0;
       info.sessions.forEach(function (s, i) {
-        (s[2] || []).forEach(function (d, j) { dayTotal++; if (prog[(i + 1) + '.' + (j + 1)] && prog[(i + 1) + '.' + (j + 1)].done) dayDone++; });
+        (s[2] || []).forEach(function (d, j) { dayTotal++; if (dayDone(d, i + 1, j, prog)) daysDone++; });
       });
-      tally += ' \u00b7 <b>' + dayDone + '</b> of ' + dayTotal + ' practice days';
+      tally += ' \u00b7 <b>' + daysDone + '</b> of ' + dayTotal + ' practice days';
     }
     $('tally').innerHTML = tally;
     $('everyNote').hidden = !info.every;
     $('everyNote').textContent = info.every || '';
 
-    $('sessions').innerHTML = info.sessions.map(function (s, i) {
+    // Courses that list their days: a header bar per session, opened with
+    // its triangle. The next class starts open; what you open or close
+    // stays that way while the page is open.
+    var bars = info.sessions.some(function (s) { return s[2]; });
+    $('sessionBars').hidden = !bars;
+    $('sessionTable').hidden = bars;
+    if (bars) {
+      if (!openSessions) { openSessions = {}; openSessions[nextIdx >= 0 ? nextIdx + 1 : 1] = true; }
+      $('sessionBars').innerHTML = info.sessions.map(function (s, i) {
+        var n = i + 1, cls = ['ses-bar'], days = s[2] || [];
+        if (first && overAt(dates[i], c.times) <= now) cls.push('past');
+        if (i === nextIdx) cls.push('now');
+        if (classDone(s, n)) cls.push('done');
+        var time = first && c.times[dates[i].getDay()];
+        var daysDone = days.filter(function (d, j) { return dayDone(d, n, j, prog); }).length;
+        return '<details class="' + cls.join(' ') + '" data-ses="' + n + '"' + (openSessions[n] ? ' open' : '') + '>' +
+          '<summary><span class="sb-n">Session ' + n + '</span>' +
+          (first ? '<span class="sb-date"><span class="l">' + esc(fmtLong(dates[i])) + '</span><span class="s">' + esc(fmt(dates[i])) + '</span></span>' : '') +
+          (time ? '<span class="sb-time">' + esc(fmtTime(time)) + '</span>' : '') +
+          '<span class="sb-br"></span><span class="sb-sp">Speed: <b>' + esc(s[0]) + '</b> WPM</span>' +
+          '<span class="sb-prog">' + (daysDone === days.length ? '\u2713 ' : '') + daysDone + ' of ' + days.length + ' days done</span></summary>' +
+          '<div class="ses-body">' + practiceHtml(info, s, n, prog) + '</div></details>';
+      }).join('');
+    }
+
+    $('sessions').innerHTML = bars ? '' : info.sessions.map(function (s, i) {
       var cls = [];
       if (first && overAt(dates[i], c.times) <= now) cls.push('past');
       if (i === nextIdx) cls.push('now');
@@ -427,12 +544,28 @@
     if (inp.value) times[inp.dataset.day] = inp.value; else delete times[inp.dataset.day];
     HST.course.set({ times: times });
   });
-  // Your progress: Done (today's date, or cleared) and Redo +1.
-  $('sessions').addEventListener('change', function (e) {
+  // Your progress: Done (today's date, or cleared), Redo +1, and an audio
+  // file's speed.
+  $('schedule').addEventListener('change', function (e) {
     var t = e.target;
     if (t.dataset.act === 'done') HST.course.progress.set(courseKey, t.dataset.n, { done: t.checked ? isoToday() : '' });
+    if (t.dataset.act === 'sp') HST.course.progress.set(courseKey, t.dataset.n, { sp: Number(t.value) });
   });
-  $('sessions').addEventListener('click', function (e) {
+  // Opening or closing a session bar (toggle doesn't bubble, so listen as it goes down).
+  $('schedule').addEventListener('toggle', function (e) {
+    var d = e.target;
+    if (d.dataset && d.dataset.ses && openSessions) openSessions[d.dataset.ses] = d.open;
+  }, true);
+  $('schedule').addEventListener('click', function (e) {
+    // A Daily Scale opens in Keyer Practice (Send tab) through the app
+    // shell; on its own (no shell), the link opens the app there.
+    var sc = e.target.closest('a[data-scale]');
+    if (sc) {
+      try {
+        if (window.parent !== window && window.parent.HCT && window.parent.HCT.openScale) { e.preventDefault(); window.parent.HCT.openScale(sc.dataset.scale); }
+      } catch (err) {}
+      return;
+    }
     var b = e.target.closest('button[data-act="redo"]');
     if (!b) return;
     var cur = HST.course.progress.get(courseKey)[b.dataset.n] || {};

@@ -954,6 +954,10 @@
     document.getElementById('frame-jeopardy').dataset.src = 'jeopardy/?room=' + room;
     wanted = 'jeopardy';
   }
+  // A Daily Scale (?tab=keyer&scale=drill, My Course's links on their own).
+  if (wanted === 'keyer' && /^(warmup|drill|exercise)$/.test(params.get('scale') || '')) {
+    document.getElementById('frame-keyer').dataset.src = 'keyer/?scale=' + params.get('scale');
+  }
   var saved = null;
   try { saved = localStorage.getItem(TAB_KEY); } catch (e) {}
   if (TABS.indexOf(wanted) >= 0) showTab(wanted, true);
@@ -1222,6 +1226,16 @@
   // its own frame, so it asks the app shell through this hook).
   window.HCT = window.HCT || {};
   window.HCT.openKeyerSetup = function () { stopTrainer(current); openKeyer(); };
+  // My Course's sending tasks: open that Daily Scale in Keyer Practice.
+  window.HCT.openScale = function (key) {
+    var frame = document.getElementById('frame-keyer');
+    if (frame.dataset.src) frame.dataset.src = 'keyer/?scale=' + encodeURIComponent(key);
+    else {
+      try { frame.contentWindow.HSTKeyerPractice.openScale(key); }
+      catch (e) { frame.src = 'keyer/?scale=' + encodeURIComponent(key); }   // still loading
+    }
+    showTab('keyer', true);
+  };
 
   // MIDI switched off: hide its Diagnostics rows too.
   if (!HST.MIDI_ENABLED) {
