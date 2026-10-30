@@ -15,7 +15,7 @@
  *   HST.course.charsThrough(order, n)  -> every character taught in classes 1..n, in order
  *   HST.course.progress         each task's (or class's) Done date and redo count (see CLASS PROGRESS)
  *   HST.course.fileUrl(code)    a CW Academy audio file's address, from its curriculum name ('QSO101-10')
- *   HST.course.fileSpeeds(base) the speeds that file comes at ('QSO101' -> [10, 13, 15, 18, 20, 25])
+ *   HST.course.fileSpeeds(base) the speeds that file comes at ('QSO101' -> [10, 13, 15, 18, 20, 25, 30, 35])
  *
  * Kept on this device only (localStorage). Loaded after hst-engine.js.
  *
@@ -140,7 +140,8 @@
         //   warmup, drill, exercise   send that Daily Morse Code Scale
         //   WD101-10*2                copy that CWops audio file 2 times (the
         //                             curriculum's name; *1-2 once or twice,
-        //                             *n several times)
+        //                             *n several times; no * when the
+        //                             curriculum gives no count)
         //   icr:10                    LCWO (or MorseCode.World) ICR at 10 WPM
         //   mr:10                     Morse Runner single calls, 10 WPM, 15 minutes
         //   wpx:18:1                  Morse Runner WPX contest, 18 WPM, activity 1
@@ -190,23 +191,47 @@
         curriculum: 'https://cwops.org/wp-content/uploads/2025/05/CW-Academy-Advanced-Curriculum-v2.1.htm',
         practice: 'https://cwops.org/advanced-practice-files/',
         speedNote: '',
+        // From the Advanced curriculum v2.1 (May 2025), session by session
+        // (Tim, 2026-10-30), in the same task tokens as Intermediate (see
+        // there). Advanced lists no LCWO or Morse Runner work for the days;
+        // its Morse Runner, RufzXP and CWT are optional extras the advisor
+        // sets. Files with no count in the curriculum have none here.
+        every: 'Practice on three days before each session. Each day is a list of tasks: send a Daily Morse Code Scale (tap it to open it in Keyer Practice), then head copy the audio files (tap one to play it, or pick another speed). Don\u2019t write anything down, except notes on the QSO and POTA files. Tick each task as you finish it. Morse Runner, RufzXP and the weekly CWT are optional extras your advisor may give you.',
+        // Each session's place in the curriculum: session n is #_Toc(197333290 + n).
+        sessionAnchor: function (n) { return '#_Toc' + (197333290 + n); },
         sessions: [
-          ['20', 'Sending warm-up; phrases, words and a QSO; -ING -ED -ES -LY sounds; POTA'],
-          ['20', 'Phrases, words and a QSO; -ING -ED -ES -LY sounds; POTA'],
-          ['20', 'Phrases, words and a QSO; -ING -ED -ES -LY sounds; POTA'],
-          ['20', 'Phrases, words and a QSO; -ING -ED -ES -LY sounds; POTA'],
-          ['20', 'Phrases, words and a QSO; the last -ING -ED -ES -LY set; POTA'],
-          ['20', 'Phrases, words and a QSO; IN- RE- IM- DIS- sounds; POTA'],
-          ['20', 'Phrases, words and a QSO; IN- RE- IM- DIS- sounds; POTA'],
-          ['20', 'Phrases, words and a QSO; IN- RE- IM- DIS- sounds; POTA'],
-          ['25', 'Phrases, words and a QSO; IN- RE- IM- DIS- sounds; POTA'],
-          ['25', 'Phrases, words and a QSO; IN- RE- IM- DIS- sounds; POTA'],
-          ['25', 'Phrases, words and a QSO; IR- and UN- sounds; POTA'],
-          ['25', 'Phrases, words and a QSO; IR- and UN- sounds; POTA'],
-          ['30', 'Phrases, words and a QSO; IR- and UN- sounds; POTA'],
-          ['30', 'Phrases, words and a QSO; IR- and UN- sounds; POTA'],
-          ['35', 'Phrases, words and a QSO; IR- and UN- sounds; POTA'],
-          ['35', 'Phrases, words, a QSO and POTA']
+          ['20', 'Words and phrases 101; sounds -ING -ED -ES -LY; QSO 101, POTA 101',
+           ['warmup PR101-20*2 WD101-20*2', 'warmup QSO101-20 ING4-20 ED4-20', 'warmup exercise POTA101-20 ES4-20 LY4-20']],
+          ['20', 'Words and phrases 102; sounds -ING -ED -ES -LY; QSO 102, POTA 102',
+           ['warmup PR102-20*2 WD102-20*2', 'warmup QSO102-20 ING5-20 ED5-20', 'warmup exercise POTA102-20 ES5-20 LY5-20']],
+          ['20', 'Words and phrases 103; sounds -ING -ED -ES -LY; QSO 103, POTA 103',
+           ['warmup PR103-20*2 WD103-20*2', 'warmup QSO103-20 ING6-20 ED6-20', 'warmup exercise POTA103-20 ES6-20 LY6-20']],
+          ['20', 'Words and phrases 104; sounds -ING -ED -ES -LY; QSO 104, POTA 104',
+           ['warmup PR104-20*2 WD104-20*2', 'warmup QSO104-20 ING7-20 ED7-20', 'warmup exercise POTA104-20 ES7-20 LY7-20']],
+          ['20', 'Words and phrases 105; sounds -ING -ED -ES -LY; QSO 105, POTA 105',
+           ['warmup PR105-20*2 WD105-20*2', 'warmup QSO105-20 ING8-20 ED8-20', 'warmup exercise POTA105-20 ES8-20 LY8-20']],
+          ['20', 'Words and phrases 201; sounds IN- RE- IM- DIS-; QSO 106, POTA 106',
+           ['warmup PR201-20*2 WD201-20*2', 'warmup QSO106-20 IN4-20 RE4-20', 'warmup exercise POTA106-20 IM4-20 DIS4-20']],
+          ['20', 'Words and phrases 202; sounds IN- RE- IM- DIS-; QSO 107, POTA 107',
+           ['warmup PR202-20*2 WD202-20*2', 'warmup QSO107-20 IN5-20 RE5-20', 'warmup exercise POTA107-20 IM5-20 DIS5-20']],
+          ['20', 'Words and phrases 203; sounds IN- RE- IM- DIS-; QSO 108, POTA 108',
+           ['warmup PR203-20*2 WD203-20*2', 'warmup QSO108-20 IN6-20 RE6-20', 'warmup exercise POTA108-20 IM6-20 DIS6-20']],
+          ['25', 'Words and phrases 204; sounds IN- RE- IM- DIS-; QSO 109, POTA 109',
+           ['warmup PR204-25*2 WD204-25*2', 'warmup QSO109-25 IN7-25 RE7-25', 'warmup exercise POTA109-25 IM7-25 DIS7-25']],
+          ['25', 'Words and phrases 205; sounds IN- RE- IM- DIS-; QSO 110, POTA 110',
+           ['warmup PR205-25*2 WD205-25*2', 'warmup QSO110-25 IN8-25 RE8-25', 'warmup exercise POTA110-25 IM8-25 DIS8-25']],
+          ['25', 'Words and phrases 301; sounds IR- UN-; QSO 201, POTA 201',
+           ['warmup PR301-25*2 WD301-25*2', 'warmup QSO201-25 IR4-25', 'warmup exercise POTA201-25 UN4-25']],
+          ['25', 'Words and phrases 302; sounds IR- UN-; QSO 202, POTA 202',
+           ['warmup PR302-25*2 WD302-25*2', 'warmup QSO202-25 IR5-25', 'warmup exercise POTA202-25 UN5-25']],
+          ['30', 'Words and phrases 303; sounds IR- UN-; QSO 203, POTA 203',
+           ['warmup PR303-30*2 WD303-30*2', 'warmup QSO203-30 IR6-30', 'warmup exercise POTA203-30 UN6-30']],
+          ['30', 'Words and phrases 304; sounds IR- UN-; QSO 204, POTA 204',
+           ['warmup PR304-30*2 WD304-30*2', 'warmup QSO204-30 IR7-30', 'warmup exercise POTA204-30 UN7-30']],
+          ['35', 'Words and phrases 305; sounds IR- UN-; QSO 205, POTA 205',
+           ['warmup PR305-35*2 WD305-35*2', 'warmup QSO205-35 IR8-35', 'warmup exercise POTA205-35 UN8-35']],
+          ['35', 'Words and phrases 401; QSO 206, POTA 206',
+           ['warmup PR401-35*2 WD401-35*2', 'warmup QSO206-35', 'warmup exercise POTA206-35']]
         ]
       }
     }
@@ -232,13 +257,17 @@
     if (m[1] === 'SS') return 'https://cwops.org/wp-content/uploads/2022/11/SS' + m[2] + '_' + m[3] + '.mp3';
     return CWA_FILES + (m[1] === 'QSO' ? 'QSO_' + m[2] + '_' + m[3] : m[1] + m[2] + '_' + m[3]) + '.mp3';
   }
-  // The speeds a file comes at ('WD101' -> [10, 13, 15, 18, 20, 25]). The
-  // CWT files come at one speed; QSO 107 has no 25 WPM file.
-  var CWA_SPEEDS = [10, 13, 15, 18, 20, 25];
+  // The speeds a file comes at ('WD101' -> [10, 13, 15, 18, 20, 25, 30,
+  // 35]): every speed on the Intermediate and Advanced practice files
+  // pages, which share the files (checked 2026-10-30). A few stop short
+  // (CWA_TOP); the short stories stop at 25; the CWT files come at one speed.
+  var CWA_SPEEDS = [10, 13, 15, 18, 20, 25, 30, 35];
+  var CWA_TOP = { POTA107: 30, PR205: 30, QSO107: 30, WD205: 30, QSO405: 25 };
   function fileSpeeds(base) {
     var one = Object.keys(CWA_OLDER).filter(function (k) { return k.slice(0, k.indexOf('-')) === base; });
     if (one.length) return one.map(function (k) { return Number(k.slice(k.indexOf('-') + 1)); });
-    return base === 'QSO107' ? CWA_SPEEDS.slice(0, 5) : CWA_SPEEDS;
+    var top = /^SS/.test(base) ? 25 : CWA_TOP[base] || 35;
+    return CWA_SPEEDS.filter(function (v) { return v <= top; });
   }
 
   /* The order courses teach characters, class by class (Tim, 2026-10-29).

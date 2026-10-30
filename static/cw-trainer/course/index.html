@@ -323,14 +323,14 @@
       return { what: 'send the ' + SCALE_NAMES[tok],
         html: 'Send the <a class="scale" href="../?tab=keyer&amp;scale=' + tok + '" target="_top" data-scale="' + tok + '">' + SCALE_NAMES[tok] + '</a> <span class="also">Daily Scales</span>' };
     }
-    var f = /^([A-Z]+\d+)-(\d+)\*(.+)$/.exec(tok);
+    var f = /^([A-Z]+\d+)-(\d+)(?:\*(.+))?$/.exec(tok);   // the count is optional (Advanced gives few)
     if (f) {
       // The assigned speed, or the one picked.
       var speeds = HST.course.fileSpeeds(f[1]), set = Number(f[2]), sp = speeds.indexOf(e.sp) >= 0 ? e.sp : set;
       var code = f[1] + '-' + sp, u = HST.course.fileUrl(code);
       return { what: 'copy ' + f[1],
         html: 'Copy ' + (u ? '<a class="file" href="' + esc(u) + '" target="_blank" rel="noopener" title="Play ' + esc(code) + '">' + esc(code) + '</a>' : '<span class="file">' + esc(code) + '</span>') +
-          ' <span class="reps">(' + (TIMES[f[3]] || f[3]) + ')</span>' +
+          (f[3] ? ' <span class="reps">(' + (TIMES[f[3]] || f[3]) + ')</span>' : '') +
           (speeds.length > 1 ? '<select class="sp" data-act="sp" data-n="' + key + '" aria-label="Speed for ' + esc(f[1]) + ' (assigned ' + set + ' WPM)">' + speeds.map(function (v) {
             return '<option value="' + v + '"' + (v === sp ? ' selected' : '') + '>' + v + ' WPM</option>';
           }).join('') + '</select>' : '') };
