@@ -71,46 +71,71 @@
   }
   .brand h1 .site { color: var(--muted); font-weight: 500; }
 
-  /* Segmented control: the two trainers as tabs. */
-  .tabs {
-    display: flex;
-    padding: 3px;
-    gap: 3px;
-    background: var(--well);
-    border: 1px solid var(--border);
-    border-radius: 9px;
-  }
-  .tab {
+  /* Five tabs (Tim, 2026-10-29): Copy, Send, Course, Play, Progress.
+     Each holds one or more tools; Copy, Send and Course show a row of tool
+     cards under the title bar to choose between them (see "Tool row").
+     On computers and tablets the tabs sit in the title bar; on phones the
+     same tabs move to a bar along the bottom (see "phones"). */
+  .sections { display: flex; gap: 4px; min-width: 0; }
+  .sec {
     appearance: none;
+    flex: none;
     border: 0;
-    border-radius: 6px;
-    padding: 7px 14px;
+    border-radius: 999px;
+    padding: 8px 16px;
     background: transparent;
-    color: var(--muted);
-    font: 500 0.95rem/1 'Oswald', sans-serif;
+    color: var(--text);
+    font: 500 1rem/1 'Oswald', sans-serif;
     letter-spacing: 0.03em;
+    white-space: nowrap;
     cursor: pointer;
   }
-  .tab:hover { color: var(--text); }
-  .tab { flex: none; white-space: nowrap; }
-  .tab .narrow { display: none; }      /* "Stats" replaces "Progress" on phones */
-  /* Eight trainer tabs: if a small screen can't fit them, the tab row scrolls
-     sideways rather than pushing the gear off the screen. */
-  .tabs { min-width: 0; overflow-x: auto; scrollbar-width: none; }
-  .tabs::-webkit-scrollbar { display: none; }
-  .tab[aria-selected="true"] { background: var(--lime); color: var(--lime-ink); }
-  /* The selected tab takes that trainer's color from the Progress tab, so
-     each trainer has one color everywhere: ICR lime, Code Groups emerald,
-     Keyer amber, QSO pink, Test Prep orange, Call Signs cyan. (Progress and
-     Jeopardy stay lime.) */
-  #tab-icr[aria-selected="true"]         { background: #a3e635; }   /* lime-400 */
-  #tab-code-groups[aria-selected="true"] { background: #34d399; }   /* emerald-400 */
-  #tab-keyer[aria-selected="true"]       { background: #fbbf24; }   /* amber-400 */
-  #tab-qso[aria-selected="true"]         { background: #f472b6; }   /* pink-400 */
-  #tab-test-prep[aria-selected="true"]   { background: #fb923c; }   /* orange-400 */
-  #tab-call-signs[aria-selected="true"]  { background: #67e8f9; }   /* cyan-300 */
-  #tab-course[aria-selected="true"]      { background: #c4b5fd; }   /* violet-300 */
-  .tab:focus-visible, .install:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+  .sec:hover { color: var(--lime); }
+  .sec[aria-selected="true"] { background: var(--lime); color: var(--lime-ink); }
+  .sec:focus-visible, .install:focus-visible, .tool:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+  .bottom-tabs { display: none; }        /* phones only */
+
+  /* ---------- Tool row: the tools in the open tab ----------
+     Each card carries its tool's color from the Progress tab (ICR lime,
+     Code Groups emerald, Call Signs cyan, Keyer amber, QSO pink, My Course
+     violet, Test Prep orange); the open one is outlined in it. */
+  .toolrow {
+    flex: none;
+    padding: 10px 14px 12px;
+    background: var(--chassis);
+    border-bottom: 1px solid var(--border);
+  }
+  .toolrow[hidden] { display: none; }
+  .tools-h {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font: 500 0.8rem/1 'Inter', sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .tools-h .swipe { display: none; }
+  .tool-cards { display: flex; gap: 10px; }
+  .tool {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 420px;
+    padding: 9px 12px 10px;
+    background: var(--bar);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+  }
+  .tool:hover { border-color: var(--c); }
+  .tool .name { display: flex; align-items: center; gap: 8px; font: 600 1rem/1.2 'Inter', sans-serif; }
+  .tool .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--c); }
+  .tool .open { display: none; margin-left: auto; padding: 2px 8px; border-radius: 999px; background: var(--c); color: var(--lime-ink); font: 600 0.76rem/1.3 'Inter', sans-serif; }
+  .tool .blurb { display: block; margin-top: 3px; color: var(--muted); font-size: 0.85rem; line-height: 1.35; }
+  .tool[aria-selected="true"] { border-color: var(--c); background: var(--tint); }
+  .tool[aria-selected="true"] .name { color: var(--c); }
+  .tool[aria-selected="true"] .open { display: inline-block; }
 
   .spacer { flex: 1; }
 
@@ -352,79 +377,51 @@
   }
   main iframe[hidden] { display: none; }
 
-  /* ---------- narrower windows: nine tabs need room ----------
-     Things give way in this order as the window narrows: the
-     "HamShackTech" word, then the title (mascot only), short tab labels
-     and an icon-only Install button, the Home button, and tighter tabs.
-     At 700px and below the tab row becomes a menu (see "phones"). */
-  @media (max-width: 1200px) { .brand h1 .site { display: none; } }   /* "CW Trainer" */
-  @media (max-width: 1150px) {
-    .brand h1 { display: none; }         /* mascot only */
-    .tab { padding: 7px 12px; }
-  }
-  @media (max-width: 1030px) {
-    .tab .long { display: none; }        /* "Code Groups" -> "Groups" */
-    .tab .wide { display: none; }        /* "Progress" -> "Stats" */
-    .tab .narrow { display: inline; }
-    /* Install becomes an icon-only square, the same size as the gear. */
-    .install.show { width: 34px; height: 34px; padding: 0; justify-content: center; }
-    .install .label { display: none; }
-    .install svg { width: 18px; height: 18px; }
-  }
-  @media (max-width: 800px) {
-    .bar { gap: 10px; padding-left: 10px; padding-right: 10px; }
-    .tab { padding: 7px 10px; }
-    .home { display: none; }             /* room is tight; the browser's Back works */
-  }
-  @media (max-width: 480px) {
-    .tab { padding: 7px 8px; font-size: 0.88rem; }
-  }
-  @media (max-width: 440px) {
-    .brand { display: none; }            /* six tabs need the room */
-    .tab { padding: 7px 6px; font-size: 0.84rem; }
-  }
-  @media (max-width: 400px) {
-    .tab { padding: 6px 4px; font-size: 0.79rem; }
-  }
-  @media (max-width: 360px) {            /* smallest phones (e.g. iPhone SE 1st gen) */
-    .bar { gap: 6px; padding-left: 6px; padding-right: 6px; }
-    .tab { padding: 6px 4px; font-size: 0.78rem; }
+  /* ---------- narrower windows ----------
+     As the window narrows, the "HamShackTech" word goes first, then the
+     Home button, then the tabs tighten. The name, the five tabs, Install
+     app and the gear all fit on an iPad held upright. */
+  @media (max-width: 1100px) { .brand h1 .site { display: none; } }   /* "CW Trainer" */
+  @media (max-width: 900px) {
+    .home { display: none; }             /* the browser's Back works */
+    .bar { gap: 10px; }
+    .sec { padding: 8px 12px; }
   }
 
-  /* ---------- phones: a menu instead of the tab row ----------
-     Nine tabs don't fit across a phone (Tim, 2026-10-20), so below
-     700px the tab row is replaced by one button naming the trainer you're
-     on; it opens a list of all of them. The tab buttons stay in the page
-     (hidden) and the menu clicks them, so switching works the same way. */
-  .menu-wrap { display: none; position: relative; }
-  .menu-btn {
-    display: inline-flex; align-items: center; gap: 9px;
-    padding: 7px 14px 7px 11px; border-radius: 9px; cursor: pointer;
-    background: var(--well); border: 1px solid var(--border); color: var(--text);
-    font: 500 1rem/1 'Oswald', sans-serif; letter-spacing: 0.03em; white-space: nowrap;
-  }
-  .menu-btn svg { width: 18px; height: 18px; flex: none; color: var(--muted); }
-  .menu-btn .dot, .tab-menu .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-  .menu-btn[aria-expanded="true"] { border-color: var(--lime); }
-  .menu-btn:focus-visible, .tab-menu button:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
-  .tab-menu {
-    position: absolute; left: 0; top: calc(100% + 6px); z-index: 50; min-width: 210px;
-    padding: 6px; background: var(--bar); border: 1px solid var(--border); border-radius: 12px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
-  }
-  .tab-menu[hidden] { display: none; }
-  .tab-menu button {
-    display: flex; align-items: center; gap: 11px; width: 100%; padding: 12px 14px;
-    background: transparent; border: 0; border-radius: 8px; color: var(--muted); text-align: left; cursor: pointer;
-    font: 500 1.05rem/1 'Oswald', sans-serif; letter-spacing: 0.03em;
-  }
-  .tab-menu button:hover { color: var(--text); background: var(--well); }
-  .tab-menu button[aria-current="true"] { color: var(--text); background: var(--well); }
+  /* ---------- phones: the tabs move to a bar along the bottom ----------
+     Below 700px the title bar keeps the name, Install app and the gear;
+     the five tabs sit at the bottom like most phone apps (Tim, 2026-10-29,
+     replacing the menu button of 2026-10-20). The bar is part of the page
+     layout, not floating over it, so it never covers a tool. */
   @media (max-width: 700px) {
-    .tabs { display: none; }
-    .menu-wrap { display: block; }
-    .bar { position: relative; z-index: 20; }
-    .brand { display: flex; }            /* room again for the mascot */
+    .bar .sections { display: none; }
+    .bar { padding-left: 12px; padding-right: 12px; }
+    .bottom-tabs {
+      flex: none;
+      display: flex;
+      justify-content: space-between;
+      gap: 2px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      background: var(--bar);
+      border-top: 1px solid var(--border);
+    }
+    .bottom-tabs .sec { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 8px 4px; font-size: 1rem; }
+    /* The tool cards scroll sideways, each most of the screen wide. */
+    .toolrow { padding: 10px 0 12px; }
+    .tools-h { padding: 0 12px; }
+    .tools-h .choose { display: none; }
+    .tools-h .swipe { display: inline; }
+    .tool-cards {
+      overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 12px;
+      padding: 0 12px; scrollbar-width: none;
+    }
+    .tool-cards::-webkit-scrollbar { display: none; }
+    .tool { flex: 0 0 72%; max-width: 300px; scroll-snap-align: start; }
+  }
+  @media (max-width: 360px) {            /* smallest phones (e.g. iPhone SE 1st gen) */
+    .bar { gap: 8px; padding-left: 8px; padding-right: 8px; }
+    .brand h1 { font-size: 1.05rem; }
+    .bottom-tabs .sec { font-size: 0.92rem; padding: 8px 2px; }
   }
 </style>
 </head>
@@ -438,34 +435,8 @@
     <img src="icons/apple-touch-icon.png" alt="" width="30" height="30">
     <h1><span class="site">HamShackTech</span> CW Trainer</h1>
   </div>
-  <nav class="tabs" role="tablist" aria-label="Trainers">
-    <button class="tab" role="tab" id="tab-icr" data-tab="icr"
-            aria-controls="frame-icr" aria-selected="true">ICR</button>
-    <button class="tab" role="tab" id="tab-code-groups" data-tab="code-groups"
-            aria-controls="frame-code-groups" aria-selected="false"><span class="long">Code </span>Groups</button>
-    <button class="tab" role="tab" id="tab-call-signs" data-tab="call-signs"
-            aria-controls="frame-call-signs" aria-selected="false"><span class="wide">Call Signs</span><span class="narrow">Calls</span></button>
-    <button class="tab" role="tab" id="tab-keyer" data-tab="keyer"
-            aria-controls="frame-keyer" aria-selected="false">Keyer</button>
-    <button class="tab" role="tab" id="tab-qso" data-tab="qso"
-            aria-controls="frame-qso" aria-selected="false">QSO</button>
-    <button class="tab" role="tab" id="tab-test-prep" data-tab="test-prep"
-            aria-controls="frame-test-prep" aria-selected="false">Test<span class="long"> Prep</span></button>
-    <button class="tab" role="tab" id="tab-course" data-tab="course"
-            aria-controls="frame-course" aria-selected="false"><span class="wide">My Course</span><span class="narrow">Course</span></button>
-    <button class="tab" role="tab" id="tab-progress" data-tab="progress"
-            aria-controls="frame-progress" aria-selected="false"><span class="wide">Progress</span><span class="narrow">Stats</span></button>
-    <button class="tab" role="tab" id="tab-jeopardy" data-tab="jeopardy"
-            aria-controls="frame-jeopardy" aria-selected="false">Jeopardy</button>
-  </nav>
-  <!-- Phones: the menu that replaces the tab row (see "phones" in the CSS). -->
-  <div class="menu-wrap">
-    <button class="menu-btn" id="menuBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="tabMenu" aria-label="Choose a trainer">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-      <span class="dot" id="menuDot"></span><span id="menuLabel">ICR</span>
-    </button>
-    <div class="tab-menu" id="tabMenu" hidden></div>
-  </div>
+  <!-- The five tabs; the script fills this and the phone bar at the bottom. -->
+  <nav class="sections" id="topTabs" role="tablist" aria-label="Sections"></nav>
   <div class="spacer"></div>
   <button class="install" id="installBtn" type="button" aria-label="Install app" title="Install app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span class="label">Install app</span></button>
   <button class="gear" id="settingsBtn" type="button" aria-haspopup="dialog" aria-controls="settingsDialog" aria-label="Settings" title="Settings">
@@ -494,6 +465,13 @@
   </div>
 </div>
 
+<!-- Tool row: the tools in the open tab, e.g. ICR, Code Groups and Call
+     Signs under Copy. Hidden for Play and Progress, which hold one each. -->
+<div class="toolrow" id="toolRow" hidden>
+  <p class="tools-h"><span id="toolsTab"></span> &middot; <span class="choose">Choose a tool</span><span class="swipe">Swipe for more</span></p>
+  <div class="tool-cards" id="toolCards" role="tablist"></div>
+</div>
+
 <!-- App-wide settings. Speed, tone and volume are NOT here any more
      (October 2026): each tool sets its own, on its own page. -->
 <dialog class="settings" id="settingsDialog" aria-labelledby="settingsTitle">
@@ -505,7 +483,7 @@
        HST.experimental store in hst-keyer.js is kept for future tools.) -->
   <div class="experimental">
     <button class="btn" id="keyerSetupBtn" type="button">Keyer Setup&hellip;</button>
-    <p class="hint">Your key or paddles, the adapter they&rsquo;re plugged into, and a place to test them. Used by the Keyer tab.</p>
+    <p class="hint">Your key or paddles, the adapter they&rsquo;re plugged into, and a place to test them. Used by Keyer and QSO (under Send) and by Jeopardy.</p>
   </div>
   <!-- My Morse code course (Tim, 2026-10-23): the My Course tab shows its
        class schedule and curriculum. -->
@@ -517,7 +495,7 @@
       <label><input type="radio" name="courseProgram" value="licw"> LICW</label>
     </div>
     <label class="course-level" id="courseLevelRow" hidden>Level <select id="courseLevel"></select></label>
-    <p class="hint">The <strong>My Course</strong> tab shows your class schedule and a link to your curriculum.</p>
+    <p class="hint"><strong>My Course</strong> (under Course) shows your class schedule and a link to your curriculum.</p>
   </div>
   <!-- Account (Milestone 8). Hidden until the site's account service is
        set up (GET /api/config says accounts: true). -->
@@ -720,27 +698,31 @@
 </dialog>
 
 <main>
-  <!-- The first tab shown loads right away; the others load the first time
-       their tab is opened (data-src), so only one starts up at launch. -->
-  <iframe id="frame-icr" role="tabpanel" aria-labelledby="tab-icr"
+  <!-- One frame per tool. The first one shown loads right away; the others
+       load the first time they're opened (data-src), so only one starts up
+       at launch. The script labels each by its tool card or tab. -->
+  <iframe id="frame-icr" role="tabpanel"
           title="ICR Trainer" src="icr/"></iframe>
-  <iframe id="frame-code-groups" role="tabpanel" aria-labelledby="tab-code-groups"
+  <iframe id="frame-code-groups" role="tabpanel"
           title="Code Groups Trainer" data-src="code-groups/" hidden></iframe>
-  <iframe id="frame-call-signs" role="tabpanel" aria-labelledby="tab-call-signs"
+  <iframe id="frame-call-signs" role="tabpanel"
           title="Call Signs" data-src="call-signs/" hidden></iframe>
-  <iframe id="frame-keyer" role="tabpanel" aria-labelledby="tab-keyer"
+  <iframe id="frame-keyer" role="tabpanel"
           title="Keyer Practice" data-src="keyer/" hidden></iframe>
-  <iframe id="frame-qso" role="tabpanel" aria-labelledby="tab-qso"
+  <iframe id="frame-qso" role="tabpanel"
           title="QSO Practice" data-src="qso/" hidden></iframe>
-  <iframe id="frame-test-prep" role="tabpanel" aria-labelledby="tab-test-prep"
+  <iframe id="frame-test-prep" role="tabpanel"
           title="Test Prep" data-src="test-prep/" hidden></iframe>
-  <iframe id="frame-course" role="tabpanel" aria-labelledby="tab-course"
+  <iframe id="frame-course" role="tabpanel"
           title="My Course" data-src="course/" hidden></iframe>
-  <iframe id="frame-progress" role="tabpanel" aria-labelledby="tab-progress"
+  <iframe id="frame-progress" role="tabpanel"
           title="Progress" data-src="progress/" hidden></iframe>
-  <iframe id="frame-jeopardy" role="tabpanel" aria-labelledby="tab-jeopardy"
+  <iframe id="frame-jeopardy" role="tabpanel"
           title="Morse Code Jeopardy" data-src="jeopardy/" hidden></iframe>
 </main>
+
+<!-- Phones: the same five tabs, along the bottom (see "phones" in the CSS). -->
+<nav class="sections bottom-tabs" id="bottomTabs" role="tablist" aria-label="Sections"></nav>
 
 <script>
   // Has this device used the app before? Checked before the shared engine
@@ -759,8 +741,40 @@
 (function () {
   'use strict';
 
-  var TAB_KEY = 'hct-cw-trainer-app-tab';   // remembers the last tab used
-  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  // ------------------------------------------------------------------
+  // Tabs and tools (Tim, 2026-10-29). Five tabs, each holding one or more
+  // tools; every tool still has its own frame and its own slug (icr,
+  // code-groups, ...), which is what ?tab= links, Stop on switching and the
+  // rest of this script use. `current` is the open tool's slug.
+  // ------------------------------------------------------------------
+  var TAB_KEY = 'hct-cw-trainer-app-tab';      // the last tool used (a slug)
+  var LAST_KEY = 'hct-cw-trainer-tab-tools';   // the last tool used in each tab
+  var SECTIONS = [
+    { key: 'copy',     name: 'Copy',     tools: ['icr', 'code-groups', 'call-signs'] },
+    { key: 'send',     name: 'Send',     tools: ['keyer', 'qso'] },
+    { key: 'learn',    name: 'Course',   tools: ['course', 'test-prep'] },
+    { key: 'play',     name: 'Play',     tools: ['jeopardy'] },
+    { key: 'progress', name: 'Progress', tools: ['progress'] }
+  ];
+  // Each tool's name, its color from the Progress tab, and a line about it.
+  var TOOLS = {
+    icr:           { name: 'ICR',         color: '#a3e635', blurb: 'Name each character the instant you hear it' },
+    'code-groups': { name: 'Code Groups', color: '#34d399', blurb: 'Copy random groups before the clock runs out' },
+    'call-signs':  { name: 'Call Signs',  color: '#67e8f9', blurb: 'Copy made-up calls in real formats' },
+    keyer:         { name: 'Keyer',       color: '#fbbf24', blurb: 'Send with your key and see your timing' },
+    qso:           { name: 'QSO',         color: '#f472b6', blurb: 'Work a full contact with a virtual station' },
+    course:        { name: 'My Course',   color: '#c4b5fd', blurb: 'Your class schedule and curriculum' },
+    'test-prep':   { name: 'Test Prep',   color: '#fb923c', blurb: 'Practice the CW Academy placement test' },
+    jeopardy:      { name: 'Jeopardy' },
+    progress:      { name: 'Progress' }
+  };
+  var TABS = Object.keys(TOOLS);
+  function sectionOf(slug) {
+    for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i].tools.indexOf(slug) >= 0) return SECTIONS[i];
+    return SECTIONS[0];
+  }
+  var lastTools = {};
+  try { lastTools = JSON.parse(localStorage.getItem(LAST_KEY)) || {}; } catch (e) {}
   var current = null;
 
   // ------------------------------------------------------------------
@@ -812,29 +826,102 @@
     }                                    // (Progress has nothing to stop)
   }
 
-  function showTab(slug, remember) {
+  // The five tabs, in the title bar and in the phone bar at the bottom.
+  ['topTabs', 'bottomTabs'].forEach(function (navId) {
+    var nav = document.getElementById(navId);
+    nav.innerHTML = SECTIONS.map(function (sec) {
+      return '<button class="sec" role="tab" type="button" id="' + navId + '-' + sec.key + '" data-sec="' + sec.key +
+             '" aria-selected="false" tabindex="-1">' + sec.name + '</button>';
+    }).join('');
+    var btns = Array.prototype.slice.call(nav.querySelectorAll('.sec'));
+    btns.forEach(function (b, i) {
+      b.addEventListener('click', function () { openSection(SECTIONS[i]); });
+      // Left/right arrow keys move between tabs (standard tab-list keys).
+      b.addEventListener('keydown', function (e) {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault();
+        var j = (i + (e.key === 'ArrowRight' ? 1 : btns.length - 1)) % btns.length;
+        openSection(SECTIONS[j], true);
+        btns[j].focus();
+      });
+    });
+  });
+  // A tab opens the tool used last in it, or its first tool.
+  function openSection(sec, fromKeys) {
+    var slug = lastTools[sec.key];
+    showTab(sec.tools.indexOf(slug) >= 0 ? slug : sec.tools[0], true, fromKeys);
+  }
+
+  // Tool row: one card per tool in the open tab. Arrow keys move between
+  // the cards too.
+  var toolRow = document.getElementById('toolRow'), toolCards = document.getElementById('toolCards');
+  var shownSection = null;
+  function drawToolRow(sec) {
+    shownSection = sec;
+    toolRow.hidden = sec.tools.length < 2;
+    document.getElementById('toolsTab').textContent = sec.name;
+    toolCards.setAttribute('aria-label', sec.name + ' tools');
+    toolCards.innerHTML = sec.tools.map(function (slug) {
+      var t = TOOLS[slug], c = t.color || '#a3e635';
+      var tint = 'rgba(' + [1, 3, 5].map(function (k) { return parseInt(c.substr(k, 2), 16); }).join(',') + ',0.13)';
+      return '<button class="tool" role="tab" type="button" id="tool-' + slug + '" data-tool="' + slug + '" aria-controls="frame-' + slug +
+             '" aria-selected="false" tabindex="-1" style="--c:' + c + ';--tint:' + tint + '">' +
+             '<span class="name"><span class="dot"></span>' + t.name + '<span class="open">Open</span></span>' +
+             '<span class="blurb">' + t.blurb + '</span></button>';
+    }).join('');
+    var cards = Array.prototype.slice.call(toolCards.querySelectorAll('.tool'));
+    cards.forEach(function (card, i) {
+      card.addEventListener('click', function () { showTab(card.dataset.tool, true); });
+      card.addEventListener('keydown', function (e) {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault();
+        var next = cards[(i + (e.key === 'ArrowRight' ? 1 : cards.length - 1)) % cards.length];
+        showTab(next.dataset.tool, true, true);
+        next.focus();
+      });
+    });
+  }
+
+  // fromKeys: switched with the arrow keys, so focus stays on the tab
+  // (otherwise the next arrow press would go to the tool instead).
+  function showTab(slug, remember, fromKeys) {
     if (slug === current) return;
     if (current) stopTrainer(current);
     current = slug;
+    var sec = sectionOf(slug);
+    lastTools[sec.key] = slug;
 
-    tabs.forEach(function (t) {
-      var on = t.dataset.tab === slug;
-      t.setAttribute('aria-selected', on ? 'true' : 'false');
-      t.tabIndex = on ? 0 : -1;          // arrow keys move between tabs
-      var frame = document.getElementById(t.getAttribute('aria-controls'));
+    document.querySelectorAll('.sec').forEach(function (b) {
+      var on = b.dataset.sec === sec.key;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+    });
+    if (shownSection !== sec) drawToolRow(sec);
+    toolCards.querySelectorAll('.tool').forEach(function (card) {
+      var on = card.dataset.tool === slug;
+      card.setAttribute('aria-selected', on ? 'true' : 'false');
+      card.tabIndex = on ? 0 : -1;
+      // On a phone the cards scroll sideways; keep the open one in view.
+      if (on && toolCards.scrollWidth > toolCards.clientWidth) {
+        var left = card.offsetLeft - toolCards.offsetLeft - 12;
+        if (left < toolCards.scrollLeft || left + card.offsetWidth > toolCards.scrollLeft + toolCards.clientWidth) toolCards.scrollLeft = left;
+      }
+    });
+
+    TABS.forEach(function (t) {
+      var frame = document.getElementById('frame-' + t), on = t === slug;
       if (on && frame.dataset.src) {     // first visit: load it now
         frame.src = frame.dataset.src;
         delete frame.dataset.src;
       }
       frame.hidden = !on;
     });
+    document.getElementById('frame-' + slug).setAttribute('aria-labelledby',
+      sec.tools.length > 1 ? 'tool-' + slug : 'topTabs-' + sec.key);
 
-    if (remember) { try { localStorage.setItem(TAB_KEY, slug); } catch (e) {} }
-    updateMenu(slug);
-
-    // On a phone the tab row may scroll sideways; keep the chosen tab in view.
-    var tabBtn = document.getElementById('tab-' + slug);
-    if (tabBtn && tabBtn.scrollIntoView) { try { tabBtn.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {} }
+    if (remember) {
+      try { localStorage.setItem(TAB_KEY, slug); localStorage.setItem(LAST_KEY, JSON.stringify(lastTools)); } catch (e) {}
+    }
 
     // Progress redraws each time it's opened, so it includes the session
     // that was just stopped by switching here.
@@ -843,63 +930,23 @@
     }
 
     // Hand keyboard focus to the trainer so typing goes straight to it.
+    if (fromKeys) return;
     var active = document.getElementById('frame-' + slug);
     setTimeout(function () { try { active.contentWindow.focus(); } catch (e) {} }, 0);
   }
 
-  // ---- Phones: the trainer menu --------------------------------------
-  // Full names (the tab row shortens some) and each trainer's color.
-  var MENU_NAMES = { icr: 'ICR', 'code-groups': 'Code Groups', 'call-signs': 'Call Signs', keyer: 'Keyer', qso: 'QSO',
-                     'test-prep': 'Test Prep', course: 'My Course', progress: 'Progress', jeopardy: 'Jeopardy' };
-  var MENU_COLORS = { icr: '#a3e635', 'code-groups': '#34d399', 'call-signs': '#67e8f9', keyer: '#fbbf24', qso: '#f472b6',
-                      'test-prep': '#fb923c', course: '#c4b5fd', progress: '#a3e635', jeopardy: '#a3e635' };
-  var menuBtn = document.getElementById('menuBtn'), tabMenu = document.getElementById('tabMenu');
-  tabMenu.innerHTML = tabs.map(function (t) {
-    var slug = t.dataset.tab;
-    return '<button type="button" data-tab="' + slug + '"><span class="dot" style="background:' + (MENU_COLORS[slug] || '#a3e635') +
-           '"></span>' + (MENU_NAMES[slug] || t.textContent) + '</button>';
-  }).join('');
-  function updateMenu(slug) {
-    document.getElementById('menuLabel').textContent = MENU_NAMES[slug] || slug;
-    document.getElementById('menuDot').style.background = MENU_COLORS[slug] || '#a3e635';
-    tabMenu.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-current', String(b.dataset.tab === slug)); });
-  }
-  function closeMenu() { tabMenu.hidden = true; menuBtn.setAttribute('aria-expanded', 'false'); }
-  menuBtn.addEventListener('click', function () {
-    var open = tabMenu.hidden;
-    tabMenu.hidden = !open;
-    menuBtn.setAttribute('aria-expanded', String(open));
-    if (open) { var cur = tabMenu.querySelector('[aria-current="true"]'); if (cur) cur.focus(); }
-  });
-  tabMenu.addEventListener('click', function (e) {
-    var b = e.target.closest('button[data-tab]');
-    if (!b) return;
-    closeMenu();
-    document.getElementById('tab-' + b.dataset.tab).click();
-  });
-  // Close on Escape, a tap anywhere else, or a tap inside a trainer (that
-  // moves focus into its frame, which blurs this window).
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !tabMenu.hidden) { closeMenu(); menuBtn.focus(); } });
-  document.addEventListener('click', function (e) { if (!tabMenu.hidden && !e.target.closest('.menu-wrap')) closeMenu(); });
-  window.addEventListener('blur', closeMenu);
-
-  tabs.forEach(function (t, i) {
-    t.addEventListener('click', function () { showTab(t.dataset.tab, true); });
-    // Left/right arrow keys switch tabs (standard tab-list keyboard behavior).
-    t.addEventListener('keydown', function (e) {
-      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-      var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
-      next.focus();
-      showTab(next.dataset.tab, true);
-    });
-  });
-
-  // Which tab to open: a ?tab=icr / code-groups / test-prep / call-signs / progress / jeopardy link (the CW
-  // Tools page and the old trainer addresses use these) wins; otherwise
-  // the tab used last time; ICR the very first time.
-  var TABS = ['icr', 'code-groups', 'call-signs', 'keyer', 'qso', 'test-prep', 'course', 'progress', 'jeopardy'];
+  // Which tool to open: a ?tab= link wins -- a tool (icr, code-groups,
+  // call-signs, keyer, qso, test-prep, course, progress, jeopardy; the CW
+  // Tools page and the old trainer addresses use these) or a tab (copy,
+  // send, play: its last tool). Otherwise the tool used last time; ICR the
+  // very first time.
   var params = new URLSearchParams(location.search);
   var wanted = params.get('tab');
+  SECTIONS.forEach(function (sec) {
+    if (wanted === sec.key && TABS.indexOf(wanted) < 0) {
+      wanted = sec.tools.indexOf(lastTools[sec.key]) >= 0 ? lastTools[sec.key] : sec.tools[0];
+    }
+  });
   // An online Jeopardy invitation (?room=QRX472): open Jeopardy with the
   // code filled in, ready to join.
   var room = (params.get('room') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
@@ -1549,15 +1596,14 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-10-28-round-13b';
+  var RELEASE = '2026-10-29-five-tabs';
   var RELEASE_LABEL = 'October 2026';
   var RELEASE_NOTES = [
-    '<strong>Release notes in the installed app.</strong> If you also opened the app in a browser tab (the website’s CW Tools link does that), the tab could take the update and these notes first, so the installed app updated silently. The installed app now always shows the notes for each new version.',
-    '<strong>Keyer:</strong> the tabs are now <strong>Daily Scales</strong>, <strong>Send This</strong> and <strong>Free Sending</strong>.',
-    '<strong>Jeopardy chat</strong> is 25% wider and always scrolls to the newest message.',
-    '<strong>Most Missed Characters</strong> is the new name for the Your Worst Characters panel in ICR, Code Groups and Call Signs.',
+    '<strong>Five tabs instead of nine.</strong> <strong>Copy</strong> has ICR, Code Groups and Call Signs; <strong>Send</strong> has Keyer and QSO; <strong>Course</strong> has My Course and Test Prep; <strong>Play</strong> is Jeopardy; and <strong>Progress</strong> has your stats. Choose a tool from the cards under the tabs. Each tab remembers the tool you used last.',
+    '<strong>On phones</strong>, the tabs are in a bar along the bottom of the screen, in place of the menu button.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
+
   // The installed app keeps its own "seen" record (Tim, 2026-10-28). The
   // website's CW Tools link opens the app in a browser TAB (since
   // 2026-10-23), and a tab shares storage and the offline copy with the

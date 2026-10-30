@@ -116,7 +116,7 @@
   <!-- No course chosen yet -->
   <section class="card" id="noneCard" hidden aria-labelledby="noneTitle">
     <h2 id="noneTitle">Taking a Morse code course?</h2>
-    <p class="desc">If you&rsquo;re in a <b>CW Academy</b> or <b>LICW</b> class, choose it in Settings and this tab shows your
+    <p class="desc">If you&rsquo;re in a <b>CW Academy</b> or <b>LICW</b> class, choose it in Settings and My Course shows your
       class schedule and a link to your curriculum.</p>
     <button class="btn primary" type="button" data-open-settings>Choose my course in Settings</button>
   </section>
@@ -234,7 +234,7 @@
     $('soonCard').hidden = !c.program || !!info;
     $('cwaContent').hidden = !info;
     if (c.program && !info) {
-      $('soonText').textContent = 'The class schedule and curriculum for ' + progName + ' ' + levelName + ' are coming to this tab soon.';
+      $('soonText').textContent = 'The class schedule and curriculum for ' + progName + ' ' + levelName + ' are coming to My Course soon.';
       return;
     }
     if (!info) return;

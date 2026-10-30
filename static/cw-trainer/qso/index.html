@@ -251,7 +251,7 @@
       <button class="pad" id="padDit" type="button">DIT</button>
       <button class="pad" id="padDah" type="button">DAH</button>
     </div>
-    <p class="hint audio-hint" id="audioHint" hidden>Click anywhere in this tab to turn on your sidetone &mdash; browsers only allow sound after a click.</p>
+    <p class="hint audio-hint" id="audioHint" hidden>Click anywhere in QSO to turn on your sidetone &mdash; browsers only allow sound after a click.</p>
   </section>
 
   <!-- ================= After: copy check, then review ================= -->
@@ -674,7 +674,7 @@
         : '') +
       (k === 'straight' ? 'With a straight key you set your own speed; the sending speed is where the decoder starts.'
        : k === 'bug' ? 'Your bug’s automatic dits run at the sending speed.'
-       : 'Your paddles key at the sending speed while you’re in this tab. Keyer Setup’s speed is unchanged.');
+       : 'Your paddles key at the sending speed while you’re in QSO. Keyer Setup’s speed is unchanged.');
   }
   function setSpeed(key, v) {
     prefs[key] = clampWpm(v, prefs[key]);
