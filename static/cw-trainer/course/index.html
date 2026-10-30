@@ -103,6 +103,18 @@
   .note:focus { border-color: var(--mc); outline: none; }
   tr.done td.n { color: var(--mc); }
   .nw { white-space: nowrap; }
+  /* The time sits under the date, so the date column stays narrow. */
+  td.date .time { display: block; color: var(--dim); font-size: 0.85rem; }
+  /* The three practice days before each session (Tim, 2026-10-30), each
+     with its audio files as links that play them. */
+  .day { margin: 0 0 5px; line-height: 1.6; }
+  .day .dl { display: inline-block; min-width: 3.4em; color: var(--dim); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .file { display: inline-block; margin: 1px 3px 1px 0; padding: 0 7px; border: 1px solid var(--border); border-radius: 999px;
+          color: var(--mc); font: 500 0.8rem/1.6 'JetBrains Mono', monospace; text-decoration: none; white-space: nowrap; }
+  .file:hover { border-color: var(--mc); background: rgba(196, 181, 253, 0.10); }
+  .day .also { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+  tr.past .day .also { color: var(--dim); }
+  .curr { display: inline-block; margin-top: 2px; font-size: 0.85rem; }
 
   .links { list-style: none; margin: 0; padding: 0; }
   .links li { padding: 9px 0; border-bottom: 1px solid var(--grid); }
@@ -122,6 +134,8 @@
     #sessions td.focus { flex-basis: 100%; color: var(--muted); }
     #sessions tr.past td.focus { color: var(--dim); }
     #sessions td.prog { flex-basis: 100%; width: auto; margin-top: 6px; }
+    #sessions td.date .time { display: inline; }
+    #sessions td.date .time::before { content: " \00b7\00a0"; }
   }
 </style>
 </head>
@@ -247,6 +261,20 @@
   // "What you'll practice" text, with each sound (-ING, IR-) kept on one line.
   function focusHtml(t) { return esc(t).replace(/(^|\s)(-[A-Z]+|[A-Z]+-)(?=[\s,;.]|$)/g, '$1<span class="nw">$2</span>'); }
 
+  // A session's three practice days, when the course lists them: each
+  // day's audio files as links, then its other practice, then a link to
+  // that session in the online curriculum.
+  function practiceHtml(info, s, n) {
+    if (!s[2]) return focusHtml(s[1]);
+    return s[2].map(function (day, j) {
+      var parts = day.split('|'), files = parts[0].trim() ? parts[0].trim().split(/\s+/) : [];
+      return '<div class="day"><span class="dl">Day ' + (j + 1) + '</span> ' + files.map(function (f) {
+        var u = HST.course.fileUrl(f);
+        return u ? '<a class="file" href="' + esc(u) + '" target="_blank" rel="noopener" title="Play ' + esc(f) + '">' + esc(f) + '</a>' : '<span class="file">' + esc(f) + '</span>';
+      }).join('') + (parts[1] ? ' <span class="also">' + esc(parts[1].trim()).split('; ').join('</span> <span class="also">') + '</span>' : '') + '</div>';
+    }).join('') + (info.sessionAnchor ? '<a class="curr" href="' + esc(info.curriculum + info.sessionAnchor(n)) + '" target="_blank" rel="noopener">Session ' + n + ' in the curriculum \u2197</a>' : '');
+  }
+
   function speedText(sp) {
     if (!sp) return '—';
     return sp.indexOf('/') > 0 ? sp + ' WPM' : sp + ' WPM';
@@ -334,8 +362,8 @@
       if (i === nextIdx) cls.push('now');
       if (e.done) cls.push('done');
       return '<tr class="' + cls.join(' ') + '"><td class="n ses">' + (i + 1) + '</td>' +
-        (first ? '<td class="date">' + esc(fmt(dates[i])) + (c.times[dates[i].getDay()] ? ' \u00b7 ' + esc(fmtTime(c.times[dates[i].getDay()])) : '') + '</td>' : '') +
-        '<td class="speed">' + esc(speedText(s[0])) + '</td><td class="focus">' + focusHtml(s[1]) + '</td>' + progCell(i + 1, e) + '</tr>';
+        (first ? '<td class="date">' + esc(fmt(dates[i])) + (c.times[dates[i].getDay()] ? '<span class="time">' + esc(fmtTime(c.times[dates[i].getDay()])) + '</span>' : '') + '</td>' : '') +
+        '<td class="speed">' + esc(speedText(s[0])) + '</td><td class="focus">' + practiceHtml(info, s, i + 1) + '</td>' + progCell(i + 1, e) + '</tr>';
     }).join('');
 
     var nx = $('nextClass');
