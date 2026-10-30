@@ -174,7 +174,7 @@
 <div class="wrap">
   <div class="head">
     <img class="hst-mascot" src="../icons/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
-    <h1 class="hst-title">CW Progress</h1>
+    <h1 class="hst-title">Progress</h1>
     <div class="spacer"></div>
     <div class="range" role="group" aria-label="Time range">
       <button type="button" data-days="7">7 days</button>
@@ -186,7 +186,7 @@
 
   <div id="empty" class="empty" hidden>
     <h2>No practice recorded yet</h2>
-    <p>Run a session in ICR, Code Groups, Call Signs, Keyer, QSO or Test Prep, or play Jeopardy. When you stop (or the Practice Timer rings, or you switch to another tool), it shows up here.</p>
+    <p>Run a session in ICR, Code Groups, Call Signs, Keyer Practice, QSO Practice or Test Prep, or play Jeopardy. When you stop (or the Practice Timer rings, or you switch to another tool), it shows up here.</p>
     <p id="emptySignIn" hidden><button type="button" class="textlink" id="emptySignInBtn">Sign in to keep your history safe if you clear your browser data</button></p>
     <p>Practiced somewhere else, like a Zoom class or on the air?</p>
     <button type="button" class="addbtn" data-addtime>+ Add practice time</button>
@@ -248,7 +248,7 @@
       </section>
 
       <!-- Sending (Keyer Practice). Shown once there's any Keyer history. -->
-      <h2 class="section-title sending">Sending <small>Keyer</small></h2>
+      <h2 class="section-title sending">Sending <small>Keyer Practice</small></h2>
       <section class="card sending">
         <h2>Sending accuracy</h2>
         <p class="note">Letters sent correctly in Send This, %. Higher is better.</p>
@@ -694,7 +694,7 @@
         .slice(0, 8);
       $('sendTrouble').innerHTML = !sWorst.length
         ? '<div class="nodata">' + (Object.keys(sTally).length ? 'Every letter with 5+ tries is at 100%. Nice fist!'
-            : 'Practice Send This in Keyer (under Send) and letters you send wrong will show up here.') + '</div>'
+            : 'Practice Send This in Keyer Practice (under Send) and letters you send wrong will show up here.') + '</div>'
         : '<div class="trouble">' + sWorst.map(function (ch) {
             var t = sTally[ch], p = pct(t[0], t[1]);
             return '<div class="trow"><span class="ch">' + esc(ch) + '</span><span class="bar"><i style="width:' + (100 - p) +
