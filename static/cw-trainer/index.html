@@ -1226,6 +1226,8 @@
   // its own frame, so it asks the app shell through this hook).
   window.HCT = window.HCT || {};
   window.HCT.openKeyerSetup = function () { stopTrainer(current); openKeyer(); };
+  // My Course's task links to a tool here ([ICR](tool:icr)).
+  window.HCT.openTool = function (slug) { if (TABS.indexOf(slug) >= 0) showTab(slug, true); };
   // My Course's sending tasks: open that Daily Scale in Keyer Practice.
   window.HCT.openScale = function (key) {
     var frame = document.getElementById('frame-keyer');

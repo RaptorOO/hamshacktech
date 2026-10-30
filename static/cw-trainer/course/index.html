@@ -347,12 +347,40 @@
         ' <span class="also">(Wednesday 1300 or 1900 UTC, Thursday 0300 or 0700 UTC)</span>' };
     return { what: tok, html: esc(tok) };
   }
+  // A task written in words (Beginner, Fundamental): 'c1|Two runs of
+  // [Code Groups](groups)'. [label](key) links through HST.course.link();
+  // (scale:warmup) opens a Daily Scale and (tool:icr) a tool of this app.
+  function textTask(text) {
+    var out = '', last = 0, re = /\[([^\]]+)\]\(([^)]+)\)/g, m;
+    while ((m = re.exec(text))) {
+      out += esc(text.slice(last, m.index));
+      var tgt = m[2], label = esc(m[1]);
+      if (tgt.indexOf('scale:') === 0) {
+        var sc = tgt.slice(6);
+        out += '<a class="scale" href="../?tab=keyer&amp;scale=' + sc + '" target="_top" data-scale="' + sc + '">' + label + '</a>';
+      } else if (tgt.indexOf('tool:') === 0) {
+        out += '<a href="../?tab=' + tgt.slice(5) + '" target="_top" data-tool="' + tgt.slice(5) + '">' + label + '</a>';
+      } else {
+        out += ext(HST.course.link(tgt) || tgt, m[1]);
+      }
+      last = re.lastIndex;
+    }
+    return { what: text.replace(re, '$1').slice(0, 60), html: out + esc(text.slice(last)) };
+  }
+  // A day: a string of tokens ('warmup WD101-10*2 icr:10'), or a list of
+  // tasks in words, optionally starting with '#Label' ('#' = no heading).
+  function dayLabel(day, j) {
+    return typeof day === 'string' || day[0].charAt(0) !== '#' ? 'Day ' + (j + 1) : day[0].slice(1);
+  }
   // A day's tasks, each with its progress key ('3.1.WD103': the token
-  // without its speed, so picking another speed keeps the ticks).
+  // without its speed, so picking another speed keeps the ticks; '3.1.c2'
+  // for a task in words).
   function dayTasks(day, n, j, prog) {
-    return day.split(' ').map(function (tok) {
-      var key = n + '.' + (j + 1) + '.' + tok.replace(/[-*:].*$/, '');
-      var t = task(tok, key, prog[key] || {});
+    var list = typeof day === 'string' ? day.split(' ') : day.filter(function (x) { return x.charAt(0) !== '#'; });
+    return list.map(function (tok) {
+      var bar = tok.indexOf('|');
+      var key = n + '.' + (j + 1) + '.' + (bar > 0 ? tok.slice(0, bar) : tok.replace(/[-*:].*$/, ''));
+      var t = bar > 0 ? textTask(tok.slice(bar + 1)) : task(tok, key, prog[key] || {});
       t.key = key;
       return t;
     });
@@ -363,10 +391,11 @@
   function practiceHtml(info, s, n, prog) {
     if (!s[2]) return focusHtml(s[1]);
     return s[2].map(function (day, j) {
-      return '<div class="day"><div class="dl">Day ' + (j + 1) + (dayDone(day, n, j, prog) ? '<span class="day-done">\u2713 done</span>' : '') + '</div>' +
+      var label = dayLabel(day, j);
+      return '<div class="day">' + (label ? '<div class="dl">' + esc(label) + (dayDone(day, n, j, prog) ? '<span class="day-done">\u2713 done</span>' : '') + '</div>' : '') +
         dayTasks(day, n, j, prog).map(function (t) {
           return '<div class="task"><div>' + t.html + '</div>' +
-            progControls(t.key, prog[t.key] || {}, 'session ' + n + ' day ' + (j + 1) + ', ' + t.what) + '</div>';
+            progControls(t.key, prog[t.key] || {}, 'session ' + n + (label ? ', ' + label : '') + ', ' + t.what) + '</div>';
         }).join('') + '</div>';
     }).join('') + (info.sessionAnchor ? '<a class="curr" href="' + esc(info.curriculum + info.sessionAnchor(n)) + '" target="_blank" rel="noopener">Session ' + n + ' in the curriculum \u2197</a>' : '');
   }
@@ -454,9 +483,12 @@
     if (withDays.length) {
       var dayTotal = 0, daysDone = 0;
       info.sessions.forEach(function (s, i) {
-        (s[2] || []).forEach(function (d, j) { dayTotal++; if (dayDone(d, i + 1, j, prog)) daysDone++; });
+        (s[2] || []).forEach(function (d, j) {
+          if (!info.noDays) { dayTotal++; if (dayDone(d, i + 1, j, prog)) daysDone++; return; }
+          dayTasks(d, i + 1, j, prog).forEach(function (t) { dayTotal++; if (prog[t.key] && prog[t.key].done) daysDone++; });
+        });
       });
-      tally += ' \u00b7 <b>' + daysDone + '</b> of ' + dayTotal + ' practice days';
+      tally += ' \u00b7 <b>' + daysDone + '</b> of ' + dayTotal + (info.noDays ? ' tasks' : ' practice days');
     }
     $('tally').innerHTML = tally;
     $('everyNote').hidden = !info.every;
@@ -476,13 +508,18 @@
         if (i === nextIdx) cls.push('now');
         if (classDone(s, n)) cls.push('done');
         var time = first && c.times[dates[i].getDay()];
-        var daysDone = days.filter(function (d, j) { return dayDone(d, n, j, prog); }).length;
+        var daysDone = days.filter(function (d, j) { return dayDone(d, n, j, prog); }).length, unit = 'days';
+        if (days.length === 1) {   // one list (Beginner; Fundamental 15 and 16): count its tasks
+          var ts = dayTasks(days[0], n, 0, prog);
+          days = ts; unit = 'tasks';
+          daysDone = ts.filter(function (t) { return prog[t.key] && prog[t.key].done; }).length;
+        }
         return '<details class="' + cls.join(' ') + '" data-ses="' + n + '"' + (openSessions[n] ? ' open' : '') + '>' +
           '<summary><span class="sb-n">Session ' + n + '</span>' +
           (first ? '<span class="sb-date"><span class="l">' + esc(fmtLong(dates[i])) + '</span><span class="s">' + esc(fmt(dates[i])) + '</span></span>' : '') +
           (time ? '<span class="sb-time">' + esc(fmtTime(time)) + '</span>' : '') +
-          '<span class="sb-br"></span><span class="sb-sp">Speed: <b>' + esc(s[0]) + '</b> WPM</span>' +
-          '<span class="sb-prog">' + (daysDone === days.length ? '\u2713 ' : '') + daysDone + ' of ' + days.length + ' days done</span></summary>' +
+          '<span class="sb-br"></span><span class="sb-sp">' + (s[0] ? 'Speed: <b>' + esc(s[0]) + '</b> WPM' : '') + '</span>' +   // some sessions give none
+          '<span class="sb-prog">' + (daysDone === days.length ? '\u2713 ' : '') + daysDone + ' of ' + days.length + ' ' + unit + ' done</span></summary>' +
           '<div class="ses-body">' + practiceHtml(info, s, n, prog) + '</div></details>';
       }).join('');
     }
@@ -559,6 +596,13 @@
   $('schedule').addEventListener('click', function (e) {
     // A Daily Scale opens in Keyer Practice (Send tab) through the app
     // shell; on its own (no shell), the link opens the app there.
+    var tl = e.target.closest('a[data-tool]');
+    if (tl) {
+      try {
+        if (window.parent !== window && window.parent.HCT && window.parent.HCT.openTool) { e.preventDefault(); window.parent.HCT.openTool(tl.dataset.tool); }
+      } catch (err) {}
+      return;
+    }
     var sc = e.target.closest('a[data-scale]');
     if (sc) {
       try {
