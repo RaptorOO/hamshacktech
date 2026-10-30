@@ -17,7 +17,7 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = '30a18f982b9e';
+const VERSION = '004cdf698e68';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline, each with its fingerprint (see
@@ -25,7 +25,7 @@ const CACHE = 'cw-trainer-' + VERSION;
 const PRECACHE = [
   ['/cw-trainer/call-signs/', '8e5d760af31985da'],
   ['/cw-trainer/code-groups/', '345225d4b4b2dd50'],
-  ['/cw-trainer/course/', '37fa03b6f0e292f5'],
+  ['/cw-trainer/course/', 'd8b400a2c848a6c6'],
   ['/cw-trainer/fonts/bebas-neue-latin-400-normal.woff2', 'a7c90c89240c134f'],
   ['/cw-trainer/fonts/fonts.css', '25c4ec75fe307c29'],
   ['/cw-trainer/fonts/ibm-plex-mono-latin-400-normal.woff2', '08949f728dc52d52'],
@@ -65,7 +65,7 @@ const PRECACHE = [
   ['/cw-trainer/shared/hst-account.js', '2c569a86f4ee499c'],
   ['/cw-trainer/shared/hst-chrome.css', '5eaf22d6275a47e0'],
   ['/cw-trainer/shared/hst-content.js', '98f9e954ad3f2732'],
-  ['/cw-trainer/shared/hst-course.js', '3cf7e316e1140101'],
+  ['/cw-trainer/shared/hst-course.js', 'c53287db1d508f04'],
   ['/cw-trainer/shared/hst-engine.js', '7ece44a8742daa08'],
   ['/cw-trainer/shared/hst-keyer.js', 'bf7ebb5db5d48776'],
   ['/cw-trainer/shared/hst-listen.js', '098e02d85b32b8fa'],
