@@ -1333,6 +1333,19 @@
     rz = setTimeout(function () { if (!$('result').hidden && marks0.length) { var a = analyze(marks0); if (a) drawTimeline(a); } }, 150);
   });
 
+  // My Course's sending tasks open a Daily Scale (Tim, 2026-10-30):
+  // keyer/?scale=drill the first time this tab loads, openScale() after.
+  var askedScale = new URLSearchParams(location.search).get('scale');
+  if (SCALES[askedScale]) { prefs.mode = 'warmup'; prefs.scale = askedScale; savePrefs(); }
+  function openScale(key) {
+    if (!SCALES[key]) return;
+    endSession();
+    prefs.mode = 'warmup'; prefs.scale = key; savePrefs();
+    clearTimeout(waitTimer); keyer.reset();
+    loadScale();
+    applyMode();
+  }
+
   $('source').value = prefs.source;
   $('showCode').checked = prefs.showCode;
   renderSetup();
@@ -1341,7 +1354,7 @@
 
   // The app shell clicks End session when you leave this tab; tests and the
   // QSO tab can reach the pieces here.
-  window.HSTKeyerPractice = { end: endSession };
+  window.HSTKeyerPractice = { end: endSession, openScale: openScale };
 })();
 </script>
 </body>
