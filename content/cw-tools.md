@@ -15,7 +15,7 @@ Everything for CW practice now lives in one free app: the **HamShackTech CW Trai
     <span class="tool-card-badge">Free · Installable App</span>
   </div>
 
-  <p>One app you use online, or install on your computer, phone or tablet. Installed, it gets its own icon and its own window, and it works with no internet connection. Updates arrive automatically whenever you open it while you're online. Inside, one tab each:</p>
+  <p>One app you use online, or install on your computer, phone or tablet. Installed, it gets its own icon and its own window, and it works with no internet connection. Updates arrive automatically whenever you open it while you're online. Inside are five tabs: <strong>Copy</strong> (ICR, Code Groups and Call Signs), <strong>Send</strong> (Keyer and QSO), <strong>Course</strong> (My Course and Test Prep), <strong>Play</strong> (Jeopardy) and <strong>Progress</strong>. The tools:</p>
   <ul>
     <li><strong>ICR</strong>: Instant Character Recognition drills. Hear a character, press the space bar the moment you know it, then type it. Tracks your weakest characters and drills them, Car Mode plays characters for hands-free listening, and Walk Mode does the same with a voice that says each one, playing on with the phone in your pocket.</li>
     <li><strong>Code Groups</strong>: head copy of character groups, common words, QSO elements, call signs, phrases and sayings, or your own text file (like a Morserino practice file), with Farnsworth spacing and a replay after each miss. Walk Mode plays them hands-free, with a voice that spells each one out.</li>

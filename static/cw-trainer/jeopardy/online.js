@@ -792,7 +792,7 @@
     return 'Join me for Morse Code Jeopardy online! 📻\n' +
       'Room code: ' + code + '\n' +
       'Tap to join: ' + link + '\n' +
-      'Or open the HamShackTech CW Trainer, go to the Jeopardy tab, tap Join Online Game and enter the code.\n' +
+      'Or open the HamShackTech CW Trainer, tap Play, then Host or Join a Game, and enter the code.\n' +
       '73, ' + (O.room ? O.room.name : '');
   }
   async function shareInvite(btn) {
@@ -946,7 +946,7 @@
     document.body.classList.toggle('online-ok', online);
     if (!online) {
       // Jeopardy is played in a room on the server, so it needs the internet.
-      el('offlineNote').textContent = 'Jeopardy needs an internet connection. Connect, then reopen this tab.';
+      el('offlineNote').textContent = 'Jeopardy needs an internet connection. Connect, then reopen the app.';
       return;
     }
     const params = new URLSearchParams(location.search);
