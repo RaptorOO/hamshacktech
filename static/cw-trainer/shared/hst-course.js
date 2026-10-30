@@ -13,7 +13,7 @@
  *   HST.course.ORDERS           { cwaBeginner: { name, classes: [['A','E','N','T'], ...] } } -- the order
  *                               a course teaches characters, class by class; prosigns written '<AR>'
  *   HST.course.charsThrough(order, n)  -> every character taught in classes 1..n, in order
- *   HST.course.progress         each class's Done date, redo count and note (see CLASS PROGRESS)
+ *   HST.course.progress         each practice day's (or class's) Done date and redo count (see CLASS PROGRESS)
  *   HST.course.fileUrl(code)    a CW Academy audio file's address, from its curriculum name ('QSO101-10')
  *
  * Kept on this device only (localStorage). Loaded after hst-engine.js.
@@ -246,12 +246,12 @@
   };
 
   /* ---------------------------------------------------------------------
-     CLASS PROGRESS (Tim, 2026-10-30): for each class in My Course, the date
-     it was ticked Done, how many times it was redone, and a note. Kept per
-     course level ('cwa:intermediate'), so switching levels and back loses
-     nothing. Classes are numbered from 1.
-       HST.course.progress.get(courseKey)  { '3': { done: 'YYYY-MM-DD', redo: 2, note: '...' }, ... }
-       HST.course.progress.set(courseKey, n, patch)
+     CLASS PROGRESS (Tim, 2026-10-30): the date each practice day (or class)
+     was ticked Done, and how many times it was redone. Kept per course level
+     ('cwa:intermediate'), so switching levels and back loses nothing. Keys:
+     '3.1' = session 3, day 1 (courses that list the days), '3' = class 3.
+       HST.course.progress.get(courseKey)  { '3.1': { done: 'YYYY-MM-DD', redo: 2 }, ... }
+       HST.course.progress.set(courseKey, key, patch)
        HST.course.progress.onChange(fn)    fn() -- also when another window changes it
      --------------------------------------------------------------------- */
   var PKEY = 'hct-cw-course-progress-v1';
@@ -261,7 +261,6 @@
     if (/^\d{4}-\d{2}-\d{2}$/.test(e.done || '')) out.done = e.done;
     var r = Math.floor(Number(e.redo) || 0);
     if (r > 0) out.redo = Math.min(r, 999);
-    if (typeof e.note === 'string' && e.note) out.note = e.note.slice(0, 2000);
     return out;
   }
   function loadProgress() {
