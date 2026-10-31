@@ -98,6 +98,12 @@
   .redo { padding: 3px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--well); color: var(--text); font: 500 0.82rem/1.3 'Inter', sans-serif; cursor: pointer; white-space: nowrap; }
   .redo:hover { border-color: var(--mc); }
   .redo-count { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+  /* One box per play a file asks for ("copy it 2 times"), Tim 2026-10-31. */
+  .plays { display: inline-flex; gap: 8px; }
+  /* Done, or the play boxes: one slot as wide as three boxes, so the Redo
+     buttons line up on every row. */
+  .prog-row > .done-box, .prog-row > .plays { min-width: 10.4em; }
+  .plays .done-box { gap: 4px; font-size: 0.88rem; }
   tr.done td.n { color: var(--mc); }
   .nw { white-space: nowrap; }
   /* The time sits under the date, so the date column stays narrow. */
@@ -112,7 +118,7 @@
   .day .dl { margin: 0 0 2px; color: var(--dim); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
   .day .dl .dd { margin-left: 8px; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 500; }
   .day .dl .day-done { margin-left: 6px; color: var(--mc); text-transform: none; letter-spacing: 0; font-weight: 500; }
-  .task { display: grid; grid-template-columns: 1fr 320px; gap: 2px 16px; align-items: center; padding: 2px 0; line-height: 1.6; color: var(--text); }
+  .task { display: grid; grid-template-columns: 1fr 400px; gap: 2px 16px; align-items: center; padding: 2px 0; line-height: 1.6; color: var(--text); }
   .ses-bar.past .task { color: var(--muted); }
   .task .reps { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
   .task select.sp { margin: 0 0 0 6px; padding: 1px 4px; border: 1px solid var(--border); border-radius: 6px; background: var(--well); color: var(--text); font: 0.8rem 'Inter', sans-serif; }
@@ -255,6 +261,7 @@
 
 <script src="../shared/hst-engine.js"></script>
 <script src="../shared/hst-course.js"></script>
+<script src="../shared/hst-file-lengths.js"></script>
 <script>
 (function () {
   'use strict';
@@ -329,7 +336,10 @@
       // The assigned speed, or the one picked.
       var speeds = HST.course.fileSpeeds(f[1]), set = Number(f[2]), sp = speeds.indexOf(e.sp) >= 0 ? e.sp : set;
       var code = f[1] + '-' + sp, u = HST.course.fileUrl(code);
-      return { what: 'copy ' + f[1],
+      // How many plays the count asks for: a box for each (once or twice:
+      // two boxes, one needed; several: three boxes, one needed).
+      var PLAYS = { '2': [2, 2], '3': [3, 3], '1-2': [2, 1], n: [3, 1] }[f[3]];
+      return { what: 'copy ' + f[1], audio: u, code: code, plays: PLAYS ? { boxes: PLAYS[0], need: PLAYS[1] } : null,
         html: 'Copy ' + (u ? '<a class="file" href="' + esc(u) + '" target="_blank" rel="noopener" title="Play ' + esc(code) + '">' + esc(code) + '</a>' : '<span class="file">' + esc(code) + '</span>') +
           (f[3] ? ' <span class="reps">(' + (TIMES[f[3]] || f[3]) + ')</span>' : '') +
           (speeds.length > 1 ? '<select class="sp" data-act="sp" data-n="' + key + '" aria-label="Speed for ' + esc(f[1]) + ' (assigned ' + set + ' WPM)">' + speeds.map(function (v) {
@@ -366,7 +376,9 @@
       }
       last = re.lastIndex;
     }
-    return { what: text.replace(re, '$1').slice(0, 60), html: out + esc(text.slice(last)) };
+    var audio = '';
+    text.replace(re, function (all, label, key) { var u = HST.course.link(key); if (!audio && /\.mp3$/i.test(u)) audio = u; return all; });
+    return { what: text.replace(re, '$1').slice(0, 60), html: out + esc(text.slice(last)), audio: audio };
   }
   // A day: a string of tokens ('warmup WD101-10*2 icr:10'), or a list of
   // tasks in words, optionally starting with '#Label' ('#' = no heading).
@@ -401,7 +413,7 @@
         (dayDone(day, n, j, prog) ? '<span class="day-done">\u2713 done</span>' : '') + '</div>' : '') +
         dayTasks(day, n, j, prog).map(function (t) {
           return '<div class="task"><div>' + t.html + '</div>' +
-            progControls(t.key, prog[t.key] || {}, 'session ' + n + (label ? ', ' + label : '') + ', ' + t.what) + '</div>';
+            progControls(t.key, prog[t.key] || {}, 'session ' + n + (label ? ', ' + label : '') + ', ' + t.what, t) + '</div>';
         }).join('') + '</div>';
     }).join('') + (info.sessionAnchor ? '<a class="curr" href="' + esc(info.curriculum + info.sessionAnchor(n)) + '" target="_blank" rel="noopener">Session ' + n + ' in the curriculum \u2197</a>' : '');
   }
@@ -421,9 +433,16 @@
   var openSessions = null;   // { 3: true }: the session bars that are open
   var sessionDates = [];     // each class's date (Date), when the first class is set
   // Done (with the date ticked), then Redo +1 (with the count).
-  function progControls(key, e, what) {
-    return '<div class="prog-row">' +
-      '<label class="done-box"><input type="checkbox" data-act="done" data-n="' + key + '"' + (e.done ? ' checked' : '') + ' aria-label="Done: ' + what + '"> Done</label>' +
+  // t: the task (its plays and audio file), when there is one.
+  var NTH = ['1st', '2nd', '3rd'];
+  function progControls(key, e, what, t) {
+    var audio = t && t.audio ? ' data-url="' + esc(t.audio) + '"' : '';
+    var boxes = t && t.plays ? '<span class="plays">' + NTH.slice(0, t.plays.boxes).map(function (nth, i) {
+      return '<label class="done-box"><input type="checkbox" data-act="play" data-i="' + i + '" data-need="' + t.plays.need + '" data-n="' + key + '"' + audio +
+        (e.plays && e.plays[i] ? ' checked' : '') + ' aria-label="' + esc(what) + ': played the ' + nth + ' time"> ' + nth + '</label>';
+    }).join('') + '</span>'
+      : '<label class="done-box"><input type="checkbox" data-act="done" data-n="' + key + '"' + audio + (e.done ? ' checked' : '') + ' aria-label="Done: ' + what + '"> Done</label>';
+    return '<div class="prog-row">' + boxes +
       '<span class="done-date">' + esc(e.done ? fmtDone(e.done) : '') + '</span>' +
       '<button class="redo" type="button" data-act="redo" data-n="' + key + '" aria-label="Redo ' + what + ': add one">Redo +1</button>' +
       '<span class="redo-count">' + esc(redoText(e.redo || 0)) + '</span></div>';
@@ -593,7 +612,21 @@
   // file's speed.
   $('schedule').addEventListener('change', function (e) {
     var t = e.target;
-    if (t.dataset.act === 'done') HST.course.progress.set(courseKey, t.dataset.n, { done: t.checked ? isoToday() : '' });
+    if (t.dataset.act === 'done') {
+      HST.course.progress.set(courseKey, t.dataset.n, { done: t.checked ? isoToday() : '' });
+      if (t.dataset.url) homework(t.dataset.n, 0, t.checked, t.dataset.url);
+    }
+    if (t.dataset.act === 'play') {
+      // One play of a file ticked or unticked; the task is done once it has
+      // the plays its count needs.
+      var cur = HST.course.progress.get(courseKey)[t.dataset.n] || {}, i = Number(t.dataset.i);
+      var plays = (cur.plays || []).slice();
+      while (plays.length <= i) plays.push('');
+      plays[i] = t.checked ? isoToday() : '';
+      var got = plays.filter(Boolean).length;
+      HST.course.progress.set(courseKey, t.dataset.n, { plays: plays, done: got >= Number(t.dataset.need) ? cur.done || isoToday() : '' });
+      if (t.dataset.url) homework(t.dataset.n, i, t.checked, t.dataset.url);
+    }
     if (t.dataset.act === 'sp') HST.course.progress.set(courseKey, t.dataset.n, { sp: Number(t.value) });
   });
   // Opening or closing a session bar (toggle doesn't bubble, so listen as it goes down).
@@ -623,6 +656,28 @@
     var cur = HST.course.progress.get(courseKey)[b.dataset.n] || {};
     HST.course.progress.set(courseKey, b.dataset.n, { redo: (cur.redo || 0) + 1 });
   });
+  /* Homework practice time (Tim, 2026-10-31): ticking that you played a
+     sound file adds its length to Practice time, as Homework -- saved like
+     practice added by hand ({ trainer: 'manual', kind: 'homework' }), which
+     the account sync already carries. Unticking takes it off this device
+     again (a copy already synced to the account stays there). */
+  function homework(key, i, on, url) {
+    var cur = HST.course.progress.get(courseKey)[key] || {}, hw = (cur.hw || []).slice();
+    while (hw.length <= i) hw.push('');
+    if (on && !hw[i]) {
+      var sec = HST.fileSeconds(url);
+      if (!sec) return;
+      var end = Date.now(), ms = sec * 1000;
+      hw[i] = HST.history.newUid();
+      HST.history.add({ uid: hw[i], trainer: 'manual', kind: 'homework', start: end - ms, end: end, durationMs: ms,
+                        charsTotal: 0, charsCorrect: 0, file: url.split('/').pop().replace(/\.mp3$/i, ''), course: courseKey, task: key });
+    } else if (!on && hw[i]) {
+      HST.history.remove(hw[i]);
+      hw[i] = '';
+    } else return;
+    HST.course.progress.set(courseKey, key, { hw: hw });
+  }
+
   // Changes here, and in another window of the app, redraw the list.
   HST.course.progress.onChange(render);
   HST.course.onChange(render);
