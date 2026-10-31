@@ -73,46 +73,9 @@
 
   a { color: var(--accent2); }
 
-  /* ---------------------------------------------------------------------
-     Masthead
-     --------------------------------------------------------------------- */
-  .masthead {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-bottom: 22px;
-  }
-  .masthead-title {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  /* Site mascot — the alien-with-headphones mark used in the main
-     hamshacktech.com header (see assets/hamshacktech_logo.png there).
-     Served from /apple-touch-icon.png, a pre-existing square, transparent
-     crop of the same artwork, so no new image asset is needed here.
-     Sits on its own baseline via align-self so it lines up with the
-     text rather than the flex row's shared baseline. */
-  .masthead .mascot {
-    width: 40px;
-    height: 40px;
-    align-self: center;
-    flex-shrink: 0;
-  }
-  .masthead h1 {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.4rem);
-    letter-spacing: 0.01em;
-    margin: 0;
-    text-wrap: balance;
-  }
-
   /* Info button + popup — replaces what used to be a permanent intro
-     paragraph under the masthead. Keeps the explanation one tap away
+     paragraph at the top; it sits at the end of the clock chips (no logo
+     or title since Tim, 2026-10-31: the app's tool card names the tool). Keeps the explanation one tap away
      instead of costing every visitor (phones especially) scroll space
      on every visit. Built on the native <dialog> element rather than a
      hand-rolled modal: showModal()/close() give us focus-trapping,
@@ -670,6 +633,7 @@
     margin-top: 8px;
   }
   .check-row input { accent-color: var(--accent2); }
+  .check-note { margin: 4px 0 0 22px; font-size: 0.85rem; color: var(--text-dim); line-height: 1.4; }
 
   fieldset { border: none; padding: 0; margin: 0; }
   fieldset:disabled { opacity: 0.5; }
@@ -801,18 +765,6 @@
 <body>
 <div class="wrap">
 
-  <div class="masthead">
-    <div class="masthead-title">
-      <img class="mascot" src="../icons/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
-      <h1>Code Groups</h1>
-      <!-- Info button opens the #infoDialog <dialog> below instead of a
-           permanent intro paragraph in the page flow — keeps the masthead
-           short on a phone screen while the explanation stays one tap away. -->
-      <button type="button" class="info-btn" id="infoBtn" aria-haspopup="dialog" aria-controls="infoDialog" aria-label="About this trainer" title="About this trainer">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
-      </button>
-    </div>
-  </div>
 
   <dialog class="info-dialog" id="infoDialog" aria-labelledby="infoDialogTitle">
     <h2 id="infoDialogTitle">About This Trainer</h2>
@@ -958,6 +910,9 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="mute" d="m22 9-6 6M16 9l6 6"/></svg>
         <span>Buzzer</span>
         <span class="clock-val" id="buzzVal">On</span>
+      </button>
+      <button type="button" class="info-btn" id="infoBtn" aria-haspopup="dialog" aria-controls="infoDialog" aria-label="About this trainer" title="About this trainer">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
       </button>
     </div>
 
@@ -1128,6 +1083,12 @@
         <div class="field">
           <label for="wpmRange">Character Speed (WPM)<span class="val" id="wpmVal">20</span></label>
           <input type="range" id="wpmRange" min="5" max="40" step="1" value="20" />
+          <!-- Adaptive Speed (Tim, 2026-10-31). -->
+          <div class="check-row">
+            <input type="checkbox" id="adaptSpeedCheck" />
+            <label for="adaptSpeedCheck" style="margin:0; color: var(--text-dim);">Adaptive Speed</label>
+          </div>
+          <p class="check-note">Character Speed goes up 1 WPM for each group you get right and down 1 for each miss.</p>
         </div>
 
         <div class="field">
@@ -1624,6 +1585,7 @@
       volume: 70,
       maxTimeSec: 6,
       unlimited: false,
+      adaptSpeed: false, // Adaptive Speed: +1 WPM per right group, -1 per miss or timeout
       callMix: "mixed",  // Call Signs group only: "mixed" | "us" | "intl"
       wordPool: 500,     // Common Words group only: how many of GENERAL_WORDS to draw from (100/500/1000/2000)
       headCopy: false,   // Head Copy Mode: no typing allowed while code is playing
@@ -1712,7 +1674,7 @@
     toneRange: $("toneRange"), toneVal: $("toneVal"),
     volRange: $("volRange"), volVal: $("volVal"),
     maxTimeRange: $("maxTimeRange"), maxTimeVal: $("maxTimeVal"),
-    unlimitedCheck: $("unlimitedCheck"),
+    unlimitedCheck: $("unlimitedCheck"), adaptSpeedCheck: $("adaptSpeedCheck"),
     settingsFieldset: $("settingsFieldset"),
     lockNote: $("lockNote"),
     resetStatsBtn: $("resetStatsBtn"),
@@ -1777,6 +1739,7 @@
     els.volRange.value = s.volume; els.volVal.textContent = s.volume + "%";
     els.maxTimeRange.value = s.maxTimeSec; els.maxTimeVal.textContent = s.maxTimeSec.toFixed(1) + " s";
     els.unlimitedCheck.checked = s.unlimited;
+    els.adaptSpeedCheck.checked = !!s.adaptSpeed;
     els.maxTimeRange.disabled = s.unlimited;
     els.callMixSelect.value = s.callMix;
     els.wordPoolSelect.value = String(s.wordPool);
@@ -2334,6 +2297,7 @@
       if (state.roundToken !== myToken) return null; // abandoned \u2014 e.g. Drill started a fresh round instead
       if (!state.running) return null;
       var outcome = evaluateGroup(timedOut);
+      if (state.settings.adaptSpeed) HST.shared.adaptWpm(outcome.allCorrect);   // the next group's speed
       if (timedOut || !outcome.allCorrect) playBuzzer();   // missed group or timeout (unless muted)
       setStatus(timedOut ? "timeout" : (outcome.allCorrect ? "correct" : "miss"),
         timedOut ? "\u23f1 Time's up" : (outcome.allCorrect ? "\u2713 Correct" : "\u2717 Missed"));
@@ -2671,7 +2635,7 @@
     state.running = true;
     state.callsUsed = {}; // fresh session, fresh pool of call signs
     practiceLog.start({ group: state.settings.group, wpm: state.settings.wpm,
-                    fwpm: state.settings.fwpm, groupSize: state.settings.groupSize });
+                    fwpm: state.settings.fwpm < state.settings.wpm ? state.settings.fwpm : 0, groupSize: state.settings.groupSize });
     els.sessionBtn.textContent = "Stop Session";
     els.sessionBtn.classList.add("running");
     els.tapHint.style.display = "none";
@@ -3038,6 +3002,10 @@
     els.maxTimeVal.textContent = state.settings.maxTimeSec.toFixed(1) + " s";
     saveSettings();
   });
+  els.adaptSpeedCheck.addEventListener("change", function () {
+    state.settings.adaptSpeed = els.adaptSpeedCheck.checked;
+    saveSettings();
+  });
   els.unlimitedCheck.addEventListener("change", function () {
     state.settings.unlimited = els.unlimitedCheck.checked;
     els.maxTimeRange.disabled = state.settings.unlimited;
@@ -3067,7 +3035,9 @@
     state.settings.wpm = shared.wpm;
     state.settings.toneHz = shared.toneHz;
     state.settings.volume = shared.volume;
-    if (state.settings.fwpm > shared.wpm) state.settings.fwpm = shared.wpm;
+    // Farnsworth isn't lowered with the character speed: HST.timing ignores
+    // it at or above the character speed, so Adaptive Speed going down then
+    // back up keeps the Farnsworth speed you set (Tim, 2026-10-31).
   }
   loadSettings();
   // Buzzer chip: mute/unmute the missed-group buzzer (saved with settings).

@@ -153,6 +153,9 @@
       try { localStorage.setItem(SHARED_KEY, JSON.stringify(current)); } catch (e) {}
       notify();
     },
+    // Adaptive Speed (Tim, 2026-10-31): +1 WPM after a right answer, -1
+    // after a miss, kept within LIMITS.wpm.
+    adaptWpm: function (correct) { this.set({ wpm: current.wpm + (correct ? 1 : -1) }); },
     // onChange(fn): fn(settings) runs after any change, here or in another tab/frame.
     onChange: function (fn) { listeners.push(fn); }
   };
