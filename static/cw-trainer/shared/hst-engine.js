@@ -425,6 +425,7 @@
        HST.history.update(recs)     save changes to existing records (e.g. synced: true)
        HST.history.addMany(recs)    add sessions that came from other devices
        HST.history.removeBefore(t)  drop sessions that started before t
+       HST.history.remove(uid)      drop one session (an unticked homework play)
        HST.history.newUid()         a fresh uid
        HST.history.onChange(fn)  fn() runs when history changes in any tab/frame
        HST.history.recorder('icr' | 'code-groups')  -> see below
@@ -523,6 +524,16 @@
       recs.forEach(function (r) { delete r.id; if (!r.uid) r.uid = newUid(); });
       return dbMany(function (s) { recs.forEach(function (r) { s.add(r); }); })
         .then(function (ok) { if (ok == null) recs.forEach(function (r) { memoryOnly.push(r); }); historyChanged(); });
+    },
+    // Only on this device: sync never edits or deletes, so a copy already
+    // synced stays on the account and other devices.
+    remove: function (uid) {
+      return HST.history.all().then(function (rows) {
+        var gone = rows.filter(function (r) { return r.uid === uid; });
+        if (!gone.length) return;
+        return dbMany(function (s) { gone.forEach(function (r) { if (r.id != null) s.delete(r.id); }); })
+          .then(function () { memoryOnly = memoryOnly.filter(function (r) { return r.uid !== uid; }); historyChanged(); });
+      });
     },
     removeBefore: function (t) {
       return HST.history.all().then(function (rows) {

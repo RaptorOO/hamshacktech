@@ -381,7 +381,7 @@
      levels and back loses nothing. Keys: '3.1.WD103' = session 3, day 1,
      that task (courses that list the days: the scale, the file without its
      speed, or icr, mr, wpx, cwt), '3' = class 3.
-       HST.course.progress.get(courseKey)  { '3.1.WD103': { done: 'YYYY-MM-DD', redo: 2, sp: 15 }, ... }
+       HST.course.progress.get(courseKey)  { '3.1.WD103': { done: 'YYYY-MM-DD', redo: 2, sp: 15, plays: ['YYYY-MM-DD', ''], hw: [uid, ''] }, ... }
        HST.course.progress.set(courseKey, key, patch)
        HST.course.progress.onChange(fn)    fn() -- also when another window changes it
      --------------------------------------------------------------------- */
@@ -394,6 +394,10 @@
     if (r > 0) out.redo = Math.min(r, 999);
     var sp = Math.floor(Number(e.sp) || 0);
     if (sp >= 5 && sp <= 40) out.sp = sp;
+    // Homework plays (Tim, 2026-10-31): plays[i] = the date the i-th play
+    // was ticked ('' = not), hw[i] = the uid of its Homework session.
+    if (Array.isArray(e.plays) && e.plays.some(Boolean)) out.plays = e.plays.slice(0, 3).map(function (d) { return /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d : ''; });
+    if (Array.isArray(e.hw) && e.hw.some(Boolean)) out.hw = e.hw.slice(0, 3).map(function (u) { return typeof u === 'string' && /^[\w-]{8,64}$/.test(u) ? u : ''; });
     return out;
   }
   function loadProgress() {

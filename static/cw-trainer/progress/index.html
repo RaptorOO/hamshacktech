@@ -29,6 +29,7 @@
     --zoom: #38bdf8;       /* sky-400 */
     --onair: #c084fc;      /* purple-400 */
     --other: #94a3b8;      /* slate-400 */
+    --hw: #c4b5fd;         /* violet-300: Homework (My Course's color), Tim 2026-10-31 */
     --bad: #f87171;        /* red-400 */
     --lime-ink: #1a2e05;
     color-scheme: dark;
@@ -79,8 +80,8 @@
   .legend .jep { color: var(--jep); font-weight: 500; }
   .legend .tp { color: var(--tp); font-weight: 500; }
   .legend .cs { color: var(--cs); font-weight: 500; }
-  .legend .zoom { color: var(--zoom); } .legend .onair { color: var(--onair); } .legend .other { color: var(--other); }
-  .legend .icr, .legend .cg, .legend .key, .legend .key2, .legend .zoom, .legend .onair, .legend .other { font-weight: 500; }
+  .legend .zoom { color: var(--zoom); } .legend .onair { color: var(--onair); } .legend .other { color: var(--other); } .legend .hw { color: var(--hw); }
+  .legend .icr, .legend .cg, .legend .key, .legend .key2, .legend .zoom, .legend .onair, .legend .other, .legend .hw { font-weight: 500; }
   .legend { flex-wrap: wrap; row-gap: 4px; }
   .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
   .addbtn {
@@ -119,7 +120,7 @@
   .tag.jep { background: var(--jep); }
   .tag.tp { background: var(--tp); }
   .tag.cs { background: var(--cs); }
-  .tag.zoom { background: var(--zoom); } .tag.onair { background: var(--onair); } .tag.other { background: var(--other); }
+  .tag.zoom { background: var(--zoom); } .tag.onair { background: var(--onair); } .tag.other { background: var(--other); } .tag.hw { background: var(--hw); }
 
   /* ---------- "Add practice time" dialog ---------- */
   .addtime {
@@ -211,7 +212,7 @@
           </div>
           <button type="button" class="addbtn" data-addtime title="Add practice you did outside the CW Trainer">+ Add time</button>
         </div>
-        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span><span class="key" id="timeKeyLegend">Keyer</span><span class="qso" id="timeQsoLegend">QSO</span><span class="tp" id="timeTpLegend">Test Prep</span><span class="cs" id="timeCsLegend">Call Signs</span><span class="jep" id="timeJepLegend">Jeopardy</span><span class="zoom" id="timeZoomLegend">Zoom Session</span><span class="onair" id="timeOnairLegend">On-Air</span><span class="other" id="timeOtherLegend">Other</span></div>
+        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span><span class="key" id="timeKeyLegend">Keyer</span><span class="qso" id="timeQsoLegend">QSO</span><span class="tp" id="timeTpLegend">Test Prep</span><span class="cs" id="timeCsLegend">Call Signs</span><span class="jep" id="timeJepLegend">Jeopardy</span><span class="zoom" id="timeZoomLegend">Zoom Session</span><span class="onair" id="timeOnairLegend">On-Air</span><span class="other" id="timeOtherLegend">Other</span><span class="hw" id="timeHwLegend">Homework</span></div>
         <div id="chTime"></div>
       </section>
 
@@ -331,13 +332,14 @@
   var DAY = 86400000;
   var RANGE_KEY = 'hct-cw-progress-range';
   var COLORS = { icr: 'var(--icr)', 'code-groups': 'var(--cg)', keyer: 'var(--key)', qso: 'var(--qso)', 'test-prep': 'var(--tp)', 'call-signs': 'var(--cs)', jeopardy: 'var(--jep)',
-                 zoom: 'var(--zoom)', 'on-air': 'var(--onair)', other: 'var(--other)' };
+                 zoom: 'var(--zoom)', 'on-air': 'var(--onair)', other: 'var(--other)', homework: 'var(--hw)' };
   var TRAINER_NAMES = { icr: 'ICR', 'code-groups': 'Code Groups', keyer: 'Keyer', qso: 'QSO', 'test-prep': 'Test Prep', 'call-signs': 'Call Signs', jeopardy: 'Jeopardy',
-                        zoom: 'Zoom Session', 'on-air': 'On-Air', other: 'Other' };
+                        zoom: 'Zoom Session', 'on-air': 'On-Air', other: 'Other', homework: 'Homework' };
   // Practice added by hand is saved as { trainer: 'manual', kind: one of
   // these }; each kind gets its own color in the Practice time chart.
-  var MANUAL_KINDS = ['zoom', 'on-air', 'other'];
-  var MANUAL_TAGS = { zoom: 'zoom', 'on-air': 'onair', other: 'other' };
+  // 'homework' comes from My Course: the sound files you tick as played.
+  var MANUAL_KINDS = ['zoom', 'on-air', 'other', 'homework'];
+  var MANUAL_TAGS = { zoom: 'zoom', 'on-air': 'onair', other: 'other', homework: 'hw' };
   function manualKind(s) { return MANUAL_KINDS.indexOf(s.kind) >= 0 ? s.kind : 'other'; }
   // The chart series a session belongs to.
   function seriesOf(s) { return s.trainer === 'manual' ? manualKind(s) : s.trainer; }
@@ -598,7 +600,9 @@
     var ms = 0, chars = 0, correct = 0, byTrainer = { icr: 0, 'code-groups': 0, keyer: 0, qso: 0, 'test-prep': 0, 'call-signs': 0, jeopardy: 0, manual: 0 };
     function copying(s) { return s.trainer === 'icr' || s.trainer === 'code-groups'; }
     rows.forEach(function (s) {
-      ms += s.durationMs || 0; byTrainer[s.trainer] = (byTrainer[s.trainer] || 0) + 1;
+      ms += s.durationMs || 0;
+      var tk = s.trainer === 'manual' && s.kind === 'homework' ? 'homework' : s.trainer;   // homework plays aren't "added by hand"
+      byTrainer[tk] = (byTrainer[tk] || 0) + 1;
       if (copying(s)) { chars += s.charsTotal; correct += s.charsCorrect; }
     });
     var copyRows = rows.filter(copying);
@@ -619,6 +623,7 @@
     $('timeZoomLegend').hidden = !manualHas.zoom;
     $('timeOnairLegend').hidden = !manualHas['on-air'];
     $('timeOtherLegend').hidden = !manualHas.other;
+    $('timeHwLegend').hidden = !manualHas.homework;
     // Today's Practice Time: the part of each session since midnight.
     var todayMs = 0, now = Date.now();
     allRows.forEach(function (s) {
@@ -643,6 +648,7 @@
       (hasTp ? ' · ' + byTrainer['test-prep'] + ' Test Prep' : '') +
       (hasCs ? ' · ' + byTrainer['call-signs'] + ' Call Signs' : '') +
       (hasJep ? ' · ' + byTrainer.jeopardy + ' Jeopardy' : '') +
+      (byTrainer.homework ? ' · ' + byTrainer.homework + ' Homework' : '') +
       (byTrainer.manual ? ' · ' + byTrainer.manual + ' added' : '');
 
     // Charts
@@ -708,7 +714,7 @@
       if (s.trainer === 'manual') {
         var k = manualKind(s);
         return '<tr><td>' + esc(s.dateOnly ? shortDate(s.start) : when) + '</td><td><span class="tag ' + MANUAL_TAGS[k] + '">' +
-               esc(TRAINER_NAMES[k]) + '</span></td><td>Added by hand</td><td class="num"></td><td class="num">' +
+               esc(TRAINER_NAMES[k]) + '</span></td><td>' + (k === 'homework' ? 'Played ' + esc(String(s.file || '').replace(/_(\d+)$/, '-$1').replace(/^QSO_/, 'QSO')) : 'Added by hand') + '</td><td class="num"></td><td class="num">' +
                HST.fmtClock(s.durationMs || 0) + '</td><td class="num">—</td><td class="num">—</td></tr>';
       }
       if (s.trainer === 'qso') {
