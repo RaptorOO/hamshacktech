@@ -61,43 +61,10 @@
   }
 
   /* Page layout matches the Code Groups Trainer (Tim, 2026-10-13): the
-     same 1180px width and masthead, the practice panel across the top,
+     same 1180px width, the practice panel across the top,
      then three cards -- Tool Settings, Statistics, Most Missed Characters
      -- side by side, stacking into one column on narrower screens. */
   .wrap{ max-width: 1180px; margin: 0 auto; padding: 4px 4px 0; }
-
-  /* ===================== MASTHEAD ===================== */
-  .masthead{
-    display:flex;
-    align-items:center;
-    gap: 12px;
-    margin-bottom: 22px;
-  }
-  .masthead h1{
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.4rem);
-    letter-spacing: 0.01em;
-    margin: 0;
-    color: var(--text);
-  }
-  /* Site mascot — same alien-with-headphones mark used in the main
-     hamshacktech.com header and the Code Groups Trainer's masthead,
-     served from /apple-touch-icon.png (a pre-existing square, transparent
-     crop of that artwork) so no new image asset is needed here. */
-  /* "Instant Character Recognition" under the title, for beginners who
-     haven't met the abbreviation (Tim, 2026-10-29). */
-  .masthead .subtitle{
-    margin: 2px 0 0;
-    color: var(--text-muted);
-    font-size: 0.95rem;
-    letter-spacing: 0.01em;
-  }
-  .masthead .mascot{
-    width: 40px;
-    height: 40px;
-    flex-shrink: 0;
-  }
 
   /* ===================== PANEL / CARD BASE ===================== */
   .panel{
@@ -618,6 +585,7 @@
   .car-status{ font-size: 13px; color: var(--text-muted); margin: -8px 0 16px; }
   /* Turn Off Spacebar Mode */
   .nospace-note{ font-size: 0.88rem; color: var(--text-dim); line-height: 1.45; }
+  .adapt-note{ margin: 2px 0 10px 22px; }
   .nospace-note b{ color: var(--text); font-weight: 600; }
   .linkbtn{ background: none; border: 0; padding: 0; color: var(--amber); font: inherit; text-decoration: underline; cursor: pointer; }
   .timer-dialog p.say-msg{ font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
@@ -635,13 +603,6 @@
 <body>
 <div class="wrap">
 
-  <div class="masthead">
-    <img class="mascot" src="../icons/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
-    <div>
-      <h1>ICR</h1>
-      <p class="subtitle">Instant Character Recognition</p>
-    </div>
-  </div>
 
   <!-- PRACTICE STAGE -->
   <div class="panel practice">
@@ -768,6 +729,20 @@
             Say each character out loud; the answer plays <b id="noSpaceNoteMs">1500 ms</b> after it.
             <button type="button" class="linkbtn" id="noSpaceEditBtn">Change</button>
           </div>
+        </div>
+
+        <!-- Adaptive ICR and Adaptive Speed (Tim, 2026-10-31). -->
+        <div class="control-row">
+          <label class="toggle-row">
+            <input type="checkbox" id="adaptiveToggle">
+            <span>Adaptive ICR</span>
+          </label>
+          <p class="nospace-note adapt-note">The characters you miss most come up more often.</p>
+          <label class="toggle-row">
+            <input type="checkbox" id="adaptSpeedToggle">
+            <span>Adaptive Speed</span>
+          </label>
+          <p class="nospace-note adapt-note">Character Speed goes up 1 WPM for each right answer and down 1 for each miss.</p>
         </div>
 
       </div>
@@ -955,6 +930,8 @@ let settings = {
   carWpm: 0,         // Car / Walk Mode speed; 0 = not set yet (starts from this page's speed)
   carGap: 2,         // Car / Walk Mode: seconds of quiet after each play
   noSpace: false,    // Turn Off Spacebar Mode: say it, then the answer plays
+  adaptive: false,   // Adaptive ICR: missed characters come up more often (weightFor)
+  adaptSpeed: false, // Adaptive Speed: +1 WPM per right answer, -1 per miss or timeout
   sayDelayMs: 1500   // ...this long after the character ends (0-3000 ms)
 };
 
@@ -1131,7 +1108,8 @@ function pickNextCharacter(){
     candidates = activeSet.filter(c => !skip.includes(c));
     if(!candidates.length) candidates = activeSet;
   }
-  const weights = candidates.map(weightFor);
+  // Without Adaptive ICR every character is equally likely.
+  const weights = candidates.map(c => settings.adaptive ? weightFor(c) : 1);
   const total = weights.reduce((a,b) => a+b, 0);
   let r = Math.random() * total;
   for(let i=0; i<candidates.length; i++){
@@ -1379,6 +1357,7 @@ function handleTimeout(){
   // Timeout = miss, scored against the character; skip answer entry
   // since there's nothing to grade, but still reveal the character.
   recordResult(currentChar, false, settings.ttaMs);
+  if(settings.adaptSpeed) HST.shared.adaptWpm(false);
   practiceLog.char(currentChar, false);
   practiceLog.round(false, null, true);
   session.total += 1;
@@ -1397,6 +1376,7 @@ function submitAnswer(){
   const correct = guess === HST.charLabel(currentChar);   // a prosign is typed as its letters
 
   recordResult(currentChar, correct, reactionTime);
+  if(settings.adaptSpeed) HST.shared.adaptWpm(correct);
   practiceLog.char(currentChar, correct);
   practiceLog.round(correct, reactionTime, false);
   session.total += 1;
@@ -1918,6 +1898,8 @@ function refreshSettingsUI(){
   els.ttaVal.textContent = settings.ttaEnabled ? settings.ttaMs + ' ms' : 'Off';
   els.ttaSlider.disabled = !settings.ttaEnabled;
   els.ttaOffToggle.checked = !settings.ttaEnabled;
+  els.adaptiveToggle.checked = !!settings.adaptive;
+  els.adaptSpeedToggle.checked = !!settings.adaptSpeed;
 }
 
 /* ------------------------------- WIRING ---------------------------------- */
@@ -2089,6 +2071,8 @@ function wireEvents(){
     els.ttaVal.textContent = settings.ttaMs + ' ms';
     saveState();
   });
+  els.adaptiveToggle.addEventListener('change', () => { settings.adaptive = els.adaptiveToggle.checked; saveState(); });
+  els.adaptSpeedToggle.addEventListener('change', () => { settings.adaptSpeed = els.adaptSpeedToggle.checked; saveState(); });
   els.ttaOffToggle.addEventListener('change', () => {
     settings.ttaEnabled = !els.ttaOffToggle.checked;
     els.ttaSlider.disabled = !settings.ttaEnabled;
@@ -2138,7 +2122,7 @@ function init(){
    'weakList','drillBtn','stopDrillBtn','drillStatus',
    'groupSelect','customRow','customInput','cwaRow','cwaClassSelect','cwaChars','wpmSlider','wpmVal',
    'toneSlider','toneVal','volSlider','volVal',
-   'ttaSlider','ttaVal','ttaOffToggle','resetSessionBtn',
+   'ttaSlider','ttaVal','ttaOffToggle','adaptiveToggle','adaptSpeedToggle','resetSessionBtn',
    'oopsOverlay','oopsCloseBtn','buzzBtn','buzzVal',
    'elapsedChip','elapsedVal','timerBtn','timerVal',
    'timerDialog','timerPresets','timerInput','timerSetBtn','timerOffBtn','timerCancelBtn',

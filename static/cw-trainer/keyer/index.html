@@ -231,10 +231,6 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="head">
-    <img class="hst-mascot" src="../icons/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
-    <h1 class="hst-title">Keyer Practice</h1>
-  </div>
 
   <div class="controls">
     <div class="seg" role="group" aria-label="Practice mode">
@@ -265,7 +261,7 @@
     <div data-show="warmup">
       <p class="warm-intro"><strong id="scaleWhen">Do the Warm Up every day, before you send anything else.</strong>
         Send the whole list below at your keyer speed, top to bottom; each character turns green when you send it right.
-        A mistake turns its group red: pause, then send that group again from its first character. Take as long as you like.
+        A mistake turns its group red: pause, then send that group again from its first character. After 5 tries it moves on to the next group. Take as long as you like.
         Pause when you&rsquo;re done, or press <kbd>Enter</kbd>.</p>
       <p class="warm-credit">Daily Morse Code &ldquo;Scales&rdquo; by Bob Carter, WR7Q.</p>
       <div class="label" id="scaleLabel">Warm Up</div>
@@ -681,11 +677,13 @@
   /* ---------------- Warm Up ----------------
      One fixed text, sent every day before anything else (list by Bob
      Carter, WR7Q). It's one long attempt, sent block by block (a block =
-     the characters between spaces: BBBBB, ABCDEF, THE). Each character
+     the characters between spaces: BBBBB, ABCDEF, THE; a group of five
+     prosigns is one block, spaced out or not). Each character
      turns green as the live decoder hears it right. A wrong one turns its
      block red: pause, then send the whole block again from its first
      character (CW Academy's rule, Tim 2026-10-31), so a finished scale is
-     all green. Mistakes are still counted for the stats. When the last
+     all green. After 5 missed tries at one block it stays red and the run
+     moves on to the next block (Tim, 2026-10-31). Mistakes are still counted for the stats. When the last
      character is in and you pause (or press Enter), the result card shows
      the full timing report at your keyer speed. There's no time limit. */
   var WARMUP_LINES = [
@@ -727,10 +725,15 @@
     var sc = scale();
     WARMUP_TARGET = sc.lines.join(' ').replace(/\s+/g, ' ');
     WARM_T = toks(WARMUP_TARGET);
+    // A block is a word, except that a group of prosigns is one block
+    // even when spaced out, as in the Drill's <SK> <SK> <SK> <SK> <SK>
+    // (Tim, 2026-10-31); groups are set apart by two or more spaces.
     WARM_START = [];
-    WARMUP_TARGET.split(' ').forEach(function (w) {
-      var start = WARM_START.length, n = toks(w).length;
-      for (var i = 0; i < n; i++) WARM_START.push(start);
+    sc.lines.join('  ').trim().split(/ {2,}/).forEach(function (g) {
+      (/^<[A-Z]+>( <[A-Z]+>)*$/.test(g) ? [g] : g.split(' ')).forEach(function (w) {
+        var start = WARM_START.length, n = toks(w).length;
+        for (var i = 0; i < n; i++) WARM_START.push(start);
+      });
     });
     $('scale').value = prefs.scale in SCALES ? prefs.scale : 'warmup';
     $('scaleWhen').textContent = sc.when;
@@ -787,18 +790,25 @@
   // to send; wSeen = how many decoded characters have been checked; after a
   // mistake (wBad = where), wHold ignores what's sent until you pause.
   // wFirst[k]: whether character k was right the first time it was tried.
-  var wPos = 0, wSeen = 0, wErr = 0, wBad = -1, wHold = false, wFirst = [];
-  function warmRunReset() { wPos = 0; wSeen = 0; wErr = 0; wBad = -1; wHold = false; wFirst = []; }
-  function warmBlock(k) {   // the block holding character k, as text
+  // wTries[a]: missed tries at the block starting at a. After WARM_TRIES
+  // of them the run moves on to the next block (Tim, 2026-10-31), and
+  // wSkip[a] keeps that block red.
+  var WARM_TRIES = 5;
+  var wPos = 0, wSeen = 0, wErr = 0, wBad = -1, wHold = false, wFirst = [], wTries = {}, wSkip = {}, wSkipped = 0;
+  function warmRunReset() { wPos = 0; wSeen = 0; wErr = 0; wBad = -1; wHold = false; wFirst = []; wTries = {}; wSkip = {}; wSkipped = 0; }
+  function warmBlockEnd(k) {   // just past the block holding character k
     var a = WARM_START[k], b = a;
     while (b < WARM_T.length && WARM_START[b] === a) b++;
-    return WARM_T.slice(a, b).join('');
+    return b;
+  }
+  function warmBlock(k) {   // the block holding character k, as text
+    return WARM_T.slice(WARM_START[k], warmBlockEnd(k)).join('');
   }
   function warmPaint() {
     var redFrom = wHold ? WARM_START[wBad] : -1;
     warmSpans.forEach(function (el, k) {
       var c = el.textContent.length > 1 ? 't pro' : 't';
-      if (wHold && k >= redFrom && k <= wBad) c += ' bad';
+      if ((wHold && k >= redFrom && k <= wBad) || wSkip[WARM_START[k]]) c += ' bad';
       else if (k < wPos) c += ' ok';
       if (!wHold && k === wPos && state === 'sending') c += ' next';
       el.className = c;
@@ -815,15 +825,31 @@
       } else {
         if (wFirst[wPos] === undefined) wFirst[wPos] = false;
         wErr++; wBad = wPos; wHold = true;
+        var b0 = WARM_START[wBad];
+        wTries[b0] = (wTries[b0] || 0) + 1;
       }
     }
-    // A pause after the mistake: clear the block and start it again.
-    if (wHold && /\s$/.test(live)) { wHold = false; wPos = WARM_START[wBad]; }
+    // A pause after the mistake: clear the block and start it again, or
+    // after the last try, leave it red and go on to the next block.
+    var moved = '';
+    if (wHold && /\s$/.test(live)) {
+      wHold = false;
+      var bs = WARM_START[wBad];
+      if (wTries[bs] >= WARM_TRIES) {
+        wSkip[bs] = true; wSkipped++; moved = warmBlock(wBad);
+        wPos = warmBlockEnd(wBad);
+        if (wPos >= WARM_T.length) finishAttempt();
+      } else wPos = bs;
+    }
     warmPaint();
+    if (state !== 'sending') return;
     var a = marks.length > 4 ? analyze() : null;
+    var left = wHold ? WARM_TRIES - wTries[WARM_START[wBad]] : 0;
     $('warmProgress').innerHTML = (wHold
-      ? '<b>Missed one.</b> Pause, then send <b>' + esc(warmBlock(wBad)) + '</b> again from the start.'
-      : 'Sent <b>' + wPos + '</b> of ' + WARM_T.length) +
+      ? (left > 0
+        ? '<b>Missed one.</b> Pause, then send <b>' + esc(warmBlock(wBad)) + '</b> again from the start (' + left + (left === 1 ? ' try' : ' tries') + ' left).'
+        : '<b>Missed one.</b> That was the last try at <b>' + esc(warmBlock(wBad)) + '</b>: pause, and go on to the next block.')
+      : (moved ? 'Moved on from <b>' + esc(moved) + '</b> after ' + WARM_TRIES + ' tries. ' : '') + 'Sent <b>' + wPos + '</b> of ' + WARM_T.length) +
       (wErr ? ' · <b>' + wErr + '</b> ' + (wErr === 1 ? 'mistake' : 'mistakes') : '') +
       ' · keyer speed <b>' + keyWpm() + ' WPM</b>' + (a ? ', your overall <b>' + Math.round(a.overallWpm) + ' WPM</b>' : '');
   }
@@ -833,7 +859,7 @@
     var items = [];
     WARM_T.forEach(function (w, k) { if (k < wPos || wFirst[k] !== undefined) items.push({ want: w, ok: wFirst[k] === true }); });
     var right = items.filter(function (x) { return x.ok; }).length;
-    return { items: items, correct: right, total: items.length, extra: 0, mistakes: wErr, done: wPos, all: WARM_T.length };
+    return { items: items, correct: right, total: items.length, extra: 0, mistakes: wErr - wSkipped, skipped: wSkipped, done: wPos, all: WARM_T.length };
   }
 
   function warmReady(msg) {
@@ -861,9 +887,10 @@
     var goal = fwpm() || keyWpm(), pctOfSet = Math.round(100 * a.overallWpm / goal);
     $('warmProgress').innerHTML = (g.done < g.all ? 'Sent <b>' + g.done + ' of ' + g.all + '</b> · ' : 'All <b>' + g.all + '</b> sent · ') +
       '<b>' + g.correct + ' of ' + g.total + '</b> right the first time' + (g.mistakes ? ' (' + g.mistakes + ' ' + (g.mistakes === 1 ? 'block' : 'blocks') + ' sent again)' : '') +
+      (g.skipped ? ' · <b>' + g.skipped + '</b> ' + (g.skipped === 1 ? 'block' : 'blocks') + ' left after ' + WARM_TRIES + ' tries' : '') +
       ' at your keyer speed of <b>' + speedText() + '</b> · overall speed <b>' + Math.round(a.overallWpm) + ' WPM</b> (' + pctOfSet + '% of ' +
       (fwpm() ? 'your Farnsworth ' + goal + ')' : 'it)');
-    setStatus(g.done === g.all && !g.mistakes ? 'Clean warm-up! Your timing report is below.' : 'Your timing report is below. Again (Esc) runs it from the top.');
+    setStatus(g.done === g.all && !g.mistakes && !g.skipped ? 'Clean warm-up! Your timing report is below.' : 'Your timing report is below. Again (Esc) runs it from the top.');
   }
 
   function showLive() {
@@ -930,7 +957,8 @@
       $('score').className = 'score ' + (perfect ? 'good' : 'bad');
       $('score').textContent = g.all != null   // Daily Scales: right the first time, blocks sent again
         ? (perfect ? 'All ' + g.all + ' right the first time' : g.correct + ' of ' + g.total + ' right the first time' +
-           (g.mistakes ? ' · ' + g.mistakes + ' ' + (g.mistakes === 1 ? 'block' : 'blocks') + ' sent again' : '') + (g.done < g.all ? ' · stopped at ' + g.done + ' of ' + g.all : ''))
+           (g.mistakes ? ' · ' + g.mistakes + ' ' + (g.mistakes === 1 ? 'block' : 'blocks') + ' sent again' : '') +
+           (g.skipped ? ' · ' + g.skipped + ' ' + (g.skipped === 1 ? 'block' : 'blocks') + ' left after ' + WARM_TRIES + ' tries' : '') + (g.done < g.all ? ' · stopped at ' + g.done + ' of ' + g.all : ''))
         : perfect ? 'All ' + g.total + ' letters right' :
         g.correct + ' of ' + g.total + ' letters right' + (g.extra ? ' · ' + g.extra + ' extra' : '');
     } else {
