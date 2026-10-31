@@ -17,7 +17,7 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = 'f3daa6274a9d';
+const VERSION = '71ddde4c42c8';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline, each with its fingerprint (see
@@ -25,7 +25,7 @@ const CACHE = 'cw-trainer-' + VERSION;
 const PRECACHE = [
   ['/cw-trainer/call-signs/', '8e5d760af31985da'],
   ['/cw-trainer/code-groups/', '345225d4b4b2dd50'],
-  ['/cw-trainer/course/', '5d5b75c2ae05c214'],
+  ['/cw-trainer/course/', 'cf655daee0ed23b0'],
   ['/cw-trainer/fonts/bebas-neue-latin-400-normal.woff2', 'a7c90c89240c134f'],
   ['/cw-trainer/fonts/fonts.css', '25c4ec75fe307c29'],
   ['/cw-trainer/fonts/ibm-plex-mono-latin-400-normal.woff2', '08949f728dc52d52'],
@@ -54,11 +54,11 @@ const PRECACHE = [
   ['/cw-trainer/icons/apple-touch-icon.png', '6877a92df205dbd5'],
   ['/cw-trainer/icons/favicon-32x32.png', '5cc015c2d45188f7'],
   ['/cw-trainer/icr/', 'd3374bfadcac03ab'],
-  ['/cw-trainer/', '56093039a000140b'],
+  ['/cw-trainer/', '0255caf444f346ac'],
   ['/cw-trainer/jeopardy/answers.js', '4afd4de2da8d724a'],
-  ['/cw-trainer/jeopardy/', '2b72d470800d6ae1'],
+  ['/cw-trainer/jeopardy/', '27a2dcd680b9a609'],
   ['/cw-trainer/jeopardy/online.js', '0b9cc79f05880d24'],
-  ['/cw-trainer/keyer/', 'f73b995eda6e7f39'],
+  ['/cw-trainer/keyer/', 'a5dfba8ada0d067b'],
   ['/cw-trainer/manifest.webmanifest', '95ad85868753605c'],
   ['/cw-trainer/progress/', '7bcd3396917e152f'],
   ['/cw-trainer/qso/', 'b2ef2de6897cd85a'],
@@ -67,7 +67,7 @@ const PRECACHE = [
   ['/cw-trainer/shared/hst-content.js', '98f9e954ad3f2732'],
   ['/cw-trainer/shared/hst-course.js', '4f1c0896186495f5'],
   ['/cw-trainer/shared/hst-engine.js', '7ece44a8742daa08'],
-  ['/cw-trainer/shared/hst-keyer.js', 'bf7ebb5db5d48776'],
+  ['/cw-trainer/shared/hst-keyer.js', '471d7ffae68ca047'],
   ['/cw-trainer/shared/hst-listen.js', '098e02d85b32b8fa'],
   ['/cw-trainer/shared/hst-qso.js', '4e96bd2ce0383e93'],
   ['/cw-trainer/test-prep/', '954af9c1e7470610'],
