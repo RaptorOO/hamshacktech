@@ -421,7 +421,13 @@
     /* ---- recognizing an adapter that keys by itself (see HST.adapterKeying) ----
        Watches the adapter's key presses. Six in a row that are each 1 or 3
        units long (within ~20%), never overlapping, with at least three
-       1-unit gaps between them, are the adapter's keyer at work. */
+       1-unit gaps between them, are the adapter's keyer at work -- as long
+       as one paddle repeats with a 1-unit gap somewhere in them (a held
+       paddle arriving as dah, dah, dah). A hand on paddles never does that
+       with the app's keyer (it holds the paddle instead), but a steady hand
+       sending AAAAA does press 1 and 3 units long with 1-unit gaps: before
+       this check, that switched a student's iambic B to following, which
+       plays like a straight key (Tim, 2026-10-31). */
     var watch = { down: {}, presses: [] };
     function following() {
       var c = cfg();
@@ -447,6 +453,9 @@
       }
       var unitGaps = gaps.filter(function (g) { return g < 2 * u; });
       if (unitGaps.length < 3 || !unitGaps.every(function (g) { return near(g, u, 0.25); })) return 0;
+      var repeat = false;                            // one paddle again, a unit later
+      for (i = 1; i < p.length; i++) if (p[i].w === p[i - 1].w && near(p[i].s - p[i - 1].e, u, 0.25)) repeat = true;
+      if (!repeat) return 0;
       // The unit: from the key-down lengths (dits as they are, dahs / 3).
       var sum = 0;
       for (i = 0; i < p.length; i++) { var dd = p[i].e - p[i].s; sum += near(dd, u, 0.2) ? dd : dd / 3; }
@@ -483,7 +492,7 @@
         } else watch.offSpeed = 0;
         return;
       }
-      watch.presses.push({ s: s, e: t });
+      watch.presses.push({ s: s, e: t, w: which });
       if (watch.presses.length > 6) watch.presses.shift();
       if (watch.presses.length < 6) return;
       var u = looksKeyed(watch.presses);

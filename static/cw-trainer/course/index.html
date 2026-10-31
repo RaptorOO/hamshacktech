@@ -110,6 +110,7 @@
   .day { padding: 4px 0 6px; }
   .day + .day { border-top: 1px dashed var(--grid); }
   .day .dl { margin: 0 0 2px; color: var(--dim); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .day .dl .dd { margin-left: 8px; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 500; }
   .day .dl .day-done { margin-left: 6px; color: var(--mc); text-transform: none; letter-spacing: 0; font-weight: 500; }
   .task { display: grid; grid-template-columns: 1fr 320px; gap: 2px 16px; align-items: center; padding: 2px 0; line-height: 1.6; color: var(--text); }
   .ses-bar.past .task { color: var(--muted); }
@@ -390,9 +391,14 @@
   }
   function practiceHtml(info, s, n, prog) {
     if (!s[2]) return focusHtml(s[1]);
+    var cls = sessionDates[n - 1];
     return s[2].map(function (day, j) {
       var label = dayLabel(day, j);
-      return '<div class="day">' + (label ? '<div class="dl">' + esc(label) + (dayDone(day, n, j, prog) ? '<span class="day-done">\u2713 done</span>' : '') + '</div>' : '') +
+      // The day's date: the practice days are the days just before the
+      // class (Tim, 2026-10-31) -- a Tuesday class: Saturday, Sunday, Monday.
+      var when = cls && label === 'Day ' + (j + 1) ? new Date(cls.getFullYear(), cls.getMonth(), cls.getDate() - (s[2].length - j)) : null;
+      return '<div class="day">' + (label ? '<div class="dl">' + esc(label) + (when ? '<span class="dd">' + esc(fmt(when)) + '</span>' : '') +
+        (dayDone(day, n, j, prog) ? '<span class="day-done">\u2713 done</span>' : '') + '</div>' : '') +
         dayTasks(day, n, j, prog).map(function (t) {
           return '<div class="task"><div>' + t.html + '</div>' +
             progControls(t.key, prog[t.key] || {}, 'session ' + n + (label ? ', ' + label : '') + ', ' + t.what) + '</div>';
@@ -413,6 +419,7 @@
   function redoText(r) { return r ? 'Redone ' + r + (r === 1 ? ' time' : ' times') : ''; }
   var courseKey = '';
   var openSessions = null;   // { 3: true }: the session bars that are open
+  var sessionDates = [];     // each class's date (Date), when the first class is set
   // Done (with the date ticked), then Redo +1 (with the count).
   function progControls(key, e, what) {
     return '<div class="prog-row">' +
@@ -466,6 +473,7 @@
 
     var first = parseDate(c.firstClass);
     var dates = first ? classDates(first, c.days, info.sessions.length) : [];
+    sessionDates = dates;
     var t = today(), now = new Date(), nextIdx = -1;
     dates.forEach(function (d, i) { if (nextIdx < 0 && overAt(d, c.times) > now) nextIdx = i; });
     $('dateHead').hidden = !first;

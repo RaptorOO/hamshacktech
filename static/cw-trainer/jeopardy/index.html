@@ -1120,8 +1120,10 @@ class MorseAudio {
   }
   ensure() {
     if (!this.ctx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      this.ctx = new AC();
+      // The same audio system as your key's sidetone (HST.audio), not a
+      // second one: two running side by side can only add output delay to
+      // the sidetone (students heard lag keying answers, Tim 2026-10-31).
+      this.ctx = HST.audio.unlock();
       this.master = this.ctx.createGain();
       this.master.gain.value = volumeLevel();
       this.master.connect(this.ctx.destination);

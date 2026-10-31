@@ -264,8 +264,8 @@
          character turns green or red as you send it. -->
     <div data-show="warmup">
       <p class="warm-intro"><strong id="scaleWhen">Do the Warm Up every day, before you send anything else.</strong>
-        Send the whole list below at your keyer speed, top to bottom; each character turns green when you send it right and red when you don&rsquo;t.
-        Send each group of five, or each word, without a mistake, or start it again.
+        Send the whole list below at your keyer speed, top to bottom; each character turns green when you send it right.
+        A mistake turns its group red: pause, then send that group again from its first character. Take as long as you like.
         Pause when you&rsquo;re done, or press <kbd>Enter</kbd>.</p>
       <p class="warm-credit">Daily Morse Code &ldquo;Scales&rdquo; by Bob Carter, WR7Q.</p>
       <div class="label" id="scaleLabel">Warm Up</div>
@@ -350,7 +350,7 @@
     <p class="help audio-hint" id="audioHint" hidden>Click anywhere in Keyer Practice to turn on sidetone &mdash; browsers only allow sound after a click.</p>
     <details class="help">
       <summary>How this works</summary>
-      <p><strong>Daily Scales:</strong> Bob Carter&rsquo;s (WR7Q) sending scales. <strong>Warm Up</strong>, every day before you send anything else, works every letter, number and prosign; <strong>Exercise</strong> sends every letter and number five times; <strong>Drill</strong> builds sending skill with sentences, words and punctuation. Send it top to bottom; each character turns green or red as you go. When you&rsquo;ve sent the last character and pause (or press <kbd>Enter</kbd>), you get the full timing report for your keyer speed. <kbd>Esc</kbd> starts over.</p>
+      <p><strong>Daily Scales:</strong> Bob Carter&rsquo;s (WR7Q) sending scales. <strong>Warm Up</strong>, every day before you send anything else, works every letter, number and prosign; <strong>Exercise</strong> sends every letter and number five times; <strong>Drill</strong> builds sending skill with sentences, words and punctuation. Send it top to bottom; each character turns green as you send it right. A mistake turns its group (BBBBB, or a word) red: pause, then send the whole group again, so a finished scale is all green; mistakes still count in your accuracy. There&rsquo;s no time limit.When you&rsquo;ve sent the last character and pause (or press <kbd>Enter</kbd>), you get the full timing report for your keyer speed. <kbd>Esc</kbd> starts over.</p>
       <p><strong>Send This:</strong> send what&rsquo;s shown, then pause. As you send, each character turns green when you send it right and red when you don&rsquo;t, like Daily Scales. Under <strong>Send</strong>, the lists (the pyramid, QSO exchanges, the dits exercise, pangrams) go one line at a time, in order, and pick up where you left off. <strong>Your own text&hellip;</strong> lets you type, paste or load a text file; a Morserino-style file with <code>&lt;c&gt;$</code> chapters gives one choice per chapter. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
       <p><strong>The timing rules:</strong> a dah is 3 dits long; the gap inside a letter is 1 dit; between letters 3 dits; between words 7 dits. &ldquo;Character speed&rdquo; is how fast your dits and dahs go. &ldquo;Overall speed&rdquo; includes your spacing &mdash; what someone copying you actually hears. Extra space between letters (Farnsworth spacing) is fine while learning, but the closer you get to 3 and 7, the easier you are to copy.</p>
       <p><strong>With paddles</strong> the keyer makes perfect dits and dahs, so the useful feedback is spacing and which letters came out wrong. <strong>With a straight key or bug</strong> you form the elements yourself, so you&rsquo;ll also see your dah-to-dit ratio (ideally 3:1).</p>
@@ -604,7 +604,7 @@
   function beginAttempt() {
     state = 'sending';
     analyzedTarget = target;
-    marks = []; live = ''; showLive();
+    marks = []; live = ''; if (prefs.mode === 'warmup') warmRunReset(); showLive();
     decoder.reset();
     $('targetLabel').textContent = 'Send this';
     setStatus(prefs.mode === 'warmup' ? 'Warming up… pause at the end, or press Enter.' : 'Listening… pause when you’re done.');
@@ -640,7 +640,7 @@
     if (state !== 'sending' || !marks.length) return;
     state = 'graded';
     var a = analyze();
-    var g = HST.gradeSending(target, a.text);   // analyzedTarget === target here
+    var g = prefs.mode === 'warmup' ? warmGrade() : HST.gradeSending(target, a.text);   // analyzedTarget === target here
     live = a.text; showLive();
     showResult(a, g, target);
     recordAttempt(a, g);
@@ -680,10 +680,14 @@
 
   /* ---------------- Warm Up ----------------
      One fixed text, sent every day before anything else (list by Bob
-     Carter, WR7Q). It's graded like Copy this, as one long attempt: each
-     character in the window turns green or red as the live decoder hears
-     it, and when the last one is sent and you pause (or press Enter) the
-     result card shows the full timing report at your keyer speed. */
+     Carter, WR7Q). It's one long attempt, sent block by block (a block =
+     the characters between spaces: BBBBB, ABCDEF, THE). Each character
+     turns green as the live decoder hears it right. A wrong one turns its
+     block red: pause, then send the whole block again from its first
+     character (CW Academy's rule, Tim 2026-10-31), so a finished scale is
+     all green. Mistakes are still counted for the stats. When the last
+     character is in and you pause (or press Enter), the result card shows
+     the full timing report at your keyer speed. There's no time limit. */
   var WARMUP_LINES = [
     'EEEEE  TTTTT  IIIII  MMMMM  SSSSS  OOOOO  HHHHH  00000  55555',
     'AAAAA  NNNNN  UUUUU  DDDDD  VVVVV  BBBBB  44444  66666',
@@ -715,7 +719,7 @@
     ] }
   };
   function scale() { return SCALES[prefs.scale] || SCALES.warmup; }
-  var WARMUP_TARGET = '', WARM_T = [];
+  var WARMUP_TARGET = '', WARM_T = [], WARM_START = [];   // WARM_START[k]: where token k's block starts
   function toks(str) { return str.match(/<[A-Z]+>|\S/g) || []; }
   var warmSpans = [];
   // Sets up the chosen scale's window and target.
@@ -723,6 +727,11 @@
     var sc = scale();
     WARMUP_TARGET = sc.lines.join(' ').replace(/\s+/g, ' ');
     WARM_T = toks(WARMUP_TARGET);
+    WARM_START = [];
+    WARMUP_TARGET.split(' ').forEach(function (w) {
+      var start = WARM_START.length, n = toks(w).length;
+      for (var i = 0; i < n; i++) WARM_START.push(start);
+    });
     $('scale').value = prefs.scale in SCALES ? prefs.scale : 'warmup';
     $('scaleWhen').textContent = sc.when;
     $('scaleLabel').textContent = sc.name;
@@ -774,43 +783,87 @@
     });
   }
 
+  // The run through the scale, block by block: wPos = the next character
+  // to send; wSeen = how many decoded characters have been checked; after a
+  // mistake (wBad = where), wHold ignores what's sent until you pause.
+  // wFirst[k]: whether character k was right the first time it was tried.
+  var wPos = 0, wSeen = 0, wErr = 0, wBad = -1, wHold = false, wFirst = [];
+  function warmRunReset() { wPos = 0; wSeen = 0; wErr = 0; wBad = -1; wHold = false; wFirst = []; }
+  function warmBlock(k) {   // the block holding character k, as text
+    var a = WARM_START[k], b = a;
+    while (b < WARM_T.length && WARM_START[b] === a) b++;
+    return WARM_T.slice(a, b).join('');
+  }
+  function warmPaint() {
+    var redFrom = wHold ? WARM_START[wBad] : -1;
+    warmSpans.forEach(function (el, k) {
+      var c = el.textContent.length > 1 ? 't pro' : 't';
+      if (wHold && k >= redFrom && k <= wBad) c += ' bad';
+      else if (k < wPos) c += ' ok';
+      if (!wHold && k === wPos && state === 'sending') c += ' next';
+      el.className = c;
+    });
+  }
   function warmLive() {
     if (state !== 'sending') return;
-    var al = warmAlign(live);
-    paintWarm(al.items, al.next);
-    var right = al.items.filter(function (x) { return x.ok; }).length;
+    var sent = toks(live);
+    for (; wSeen < sent.length; wSeen++) {
+      if (wHold || wPos >= WARM_T.length) continue;     // waiting for a pause, or done (extra ignored)
+      if (sent[wSeen] === WARM_T[wPos]) {
+        if (wFirst[wPos] === undefined) wFirst[wPos] = true;
+        wPos++;
+      } else {
+        if (wFirst[wPos] === undefined) wFirst[wPos] = false;
+        wErr++; wBad = wPos; wHold = true;
+      }
+    }
+    // A pause after the mistake: clear the block and start it again.
+    if (wHold && /\s$/.test(live)) { wHold = false; wPos = WARM_START[wBad]; }
+    warmPaint();
     var a = marks.length > 4 ? analyze() : null;
-    $('warmProgress').innerHTML = 'Sent <b>' + al.next + '</b> of ' + WARM_T.length + ' · <b>' + right + '</b> right' +
-      (al.next - right ? ' · <b>' + (al.next - right) + '</b> to fix' : '') +
+    $('warmProgress').innerHTML = (wHold
+      ? '<b>Missed one.</b> Pause, then send <b>' + esc(warmBlock(wBad)) + '</b> again from the start.'
+      : 'Sent <b>' + wPos + '</b> of ' + WARM_T.length) +
+      (wErr ? ' · <b>' + wErr + '</b> ' + (wErr === 1 ? 'mistake' : 'mistakes') : '') +
       ' · keyer speed <b>' + keyWpm() + ' WPM</b>' + (a ? ', your overall <b>' + Math.round(a.overallWpm) + ' WPM</b>' : '');
+  }
+  // The result of the run: only what was tried counts, and a character
+  // is right if it was right the first time.
+  function warmGrade() {
+    var items = [];
+    WARM_T.forEach(function (w, k) { if (k < wPos || wFirst[k] !== undefined) items.push({ want: w, ok: wFirst[k] === true }); });
+    var right = items.filter(function (x) { return x.ok; }).length;
+    return { items: items, correct: right, total: items.length, extra: 0, mistakes: wErr, done: wPos, all: WARM_T.length };
   }
 
   function warmReady(msg) {
     state = 'ready'; marks = []; live = ''; decoder.reset();
     if (!warmSpans.length) loadScale();
     target = analyzedTarget = WARMUP_TARGET;
+    warmRunReset();
     paintWarm([], 0);
     $('warmProgress').innerHTML = 'Your keyer speed is <b>' + speedText() + '</b>' + (fwpm() ? ' (Farnsworth)' : '') + ' (Tool Settings, below). Start sending when you’re ready.';
     setStatus(msg || 'Start with the first ' + WARM_T[0] + '.');
   }
 
-  // Graded when the last character is in and you pause for a word space;
-  // a long pause (30 s) part-way through also grades what you've sent.
+  // Graded when the last character is in and you pause for a word space,
+  // or when you press Enter. No time limit: pausing part-way through never
+  // grades it (it used to after 30 s, counting the rest as wrong).
   function warmAfterMark(t) {
     var u = automatic() ? unitMs() : 1200 / decoder.speedWpm();
     waitTimer = setTimeout(function () {
-      if (warmAlign(live).next >= WARM_T.length) return finishAttempt();
-      waitTimer = setTimeout(finishAttempt, 30000 - 5.5 * u);
+      if (wPos >= WARM_T.length) finishAttempt();
     }, 5.5 * u);
   }
 
   function warmFinished(a, g) {
-    paintWarm(g.items, -1);
+    wHold = false; warmPaint();
     var goal = fwpm() || keyWpm(), pctOfSet = Math.round(100 * a.overallWpm / goal);
-    $('warmProgress').innerHTML = '<b>' + g.correct + ' of ' + g.total + '</b> right' + (g.extra ? ' (' + g.extra + ' extra)' : '') +
+    $('warmProgress').innerHTML = (g.done < g.all ? 'Sent <b>' + g.done + ' of ' + g.all + '</b> · ' : 'All <b>' + g.all + '</b> sent · ') +
+      '<b>' + g.correct + ' of ' + g.total + '</b> right the first time' + (g.mistakes ? ' (' + g.mistakes + ' ' + (g.mistakes === 1 ? 'block' : 'blocks') + ' sent again)' : '') +
       ' at your keyer speed of <b>' + speedText() + '</b> · overall speed <b>' + Math.round(a.overallWpm) + ' WPM</b> (' + pctOfSet + '% of ' +
       (fwpm() ? 'your Farnsworth ' + goal + ')' : 'it)');
-    setStatus(g.correct === g.total && !g.extra ? 'Clean warm-up! Your timing report is below.' : 'Your timing report is below. Again (Esc) runs it from the top.');
+    setStatus(g.done === g.all && !g.mistakes ? 'Clean warm-up! Your timing report is below.' : 'Your timing report is below. Again (Esc) runs it from the top.');
   }
 
   function showLive() {
@@ -873,9 +926,12 @@
         return '<div class="cmp' + (it.ok ? '' : ' bad') + '"><span class="w">' + esc(it.want) + '</span><span class="g">' +
                (it.ok ? '✓' : esc(it.got || '–')) + '</span></div>';
       }).join('');
-      var perfect = g.correct === g.total && !g.extra;
+      var perfect = g.correct === g.total && !g.extra && (g.all == null || g.done === g.all);
       $('score').className = 'score ' + (perfect ? 'good' : 'bad');
-      $('score').textContent = perfect ? 'All ' + g.total + ' letters right' :
+      $('score').textContent = g.all != null   // Daily Scales: right the first time, blocks sent again
+        ? (perfect ? 'All ' + g.all + ' right the first time' : g.correct + ' of ' + g.total + ' right the first time' +
+           (g.mistakes ? ' · ' + g.mistakes + ' ' + (g.mistakes === 1 ? 'block' : 'blocks') + ' sent again' : '') + (g.done < g.all ? ' · stopped at ' + g.done + ' of ' + g.all : ''))
+        : perfect ? 'All ' + g.total + ' letters right' :
         g.correct + ' of ' + g.total + ' letters right' + (g.extra ? ' · ' + g.extra + ' extra' : '');
     } else {
       $('compare').innerHTML = ''; $('score').textContent = '';
@@ -1082,7 +1138,7 @@
       sess.right += g.correct; sess.total += g.total;
       g.items.forEach(function (it) { rec.char(it.want, it.ok); });
       var span = marks.length ? marks[marks.length - 1].e - marks[0].s : 0;
-      rec.round(g.correct === g.total && !g.extra, span, false);
+      rec.round(g.correct === g.total && !g.extra && (g.all == null || g.done === g.all), span, false);
     }
     rec.set({
       sentChars: sess.sent,
