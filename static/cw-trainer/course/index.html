@@ -447,6 +447,8 @@
   }
 
   function render() {
+    if (quiet) return;          // catching up Homework time: one redraw after
+    backfillHomework();
     // Redrawing replaces the table, so keep keyboard focus where it was.
     var act = document.activeElement, keep = null;
     if (act && act.dataset && act.dataset.act) keep = { act: act.dataset.act, n: act.dataset.n };
@@ -674,6 +676,51 @@
       hw[i] = '';
     } else return;
     HST.course.progress.set(courseKey, key, { hw: hw });
+  }
+
+  /* Homework time for plays ticked without it (Tim, 2026-11-01: a student's
+     listening didn't show in Practice time). Ticks made before Homework
+     time existed (2026-10-31), or in an app that hadn't updated yet, added
+     nothing. Once per course level, each tick of a sound file that has no
+     Homework session gets one, dated the day it was ticked (at noon). A file
+     ticked Done before it had a box per play gets its plays ticked too.
+     Course ticks stay on the device they were made on, and each one keeps
+     its session's uid (hw), so none is counted twice. */
+  var backfilled = {}, quiet = false;
+  function backfillHomework() {
+    var c = HST.course.get(), info = c.program ? HST.course.info(c.program, c.level) : null;
+    if (!info) return;
+    var ck = c.program + ':' + c.level;
+    if (backfilled[ck]) return;
+    backfilled[ck] = true;
+    var prog = HST.course.progress.get(ck), now = Date.now();
+    quiet = true;
+    try {
+      info.sessions.forEach(function (s, si) {
+        (s[2] || []).forEach(function (day, j) {
+          dayTasks(day, si + 1, j, prog).forEach(function (t) {
+            var e = prog[t.key], sec = t.audio && HST.fileSeconds(t.audio);
+            if (!e || !sec) return;
+            var plays = (e.plays || []).slice(), hw = (e.hw || []).slice(), changed = false;
+            if (t.plays) {
+              while (plays.length < t.plays.boxes) plays.push('');
+              if (e.done && !plays.some(Boolean)) for (var k = 0; k < t.plays.need; k++) plays[k] = e.done;
+            }
+            (t.plays ? plays : [e.done]).forEach(function (d, i) {
+              var when = parseDate(d);
+              if (!when || hw[i]) return;
+              var ms = sec * 1000, start = Math.min(when.getTime() + 12 * 3600000, now - ms);
+              while (hw.length <= i) hw.push('');
+              hw[i] = HST.history.newUid();
+              HST.history.add({ uid: hw[i], trainer: 'manual', kind: 'homework', dateOnly: true, start: start, end: start + ms, durationMs: ms,
+                                charsTotal: 0, charsCorrect: 0, file: t.audio.split('/').pop().replace(/\.mp3$/i, ''), course: ck, task: t.key });
+              changed = true;
+            });
+            if (changed) HST.course.progress.set(ck, t.key, t.plays ? { plays: plays, hw: hw } : { hw: hw });
+          });
+        });
+      });
+    } finally { quiet = false; }
   }
 
   // Changes here, and in another window of the app, redraw the list.
