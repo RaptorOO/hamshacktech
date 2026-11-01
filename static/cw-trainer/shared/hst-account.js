@@ -25,6 +25,13 @@
  * never edited, so two devices can't conflict. Sync runs on launch, a few
  * seconds after each new session, when the connection comes back, and
  * every 15 minutes while the app is open.
+ *
+ * My Course syncs too (Tim, 2026-11-01): the course chosen and every
+ * task's ticks (shared/hst-course.js, syncOut / syncIn). Each carries the
+ * time it last changed, and the newer change wins. A sync sends what
+ * changed since the last one (courseSentAt) and gets the whole course back
+ * only when the account's copy has changed (courseRev). A tick or untick
+ * syncs a few seconds later, like a new session.
  */
 (function () {
   'use strict';
@@ -37,7 +44,7 @@
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY) || 'null') || {}; } catch (e) { return {}; }
   }
-  var st = load();     // { token, deviceId, user, since, clearedBefore, lastSync }
+  var st = load();     // { token, deviceId, user, since, clearedBefore, lastSync, courseRev, courseSentAt }
   var syncing = false, lastError = '', again = false;
 
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
@@ -157,14 +164,24 @@
       var pending = rows.filter(function (r) { return !r.synced && r.start >= cleared; });
       var q = readStation();
       var station = q.call ? { call: q.call, name: q.name, qth: q.qth, updated: q.stationUpdated || 0 } : null;
+      // My Course: what changed here since the last sync (all of it the first time).
+      var courseMark = Date.now(), courseOut = HST.course ? HST.course.syncOut(st.courseSentAt || 0) : null;
+      var course = HST.course ? { rev: st.courseRev || 0, chosen: courseOut && courseOut.chosen, progress: courseOut ? courseOut.progress : {} } : null;
 
       // One round: up to 500 sessions up, up to 1,000 down. Repeats while
       // there's more either way.
       function round() {
         var batch = pending.splice(0, 500);
         var upload = batch.map(function (r) { var c = {}; Object.keys(r).forEach(function (k) { if (k !== 'id' && k !== 'synced') c[k] = r[k]; }); return c; });
-        return api('sync', { body: { since: st.since || 0, sessions: upload, station: station } }).then(function (j) {
+        return api('sync', { body: { since: st.since || 0, sessions: upload, station: station, course: course } }).then(function (j) {
           station = null;                                   // only needs sending once
+          // My Course: take the account's copy where it's newer.
+          if (course && j.course) {
+            if (j.course.chosen || j.course.progress) { applying = true; try { HST.course.syncIn(j.course); } finally { applying = false; } }
+            st.courseRev = j.course.rev || 0;
+            st.courseSentAt = courseMark;
+          }
+          course = null;
           var acc = {};
           j.accepted.forEach(function (u) { acc[u] = 1; });
           var marked = batch.filter(function (r) { return acc[r.uid]; });
@@ -204,6 +221,11 @@
   var soon = null;
   function syncSoon(ms) { clearTimeout(soon); soon = setTimeout(sync, ms || 4000); }
   HST.history.onChange(function () { if (st.token && !syncing) syncSoon(); });
+  // A tick or untick in My Course, or another course or class day, syncs
+  // too (not the changes sync itself just brought in).
+  var applying = false;
+  function courseChanged() { if (st.token && !applying) syncSoon(); }
+  if (HST.course) { HST.course.progress.onChange(courseChanged); HST.course.onChange(courseChanged); }
   window.addEventListener('online', function () { syncSoon(1000); });
   setInterval(function () { if (st.token && document.visibilityState === 'visible') sync(); }, 15 * 60000);
   if (st.token) syncSoon(1500);

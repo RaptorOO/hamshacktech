@@ -7,14 +7,14 @@ showWordCount: false
 showAuthor: false
 ---
 
-*Last updated: October 12, 2026*
+*Last updated: November 1, 2026*
 
 This policy explains what information the **HamShackTech CW Trainer** app (at hamshacktech.com/cw-trainer) collects and how it's used. The app is provided by Ham Shack Tech LLC ("we", "us").
 
 ## The short version
 
 - **You don't need an account.** Without one, everything you do in the CW Trainer stays on your device. Nothing about your practice is sent to us.
-- **If you choose to sign in,** we store your email address and your practice history so it can appear on all your devices. That's all it's used for.
+- **If you choose to sign in,** we store your email address, your practice history and your My Course progress so they can appear on all your devices. That's all they're used for.
 - **Online Jeopardy rooms** pass the name or call sign you type, the answers you send and any chat messages through our server only while the game is on. A room and everything in it is deleted about two hours after it's last used.
 - **No ads, no tracking, and we never sell or share your information.**
 - **You can download or delete your data at any time** from Settings → Account.
@@ -24,6 +24,7 @@ This policy explains what information the **HamShackTech CW Trainer** app (at ha
 - **Your email address,** to send you sign-in codes and to identify your account.
 - **Your practice history:** the date, length and type of each practice session, the speeds you practiced at, how many characters you copied or sent correctly (overall and character by character), measurements of your sending (speed and spacing), and summaries of practice QSOs.
 - **Your QSO station details,** if you enter them in the QSO tab: call sign, name and QTH.
+- **Your My Course progress,** if you use My Course: the course and level you picked, your class days, times and first class date, and for each homework task the dates you ticked it done or played, how many times you redid it, and the speed you picked.
 - **A list of the devices you've signed in on,** described in general terms (for example, "Windows · Edge"), with the date each signed in and when it was last used.
 - **Short-lived security records.** To prevent abuse of the sign-in form, we briefly keep a record of sign-in requests, including the network (IP) address they came from. These are deleted within about a day. Sign-in codes expire after 10 minutes.
 
@@ -42,7 +43,7 @@ A room is deleted, with everything in it, about two hours after anyone last used
 
 ## How we use it
 
-Only to sign you in, keep your practice history in sync across your devices, and keep the service secure. We don't use your information for advertising, profiling or marketing, and we don't email you anything except the sign-in codes you ask for.
+Only to sign you in, keep your practice history and My Course progress in sync across your devices, and keep the service secure. We don't use your information for advertising, profiling or marketing, and we don't email you anything except the sign-in codes you ask for.
 
 ## Who can see it
 
@@ -59,7 +60,7 @@ Your account and practice history are kept until you delete them. You can:
 - **Download your data** (Settings → Account → Download my data) as a file you can keep.
 - **Clear your practice history** on every device (Progress → Clear history while signed in).
 - **Sign out any device** (Settings → Account).
-- **Delete your account** (Settings → Account → Delete account). This permanently removes your account, practice history and device list from our side. Practice already saved on your devices stays there until you clear it.
+- **Delete your account** (Settings → Account → Delete account). This permanently removes your account, practice history, My Course progress and device list from our side. Practice already saved on your devices stays there until you clear it.
 
 ## Security
 

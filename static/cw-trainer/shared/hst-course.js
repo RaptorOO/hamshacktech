@@ -51,8 +51,10 @@
     Object.keys(o.times || {}).forEach(function (d) {
       if (/^[0-6]$/.test(d) && /^\d{2}:\d{2}$/.test(o.times[d])) times[d] = o.times[d];
     });
-    return { program: program, level: level, firstClass: first, days: days.slice(0, 7).sort(), times: times };
+    var updated = Math.max(0, Math.floor(Number(o.updated) || 0));   // when it was last changed, for sync
+    return { program: program, level: level, firstClass: first, days: days.slice(0, 7).sort(), times: times, updated: updated };
   }
+  function saveChosen() { try { localStorage.setItem(KEY, JSON.stringify(cur)); } catch (e) {} }
   var cur;
   try { cur = clean(JSON.parse(localStorage.getItem(KEY) || 'null')); } catch (e) { cur = clean({}); }
   var listeners = [];
@@ -398,8 +400,51 @@
     // was ticked ('' = not), hw[i] = the uid of its Homework session.
     if (Array.isArray(e.plays) && e.plays.some(Boolean)) out.plays = e.plays.slice(0, 3).map(function (d) { return /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d : ''; });
     if (Array.isArray(e.hw) && e.hw.some(Boolean)) out.hw = e.hw.slice(0, 3).map(function (u) { return typeof u === 'string' && /^[\w-]{8,64}$/.test(u) ? u : ''; });
+    // Account sync (Tim, 2026-11-01): t = when the entry last changed, so
+    // the newer change wins between devices. An entry emptied (unticked)
+    // keeps just its t, so the untick syncs too.
+    var t = Math.floor(Number(e.t) || 0);
+    if (t > 0) out.t = t;
     return out;
   }
+  /* Two devices' copies of one task (Tim, 2026-11-01). The newer change
+     decides which boxes are ticked; when both have a box ticked, its
+     earliest date wins, with that tick's Homework session. A student who
+     did the homework on the iPad on 10/31 and ticked it again on the
+     desktop on 11/1 keeps 10/31, and the 11/1 session isn't counted
+     (Progress counts only the Homework a tick points to). The server's
+     api/[[path]].js merges the same way. */
+  function mergeEntry(a, b) {
+    var n = (b.t || 0) > (a.t || 0) ? b : a, o = n === a ? b : a, out = {};
+    Object.keys(n).forEach(function (k) { out[k] = n[k]; });
+    out.t = Math.max(a.t || 0, b.t || 0);
+    if ((o.redo || 0) > (out.redo || 0)) out.redo = o.redo;
+    if (n.done && o.done && o.done < n.done) out.done = o.done;
+    // Each box: a play (or, without play boxes, the Done tick) and its Homework session.
+    var byPlays = !!((n.plays && n.plays.length) || (o.plays && o.plays.length));
+    var ns = byPlays ? (n.plays || []) : [n.done || ''];
+    // A copy from before play boxes (just Done): its date stands for each play.
+    var os = !byPlays ? [o.done || ''] : o.plays && o.plays.length ? o.plays : ns.map(function () { return o.done || ''; });
+    var nh = n.hw || [], oh = o.hw || [], dates = [], hw = [];
+    for (var i = 0; i < Math.max(ns.length, byPlays ? 0 : 1); i++) {
+      var useOld = ns[i] && os[i] && os[i] < ns[i];
+      dates.push(ns[i] || '');
+      hw.push((useOld ? oh[i] : nh[i]) || '');
+      if (useOld) dates[i] = os[i];
+    }
+    if (byPlays) out.plays = dates;
+    else if (out.done) out.done = dates[0];
+    out.hw = hw;
+    return out;
+  }
+  // An entry without its sync time, or null when there's nothing in it.
+  function shown(e) {
+    var out = {};
+    Object.keys(e).forEach(function (k) { if (k !== 't') out[k] = e[k]; });
+    return Object.keys(out).length ? out : null;
+  }
+  function saveProgress(all) { try { localStorage.setItem(PKEY, JSON.stringify(all)); } catch (err) {} }
+  function progChanged() { progListeners.forEach(function (fn) { try { fn(); } catch (err) { console.error(err); } }); }
   function loadProgress() {
     try { var o = JSON.parse(localStorage.getItem(PKEY) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; }
   }
@@ -411,17 +456,17 @@
   var progress = {
     get: function (courseKey) {
       var all = loadProgress(), mine = all[courseKey] || {}, out = {};
-      Object.keys(mine).forEach(function (n) { var e = cleanEntry(mine[n]); if (Object.keys(e).length) out[n] = e; });
+      Object.keys(mine).forEach(function (n) { var e = shown(cleanEntry(mine[n])); if (e) out[n] = e; });
       return out;
     },
     set: function (courseKey, n, patch) {
       var all = loadProgress(), mine = all[courseKey] || {}, e = mine[n] || {};
       Object.keys(patch).forEach(function (k) { e[k] = patch[k]; });
-      e = cleanEntry(e);
-      if (Object.keys(e).length) mine[n] = e; else delete mine[n];
+      e.t = Date.now();
+      mine[n] = cleanEntry(e);
       all[courseKey] = mine;
-      try { localStorage.setItem(PKEY, JSON.stringify(all)); } catch (err) {}
-      progListeners.forEach(function (fn) { try { fn(); } catch (err) { console.error(err); } });
+      saveProgress(all);
+      progChanged();
     },
     onChange: function (fn) { progListeners.push(fn); }
   };
@@ -443,9 +488,51 @@
     set: function (patch) {
       var next = copy();
       Object.keys(patch).forEach(function (k) { next[k] = patch[k]; });
+      next.updated = Date.now();
       cur = clean(next);
-      try { localStorage.setItem(KEY, JSON.stringify(cur)); } catch (e) {}
+      saveChosen();
       notify();
+    },
+    /* Account sync (Tim, 2026-11-01; shared/hst-account.js). The chosen
+       course and every progress entry carry the time they last changed;
+       the newer one wins.
+         syncOut(since) -> { chosen, progress } changed after since (all of
+                           it when since is 0), or null when nothing has
+         syncIn({ chosen, progress })  take what's newer than here (and drop
+                           the Homework time of a play unticked there) */
+    syncOut: function (since) {
+      var out = { progress: {} }, n = 0, all = loadProgress();
+      if (cur.program && (!since || cur.updated > since)) { out.chosen = copy(); n++; }
+      Object.keys(all).forEach(function (ck) {
+        Object.keys(all[ck] || {}).forEach(function (key) {
+          var e = cleanEntry(all[ck][key]);
+          if (since && !(e.t > since)) return;
+          (out.progress[ck] = out.progress[ck] || {})[key] = e;
+          n++;
+        });
+      });
+      return n ? out : null;
+    },
+    syncIn: function (data) {
+      if (!data) return;
+      var c = data.chosen;
+      // The newer course wins; a device with none chosen takes the account's (one chosen before sync has no time).
+      if (c && c.program && (!cur.program || (Number(c.updated) || 0) > (cur.updated || 0))) { cur = clean(c); saveChosen(); notify(); }
+      var all = loadProgress(), changed = false, gone = [];
+      Object.keys(data.progress || {}).forEach(function (ck) {
+        var mine = all[ck] || (all[ck] = {}), theirs = data.progress[ck] || {};
+        Object.keys(theirs).forEach(function (key) {
+          var here = mine[key] ? cleanEntry(mine[key]) : null, e = cleanEntry(theirs[key]);
+          if (here) e = cleanEntry(mergeEntry(here, e));
+          if (here && JSON.stringify(e) === JSON.stringify(here)) return;
+          // A play unticked (or replaced by an earlier one) on another device: its Homework time goes here too.
+          ((here && here.hw) || []).forEach(function (u) { if (u && (e.hw || []).indexOf(u) < 0) gone.push(u); });
+          mine[key] = e;
+          changed = true;
+        });
+      });
+      if (changed) { saveProgress(all); progChanged(); }
+      if (gone.length && HST.history) gone.forEach(function (u) { HST.history.remove(u); });
     },
     onChange: function (fn) { listeners.push(fn); },
     info: function (program, level) {
