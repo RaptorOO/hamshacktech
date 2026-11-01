@@ -1164,6 +1164,7 @@
     sess.wpmW += a.charWpm * a.chars.length; sess.overallW += a.overallWpm * a.chars.length;
     if (g) {
       sess.right += g.correct; sess.total += g.total;
+      if (g.skipped) sess.skipped = (sess.skipped || 0) + g.skipped;   // Daily Scales blocks left after 5 tries
       g.items.forEach(function (it) { rec.char(it.want, it.ok); });
       var span = marks.length ? marks[marks.length - 1].e - marks[0].s : 0;
       rec.round(g.correct === g.total && !g.extra && (g.all == null || g.done === g.all), span, false);
@@ -1172,6 +1173,7 @@
       sentChars: sess.sent,
       charGapSum: sess.cgSum, charGapN: sess.cgN, wordGapSum: sess.wgSum, wordGapN: sess.wgN,
       wpm: sess.sent ? Math.round(sess.wpmW / sess.sent) : keyWpm(),
+      skipped: sess.skipped || 0,
       overallWpm: sess.sent ? Math.round(sess.overallW / sess.sent) : null
     });
     renderSession();
