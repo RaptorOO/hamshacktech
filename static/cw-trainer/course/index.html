@@ -684,8 +684,9 @@
      nothing. Once per course level, each tick of a sound file that has no
      Homework session gets one, dated the day it was ticked (at noon). A file
      ticked Done before it had a box per play gets its plays ticked too.
-     Course ticks stay on the device they were made on, and each one keeps
-     its session's uid (hw), so none is counted twice. */
+     Each tick keeps its session's uid (hw), and a caught-up session's uid is
+     made from the tick itself, so with course ticks syncing between devices
+     (2026-11-01) none is counted twice. */
   var backfilled = {}, quiet = false;
   function backfillHomework() {
     var c = HST.course.get(), info = c.program ? HST.course.info(c.program, c.level) : null;
@@ -693,7 +694,7 @@
     var ck = c.program + ':' + c.level;
     if (backfilled[ck]) return;
     backfilled[ck] = true;
-    var prog = HST.course.progress.get(ck), now = Date.now();
+    var prog = HST.course.progress.get(ck), now = Date.now(), recs = [];
     quiet = true;
     try {
       info.sessions.forEach(function (s, si) {
@@ -711,8 +712,10 @@
               if (!when || hw[i]) return;
               var ms = sec * 1000, start = Math.min(when.getTime() + 12 * 3600000, now - ms);
               while (hw.length <= i) hw.push('');
-              hw[i] = HST.history.newUid();
-              HST.history.add({ uid: hw[i], trainer: 'manual', kind: 'homework', dateOnly: true, start: start, end: start + ms, durationMs: ms,
+              // The same id on every device (course ticks sync since 2026-11-01),
+              // so two devices catching up one tick make one session.
+              hw[i] = ('bf-' + ck + '-' + t.key + '-' + i).replace(/[^\w-]/g, '_').slice(0, 64);
+              recs.push({ uid: hw[i], trainer: 'manual', kind: 'homework', dateOnly: true, start: start, end: start + ms, durationMs: ms,
                                 charsTotal: 0, charsCorrect: 0, file: t.audio.split('/').pop().replace(/\.mp3$/i, ''), course: ck, task: t.key });
               changed = true;
             });
@@ -721,6 +724,12 @@
         });
       });
     } finally { quiet = false; }
+    // Add the sessions this device doesn't have yet (one may have come from another).
+    if (recs.length) HST.history.all().then(function (rows) {
+      var have = {};
+      rows.forEach(function (r) { have[r.uid] = 1; });
+      return HST.history.addMany(recs.filter(function (r) { return !have[r.uid]; }));
+    });
   }
 
   // Changes here, and in another window of the app, redraw the list.

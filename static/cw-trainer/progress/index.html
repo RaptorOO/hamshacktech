@@ -715,7 +715,21 @@
   });
 
   /* ---------------- render ---------------- */
+  /* Homework time counts only while a tick in My Course points to it
+     (Tim, 2026-11-01). A play ticked on two devices keeps one session (the
+     earliest; see mergeEntry in hst-course.js), and one unticked on
+     another device stops counting here, though sync never deletes it. */
+  function counted(rows) {
+    var prog = {};
+    return rows.filter(function (s) {
+      if (s.trainer !== 'manual' || s.kind !== 'homework' || !s.course || !s.task) return true;
+      var p = prog[s.course] || (prog[s.course] = HST.course.progress.get(s.course)), e = p[s.task];
+      return !!(e && e.hw && e.hw.indexOf(s.uid) >= 0);
+    });
+  }
+
   function render(allRows) {
+    allRows = counted(allRows);
     var has = allRows.length > 0;
     $('empty').hidden = has;
     $('clearBtn').hidden = !has;
@@ -1155,8 +1169,8 @@
     }), null, 'hwbars');
   }
   // Ticking homework in My Course redraws the bars.
-  HST.course.progress.onChange(function () { if (cache.length) renderCourse(); });
-  HST.course.onChange(function () { if (cache.length) renderCourse(); });
+  HST.course.progress.onChange(function () { render(cache); });   // ticks change the Homework time too
+  HST.course.onChange(function () { render(cache); });
 
   /* ---------------- Add practice time ----------------
      Practice done away from the app (a Zoom class, on-air contacts...).

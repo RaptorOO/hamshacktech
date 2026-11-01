@@ -456,7 +456,7 @@
 <div class="update nudge" id="nudgeBar" role="region" aria-labelledby="nudgeTitle" hidden>
   <div class="msg">
     <strong id="nudgeTitle">Don&rsquo;t lose your progress</strong>
-    Right now your stats and practice history live only in this browser. If you clear your browser data, they&rsquo;re gone. Sign in free with your email to keep them safe. We never use your email for anything else.
+    Right now your stats, practice history and My Course progress live only in this browser. If you clear your browser data, they&rsquo;re gone. Sign in free with your email to keep them safe. We never use your email for anything else.
     <a href="/privacy/" target="_blank" rel="noopener">Privacy policy</a>
   </div>
   <div class="acts">
@@ -605,7 +605,7 @@
 <!-- Sign in (Milestone 8): email -> 6-digit code. -->
 <dialog class="settings account" id="signinDialog" aria-labelledby="signinTitle">
   <h2 id="signinTitle">Sign in</h2>
-  <p class="lede">Sign in to keep your practice history the same on all your devices. Practicing never needs an account &mdash; without one, everything stays on this device.</p>
+  <p class="lede">Sign in to keep your practice history and My Course progress the same on all your devices. Practicing never needs an account &mdash; without one, everything stays on this device.</p>
   <form id="signinStep1">
     <div class="field">
       <label for="siEmail">Email address</label>
@@ -652,7 +652,7 @@
     <button class="btn danger" id="acDelete" type="button">Delete account&hellip;</button>
   </div>
   <div id="acDeleteBox" hidden>
-    <p class="fine" style="color:var(--text)">This permanently deletes your account and the practice history stored with it, and signs out every device. Practice already saved on your devices stays there. Type <strong>DELETE</strong> to confirm.</p>
+    <p class="fine" style="color:var(--text)">This permanently deletes your account and the practice history and My Course progress stored with it, and signs out every device. Practice already saved on your devices stays there. Type <strong>DELETE</strong> to confirm.</p>
     <div class="acct-line" style="margin-top:8px">
       <input type="text" id="acDeleteWord" autocomplete="off" style="flex:1;min-width:8em">
       <button class="btn danger" id="acDeleteGo" type="button" disabled>Delete my account</button>
@@ -735,8 +735,8 @@
 </script>
 <script src="shared/hst-engine.js"></script>
 <script src="shared/hst-keyer.js"></script>
-<script src="shared/hst-account.js"></script>
 <script src="shared/hst-course.js"></script>
+<script src="shared/hst-account.js"></script>   <!-- after hst-course.js: it syncs My Course too -->
 <script>
 (function () {
   'use strict';
@@ -1612,9 +1612,11 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-11-01-homework-time';
+  var RELEASE = '2026-11-01-course-sync';
   var RELEASE_LABEL = 'November 1, 2026';
   var RELEASE_NOTES = [
+    '<strong>My Course syncs with your account.</strong> Signed in, your course, class days and every homework tick now follow you to all your devices, and come back after you clear your browser data. Your tool settings (speeds, tone and so on) still stay on each device.',
+    '<strong>Daily Scales Drill:</strong> a miss on the punctuation line (like / / / / /) now sends you back to the start of that group of five, as everywhere else in the scales, not just the one character.',
     '<strong>Homework you ticked earlier now counts.</strong> Sound files you ticked as played in My Course before Homework time arrived (October 31) now add their length to your Practice time, on the day you ticked them. Open My Course once on the device where you ticked them.',
     '<strong>A new Progress tab, in three parts.</strong> <strong>Overview</strong> has your practice time, streak and recent sessions, plus a bar for each class of your course showing how much of its homework you&rsquo;ve ticked in My Course.',
     '<strong>Copying</strong> has an ICR view and a Code Groups view. ICR shows your <strong>copy speed</strong> (the fastest speed you copy at 90% or better), your recognition time week by week, and the characters to work on. Code Groups shows your speed with Farnsworth, your answer time and your <strong>head copy span</strong> (the longest group you copy whole 80% of the time). Accuracy charts now show the speed you practiced at, too.',

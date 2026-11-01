@@ -13,7 +13,8 @@
  *   POST   /api/auth/signout      { all? }  sign out this device (or every device)
  *   GET    /api/me                profile + signed-in devices
  *   DELETE /api/devices/:id       sign out one device
- *   POST   /api/sync              upload new sessions, download others, station details
+ *   POST   /api/sync              upload new sessions, download others, station details,
+ *                                  My Course (the course chosen and its ticks)
  *   POST   /api/history/clear     clear practice history on every device
  *   GET    /api/export            everything stored about you, as a JSON file
  *   DELETE /api/account           delete your account and all its data
@@ -110,6 +111,11 @@ const SCHEMA = [
      seq INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, uid TEXT NOT NULL,
      start INTEGER NOT NULL, trainer TEXT, data TEXT NOT NULL, UNIQUE(user_id, uid))`,
   `CREATE INDEX IF NOT EXISTS records_user_seq ON records(user_id, seq)`,
+  // My Course (Tim, 2026-11-01): the course chosen and every task's ticks,
+  // as one JSON document per account. rev goes up with every change, so a
+  // device that has seen this rev needn't download it again.
+  `CREATE TABLE IF NOT EXISTS course (
+     user_id TEXT PRIMARY KEY, rev INTEGER NOT NULL, data TEXT NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS hits (key TEXT NOT NULL, at INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS hits_key ON hits(key, at)`
 ];
@@ -295,7 +301,7 @@ async function me(user, db) {
    the new sessions (a repeat upload of the same uid is ignored), then
    returns everything stored after `since` that came from elsewhere, plus
    whichever station details are newer, plus "cleared before" (history
-   cleared on another device). */
+   cleared on another device), plus My Course (syncCourse, below). */
 async function sync(request, user, db) {
   const body = await request.json().catch(() => ({}));
   const up = Array.isArray(body.sessions) ? body.sessions.slice(0, MAX_UPLOAD) : [];
@@ -323,6 +329,8 @@ async function sync(request, user, db) {
   }
   if (stmts.length) await db.batch(stmts);
 
+  const course = await syncCourse(body, user, db);
+
   const since = Math.max(0, Number(body.since) || 0);
   const rows = await db.prepare('SELECT seq, uid, data FROM records WHERE user_id = ? AND seq > ? ORDER BY seq LIMIT ?')
     .bind(user.id, since, MAX_DOWNLOAD).all();
@@ -335,8 +343,107 @@ async function sync(request, user, db) {
     seq: results.length ? results[results.length - 1].seq : since,
     more: results.length === MAX_DOWNLOAD,
     clearedBefore: user.cleared_before || 0,
-    station: { call: station.call, name: station.name, qth: station.qth, updated: station.stationUpdated }
+    station: { call: station.call, name: station.name, qth: station.qth, updated: station.stationUpdated },
+    course
   });
+}
+
+/* ---------------- My Course ----------------
+   { chosen: { program, level, firstClass, days, times, updated },
+     progress: { 'cwa:intermediate': { '3.1.WD103': { done, redo, sp, plays, hw, t } } } }
+   Every entry carries t, when it last changed on its device; the newer
+   one wins. An unticked entry is just { t }. */
+const MAX_COURSE_BYTES = 512 * 1024;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+function cleanChosen(c) {
+  if (!c || typeof c !== 'object' || typeof c.program !== 'string' || !/^[a-z]{2,12}$/.test(c.program)) return null;
+  const times = {};
+  Object.keys(c.times || {}).forEach((d) => { if (/^[0-6]$/.test(d) && /^\d{2}:\d{2}$/.test(c.times[d])) times[d] = c.times[d]; });
+  return {
+    program: c.program,
+    level: typeof c.level === 'string' && /^[a-z-]{2,24}$/.test(c.level) ? c.level : '',
+    firstClass: DATE_RE.test(c.firstClass || '') ? c.firstClass : '',
+    days: Array.isArray(c.days) ? c.days.map(Number).filter((d) => d >= 0 && d <= 6).slice(0, 7) : [],
+    times,
+    updated: Math.max(0, Math.floor(Number(c.updated) || 0))
+  };
+}
+function cleanCourseEntry(e) {
+  e = e && typeof e === 'object' ? e : {};
+  const out = {};
+  if (DATE_RE.test(e.done || '')) out.done = e.done;
+  const redo = Math.floor(Number(e.redo) || 0);
+  if (redo > 0) out.redo = Math.min(redo, 999);
+  const sp = Math.floor(Number(e.sp) || 0);
+  if (sp >= 5 && sp <= 40) out.sp = sp;
+  if (Array.isArray(e.plays)) out.plays = e.plays.slice(0, 3).map((d) => (DATE_RE.test(d || '') ? d : ''));
+  if (Array.isArray(e.hw)) out.hw = e.hw.slice(0, 3).map((u) => (typeof u === 'string' && /^[\w-]{8,64}$/.test(u) ? u : ''));
+  out.t = Math.max(0, Math.floor(Number(e.t) || 0));
+  return out;
+}
+// Two copies of one task: as mergeEntry in static/cw-trainer/shared/hst-course.js (keep them the same).
+function mergeEntry(a, b) {
+  var n = (b.t || 0) > (a.t || 0) ? b : a, o = n === a ? b : a, out = {};
+  Object.keys(n).forEach(function (k) { out[k] = n[k]; });
+  out.t = Math.max(a.t || 0, b.t || 0);
+  if ((o.redo || 0) > (out.redo || 0)) out.redo = o.redo;
+  if (n.done && o.done && o.done < n.done) out.done = o.done;
+  // Each box: a play (or, without play boxes, the Done tick) and its Homework session.
+  var byPlays = !!((n.plays && n.plays.length) || (o.plays && o.plays.length));
+  var ns = byPlays ? (n.plays || []) : [n.done || ''];
+  // A copy from before play boxes (just Done): its date stands for each play.
+  var os = !byPlays ? [o.done || ''] : o.plays && o.plays.length ? o.plays : ns.map(function () { return o.done || ''; });
+  var nh = n.hw || [], oh = o.hw || [], dates = [], hw = [];
+  for (var i = 0; i < Math.max(ns.length, byPlays ? 0 : 1); i++) {
+    var useOld = ns[i] && os[i] && os[i] < ns[i];
+    dates.push(ns[i] || '');
+    hw.push((useOld ? oh[i] : nh[i]) || '');
+    if (useOld) dates[i] = os[i];
+  }
+  if (byPlays) out.plays = dates;
+  else if (out.done) out.done = dates[0];
+  out.hw = hw;
+  return out;
+}
+
+// Merge a device's changes into the stored course. Returns true if anything changed.
+function mergeCourse(data, inc) {
+  let changed = false;
+  const c = cleanChosen(inc.chosen);
+  if (c && (!data.chosen || c.updated > (data.chosen.updated || 0))) { data.chosen = c; changed = true; }
+  const prog = inc.progress && typeof inc.progress === 'object' ? inc.progress : {};
+  for (const ck of Object.keys(prog).slice(0, 20)) {
+    if (!/^[a-z]{2,12}:[a-z-]{2,24}$/.test(ck) || !prog[ck] || typeof prog[ck] !== 'object') continue;
+    const mine = data.progress[ck] || (data.progress[ck] = {});
+    for (const key of Object.keys(prog[ck]).slice(0, 2000)) {
+      if (!/^[\w.-]{1,40}$/.test(key)) continue;
+      const here = mine[key];
+      const e = here ? cleanCourseEntry(mergeEntry(here, cleanCourseEntry(prog[ck][key]))) : cleanCourseEntry(prog[ck][key]);
+      if (here && JSON.stringify(e) === JSON.stringify(here)) continue;
+      mine[key] = e;
+      changed = true;
+    }
+  }
+  return changed;
+}
+async function syncCourse(body, user, db) {
+  const row = await db.prepare('SELECT rev, data FROM course WHERE user_id = ?').bind(user.id).first();
+  let rev = row ? row.rev : 0;
+  let data = row ? JSON.parse(row.data) : { chosen: null, progress: {} };
+  const inc = body.course;
+  if (inc && typeof inc === 'object' && mergeCourse(data, inc)) {
+    const text = JSON.stringify(data);
+    if (text.length <= MAX_COURSE_BYTES) {
+      rev += 1;
+      await db.prepare('INSERT INTO course (user_id, rev, data) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET rev = excluded.rev, data = excluded.data')
+        .bind(user.id, rev, text).run();
+    } else {
+      data = row ? JSON.parse(row.data) : { chosen: null, progress: {} };   // too big: keep what was stored
+    }
+  }
+  // The whole course only when the device hasn't seen this rev.
+  const known = inc && Number(inc.rev) || 0;
+  return rev && rev !== known ? { rev, chosen: data.chosen, progress: data.progress } : { rev };
 }
 
 async function clearHistory(user, db) {
@@ -351,11 +458,13 @@ async function clearHistory(user, db) {
 async function exportData(user, db) {
   const devices = await db.prepare('SELECT label, created, last_seen FROM devices WHERE user_id = ?').bind(user.id).all();
   const rows = await db.prepare('SELECT data FROM records WHERE user_id = ? ORDER BY start').bind(user.id).all();
+  const course = await db.prepare('SELECT data FROM course WHERE user_id = ?').bind(user.id).first();
   const out = {
     exported: new Date().toISOString(),
     account: { email: user.email, created: new Date(user.created).toISOString(), call: user.call || '', name: user.name || '', qth: user.qth || '' },
     devices: (devices.results || []).map((d) => ({ label: d.label, signedIn: new Date(d.created).toISOString(), lastSeen: new Date(d.last_seen).toISOString() })),
-    sessions: (rows.results || []).map((r) => JSON.parse(r.data))
+    sessions: (rows.results || []).map((r) => JSON.parse(r.data)),
+    course: course ? JSON.parse(course.data) : null
   };
   return new Response(JSON.stringify(out, null, 2), {
     headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store',
@@ -366,6 +475,7 @@ async function exportData(user, db) {
 async function deleteAccount(user, db) {
   await db.batch([
     db.prepare('DELETE FROM records WHERE user_id = ?').bind(user.id),
+    db.prepare('DELETE FROM course WHERE user_id = ?').bind(user.id),
     db.prepare('DELETE FROM devices WHERE user_id = ?').bind(user.id),
     db.prepare('DELETE FROM codes WHERE email = ?').bind(user.email),
     db.prepare('DELETE FROM users WHERE id = ?').bind(user.id)

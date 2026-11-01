@@ -677,8 +677,8 @@
   /* ---------------- Warm Up ----------------
      One fixed text, sent every day before anything else (list by Bob
      Carter, WR7Q). It's one long attempt, sent block by block (a block =
-     the characters between spaces: BBBBB, ABCDEF, THE; a group of five
-     prosigns is one block, spaced out or not). Each character
+     the characters between spaces: BBBBB, ABCDEF, THE; five prosigns,
+     or five of one character, are one block, spaced out or not). Each character
      turns green as the live decoder hears it right. A wrong one turns its
      block red: pause, then send the whole block again from its first
      character (CW Academy's rule, Tim 2026-10-31), so a finished scale is
@@ -727,10 +727,13 @@
     WARM_T = toks(WARMUP_TARGET);
     // A block is a word, except that a group of prosigns is one block
     // even when spaced out, as in the Drill's <SK> <SK> <SK> <SK> <SK>
-    // (Tim, 2026-10-31); groups are set apart by two or more spaces.
+    // (Tim, 2026-10-31), and so is one character repeated, spaced out, like
+    // the Drill's / / / / / (a student, 2026-11-01). Groups are set apart by
+    // two or more spaces; 7 0 3 6 4 ... stays one block per figure.
     WARM_START = [];
     sc.lines.join('  ').trim().split(/ {2,}/).forEach(function (g) {
-      (/^<[A-Z]+>( <[A-Z]+>)*$/.test(g) ? [g] : g.split(' ')).forEach(function (w) {
+      var ws = g.split(' '), same = ws.length > 1 && ws.every(function (w) { return w === ws[0]; });
+      (same || /^<[A-Z]+>( <[A-Z]+>)*$/.test(g) ? [g] : ws).forEach(function (w) {
         var start = WARM_START.length, n = toks(w).length;
         for (var i = 0; i < n; i++) WARM_START.push(start);
       });
