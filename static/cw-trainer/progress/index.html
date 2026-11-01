@@ -83,7 +83,7 @@
   .legend .zoom { color: var(--zoom); } .legend .onair { color: var(--onair); } .legend .other { color: var(--other); } .legend .hw { color: var(--hw); }
   .legend .icr, .legend .cg, .legend .key, .legend .key2, .legend .zoom, .legend .onair, .legend .other, .legend .hw { font-weight: 500; }
   .legend { flex-wrap: wrap; row-gap: 4px; }
-  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .card-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 12px; }
   .addbtn {
     flex: none; border: 1px solid var(--border); background: var(--well); color: var(--text); border-radius: 8px;
     padding: 6px 12px; font: 500 0.88rem/1 'Inter', sans-serif; cursor: pointer;
@@ -91,8 +91,6 @@
   .addbtn:hover { border-color: var(--icr); color: var(--icr); }
   .addbtn:focus-visible { outline: 2px solid var(--icr); outline-offset: 2px; }
   .empty .addbtn { margin-top: 8px; padding: 9px 16px; font-size: 0.9rem; }
-  .section-title { grid-column: 1 / -1; margin: 10px 0 -4px; font: 600 1.25rem/1.2 'Oswald', sans-serif; letter-spacing: 0.03em; }
-  .section-title small { font: 400 0.88rem 'Inter', sans-serif; color: var(--dim); margin-left: 8px; letter-spacing: 0; }
   svg.chart { display: block; max-width: 100%; overflow: visible; }
   svg.chart text { fill: var(--dim); font: 12.5px 'Inter', sans-serif; }
   svg.chart line.target { stroke: var(--text); stroke-width: 1.5; stroke-dasharray: 6 5; opacity: 0.75; }
@@ -101,11 +99,11 @@
 
   /* ---------- trouble characters ---------- */
   .trouble { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 22px; }
-  .trow { display: grid; grid-template-columns: 34px 1fr 92px; align-items: center; gap: 10px; }
+  .trow { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; }
   .trow .ch { font: 600 1.25rem/1 'JetBrains Mono', monospace; text-align: center; }
   .bar { height: 8px; background: var(--well); border-radius: 4px; overflow: hidden; }
   .bar i { display: block; height: 100%; background: var(--bad); border-radius: 4px; }
-  .trow .num { color: var(--muted); font: 0.88rem 'JetBrains Mono', monospace; text-align: right; }
+  .trow .num { color: var(--muted); font: 0.88rem 'JetBrains Mono', monospace; text-align: right; white-space: nowrap; }
   .practice-set { margin: 12px 0 0; color: var(--muted); font-size: 0.9rem; }
   .practice-set code { font: 600 0.95rem 'JetBrains Mono', monospace; color: var(--text); background: var(--well); padding: 2px 8px; border-radius: 5px; }
 
@@ -164,6 +162,61 @@
   .linkbtn { border: 1px solid var(--border); background: transparent; color: var(--muted); border-radius: 8px; padding: 7px 12px; font: 0.88rem 'Inter', sans-serif; cursor: pointer; }
   .linkbtn:hover { color: var(--bad); border-color: var(--bad); }
 
+  /* ---------- tabs: Overview, Copying, Sending (Tim, 2026-11-01) ---------- */
+  .ptabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .ptabs button {
+    flex: none; min-height: 44px; padding: 0 16px; background: transparent; border: 0; border-bottom: 3px solid transparent;
+    color: var(--dim); font: 600 1rem 'Inter', sans-serif; cursor: pointer;
+  }
+  .ptabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--icr); }
+  .ptabs button:focus-visible, .seg button:focus-visible { outline: 2px solid var(--icr); outline-offset: -2px; }
+  .seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--well); border: 1px solid var(--border); border-radius: 9px; margin-bottom: 14px; }
+  .seg button {
+    border: 0; border-radius: 6px; padding: 8px 16px; background: transparent; color: var(--muted);
+    font: 600 0.92rem/1 'Inter', sans-serif; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--icr); color: var(--lime-ink); }
+  .legend .dash::before { height: 0; border-top: 2px dashed currentColor; background: none; vertical-align: 3px; }
+
+  /* Bars drawn as boxes: copy speed, recognition time, homework. */
+  .vbars { position: relative; display: flex; align-items: stretch; gap: 8px; height: 150px; padding-top: 20px; }
+  .vbar { position: relative; flex: 1; min-width: 0; }
+  .vbar i { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 80px; border-radius: 4px 4px 0 0; background: var(--c); }
+  .vbar .v { position: absolute; left: 0; right: 0; text-align: center; font: 600 0.78rem 'JetBrains Mono', monospace; color: var(--muted); white-space: nowrap; }
+  .vbars .goal { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--text); opacity: 0.55; z-index: 1; pointer-events: none; }
+  .vbars .goal span { position: absolute; right: 0; top: -18px; font-size: 0.75rem; color: var(--text); }
+  .vlabels { display: flex; gap: 8px; margin-top: 6px; }
+  .vlabels span { flex: 1; min-width: 0; text-align: center; font-size: 0.8rem; color: var(--dim); line-height: 1.3; }
+  .vlabels b { display: block; color: var(--muted); font-weight: 500; }
+  .hwbars .vbar i { max-width: 46px; }
+  .hwbars .vbar.next i { outline: 2px solid var(--hw); outline-offset: 2px; }
+
+  /* Rows of bars: head copy span, Daily Scales. */
+  .hrows { display: flex; flex-direction: column; gap: 8px; }
+  .grid[hidden] { display: none; }
+  .hrow { display: grid; grid-template-columns: 7.5em 1fr 52px; align-items: center; gap: 10px; font-size: 0.88rem; }
+  .hrows.wide .hrow { grid-template-columns: 11.5em 1fr 52px; }
+  .hrow .lbl { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hrow .track { height: 14px; background: var(--well); border-radius: 4px; overflow: hidden; }
+  .hrow .track i { display: block; height: 100%; background: var(--c); }
+  .hrow .num { text-align: right; font-family: 'JetBrains Mono', monospace; }
+  .hrow .left { grid-column: 2 / -1; margin-top: -6px; color: var(--bad); font-size: 0.8rem; }
+
+  /* Spacing gauges and the speed summary. */
+  .gauge { margin-bottom: 18px; }
+  .gauge .top { display: flex; justify-content: space-between; gap: 10px; font-size: 0.92rem; }
+  .gauge .top b { font-family: 'JetBrains Mono', monospace; }
+  .gauge .top small { color: var(--dim); font-weight: 400; }
+  .gauge .track { position: relative; height: 12px; background: var(--well); border-radius: 6px; margin-top: 8px; }
+  .gauge .ideal { position: absolute; top: -4px; width: 2px; height: 20px; margin-left: -1px; background: var(--text); }
+  .gauge .you { position: absolute; top: -2px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: var(--key); }
+  .gauge .why { margin-top: 6px; color: var(--dim); font-size: 0.82rem; }
+  .bigspeed { font: 600 2rem/1.2 'Oswald', sans-serif; }
+  .bigspeed .arrow { color: var(--dim); font-size: 1.3rem; margin: 0 6px; }
+  .bigspeed .o { color: var(--key2); }
+  .bigspeed small { font: 500 0.95rem 'Inter', sans-serif; color: var(--dim); }
+  .speedwhy { color: var(--muted); font-size: 0.9rem; margin: 4px 0 0; }
+
   @media (max-width: 760px) {
     .tiles { grid-template-columns: 1fr 1fr; }
     .grid { grid-template-columns: 1fr; }
@@ -194,93 +247,156 @@
   </div>
 
   <div id="content" hidden>
-    <!-- Every tab, today only, whatever range is picked (Tim, 2026-10-25). -->
-    <p class="today" id="today">Today&rsquo;s Practice Time: <b id="todayVal">0 minutes</b></p>
-    <div class="tiles">
-      <div class="tile"><div class="val" id="tTime">—</div><div class="lbl">Practice time</div><div class="sub" id="tTimeSub"></div></div>
-      <div class="tile"><div class="val" id="tStreak">—</div><div class="lbl">Day streak</div><div class="sub" id="tStreakSub"></div></div>
-      <div class="tile"><div class="val" id="tChars">—</div><div class="lbl">Characters copied</div><div class="sub" id="tCharsSub"></div></div>
-      <div class="tile"><div class="val" id="tSessions">—</div><div class="lbl">Sessions</div><div class="sub" id="tSessionsSub"></div></div>
+    <!-- Three tabs (Tim, 2026-11-01): Overview, Copying, Sending. -->
+    <div class="ptabs" role="tablist" aria-label="Progress sections">
+      <button type="button" role="tab" id="tab-overview" aria-controls="pOverview" data-tab="overview">Overview</button>
+      <button type="button" role="tab" id="tab-copy" aria-controls="pCopy" data-tab="copy">Copying</button>
+      <button type="button" role="tab" id="tab-send" aria-controls="pSend" data-tab="send">Sending</button>
     </div>
 
-    <div class="grid">
-      <section class="card wide">
-        <div class="card-head">
-          <div>
-            <h2>Practice time</h2>
-            <p class="note" id="timeNote">Minutes per day.</p>
+    <!-- OVERVIEW -->
+    <div class="panel" id="pOverview" role="tabpanel" aria-labelledby="tab-overview">
+      <!-- Every tab, today only, whatever range is picked (Tim, 2026-10-25). -->
+      <p class="today" id="today">Today&rsquo;s Practice Time: <b id="todayVal">0 minutes</b></p>
+      <div class="tiles">
+        <div class="tile"><div class="val" id="tTime">—</div><div class="lbl">Practice time</div><div class="sub" id="tTimeSub"></div></div>
+        <div class="tile"><div class="val" id="tStreak">—</div><div class="lbl">Day streak</div><div class="sub" id="tStreakSub"></div></div>
+        <div class="tile"><div class="val" id="tChars">—</div><div class="lbl">Characters copied</div><div class="sub" id="tCharsSub"></div></div>
+        <div class="tile"><div class="val" id="tSessions">—</div><div class="lbl">Sessions</div><div class="sub" id="tSessionsSub"></div></div>
+      </div>
+      <div class="grid">
+        <section class="card wide">
+          <div class="card-head">
+            <div>
+              <h2>Practice time</h2>
+              <p class="note" id="timeNote">Minutes per day.</p>
+            </div>
+            <button type="button" class="addbtn" data-addtime title="Add practice you did outside the CW Trainer">+ Add time</button>
           </div>
-          <button type="button" class="addbtn" data-addtime title="Add practice you did outside the CW Trainer">+ Add time</button>
-        </div>
-        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span><span class="key" id="timeKeyLegend">Keyer</span><span class="qso" id="timeQsoLegend">QSO</span><span class="tp" id="timeTpLegend">Test Prep</span><span class="cs" id="timeCsLegend">Call Signs</span><span class="jep" id="timeJepLegend">Jeopardy</span><span class="zoom" id="timeZoomLegend">Zoom Session</span><span class="onair" id="timeOnairLegend">On-Air</span><span class="other" id="timeOtherLegend">Other</span><span class="hw" id="timeHwLegend">Homework</span></div>
-        <div id="chTime"></div>
-      </section>
+          <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span><span class="key" id="timeKeyLegend">Keyer</span><span class="qso" id="timeQsoLegend">QSO</span><span class="tp" id="timeTpLegend">Test Prep</span><span class="cs" id="timeCsLegend">Call Signs</span><span class="jep" id="timeJepLegend">Jeopardy</span><span class="zoom" id="timeZoomLegend">Zoom Session</span><span class="onair" id="timeOnairLegend">On-Air</span><span class="other" id="timeOtherLegend">Other</span><span class="hw" id="timeHwLegend">Homework</span></div>
+          <div id="chTime"></div>
+        </section>
 
-      <section class="card">
-        <h2>Accuracy</h2>
-        <p class="note">Characters copied correctly, %. Higher is better.</p>
-        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span></div>
-        <div id="chAcc"></div>
-      </section>
+        <!-- The course's homework, one bar per session (from My Course). -->
+        <section class="card wide" id="courseCard" hidden>
+          <div class="card-head">
+            <div>
+              <h2 id="courseTitle">Homework</h2>
+              <p class="note" id="courseNote"></p>
+            </div>
+            <a class="addbtn" href="../?tab=course" target="_top" data-tool="course">Open My Course</a>
+          </div>
+          <div class="hwbars" id="hwBars"></div>
+        </section>
 
-      <section class="card">
-        <h2>Speed</h2>
-        <p class="note">Character speed you practiced at, WPM.</p>
-        <div class="legend"><span class="icr">ICR</span><span class="cg">Code Groups</span></div>
-        <div id="chWpm"></div>
-      </section>
+        <section class="card wide">
+          <h2>Recent sessions</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>When</th><th>Trainer</th><th>Practiced</th><th class="num">WPM</th><th class="num">Time</th><th class="num">Chars</th><th class="num">Accuracy</th></tr></thead>
+              <tbody id="recent"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
 
-      <section class="card">
-        <h2>ICR reaction time</h2>
-        <p class="note">From the end of the character to your space bar, ms. Lower is better.</p>
-        <div id="chRt"></div>
-      </section>
+    <!-- COPYING: an ICR view and a Code Groups view. -->
+    <div class="panel" id="pCopy" role="tabpanel" aria-labelledby="tab-copy" hidden>
+      <div class="seg" role="group" aria-label="Copying tool">
+        <button type="button" data-view="icr">ICR</button>
+        <button type="button" data-view="cg">Code Groups</button>
+      </div>
+      <div class="grid" id="vIcr">
+        <section class="card wide">
+          <h2>Accuracy and speed</h2>
+          <p class="note">ICR: characters copied correctly, % (left), and the speed you practiced at, WPM (right).</p>
+          <div class="legend"><span class="icr">Accuracy</span><span class="key2 dash">Speed</span></div>
+          <div id="chIcrAcc"></div>
+        </section>
+        <section class="card">
+          <h2>Copy speed: <span id="copySpeed">—</span></h2>
+          <p class="note">Your ICR accuracy at each speed. Your copy speed is the fastest one at 90% or better.</p>
+          <div id="ladder"></div>
+        </section>
+        <section class="card">
+          <h2>Recognition time</h2>
+          <p class="note" id="rtNote">ICR, average per week, ms. Lower is better; under 1,000 is instant.</p>
+          <div id="rtBars"></div>
+        </section>
+        <section class="card wide">
+          <h2>Characters to work on</h2>
+          <p class="note">ICR: lowest accuracy, at least 5 tries each.</p>
+          <div id="trouble"></div>
+        </section>
+      </div>
+      <div class="grid" id="vCg" hidden>
+        <section class="card wide">
+          <h2>Accuracy and speed</h2>
+          <p class="note">Code Groups: characters copied correctly, % (left), and the character speed, WPM (right).</p>
+          <div class="legend"><span class="cg">Accuracy</span><span class="key2 dash">Speed</span></div>
+          <div id="chCgAcc"></div>
+        </section>
+        <section class="card">
+          <h2>Speed</h2>
+          <p class="note">Character speed and Farnsworth speed, WPM.</p>
+          <div class="legend"><span class="cg">Character</span><span class="key2">Farnsworth</span></div>
+          <div id="chCgWpm"></div>
+        </section>
+        <section class="card">
+          <h2>Answer time</h2>
+          <p class="note">From the end of the group to your last keystroke, seconds. Lower is better.</p>
+          <div id="chAns"></div>
+        </section>
+        <section class="card wide">
+          <h2>Head copy span: <span id="spanVal">—</span></h2>
+          <p class="note">Code Groups: whole groups right, by length (random characters). Your span is the longest at 80% or better.</p>
+          <div id="spanBars"></div>
+        </section>
+      </div>
+    </div>
 
-      <section class="card">
-        <h2>Code Groups answer time</h2>
-        <p class="note">From the end of the group to your last keystroke, seconds. Lower is better.</p>
-        <div id="chAns"></div>
-      </section>
-
-      <section class="card wide">
-        <h2>Trouble characters</h2>
-        <p class="note">Copying: lowest accuracy across ICR and Code Groups (at least 5 tries each).</p>
-        <div id="trouble"></div>
-      </section>
-
-      <!-- Sending (Keyer Practice). Shown once there's any Keyer history. -->
-      <h2 class="section-title sending">Sending <small>Keyer Practice</small></h2>
-      <section class="card sending">
-        <h2>Sending accuracy</h2>
-        <p class="note">Letters sent correctly in Send This, %. Higher is better.</p>
-        <div id="chSendAcc"></div>
-      </section>
-      <section class="card sending">
-        <h2>Sending speed</h2>
-        <p class="note">WPM. Overall includes your spacing; the closer it is to character speed, the better.</p>
-        <div class="legend"><span class="key">Character</span><span class="key2">Overall</span></div>
-        <div id="chSendWpm"></div>
-      </section>
-      <section class="card sending">
-        <h2>Letter spacing</h2>
-        <p class="note">Average gap between letters, in dits. 3 is perfect.</p>
-        <div id="chSendGap"></div>
-      </section>
-      <section class="card sending">
-        <h2>Letters you send wrong</h2>
-        <p class="note">Lowest sending accuracy in Send This (at least 5 tries each).</p>
-        <div id="sendTrouble"></div>
-      </section>
-
-      <section class="card wide">
-        <h2>Recent sessions</h2>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>When</th><th>Trainer</th><th>Practiced</th><th class="num">WPM</th><th class="num">Time</th><th class="num">Chars</th><th class="num">Accuracy</th></tr></thead>
-            <tbody id="recent"></tbody>
-          </table>
-        </div>
-      </section>
+    <!-- SENDING: Keyer Practice. -->
+    <div class="panel" id="pSend" role="tabpanel" aria-labelledby="tab-send" hidden>
+      <div class="nodata" id="sendEmpty" hidden>Practice in Keyer Practice (under Send) and your sending shows up here.</div>
+      <div class="grid" id="sendGrid">
+        <section class="card">
+          <h2>Spacing</h2>
+          <p class="note">Your average gaps, in dits. The white mark is perfect timing.</p>
+          <div id="gaps"></div>
+        </section>
+        <section class="card">
+          <h2>Daily Scales</h2>
+          <p class="note">Right the first time, each session. Blocks left after 5 tries in red.</p>
+          <div id="scales"></div>
+        </section>
+        <section class="card">
+          <h2>Speed</h2>
+          <p class="note">Character speed, then overall speed with your spacing. The closer, the better.</p>
+          <div id="sendSpeed"></div>
+        </section>
+        <section class="card">
+          <h2>Letters you send wrong</h2>
+          <p class="note">Lowest sending accuracy in Send This and the Daily Scales (at least 5 tries each).</p>
+          <div id="sendTrouble"></div>
+        </section>
+        <section class="card">
+          <h2>Sending accuracy</h2>
+          <p class="note">Letters sent correctly, %. Higher is better.</p>
+          <div id="chSendAcc"></div>
+        </section>
+        <section class="card">
+          <h2>Sending speed</h2>
+          <p class="note">WPM. Overall includes your spacing; the closer it is to character speed, the better.</p>
+          <div class="legend"><span class="key">Character</span><span class="key2">Overall</span></div>
+          <div id="chSendWpm"></div>
+        </section>
+        <section class="card wide">
+          <h2>Letter spacing</h2>
+          <p class="note">Average gap between letters, in dits. 3 is perfect.</p>
+          <div id="chSendGap"></div>
+        </section>
+      </div>
     </div>
   </div>
 
@@ -325,6 +441,7 @@
 </dialog>
 
 <script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-course.js"></script>
 <script>
 (function () {
   'use strict';
@@ -422,6 +539,7 @@
             return;
           }
           b.wpmW += s.wpm * s.charsTotal;                     // speed averaged by characters sent
+          b.fwW += (s.fwpm && s.fwpm < s.wpm ? s.fwpm : s.wpm) * s.charsTotal;   // Farnsworth (none = the character speed)
           b.timeSum += s.timeSum || 0; b.timeCount += s.timeCount || 0;
           return;
         }
@@ -429,7 +547,7 @@
     });
     return buckets;
   }
-  function blank() { return { ms: 0, chars: 0, correct: 0, wpmW: 0, timeSum: 0, timeCount: 0, sent: 0, overallW: 0, gapSum: 0, gapN: 0 }; }
+  function blank() { return { ms: 0, chars: 0, correct: 0, wpmW: 0, fwW: 0, timeSum: 0, timeCount: 0, sent: 0, overallW: 0, gapSum: 0, gapN: 0 }; }
   function bucketLabel(b) { return b.step === 1 ? shortDate(b.start) : 'Wk of ' + shortDate(b.start); }
 
   /* ---------------- SVG charts ----------------
@@ -449,18 +567,19 @@
     return { min: min, max: max, step: step };
   }
 
-  function makeChart(el, buckets, ax, yFmt) {
-    var W = Math.max(280, el.clientWidth || 560), n = buckets.length;
+  // r: the right margin (wider when there's a right-hand axis).
+  function makeChart(el, buckets, ax, yFmt, r) {
+    var W = Math.max(280, el.clientWidth || 560), n = buckets.length, RR = r == null ? R : r;
     var c = {
-      W: W, n: n,
-      x: function (i) { return L + (W - L - R) * (i + 0.5) / n; },
+      W: W, n: n, R: RR,
+      x: function (i) { return L + (W - L - RR) * (i + 0.5) / n; },
       y: function (v) { return T + (H - T - B) * (1 - (v - ax.min) / (ax.max - ax.min)); },
       svg: ''
     };
     // Gridlines + y labels
     for (var v = ax.min; v <= ax.max + ax.step / 2; v += ax.step) {
       var y = c.y(v);
-      c.svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '" stroke="var(--grid)"/>' +
+      c.svg += '<line x1="' + L + '" x2="' + (W - RR) + '" y1="' + y + '" y2="' + y + '" stroke="var(--grid)"/>' +
                '<text x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + yFmt(v) + '</text>';
     }
     // About one x label per 90 px
@@ -515,56 +634,71 @@
   // Lines with dots. Days with no practice are skipped; the line connects
   // the days that have data. The y-axis starts just below the lowest value
   // (opts.floor caps how low), so week-to-week changes are easy to see.
+  // opts.right: { series, yFmt, tip } -- more lines (dashed) on their own
+  // axis, labelled on the right (Tim, 2026-11-01: accuracy and speed).
   function lineChart(el, buckets, series, opts) {
-    var vals = [];
-    series.forEach(function (s) { buckets.forEach(function (b) { var v = s.value(b); if (v != null) vals.push(v); }); });
-    if (!vals.length) { el.innerHTML = '<div class="nodata">No practice in this range.</div>'; return; }
-    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
-    var pad = Math.max((hi - lo) * 0.15, hi * 0.05, 1e-9);
-    var ax = axis(Math.max(opts.floor || 0, lo - pad), opts.ceil != null ? Math.min(opts.ceil, hi + pad) : hi + pad);
-    var c = makeChart(el, buckets, ax, opts.yFmt);
-    series.forEach(function (s) {
+    function axisFor(list, o) {
+      var vals = [];
+      list.forEach(function (s) { buckets.forEach(function (b) { var v = s.value(b); if (v != null) vals.push(v); }); });
+      if (!vals.length) return null;
+      var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+      var pad = Math.max((hi - lo) * 0.15, hi * 0.05, 1e-9);
+      return axis(Math.max(o.floor || 0, lo - pad), o.ceil != null ? Math.min(o.ceil, hi + pad) : hi + pad);
+    }
+    var ax = axisFor(series, opts);
+    if (!ax) { el.innerHTML = '<div class="nodata">No practice in this range.</div>'; return; }
+    var right = opts.right, rax = right && axisFor(right.series, right);
+    var c = makeChart(el, buckets, ax, opts.yFmt, rax ? 44 : null);
+    function plot(s, yOf, tip, dashed) {
       var pts = [];
-      buckets.forEach(function (b, i) { var v = s.value(b); if (v != null) pts.push([c.x(i), c.y(v), v, b]); });
+      buckets.forEach(function (b, i) { var v = s.value(b); if (v != null) pts.push([c.x(i), yOf(v), v, b]); });
       if (pts.length > 1) {
-        c.svg += '<polyline fill="none" stroke="' + s.color + '" stroke-width="2" stroke-linejoin="round" points="' +
+        c.svg += '<polyline fill="none" stroke="' + s.color + '" stroke-width="2" stroke-linejoin="round"' + (dashed ? ' stroke-dasharray="6 4"' : '') + ' points="' +
                  pts.map(function (q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' ') + '"/>';
       }
       pts.forEach(function (q) {
         c.svg += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="3.5" fill="' + s.color + '"><title>' +
-                 esc(bucketLabel(q[3])) + ' · ' + s.name + ': ' + opts.tip(q[2]) + '</title></circle>';
+                 esc(bucketLabel(q[3])) + ' · ' + s.name + ': ' + tip(q[2]) + '</title></circle>';
       });
-    });
+    }
+    series.forEach(function (s) { plot(s, c.y, opts.tip, false); });
+    if (rax) {
+      var ry = function (v) { return T + (H - T - B) * (1 - (v - rax.min) / (rax.max - rax.min)); };
+      for (var v = rax.min; v <= rax.max + rax.step / 2; v += rax.step) {
+        c.svg += '<text x="' + (c.W - c.R + 8) + '" y="' + (ry(v) + 4) + '" text-anchor="start" style="fill:' + right.series[0].color + '">' + right.yFmt(v) + '</text>';
+      }
+      right.series.forEach(function (s) { plot(s, ry, right.tip, true); });
+    }
     c.done(opts.label);
   }
 
   var lastBuckets = null;
   function drawCharts(buckets) {
-    var both = [
-      { name: 'ICR', color: COLORS.icr, key: 'icr' },
-      { name: 'Code Groups', color: COLORS['code-groups'], key: 'code-groups' }
-    ];
+    var whole = function (v) { return Math.round(v); };
     barChart($('chTime'), buckets, 'Practice minutes');
-    lineChart($('chAcc'), buckets, both.map(function (s) {
-      return { name: s.name, color: s.color, value: function (b) { return pct(b[s.key].correct, b[s.key].chars); } };
-    }), { ceil: 100, yFmt: function (v) { return Math.round(v); }, tip: function (v) { return v + '%'; }, label: 'Accuracy' });
-    lineChart($('chWpm'), buckets, both.map(function (s) {
-      return { name: s.name, color: s.color, value: function (b) { var x = b[s.key]; return x.chars ? Math.round(x.wpmW / x.chars) : null; } };
-    }), { yFmt: function (v) { return Math.round(v); }, tip: function (v) { return v + ' WPM'; }, label: 'Speed' });
-    lineChart($('chRt'), buckets, [{ name: 'ICR', color: COLORS.icr,
-      value: function (b) { var x = b.icr; return x.timeCount ? Math.round(x.timeSum / x.timeCount) : null; } }],
-      { yFmt: function (v) { return Math.round(v); }, tip: function (v) { return v + ' ms'; }, label: 'ICR reaction time' });
+    // Copying: accuracy (left axis) and the speed practiced at (right).
+    [['icr', 'chIcrAcc', 'ICR accuracy and speed'], ['code-groups', 'chCgAcc', 'Code Groups accuracy and speed']].forEach(function (a) {
+      var k = a[0];
+      lineChart($(a[1]), buckets, [{ name: 'Accuracy', color: COLORS[k], value: function (b) { return pct(b[k].correct, b[k].chars); } }],
+        { ceil: 100, yFmt: whole, tip: function (v) { return v + '%'; }, label: a[2],
+          right: { yFmt: whole, tip: function (v) { return v + ' WPM'; },
+                   series: [{ name: 'Speed', color: 'var(--key2)', value: function (b) { var x = b[k]; return x.chars ? Math.round(x.wpmW / x.chars) : null; } }] } });
+    });
+    lineChart($('chCgWpm'), buckets, [
+      { name: 'Character', color: COLORS['code-groups'], value: function (b) { var x = b['code-groups']; return x.chars ? Math.round(x.wpmW / x.chars) : null; } },
+      { name: 'Farnsworth', color: 'var(--key2)', value: function (b) { var x = b['code-groups']; return x.chars ? Math.round(x.fwW / x.chars) : null; } }
+    ], { yFmt: whole, tip: function (v) { return v + ' WPM'; }, label: 'Code Groups speed' });
     lineChart($('chAns'), buckets, [{ name: 'Code Groups', color: COLORS['code-groups'],
       value: function (b) { var x = b['code-groups']; return x.timeCount ? Math.round(x.timeSum / x.timeCount / 100) / 10 : null; } }],
       { yFmt: function (v) { return (Math.round(v * 10) / 10).toString(); }, tip: function (v) { return v.toFixed(1) + ' s'; }, label: 'Code Groups answer time' });
     if (hasSending) {
       lineChart($('chSendAcc'), buckets, [{ name: 'Sending', color: COLORS.keyer,
         value: function (b) { return pct(b.keyer.correct, b.keyer.chars); } }],
-        { ceil: 100, yFmt: function (v) { return Math.round(v); }, tip: function (v) { return v + '%'; }, label: 'Sending accuracy' });
+        { ceil: 100, yFmt: whole, tip: function (v) { return v + '%'; }, label: 'Sending accuracy' });
       lineChart($('chSendWpm'), buckets, [
         { name: 'Character', color: 'var(--key)', value: function (b) { return b.keyer.sent ? Math.round(b.keyer.wpmW / b.keyer.sent) : null; } },
         { name: 'Overall', color: 'var(--key2)', value: function (b) { return b.keyer.sent ? Math.round(b.keyer.overallW / b.keyer.sent) : null; } }
-      ], { yFmt: function (v) { return Math.round(v); }, tip: function (v) { return v + ' WPM'; }, label: 'Sending speed' });
+      ], { yFmt: whole, tip: function (v) { return v + ' WPM'; }, label: 'Sending speed' });
       lineChart($('chSendGap'), buckets, [{ name: 'Letter spacing', color: COLORS.keyer,
         value: function (b) { return b.keyer.gapN ? Math.round(10 * b.keyer.gapSum / b.keyer.gapN) / 10 : null; } }],
         { yFmt: function (v) { return (Math.round(v * 10) / 10).toString(); }, tip: function (v) { return v.toFixed(1) + ' dits'; }, label: 'Letter spacing' });
@@ -609,7 +743,8 @@
     var hasQso = allRows.some(function (s) { return s.trainer === 'qso'; });
     var sendRows = rows.filter(function (s) { return s.trainer === 'keyer'; });
     hasSending = allRows.some(function (s) { return s.trainer === 'keyer'; });
-    document.querySelectorAll('.sending').forEach(function (el) { el.hidden = !hasSending; });
+    $('sendEmpty').hidden = hasSending;
+    $('sendGrid').hidden = !hasSending;
     $('timeKeyLegend').hidden = !hasSending;
     $('timeQsoLegend').hidden = !hasQso;
     var hasJep = allRows.some(function (s) { return s.trainer === 'jeopardy'; });
@@ -657,9 +792,13 @@
     lastBuckets = buckets;
     drawCharts(buckets);
 
-    // Trouble characters: combine the copying trainers' per-character tallies.
+    renderCopying(rows, from);
+    renderSending(rows, allRows, from);
+    renderCourse();
+
+    // Characters to work on: ICR's per-character tallies.
     var tally = {};
-    copyRows.forEach(function (s) {
+    copyRows.filter(function (s) { return s.trainer === 'icr'; }).forEach(function (s) {
       Object.keys(s.chars || {}).forEach(function (ch) {
         var t = tally[ch] || (tally[ch] = [0, 0]);
         t[0] += s.chars[ch][0]; t[1] += s.chars[ch][1];
@@ -682,7 +821,7 @@
                '%"></i></span><span class="num">' + p + '% · ' + t[0] + '/' + t[1] + '</span></div>';
       }).join('') + '</div>' +
       '<p class="practice-set">To focus on these, put <code>' + esc(worst.join('')) +
-      '</code> in Custom Characters in either trainer. The red bar is the share missed.</p>';
+      '</code> in Custom Characters in ICR&rsquo;s Tool Settings. The red bar is the share missed.</p>';
     }
 
     // Letters you send wrong (Keyer Practice, Copy this).
@@ -700,7 +839,7 @@
         .slice(0, 8);
       $('sendTrouble').innerHTML = !sWorst.length
         ? '<div class="nodata">' + (Object.keys(sTally).length ? 'Every letter with 5+ tries is at 100%. Nice fist!'
-            : 'Practice Send This in Keyer Practice (under Send) and letters you send wrong will show up here.') + '</div>'
+            : 'Practice Send This or the Daily Scales in Keyer Practice (under Send) and letters you send wrong will show up here.') + '</div>'
         : '<div class="trouble">' + sWorst.map(function (ch) {
             var t = sTally[ch], p = pct(t[0], t[1]);
             return '<div class="trow"><span class="ch">' + esc(ch) + '</span><span class="bar"><i style="width:' + (100 - p) +
@@ -791,6 +930,234 @@
              '</td><td class="num">' + s.charsTotal + '</td><td class="num">' + pct(s.charsCorrect, s.charsTotal) + '%</td></tr>';
     }).join('');
   }
+
+  /* ---------------- tabs (Tim, 2026-11-01) ----------------
+     Overview, Copying (an ICR view and a Code Groups view) and Sending.
+     The tab and view picked are remembered on this device. */
+  var TAB_KEY = 'hct-cw-progress-tab', VIEW_KEY = 'hct-cw-progress-copy';
+  var TAB_IDS = ['overview', 'copy', 'send'];
+  var tab = 'overview', view = 'icr';
+  try {
+    if (TAB_IDS.indexOf(localStorage.getItem(TAB_KEY)) >= 0) tab = localStorage.getItem(TAB_KEY);
+    if (localStorage.getItem(VIEW_KEY) === 'cg') view = 'cg';
+  } catch (e) {}
+  function showTab() {
+    document.querySelectorAll('.ptabs button').forEach(function (b) {
+      var on = b.dataset.tab === tab;
+      b.setAttribute('aria-selected', String(on));
+      b.tabIndex = on ? 0 : -1;
+    });
+    $('pOverview').hidden = tab !== 'overview';
+    $('pCopy').hidden = tab !== 'copy';
+    $('pSend').hidden = tab !== 'send';
+    document.querySelectorAll('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === view)); });
+    $('vIcr').hidden = view !== 'icr';
+    $('vCg').hidden = view !== 'cg';
+    // Charts are drawn at their card's width, which a hidden card hasn't got.
+    if (lastBuckets && !$('content').hidden) drawCharts(lastBuckets);
+  }
+  function pickTab(t, focus) {
+    tab = t;
+    try { localStorage.setItem(TAB_KEY, t); } catch (e) {}
+    showTab();
+    if (focus) document.querySelector('.ptabs [data-tab="' + t + '"]').focus();
+  }
+  document.querySelectorAll('.ptabs button').forEach(function (b) {
+    b.addEventListener('click', function () { pickTab(b.dataset.tab); });
+    // Arrow keys move between tabs, as tab lists do.
+    b.addEventListener('keydown', function (e) {
+      var i = TAB_IDS.indexOf(b.dataset.tab);
+      if (e.key === 'ArrowRight') { e.preventDefault(); pickTab(TAB_IDS[(i + 1) % TAB_IDS.length], true); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); pickTab(TAB_IDS[(i + TAB_IDS.length - 1) % TAB_IDS.length], true); }
+    });
+  });
+  document.querySelectorAll('.seg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      view = b.dataset.view;
+      try { localStorage.setItem(VIEW_KEY, view); } catch (e) {}
+      showTab();
+    });
+  });
+  showTab();
+
+  // Bars drawn as boxes, with labels under them. items: [{ h: 0-100,
+  // v: text above the bar, c: color, label, sub, title, cls }]. goal: a
+  // dashed line at that height (%).
+  var VBAR_H = 130;   // the bars' height in px (.vbars: 150 less its 20 px top)
+  function vbarsHtml(items, goal, cls) {
+    return '<div class="vbars' + (cls ? ' ' + cls : '') + '">' +
+      (goal != null ? '<div class="goal" style="bottom:' + Math.round(VBAR_H * goal / 100) + 'px"><span>' + goal + '%</span></div>' : '') +
+      items.map(function (it) {
+        return '<div class="vbar' + (it.cls ? ' ' + it.cls : '') + '"' + (it.title ? ' title="' + esc(it.title) + '"' : '') + '>' +
+          '<i style="height:' + it.h + '%;--c:' + it.c + '"></i>' +
+          (it.v ? '<span class="v" style="bottom:calc(' + it.h + '% + 3px)">' + esc(it.v) + '</span>' : '') + '</div>';
+      }).join('') + '</div>' +
+      '<div class="vlabels' + (cls ? ' ' + cls : '') + '">' + items.map(function (it) {
+        return '<span>' + esc(it.label) + (it.sub ? '<b>' + esc(it.sub) + '</b>' : '') + '</span>';
+      }).join('') + '</div>';
+  }
+  function nodata(msg) { return '<div class="nodata">' + esc(msg) + '</div>'; }
+  var DIM_BAR = '#57534e';   // stone-600: a bar below the mark, or with too few tries
+
+  /* ---------------- Copying ---------------- */
+  var COPY_MIN = 20;    // characters at a speed before it can be your copy speed
+  var SPAN_MIN = 5;     // groups of a length before it can be your span
+  var SPAN_GROUPS = ['qso', 'words', 'phrases', 'calls', 'file'];   // not random characters: no span
+  function renderCopying(rows, from) {
+    var icrRows = rows.filter(function (s) { return s.trainer === 'icr' && s.charsTotal > 0; });
+
+    // Copy speed: accuracy at each speed. A session with Adaptive Speed
+    // has bySpeed (since 2026-11-01); an older one, its one speed.
+    var by = {};
+    function add(w, c, t) { var o = by[w] || (by[w] = { c: 0, t: 0 }); o.c += c; o.t += t; }
+    icrRows.forEach(function (s) {
+      var sp = s.bySpeed && Object.keys(s.bySpeed).length ? s.bySpeed : null;
+      if (sp) Object.keys(sp).forEach(function (w) { add(Number(w), sp[w][0] || 0, sp[w][1] || 0); });
+      else if (s.wpm) add(s.wpm, s.charsCorrect, s.charsTotal);
+    });
+    var speeds = Object.keys(by).map(Number).filter(function (w) { return by[w].t; }).sort(function (a, b) { return a - b; });
+    var best = null;
+    speeds.forEach(function (w) { if (by[w].t >= COPY_MIN && by[w].c / by[w].t >= 0.9) best = w; });
+    $('copySpeed').textContent = best ? best + ' WPM' : speeds.length ? 'not yet' : '—';
+    $('ladder').innerHTML = !speeds.length ? nodata('Practice ICR and your accuracy at each speed shows up here.')
+      : vbarsHtml(speeds.map(function (w) {
+          var p = Math.round(100 * by[w].c / by[w].t), enough = by[w].t >= COPY_MIN;
+          return { h: p, v: p + '%', c: p >= 90 && enough ? 'var(--icr)' : DIM_BAR, label: w + ' WPM', sub: by[w].t + ' chars',
+                   title: w + ' WPM: ' + by[w].c + ' of ' + by[w].t + ' right' + (enough ? '' : ' (' + COPY_MIN + ' needed to count)') };
+        }), 90);
+
+    // Recognition time: ICR's average, per week (per day for a week's range).
+    var today = dayStart(Date.now()), step = (today - from) / DAY < 14 ? 1 : 7, groups = [];
+    for (var t = from; t <= today; t = addDays(t, step)) groups.push({ start: t, end: addDays(t, step), sum: 0, n: 0 });
+    if (groups.length > 16) groups = groups.slice(-16);
+    icrRows.forEach(function (s) {
+      for (var i = groups.length - 1; i >= 0; i--) if (s.start >= groups[i].start) { groups[i].sum += s.timeSum || 0; groups[i].n += s.timeCount || 0; return; }
+    });
+    var max = 0;
+    groups.forEach(function (g) { if (g.n) max = Math.max(max, g.sum / g.n); });
+    $('rtNote').textContent = 'ICR, average ' + (step === 1 ? 'per day' : 'per week') + ', ms. Lower is better; under 1,000 is instant.';
+    $('rtBars').innerHTML = !max ? nodata('Practice ICR and your recognition time shows up here.')
+      : vbarsHtml(groups.map(function (g, i) {
+          var v = g.n ? Math.round(g.sum / g.n) : 0;
+          return { h: v ? Math.round(100 * v / max) : 0, v: v ? v.toLocaleString() : '', c: 'var(--icr)',
+                   label: step === 1 ? shortDate(g.start) : (i === groups.length - 1 ? 'This week' : shortDate(g.start)),
+                   title: (step === 1 ? '' : 'Week of ') + shortDate(g.start) + (v ? ': ' + v + ' ms' : ': no ICR') };
+        }));
+
+    // Head copy span: whole groups right, by length (Code Groups).
+    var sizes = {};
+    rows.forEach(function (s) {
+      if (s.trainer !== 'code-groups' || s.mode === 'walk' || !s.groupSize || !s.rounds || SPAN_GROUPS.indexOf(s.group) >= 0) return;
+      var o = sizes[s.groupSize] || (sizes[s.groupSize] = { r: 0, c: 0 });
+      o.r += s.rounds; o.c += s.roundsCorrect || 0;
+    });
+    var lens = Object.keys(sizes).map(Number).sort(function (a, b) { return a - b; }), span = null;
+    lens.forEach(function (n) { if (sizes[n].r >= SPAN_MIN && sizes[n].c / sizes[n].r >= 0.8) span = n; });
+    $('spanVal').textContent = span ? span + (span === 1 ? ' character' : ' characters') : lens.length ? 'not yet' : '—';
+    $('spanBars').innerHTML = !lens.length ? nodata('Practice Code Groups with letters, numbers or mixed characters and your span shows up here.')
+      : '<div class="hrows">' + lens.map(function (n) {
+          var o = sizes[n], p = Math.round(100 * o.c / o.r), good = p >= 80 && o.r >= SPAN_MIN;
+          return '<div class="hrow" title="' + o.c + ' of ' + o.r + ' groups right"><span class="lbl">' + n + (n === 1 ? ' character' : ' characters') + '</span>' +
+            '<span class="track"><i style="width:' + p + '%;--c:' + (good ? 'var(--cg)' : DIM_BAR) + '"></i></span><span class="num">' + p + '%</span></div>';
+        }).join('') + '</div>';
+  }
+
+  /* ---------------- Sending ---------------- */
+  function sendStats(list) {
+    var o = { cg: 0, cgN: 0, wg: 0, wgN: 0, sent: 0, wpmW: 0, overallW: 0 };
+    list.forEach(function (s) {
+      if (s.trainer !== 'keyer') return;
+      o.cg += s.charGapSum || 0; o.cgN += s.charGapN || 0;
+      o.wg += s.wordGapSum || 0; o.wgN += s.wordGapN || 0;
+      var n = s.sentChars || 0;
+      o.sent += n; o.wpmW += (s.wpm || 0) * n; o.overallW += (s.overallWpm || s.wpm || 0) * n;
+    });
+    o.letter = o.cgN ? o.cg / o.cgN : null;
+    o.word = o.wgN ? o.wg / o.wgN : null;
+    o.wpm = o.sent ? Math.round(o.wpmW / o.sent) : null;
+    o.overall = o.sent ? Math.round(o.overallW / o.sent) : null;
+    return o;
+  }
+  function renderSending(rows, allRows, from) {
+    if (!hasSending) return;
+    var now = sendStats(rows);
+    // The same length of time just before, to compare (not for All).
+    var prev = rangeDays ? sendStats(allRows.filter(function (s) { return s.start >= addDays(from, -rangeDays) && s.start < from; })) : null;
+    var before = 'previous ' + rangeDays + ' days';
+
+    // Spacing: letter gaps (3 dits) and word gaps (7).
+    function gauge(name, v, ideal, pv) {
+      if (v == null) return '';
+      var r = Math.round(v * 10) / 10, pos = Math.min(100, 50 * v / ideal);
+      var why = v > ideal * 1.1 ? 'Long: your ' + (ideal === 3 ? 'letters run apart.' : 'words run apart.')
+              : v < ideal * 0.9 ? 'Short: your ' + (ideal === 3 ? 'letters run together.' : 'words run together.') : 'Right on.';
+      if (pv != null) why += ' The ' + before + ': ' + (Math.round(pv * 10) / 10) + '.';
+      return '<div class="gauge"><div class="top"><span>' + name + '</span><b>' + r + ' <small>/ ' + ideal + '</small></b></div>' +
+        '<div class="track"><span class="ideal" style="left:50%"></span><span class="you" style="left:' + pos.toFixed(1) + '%"></span></div>' +
+        '<div class="why">' + esc(why) + '</div></div>';
+    }
+    var g = gauge('Between letters', now.letter, 3, prev && prev.letter) + gauge('Between words', now.word, 7, prev && prev.word);
+    $('gaps').innerHTML = g || nodata('Send a few lines in Keyer Practice and your spacing shows up here.');
+
+    // Daily Scales: each session, newest first.
+    var sc = rows.filter(function (s) { return s.trainer === 'keyer' && s.mode === 'warmup' && s.charsTotal; }).slice(-8).reverse();
+    $('scales').innerHTML = !sc.length ? nodata('Send the Daily Scales in Keyer Practice and each session shows up here.')
+      : '<div class="hrows wide">' + sc.map(function (s) {
+          var p = pct(s.charsCorrect, s.charsTotal);
+          var when = new Date(s.start).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+          return '<div class="hrow" title="' + s.charsCorrect + ' of ' + s.charsTotal + ' right the first time"><span class="lbl">' + esc(when + ' · ' + (s.scale || 'Warm Up')) + '</span>' +
+            '<span class="track"><i style="width:' + p + '%;--c:var(--key)"></i></span><span class="num">' + p + '%</span>' +
+            (s.skipped ? '<span class="left">' + s.skipped + (s.skipped === 1 ? ' block' : ' blocks') + ' left after 5 tries</span>' : '') + '</div>';
+        }).join('') + '</div>';
+
+    // Speed: character speed, then overall with the spacing.
+    if (now.wpm == null) { $('sendSpeed').innerHTML = nodata('Send in Keyer Practice and your speed shows up here.'); }
+    else {
+      var cost = now.wpm - now.overall, pcost = prev && prev.wpm != null ? prev.wpm - prev.overall : null;
+      $('sendSpeed').innerHTML = '<div class="bigspeed">' + now.wpm + '<span class="arrow">&rarr;</span><span class="o">' + now.overall + '</span> <small>WPM</small></div>' +
+        '<p class="speedwhy">' + esc(cost > 0 ? 'Your spacing costs you ' + cost + ' WPM.' : 'Your spacing keeps up with your character speed.') +
+        (pcost != null ? ' ' + esc('The ' + before + ': ' + Math.max(0, pcost) + ' WPM.') : '') + '</p>';
+    }
+  }
+
+  /* ---------------- Overview: the course's homework ----------------
+     One bar per session: the share of its homework ticked in My Course
+     (Tim, 2026-11-01). The next class's bar is ringed. */
+  function parseIso(v) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || '');
+    return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+  }
+  // The date of each class: the first class, then every class day after it (as My Course).
+  function classDates(first, days, count) {
+    var out = [first], d = new Date(first);
+    for (var i = 0; out.length < count && i < 400; i++) {
+      d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+      if (days.indexOf(d.getDay()) >= 0) out.push(d);
+    }
+    return out;
+  }
+  function renderCourse() {
+    var c = HST.course.get(), info = c.program ? HST.course.info(c.program, c.level) : null;
+    $('courseCard').hidden = !info;
+    if (!info) return;
+    var tally = HST.course.sessionTally(info, HST.course.progress.get(c.program + ':' + c.level));
+    var first = parseIso(c.firstClass), dates = first && c.days && c.days.length ? classDates(first, c.days, info.sessions.length) : [];
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var next = -1;
+    dates.forEach(function (d, i) { if (next < 0 && d >= today) next = i; });
+    var done = tally.filter(function (t) { return t.done === t.total; }).length;
+    $('courseTitle').textContent = HST.course.PROGRAMS[c.program].name + ' ' + HST.course.levelName(c.program, c.level) + ' homework';
+    $('courseNote').textContent = 'Homework done for each of the ' + tally.length + ' sessions: ' + done + ' complete.' +
+      (next >= 0 ? ' Next class: Session ' + (next + 1) + ', ' + dates[next].toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }) + '.' : '');
+    $('hwBars').innerHTML = vbarsHtml(tally.map(function (t, i) {
+      var p = Math.round(100 * t.done / t.total);
+      return { h: Math.max(p, 4), c: p === 100 ? 'var(--hw)' : p ? '#7c6aa8' : 'var(--well)', label: String(i + 1),
+               title: 'Session ' + (i + 1) + ': ' + t.done + ' of ' + t.total + (t.total === 1 ? ' class' : ' tasks') + ' done', cls: i === next ? 'next' : '' };
+    }), null, 'hwbars');
+  }
+  // Ticking homework in My Course redraws the bars.
+  HST.course.progress.onChange(function () { if (cache.length) renderCourse(); });
+  HST.course.onChange(function () { if (cache.length) renderCourse(); });
 
   /* ---------------- Add practice time ----------------
      Practice done away from the app (a Zoom class, on-air contacts...).

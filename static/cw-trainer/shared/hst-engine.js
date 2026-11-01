@@ -397,8 +397,11 @@
                                             // times (ms), timeouts excluded
      Keyer Practice records also carry: mode ('copy' | 'free'), source,
      keyType, sentChars, charGapSum/charGapN, wordGapSum/wordGapN (units),
-     overallWpm. There, charsTotal/charsCorrect count only Copy this
+     overallWpm, and for Daily Scales (mode 'warmup') skipped: blocks left
+     after 5 missed tries. There, charsTotal/charsCorrect count only Copy this
      letters, and wpm is the measured character speed.
+     ICR records also carry bySpeed: { '13': [right, total] } (Adaptive
+     Speed changes the speed mid-session, so wpm alone can't say).
      QSO records (Milestone 7): style ('std' | 'pota'), who ('they' | 'you'
      called CQ), dxCall, theirWpm, completed, overs, copyRight/copyTotal
      (the copy check), plus the same sending fields as Keyer.

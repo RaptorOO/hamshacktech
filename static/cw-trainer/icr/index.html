@@ -1357,6 +1357,7 @@ function handleTimeout(){
   // Timeout = miss, scored against the character; skip answer entry
   // since there's nothing to grade, but still reveal the character.
   recordResult(currentChar, false, settings.ttaMs);
+  tallySpeed(false);
   if(settings.adaptSpeed) HST.shared.adaptWpm(false);
   practiceLog.char(currentChar, false);
   practiceLog.round(false, null, true);
@@ -1376,6 +1377,7 @@ function submitAnswer(){
   const correct = guess === HST.charLabel(currentChar);   // a prosign is typed as its letters
 
   recordResult(currentChar, correct, reactionTime);
+  tallySpeed(correct);
   if(settings.adaptSpeed) HST.shared.adaptWpm(correct);
   practiceLog.char(currentChar, correct);
   practiceLog.round(correct, reactionTime, false);
@@ -1394,6 +1396,16 @@ function submitAnswer(){
   showFeedback(correct, currentChar, false);
   els.answerInput.classList.add('waiting'); // stays focused/visible — just dims until next armed phase
   finishTrial(correct);
+}
+
+// Right and total at each speed played this session, saved with it as
+// bySpeed: { '13': [right, total] } (Progress, Copy speed). Adaptive Speed
+// changes the speed mid-session, so the session's wpm alone can't say.
+let speedTally = {};
+function tallySpeed(correct){
+  const t = speedTally[settings.wpm] || (speedTally[settings.wpm] = [0, 0]);
+  t[1]++; if(correct) t[0]++;
+  practiceLog.set({ bySpeed: speedTally });
 }
 
 function showFeedback(correct, char, wasTimeout){
@@ -1909,7 +1921,7 @@ function wireEvents(){
     initAudio();
     practiceLog.start(settings.noSpace ? { group: settings.group, wpm: settings.wpm, mode: 'say' }
                                        : { group: settings.group, wpm: settings.wpm });
-    sayHeard = 0;
+    sayHeard = 0; speedTally = {};
     if(settings.noSpace) loadSayVoice();
     els.noSpaceToggle.disabled = true;   // switch it between sessions
     sessionRunning = true;

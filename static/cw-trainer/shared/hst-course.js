@@ -457,6 +457,26 @@
       }
       return null;
     },
+    // Homework done for each session (Progress, Tim 2026-11-01):
+    // [{ done, total }], a task counted done like My Course does (its
+    // keys: '3.1.WD103', '3.1.c2'; a course without days: the class, '3').
+    sessionTally: function (info, prog) {
+      return info.sessions.map(function (s, i) {
+        var n = i + 1;
+        if (!s[2]) return { done: prog[n] && prog[n].done ? 1 : 0, total: 1 };
+        var done = 0, total = 0;
+        s[2].forEach(function (day, j) {
+          var list = typeof day === 'string' ? day.split(' ') : day.filter(function (x) { return x.charAt(0) !== '#'; });
+          list.forEach(function (tok) {
+            var bar = tok.indexOf('|');
+            var key = n + '.' + (j + 1) + '.' + (bar > 0 ? tok.slice(0, bar) : tok.replace(/[-*:].*$/, ''));
+            total++;
+            if (prog[key] && prog[key].done) done++;
+          });
+        });
+        return { done: done, total: total };
+      });
+    },
     levelName: function (program, level) {
       var p = PROGRAMS[program];
       var l = p && p.levels.filter(function (x) { return x.key === level; })[0];
