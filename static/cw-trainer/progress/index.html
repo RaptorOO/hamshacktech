@@ -155,7 +155,7 @@
   .addtime .btn:focus-visible { outline: 2px solid var(--icr); outline-offset: 2px; }
 
   /* ---------- empty state + footer ---------- */
-  .empty { text-align: center; padding: 70px 20px; color: var(--muted); }
+  .empty { text-align: center; padding: 22px 20px 26px; margin-bottom: 16px; color: var(--muted); background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
   .empty h2 { font: 600 1.4rem 'Oswald', sans-serif; color: var(--text); margin: 0 0 8px; }
   .textlink { border: 0; background: none; padding: 0; color: #a3e635; font: inherit; text-decoration: underline; cursor: pointer; }
   .foot { margin-top: 22px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--dim); font-size: 0.88rem; }
@@ -238,15 +238,8 @@
     </div>
   </div>
 
-  <div id="empty" class="empty" hidden>
-    <h2>No practice recorded yet</h2>
-    <p>Run a session in ICR, Code Groups, Call Signs, Keyer Practice, QSO Practice or Test Prep, or play Jeopardy. When you stop (or the Practice Timer rings, or you switch to another tool), it shows up here.</p>
-    <p id="emptySignIn" hidden><button type="button" class="textlink" id="emptySignInBtn">Sign in to keep your history safe if you clear your browser data</button></p>
-    <p>Practiced somewhere else, like a Zoom class or on the air?</p>
-    <button type="button" class="addbtn" data-addtime>+ Add practice time</button>
-  </div>
 
-  <div id="content" hidden>
+  <div id="content">
     <!-- Three tabs (Tim, 2026-11-01): Overview, Copying, Sending. -->
     <div class="ptabs" role="tablist" aria-label="Progress sections">
       <button type="button" role="tab" id="tab-overview" aria-controls="pOverview" data-tab="overview">Overview</button>
@@ -256,6 +249,14 @@
 
     <!-- OVERVIEW -->
     <div class="panel" id="pOverview" role="tabpanel" aria-labelledby="tab-overview">
+      <!-- No history yet: this note, and every card shows its own "nothing yet" (Tim, 2026-11-01: the tabs always show). -->
+      <div id="empty" class="empty" hidden>
+        <h2>No practice recorded yet</h2>
+        <p>Run a session in ICR, Code Groups, Call Signs, Keyer Practice, QSO Practice or Test Prep, or play Jeopardy. When you stop (or the Practice Timer rings, or you switch to another tool), it shows up here.</p>
+        <p id="emptySignIn" hidden><button type="button" class="textlink" id="emptySignInBtn">Sign in to keep your history safe if you clear your browser data</button></p>
+        <p>Practiced somewhere else, like a Zoom class or on the air?</p>
+        <button type="button" class="addbtn" data-addtime>+ Add practice time</button>
+      </div>
       <!-- Every tab, today only, whatever range is picked (Tim, 2026-10-25). -->
       <p class="today" id="today">Today&rsquo;s Practice Time: <b id="todayVal">0 minutes</b></p>
       <div class="tiles">
@@ -716,15 +717,13 @@
   function render(allRows) {
     var has = allRows.length > 0;
     $('empty').hidden = has;
-    $('content').hidden = !has;
     $('clearBtn').hidden = !has;
     document.querySelectorAll('.range button').forEach(function (b) {
       b.setAttribute('aria-pressed', String(Number(b.dataset.days) === rangeDays));
     });
-    if (!has) return;
 
     var today = dayStart(Date.now());
-    var from = rangeDays ? addDays(today, -(rangeDays - 1)) : dayStart(allRows[0].start);
+    var from = rangeDays ? addDays(today, -(rangeDays - 1)) : has ? dayStart(allRows[0].start) : today;
     var rows = allRows.filter(function (s) { return s.start >= from; });
     var rangeText = rangeDays ? 'last ' + rangeDays + ' days' : 'all time';
 
@@ -848,7 +847,8 @@
     }
 
     // Recent sessions (newest first, last 10 in the range)
-    $('recent').innerHTML = rows.slice(-10).reverse().map(function (s) {
+    if (!rows.length) $('recent').innerHTML = '<tr><td colspan="7" class="nodata">No sessions ' + (has ? 'in this range.' : 'yet.') + '</td></tr>';
+    else $('recent').innerHTML = rows.slice(-10).reverse().map(function (s) {
       var when = new Date(s.start).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
       if (s.trainer === 'manual') {
         var k = manualKind(s);
