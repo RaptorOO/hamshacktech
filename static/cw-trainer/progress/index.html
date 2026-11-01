@@ -194,6 +194,7 @@
   /* Rows of bars: head copy span, Daily Scales. */
   .hrows { display: flex; flex-direction: column; gap: 8px; }
   .grid[hidden] { display: none; }
+  .send-empty { padding: 4px 0 16px; text-align: left; }
   .hrow { display: grid; grid-template-columns: 7.5em 1fr 52px; align-items: center; gap: 10px; font-size: 0.88rem; }
   .hrows.wide .hrow { grid-template-columns: 11.5em 1fr 52px; }
   .hrow .lbl { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -359,7 +360,7 @@
 
     <!-- SENDING: Keyer Practice. -->
     <div class="panel" id="pSend" role="tabpanel" aria-labelledby="tab-send" hidden>
-      <div class="nodata" id="sendEmpty" hidden>Practice in Keyer Practice (under Send) and your sending shows up here.</div>
+      <div class="nodata send-empty" id="sendEmpty" hidden>Practice in Keyer Practice (under Send) and your sending shows up here.</div>
       <div class="grid" id="sendGrid">
         <section class="card">
           <h2>Spacing</h2>
@@ -692,7 +693,7 @@
     lineChart($('chAns'), buckets, [{ name: 'Code Groups', color: COLORS['code-groups'],
       value: function (b) { var x = b['code-groups']; return x.timeCount ? Math.round(x.timeSum / x.timeCount / 100) / 10 : null; } }],
       { yFmt: function (v) { return (Math.round(v * 10) / 10).toString(); }, tip: function (v) { return v.toFixed(1) + ' s'; }, label: 'Code Groups answer time' });
-    if (hasSending) {
+    {   // with or without Keyer history: each chart says when it has nothing yet (Tim, 2026-11-01)
       lineChart($('chSendAcc'), buckets, [{ name: 'Sending', color: COLORS.keyer,
         value: function (b) { return pct(b.keyer.correct, b.keyer.chars); } }],
         { ceil: 100, yFmt: whole, tip: function (v) { return v + '%'; }, label: 'Sending accuracy' });
@@ -743,7 +744,6 @@
     var sendRows = rows.filter(function (s) { return s.trainer === 'keyer'; });
     hasSending = allRows.some(function (s) { return s.trainer === 'keyer'; });
     $('sendEmpty').hidden = hasSending;
-    $('sendGrid').hidden = !hasSending;
     $('timeKeyLegend').hidden = !hasSending;
     $('timeQsoLegend').hidden = !hasQso;
     var hasJep = allRows.some(function (s) { return s.trainer === 'jeopardy'; });
@@ -823,8 +823,8 @@
       '</code> in Custom Characters in ICR&rsquo;s Tool Settings. The red bar is the share missed.</p>';
     }
 
-    // Letters you send wrong (Keyer Practice, Copy this).
-    if (hasSending) {
+    // Letters you send wrong (Keyer Practice: Send This and the Daily Scales).
+    {
       var sTally = {};
       sendRows.forEach(function (s) {
         Object.keys(s.chars || {}).forEach(function (ch) {
@@ -1079,7 +1079,6 @@
     return o;
   }
   function renderSending(rows, allRows, from) {
-    if (!hasSending) return;
     var now = sendStats(rows);
     // The same length of time just before, to compare (not for All).
     var prev = rangeDays ? sendStats(allRows.filter(function (s) { return s.start >= addDays(from, -rangeDays) && s.start < from; })) : null;
