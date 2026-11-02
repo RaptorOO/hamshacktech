@@ -65,7 +65,7 @@
   try { cur = clean(JSON.parse(localStorage.getItem(KEY) || 'null')); } catch (e) { cur = clean({}); }
   var listeners = [];
   function copy() { return JSON.parse(JSON.stringify(cur)); }
-  function notify() { var c = copy(); listeners.forEach(function (fn) { try { fn(c); } catch (e) { console.error(e); } }); }
+  function notify() { carry(); var c = copy(); listeners.forEach(function (fn) { try { fn(c); } catch (e) { console.error(e); } }); }
   window.addEventListener('storage', function (e) {
     if (e.key !== KEY) return;
     try { cur = clean(JSON.parse(e.newValue || 'null')); notify(); } catch (err) {}
@@ -636,6 +636,52 @@
       var p = PROGRAMS[program];
       var l = p && p.levels.filter(function (x) { return x.key === level; })[0];
       return l ? l.name : '';
-    }
+    },
+    carryOver: carryOver
   };
+
+  /* Switching to an advisor's own curriculum (Tim, 2026-11-02: a student
+     in Buz's class had already ticked weeks of the standard Intermediate).
+     The first time a device has a level with variantOf chosen, every tick
+     from the level it varies (same task key, so the same task) is copied
+     to it with its dates and its Homework session (hw): the time isn't
+     counted twice, as Progress counts a Homework session through the
+     course it was ticked in. Ticks already there are kept. The standard
+     level keeps its own ticks, for switching back. Once per device and
+     level (CARRIED); the copies sync like any other tick.
+     HST.course.carryOver(program, level) -> how many tasks were copied */
+  var CARRIED = 'hct-cw-course-carried-v1';
+  function carryOver(program, level) {
+    var p = PROGRAMS[program], l = p && p.levels.filter(function (x) { return x.key === level; })[0];
+    var info = l && l.variantOf ? HST.course.info(program, level) : null;
+    if (!info) return 0;
+    var ck = program + ':' + level, marks = {};
+    try { marks = JSON.parse(localStorage.getItem(CARRIED) || '{}') || {}; } catch (e) {}
+    if (marks[ck]) return 0;
+    // This curriculum's task keys ('3.1.WD103'), as My Course makes them.
+    var keys = {};
+    info.sessions.forEach(function (sn, i) {
+      (sn[2] || []).forEach(function (day, j) {
+        var list = typeof day === 'string' ? day.split(' ') : day.filter(function (x) { return x.charAt(0) !== '#'; }), seen = {};
+        list.forEach(function (tok) {
+          var bar = tok.indexOf('|');
+          keys[HST.course.taskKey((i + 1) + '.' + (j + 1) + '.' + (bar > 0 ? tok.slice(0, bar) : tok.replace(/[-*:].*$/, '')), seen)] = true;
+        });
+      });
+    });
+    var all = loadProgress(), from = all[program + ':' + l.variantOf] || {}, to = all[ck] || {}, n = 0, now = Date.now();
+    Object.keys(from).forEach(function (k) {
+      if (!keys[k] || (to[k] && shown(cleanEntry(to[k])))) return;
+      var e = shown(cleanEntry(from[k]));
+      if (!e) return;
+      e.t = now;                      // a change here, so it syncs
+      to[k] = cleanEntry(e); n++;
+    });
+    marks[ck] = true;
+    try { localStorage.setItem(CARRIED, JSON.stringify(marks)); } catch (e) {}
+    if (n) { all[ck] = to; saveProgress(all); progChanged(); }
+    return n;
+  }
+  function carry() { if (cur.program && cur.level) carryOver(cur.program, cur.level); }
+  carry();                            // chosen before this update, or on another device
 })();
