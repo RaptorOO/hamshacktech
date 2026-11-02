@@ -25,3 +25,10 @@ h1.hst-title {
 .hst-foot.compact { margin: 0; line-height: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hst-foot.compact .hst-73, .hst-foot.compact .hst-copy { display: inline; margin: 0; font-size: 0.88rem; }
 .hst-foot.compact .hst-copy { margin-left: 14px; }
+
+/* Record buttons (HST.recordButton in hst-engine.js; Tim, 2026-11-02). */
+.rec-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #ef4444; margin-right: 7px; vertical-align: 1px; }
+.rec-on { border-color: #ef4444 !important; }
+.rec-on .rec-dot { animation: hst-rec-blink 1s steps(2, start) infinite; }
+.rec-time { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; margin-left: 4px; }
+@keyframes hst-rec-blink { 50% { opacity: 0.2; } }

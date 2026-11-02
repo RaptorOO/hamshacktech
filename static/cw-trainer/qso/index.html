@@ -80,6 +80,7 @@
   .speed-row input[type="range"] { width: 100%; accent-color: var(--lime); }
   .speed-row output { font: 500 0.92rem 'JetBrains Mono', monospace; color: var(--lime); text-align: right; }
   .speeds .hint { margin-top: 4px; }
+  .band-checks { margin: 6px 0 0; }
   .desc { color: var(--muted); font-size: 0.88rem; margin: 0 0 14px; }
 
   .btn { border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; background: var(--well); color: var(--text); font: 500 0.9rem/1 'Inter', sans-serif; cursor: pointer; }
@@ -223,9 +224,24 @@
       </div>
       <p class="hint" id="speedHint"></p>
     </fieldset>
+    <!-- Band conditions (Tim, 2026-11-02): make it sound like a real band. -->
+    <fieldset class="speeds">
+      <legend class="label">Band conditions</legend>
+      <div class="speed-row">
+        <label for="bNoise">Noise <span>(receiver hiss)</span></label>
+        <input type="range" id="bNoise" min="0" max="100" step="10">
+        <output id="bNoiseVal" for="bNoise"></output>
+      </div>
+      <div class="checks band-checks">
+        <label class="check"><input type="checkbox" id="bQsb"> Fading (QSB)</label>
+        <label class="check"><input type="checkbox" id="bQrn"> Static crashes (QRN)</label>
+        <label class="check"><input type="checkbox" id="bQrm"> Another station nearby (QRM)</label>
+      </div>
+    </fieldset>
     <div class="checks">
       <label class="check"><input type="checkbox" id="hints"> Show what to send</label>
       <label class="check"><input type="checkbox" id="showText"> Show their text after each over</label>
+      <label class="check"><input type="checkbox" id="recordQso"> Record the contact <span class="hint" style="display:inline;margin:0">(saved as a sound file when it ends)</span></label>
     </div>
     <div class="actions">
       <button class="btn primary big" id="startBtn" type="button">Start QSO</button>
@@ -244,6 +260,7 @@
       <button class="btn primary" id="overBtn" type="button" title="Finish your over now">Done <kbd>Enter</kbd></button>
       <span style="flex:1"></span>
       <button class="btn" id="endQsoBtn" type="button" title="Stop this contact">End QSO</button>
+      <button class="btn" id="recBtn" type="button" title="Record the contact (both stations) and save it as a sound file"><span class="rec-dot" aria-hidden="true"></span>Record</button>
     </div>
     <div class="pads" id="pads" hidden>
       <button class="pad" id="padDit" type="button">DIT</button>
@@ -304,7 +321,7 @@
   // (shared/hst-account.js) can tell which device has the newer details.
   // copyWpm / sendWpm: this tab's own speeds (0 = not chosen yet). fw: their
   // Farnsworth (overall) speed, 0 = off.
-  var prefs = { call: '', name: '', qth: '', cwops: '', stationUpdated: 0, style: 'std', who: 'they', fw: 0, copyWpm: 0, sendWpm: 0, hints: true, showText: false };
+  var prefs = { call: '', name: '', qth: '', cwops: '', stationUpdated: 0, style: 'std', who: 'they', fw: 0, copyWpm: 0, sendWpm: 0, hints: true, showText: false, record: false, noise: 0, qsb: false, qrn: false, qrm: false };
   try { var sv = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (sv) Object.keys(prefs).forEach(function (k) { if (k in sv) prefs[k] = sv[k]; }); } catch (e) {}
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
 
@@ -339,6 +356,12 @@
     return { wpm: w, fwpm: fw && fw < w ? fw : undefined, toneHz: s.toneHz, volume: s.volume };
   }
 
+  // Band conditions for the contact (hst-engine.js HST.audio.conditions).
+  function bandOn() {
+    var sh = HST.shared.get();
+    HST.audio.conditions({ noise: Number(prefs.noise) || 0, qsb: !!prefs.qsb, qrn: !!prefs.qrn, qrm: !!prefs.qrm, toneHz: sh.toneHz, volume: sh.volume });
+  }
+
   /* ================= the contact ================= */
   var q = null;              // the QSO in progress (HST.qso.create)
   var stepIdx = 0, tries = 0;
@@ -369,6 +392,8 @@
     $('log').innerHTML = '';
     show('live');
     rec.start({ style: q.style, who: q.who, wpm: theirWpm(), dxCall: q.dx.call, keyType: cfg().keyType });
+    if (prefs.record && !HST.audio.recording()) $('recBtn').click();   // from the first dit
+    bandOn();
     runStep();
   }
 
@@ -423,6 +448,9 @@
   }
 
   var keyer = HST.createKeyer({ key: onKey, wpm: sendWpm });
+  // Record (Tim, 2026-11-02): the whole contact, both stations, saved as a
+  // WAV file when you stop it or the contact ends.
+  HST.recordButton($('recBtn'), { name: function () { return 'cw-qso' + (q ? '-' + q.dx.call.replace(/\W/g, '') : ''); } });
   keyer.attachKeyboard(window);
   var decoder = HST.createDecoder({
     unitMs: unitMs,
@@ -530,6 +558,8 @@
   /* ================= after the contact ================= */
   function finish(completed) {
     gen++;
+    HST.recorderStop();
+    HST.audio.conditions(null);
     clearTimeout(waitTimer);
     HST.audio.stop(); keyer.reset();
     q.completed = completed;
@@ -635,7 +665,9 @@
     document.querySelectorAll('[data-style]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.style === prefs.style)); });
     document.querySelectorAll('[data-who]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.who === prefs.who)); });
     renderSpeeds();
-    $('hints').checked = prefs.hints; $('showText').checked = prefs.showText;
+    $('hints').checked = prefs.hints; $('showText').checked = prefs.showText; $('recordQso').checked = !!prefs.record;
+    $('bNoise').value = prefs.noise; $('bNoiseVal').textContent = prefs.noise ? prefs.noise + '%' : 'Off';
+    $('bQsb').checked = !!prefs.qsb; $('bQrn').checked = !!prefs.qrn; $('bQrm').checked = !!prefs.qrm;
     var D = {
       'std-they': 'They call CQ and you answer. You’ll exchange signal reports, names and QTHs, then 73.',
       'std-you': 'You call CQ and they answer. Then the same exchange: signal reports, names and QTHs, then 73.',
@@ -690,6 +722,11 @@
   });
   $('hints').addEventListener('change', function (e) { prefs.hints = e.target.checked; savePrefs(); });
   $('showText').addEventListener('change', function (e) { prefs.showText = e.target.checked; savePrefs(); });
+  $('recordQso').addEventListener('change', function (e) { prefs.record = e.target.checked; savePrefs(); });
+  $('bNoise').addEventListener('input', function (e) { prefs.noise = Number(e.target.value); $('bNoiseVal').textContent = prefs.noise ? prefs.noise + '%' : 'Off'; savePrefs(); });
+  ['qsb', 'qrn', 'qrm'].forEach(function (k) {
+    $('b' + k.charAt(0).toUpperCase() + k.slice(1)).addEventListener('change', function (e) { prefs[k] = e.target.checked; savePrefs(); });
+  });
   ['myCall', 'myName', 'myQth'].forEach(function (id) { $(id).addEventListener('input', function () { $(id).classList.remove('bad'); }); });
   HST.shared.onChange(renderSetup);
   // Station details synced in from another device (by the app shell's
