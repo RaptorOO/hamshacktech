@@ -125,6 +125,19 @@
   .file { display: inline-block; margin: 1px 3px 1px 0; padding: 0 7px; border: 1px solid var(--border); border-radius: 999px;
           color: var(--mc); font: 500 0.8rem/1.6 'JetBrains Mono', monospace; text-decoration: none; white-space: nowrap; }
   .file:hover { border-color: var(--mc); background: rgba(196, 181, 253, 0.10); }
+  /* The player (Tim, 2026-11-02): a student found the browser's own player
+     for a bare MP3 tiny (about 300 px) next to CWops' full-width one, so
+     the files play here, in a bar across the bottom with a full-width
+     scrubber. It sits outside the schedule, so ticking a box (which redraws
+     the schedule) doesn't stop it. */
+  .player { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--panel); border-top: 1px solid var(--mc);
+            box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.45); padding: 8px 18px 10px; }
+  .player .pl-head { max-width: 900px; margin: 0 auto 4px; display: flex; align-items: center; gap: 12px; font-size: 0.88rem; }
+  .player .pl-title { color: var(--mc); font: 600 0.9rem 'JetBrains Mono', monospace; }
+  .player .pl-open { margin-left: auto; color: var(--muted); font-size: 0.82rem; }
+  .player .pl-close { border: 1px solid var(--border); background: var(--well); color: var(--text); border-radius: 6px; padding: 2px 9px; cursor: pointer; font-size: 0.9rem; }
+  .player audio { display: block; width: 100%; max-width: 900px; margin: 0 auto; height: 40px; }
+  body.playing .wrap { padding-bottom: 120px; }
   .task .also { color: var(--muted); font-size: 0.85rem; }
   .ses-bar.past .task .also { color: var(--dim); }
   .curr { display: inline-block; margin-top: 2px; font-size: 0.85rem; }
@@ -257,6 +270,14 @@
   </footer>
 </div>
 
+<div class="player" id="player" hidden aria-label="Audio player">
+  <div class="pl-head">
+    <span>Playing</span> <span class="pl-title" id="plTitle"></span>
+    <a class="pl-open" id="plOpen" href="#" target="_blank" rel="noopener">Open in a new tab &#8599;</a>
+    <button class="pl-close" id="plClose" type="button" aria-label="Stop and close the player">&times;</button>
+  </div>
+  <audio id="plAudio" controls preload="metadata"></audio>
+</div>
 <script src="../shared/hst-engine.js"></script>
 <script src="../shared/hst-course.js"></script>
 <script src="../shared/hst-file-lengths.js"></script>
@@ -635,7 +656,30 @@
     var d = e.target;
     if (d.dataset && d.dataset.ses && openSessions) openSessions[d.dataset.ses] = d.open;
   }, true);
+  // A sound file plays in the player bar (Ctrl/Cmd-click or middle-click
+  // still opens it in a new tab).
+  function play(url, title) {
+    var a = $('plAudio');
+    $('plTitle').textContent = title;
+    $('plOpen').href = url;
+    $('player').hidden = false;
+    document.body.classList.add('playing');
+    if (a.getAttribute('src') !== url) a.src = url;
+    a.play().catch(function () {});
+  }
+  $('plClose').addEventListener('click', function () {
+    var a = $('plAudio');
+    a.pause(); a.removeAttribute('src'); a.load();
+    $('player').hidden = true;
+    document.body.classList.remove('playing');
+  });
   $('schedule').addEventListener('click', function (e) {
+    var mp3 = e.target.closest('a[href$=".mp3"]');
+    if (mp3 && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+      e.preventDefault();
+      play(mp3.href, mp3.textContent.trim());
+      return;
+    }
     // A Daily Scale opens in Keyer Practice (Send tab) through the app
     // shell; on its own (no shell), the link opens the app there.
     var tl = e.target.closest('a[data-tool]');
