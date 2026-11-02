@@ -17,7 +17,7 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = '1c8fa413358a';
+const VERSION = '26efe6d5f300';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline, each with its fingerprint (see
@@ -54,7 +54,7 @@ const PRECACHE = [
   ['/cw-trainer/icons/apple-touch-icon.png', '6877a92df205dbd5'],
   ['/cw-trainer/icons/favicon-32x32.png', '5cc015c2d45188f7'],
   ['/cw-trainer/icr/', '4496eef29cb67c0d'],
-  ['/cw-trainer/', '8b5343af50ec7426'],
+  ['/cw-trainer/', 'c473245ca4de8336'],
   ['/cw-trainer/jeopardy/answers.js', '4afd4de2da8d724a'],
   ['/cw-trainer/jeopardy/', '27a2dcd680b9a609'],
   ['/cw-trainer/jeopardy/online.js', '0b9cc79f05880d24'],

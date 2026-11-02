@@ -564,6 +564,11 @@
   </div>
   <p class="hint" id="kFollow" hidden></p>
   <!-- Shown for the Vail adapter only (see renderKeyer). -->
+  <!-- iPhone/iPad with an adapter (Tim, 2026-11-02): the adapters key the
+       Ctrl keys, and iOS's Dictation Shortcut can be "press Control twice",
+       so two quick dits start dictation and play its tone. A web page can't
+       stop that; the setting has to change. -->
+  <p class="hint" id="kIosTip" hidden><strong>iPhone or iPad tip:</strong> if you hear a system tone when you send several dits or dahs, change Settings &rsaquo; General &rsaquo; Keyboard &rsaquo; <strong>Dictation Shortcut</strong> to anything but Control (Command works). The adapter&rsquo;s dits and dahs are Control presses, and pressing Control twice starts dictation.</p>
   <p class="hint" id="kVailTip"><strong>Vail adapter tip:</strong> if you&rsquo;ve used vailmorse.com since plugging the adapter in, unplug it and plug it back in. The Vail site switches the adapter to a mode where it stops sending key presses, and it stays that way until it&rsquo;s replugged.</p>
 
   <section class="ktest" aria-labelledby="kTestTitle">
@@ -1085,6 +1090,8 @@
     // MIDI is a Vail-adapter option, and switched off for now (HST.MIDI_ENABLED).
     $('kInputField').hidden = !HST.MIDI_ENABLED || s.adapter !== 'vail';
     $('kVailTip').hidden = s.adapter !== 'vail';
+    var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+    $('kIosTip').hidden = !ios || s.adapter === 'keyboard';
     renderFollow();
     $('kReversed').parentNode.style.display = straight ? 'none' : '';
     // For a straight key the speed slider is only the decoder's first guess;
@@ -1639,7 +1646,7 @@
     '<strong>Buz Tarlow’s Intermediate curriculum.</strong> In Buz’s (AC6AC) Intermediate class? Under Settings, My Morse code course, pick CW Academy, Intermediate, then <strong>Master Advisor: Buz Tarlow, AC6AC</strong>. My Course then follows his prototype curriculum, sound head copy files and all.',
     '<strong>ICR:</strong> Max Time to Answer now goes down to 0 ms. At 0 you answer while the character is still playing: press the space bar (or tap the number) before it ends.',
     '<strong>VBand and Vail adapters:</strong> fixed dits that could keep running after a dah, until you touched the dit paddle again (on some computers, when one paddle was let go while the other was still held).',
-    '<strong>iPhone and iPad with an adapter:</strong> Keyer Setup no longer plays the iPhone’s “can’t do that” alert on every dit and dah.',
+    '<strong>iPhone and iPad with an adapter:</strong> hear a system tone when you send several dits or dahs? Change Settings, General, Keyboard, <strong>Dictation Shortcut</strong> to anything but Control (Command works). Keyer Setup shows this tip on iPhone and iPad.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
 
