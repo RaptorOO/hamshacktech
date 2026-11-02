@@ -338,7 +338,7 @@
       // two boxes, one needed; several: three boxes, one needed).
       var PLAYS = { '2': [2, 2], '3': [3, 3], '1-2': [2, 1], n: [3, 1] }[f[3]];
       return { what: 'copy ' + f[1], audio: u, code: code, plays: PLAYS ? { boxes: PLAYS[0], need: PLAYS[1] } : null,
-        html: 'Copy ' + (u ? '<a class="file" href="' + esc(u) + '" target="_blank" rel="noopener" title="Play ' + esc(code) + '">' + esc(code) + '</a>' : '<span class="file">' + esc(code) + '</span>') +
+        html: (/^SL/.test(f[1]) ? 'Sound head copy ' : 'Copy ') + (u ? '<a class="file" href="' + esc(u) + '" target="_blank" rel="noopener" title="Play ' + esc(code) + '">' + esc(code) + '</a>' : '<span class="file">' + esc(code) + '</span>') +
           (f[3] ? ' <span class="reps">(' + (TIMES[f[3]] || f[3]) + ')</span>' : '') +
           (speeds.length > 1 ? '<select class="sp" data-act="sp" data-n="' + key + '" aria-label="Speed for ' + esc(f[1]) + ' (assigned ' + set + ' WPM)">' + speeds.map(function (v) {
             return '<option value="' + v + '"' + (v === sp ? ' selected' : '') + '>' + v + ' WPM</option>';
@@ -388,9 +388,10 @@
   // for a task in words).
   function dayTasks(day, n, j, prog) {
     var list = typeof day === 'string' ? day.split(' ') : day.filter(function (x) { return x.charAt(0) !== '#'; });
+    var seen = {};
     return list.map(function (tok) {
       var bar = tok.indexOf('|');
-      var key = n + '.' + (j + 1) + '.' + (bar > 0 ? tok.slice(0, bar) : tok.replace(/[-*:].*$/, ''));
+      var key = HST.course.taskKey(n + '.' + (j + 1) + '.' + (bar > 0 ? tok.slice(0, bar) : tok.replace(/[-*:].*$/, '')), seen);
       var t = bar > 0 ? textTask(tok.slice(bar + 1)) : task(tok, key, prog[key] || {});
       t.key = key;
       return t;

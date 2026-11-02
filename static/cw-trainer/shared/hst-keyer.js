@@ -234,6 +234,9 @@
      sound on/off instantly would click (the same reason transmitters
      shape their keying to avoid "key clicks").
      ===================================================================== */
+  /* Recording (Tim, 2026-11-02): while a recording runs, the keyer makes
+     its sidetone even when Sidetone is off (your radio or adapter beeps
+     instead), but then only into the recording, not the speakers. */
   var side = null;
   function sideNode() {
     var ctx = HST.audio.unlock();     // creates/resumes the shared AudioContext
@@ -241,12 +244,20 @@
       var osc = ctx.createOscillator();
       var g = ctx.createGain();
       g.gain.value = 0;
-      osc.connect(g).connect(ctx.destination);
+      var heard = ctx.createGain(), recOnly = ctx.createGain();
+      osc.connect(g);
+      g.connect(heard).connect(HST.audio.output());
+      g.connect(recOnly).connect(HST.audio.recordOnly());
       osc.start();
-      side = { ctx: ctx, osc: osc, g: g };
+      side = { ctx: ctx, osc: osc, g: g, heard: heard, recOnly: recOnly };
     }
+    var on = !!HST.keyerSettings.get().sidetone;
+    side.heard.gain.value = on ? 1 : 0;
+    side.recOnly.gain.value = on ? 0 : 1;
     return side;
   }
+  // Make the sidetone: when it's on, or a recording is running.
+  function sounding() { return HST.keyerSettings.get().sidetone || HST.audio.recording(); }
   function sidePeak() { return (HST.shared.get().volume / 100) * 0.35; }  // same loudness as the trainers
   var EDGE = 0.004;                   // 4 ms rise/fall
 
@@ -341,7 +352,7 @@
       var isDown = Object.keys(st.manual).length > 0;
       if (isDown === st.manualDown) return;
       st.manualDown = isDown;
-      if (cfg().sidetone) sideNow(isDown);
+      if (sounding()) sideNow(isDown);
       emit(isDown, t);
     }
 
@@ -358,7 +369,7 @@
       // (a squeeze) is remembered, so letting go mid-element still sends it.
       var opp = el === 'dit' ? 'dah' : 'dit';
       if (c.keyType === 'iambicB' && st[opp]) st[opp + 'Mem'] = true;
-      if (c.sidetone) sideElement(t0, dur);
+      if (sounding()) sideElement(t0, dur);
       emit(true, t0);
       emit(false, t0 + dur);
       var nextAt = t0 + dur + u;       // one dit of silence after every element
@@ -550,7 +561,19 @@
     function logKey(e) {
       if (h.keyLog) h.keyLog({ type: e.type, code: e.code, key: e.key, ctrl: e.ctrlKey, repeat: e.repeat, t: evTime(e) });
     }
+    /* A paddle that never lets go (Tim, 2026-11-02: a VBand user got dits
+       running on after a dah until he touched the dit paddle again). The
+       adapters key Left Ctrl and Right Ctrl, and on a Mac the browser
+       works out "pressed" or "let go" for a Ctrl key from whether Ctrl as
+       a whole is still down. So letting go of one Ctrl while the other is
+       held (the end of a squeeze) arrives as another key-DOWN of the key
+       let go, and its key-up never comes: the dit paddle looks held and
+       the keyer sends dits until it's pressed and let go again. So:
+         - a key-down for a key that's already down, and isn't the
+           keyboard's auto-repeat, is that key being let go;
+         - a key-up with Ctrl no longer down at all lets go of both Ctrls. */
     function attachKeyboard(win) {
+      var held = {};                  // e.code -> true while that key is down
       function kd(e) {
         logKey(e);
         var w = KEYMAP[e.code];
@@ -562,6 +585,8 @@
         // that" sound unless the page says it handled the key.
         e.preventDefault();
         if (e.repeat) return;
+        if (held[e.code]) { delete held[e.code]; feed('keyboard', w, false, evTime(e), e.code); return; }
+        held[e.code] = true;
         feed('keyboard', w, true, evTime(e), e.code);
       }
       function ku(e) {
@@ -569,17 +594,24 @@
         var w = KEYMAP[e.code];
         if (!w) return;
         e.preventDefault();
-        feed('keyboard', w, false, evTime(e), e.code);
+        var t = evTime(e);
+        delete held[e.code];
+        feed('keyboard', w, false, t, e.code);
+        if (!e.ctrlKey) ['ControlLeft', 'ControlRight'].forEach(function (c) {
+          if (held[c]) { delete held[c]; feed('keyboard', KEYMAP[c], false, t, c); }
+        });
       }
       // If the window loses focus with a key held, its key-up never arrives.
-      function blur() { releaseAll(); }
+      function blur() { held = {}; releaseAll(); }
       win.addEventListener('keydown', kd, true);
       win.addEventListener('keyup', ku, true);
       win.addEventListener('blur', blur);
+      HST.keyListening = (HST.keyListening || 0) + 1;   // see hst-engine.js: the adapters' Ctrl keys
       return function () {
         win.removeEventListener('keydown', kd, true);
         win.removeEventListener('keyup', ku, true);
         win.removeEventListener('blur', blur);
+        HST.keyListening = Math.max(0, (HST.keyListening || 0) - 1);
       };
     }
 
@@ -733,7 +765,7 @@
       var t = performance.now();
       st.dit = st.dah = st.ditMem = st.dahMem = false;
       Object.keys(st.manual).forEach(function (id) { delete st.manual[id]; });
-      if (st.manualDown) { st.manualDown = false; if (cfg().sidetone) sideNow(false); emit(false, t); }
+      if (st.manualDown) { st.manualDown = false; if (sounding()) sideNow(false); emit(false, t); }
     }
 
     function reset() {

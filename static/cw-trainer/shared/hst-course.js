@@ -8,7 +8,10 @@
  *                                 times: { 1: '19:00', 4: '19:00' } }  -- each class day's start time ('' = not set)
  *   HST.course.set(patch)
  *   HST.course.onChange(fn)     fn(course) -- also when another tab/frame changes it
- *   HST.course.PROGRAMS         { cwa: { name, levels: [{ key, name }] }, licw: {...} }
+ *   HST.course.PROGRAMS         { cwa: { name, levels: [{ key, name, variantOf }] }, licw: {...} }
+ *                               variantOf: a level that's another advisor's curriculum for the
+ *                               same class ('intermediate-prototype' for 'intermediate'); Settings
+ *                               offers it under that level, not in the Level list
  *   HST.course.info(program, level)  -> that level's details, or null
  *   HST.course.ORDERS           { cwaBeginner: { name, classes: [['A','E','N','T'], ...] } } -- the order
  *                               a course teaches characters, class by class; prosigns written '<AR>'
@@ -34,7 +37,10 @@
   var PROGRAMS = {
     cwa: { name: 'CW Academy', levels: [
       { key: 'beginner', name: 'Beginner' }, { key: 'fundamental', name: 'Fundamental' },
-      { key: 'intermediate', name: 'Intermediate' }, { key: 'advanced', name: 'Advanced' }] },
+      { key: 'intermediate', name: 'Intermediate' },
+      // Level keys are letters and dashes only: the account server accepts no others.
+      { key: 'intermediate-prototype', name: 'Intermediate (AC6AC prototype)', variantOf: 'intermediate', advisor: 'Buz Tarlow, AC6AC' },
+      { key: 'advanced', name: 'Advanced' }] },
     licw: { name: 'LICW', levels: [
       { key: 'beginners', name: 'Beginners' }, { key: 'intermediate', name: 'Intermediate' }, { key: 'advanced', name: 'Advanced' }] }
   };
@@ -286,6 +292,57 @@
     }
   };
 
+  /* Buz Tarlow's (AC6AC) Prototype Curriculum for Intermediate, version
+     2.24, September 2026 (Tim, 2026-11-02): for students in his classes,
+     chosen in Settings as the Master Advisor under Intermediate. It's the
+     standard Intermediate with more listening: a "sound head copy" file
+     (SL201-SL216, the phonics short stories) on each first day, and a few
+     Morse Runner and LCWO tasks moved. Same tokens as Intermediate; its
+     table of contents uses the same anchors. Session 15 day 1 has no
+     PR404 in his version. */
+  CWA.levels['intermediate-prototype'] = (function () {
+    var std = CWA.levels.intermediate, out = {};
+    Object.keys(std).forEach(function (k) { out[k] = std[k]; });
+    out.about = 'Buz Tarlow\u2019s (AC6AC) prototype curriculum for his Intermediate classes: the standard Intermediate with more listening, and "sound head copy" (hearing each letter as a sound, so words form the way they do in speech).';
+    out.curriculum = 'https://cwa.cwops.org/wp-content/uploads/Intermediate_Prototype-ver2.24.htm';
+    out.every = 'Practice on three days before each session. Each day is a list of tasks: send a Daily Morse Code Scale (tap it to open it in Keyer Practice), copy the audio files (tap one to play it, or pick another speed) and listen to the sound head copy file, then finish on LCWO or Morse Runner. Tick each task as you finish it.';
+    out.sessions = [
+      ['10', 'Words and phrases 101; sounds -ING -ES IR- RE-; sound head copy SL 201; QSO 101, POTA 102; Morse Runner single calls',
+       ['warmup WD101-10*2 PR101-10*3 SL201-10*2 icr:10', 'warmup drill ING4-10*2 ES4-10*2 IR4-10*2 RE4-10*2 mr:10', 'warmup QSO101-10*2 POTA102-10*3 icr:10']],
+      ['10', 'Words and phrases 102; sounds -ED -LY IM- UN-; sound head copy SL 202; QSO 103, POTA 104',
+       ['warmup WD102-10*2 PR102-10*3 mr:10 SL202-10*2 mr:13', 'warmup drill ED4-10*2 LY4-10*2 IM4-10*2 UN4-10*2 icr:10', 'warmup exercise QSO103-10*2 POTA104-10*3 mr:10']],
+      ['13', 'Words and phrases 103; sounds -ING -ES IN-; sound head copy SL 203; QSO 105, POTA 106',
+       ['warmup WD103-13*2 PR103-13*3 SL203-13*2 mr:13 icr:13', 'warmup drill ING5-13*2 ES5-13*2 IN4-13*2 mr:13', 'warmup exercise QSO105-13*2 POTA106-13*3 icr:13']],
+      ['13', 'Words and phrases 202; sounds -ED -LY IR-; sound head copy SL 204; QSO 107, POTA 108',
+       ['warmup WD202-13*2 PR202-13*3 SL204-13*2 mr:13', 'warmup drill ED5-13*2 LY5-13*2 IR5-13*2 icr:13', 'warmup exercise QSO107-13*2 POTA108-13*3 mr:13']],
+      ['13', 'Words and phrases 203; sounds -ING DIS- IM-; sound head copy SL 205; QSO 201, POTA 110',
+       ['warmup WD203-13*2 PR203-13*3 SL205-13*2 mr:13 icr:13', 'warmup drill ING6-13*2 DIS4-13*2 IM5-13*2 mr:13', 'warmup exercise QSO201-13*2 POTA110-13*3 icr:13']],
+      ['13', 'Words and phrases 205; sounds -ES RE- IN-; sound head copy SL 206; QSO 203, POTA 202',
+       ['warmup WD205-13*2 PR205-13*3 SL206-13*2 mr:13', 'warmup drill ES6-13*2 RE5-13*2 IN5-13*2 icr:13', 'warmup exercise QSO203-13*2 POTA202-13*3 mr:13']],
+      ['15', 'Words and phrases 301; sounds -ED -LY IR-; sound head copy SL 207; QSO 205, POTA 204',
+       ['warmup WD301-15*2 PR301-15*3 SL207-15*2 icr:15', 'warmup drill ED6-15*2 LY6-15*2 IR6-15*2 mr:15', 'warmup exercise QSO205-15*2 POTA204-15*3 icr:15']],
+      ['15', 'Words and phrases 302; sounds -ING DIS- IM-; sound head copy SL 208; QSO 207, POTA 206',
+       ['warmup WD302-15*2 PR302-15*3 SL208-15*2 mr:15', 'warmup drill ING7-15*2 DIS5-15*2 IM6-15*2 icr:15', 'warmup exercise QSO207-15*2 POTA206-15*3 mr:15']],
+      ['15', 'Words and phrases 303; sounds -ES UN- IN-; sound head copy SL 209; QSO 301, POTA 208',
+       ['warmup WD303-15*2 PR303-15*3 SL209-15*2 icr:15', 'warmup drill ES7-15*2 UN5-15*2 IN6-15*2 mr:15', 'warmup exercise QSO301-15*2 POTA208-15*3 icr:15']],
+      ['15', 'Words and phrases 304; sounds -ED RE- IR-; sound head copy SL 210; QSO 303, POTA 210',
+       ['warmup WD304-15*2 PR304-15*3 SL210-15*2 mr:15', 'warmup drill ED7-15*2 RE6-15*2 IR7-15*2 icr:15', 'warmup exercise QSO303-15*2 POTA210-15*3 mr:15']],
+      ['18', 'Words and phrases 305; sounds -LY DIS- IM-; sound head copy SL 211; QSO 305, POTA 301; first short story for head copy (SS 101)',
+       ['warmup WD305-18*2 PR305-18*3 SL211-18*2 icr:18', 'warmup drill LY7-18*2 DIS6-18*2 IM7-18*2 icr:18 SS101-18*1-2', 'warmup exercise QSO305-18*2 POTA301-18*3 mr:15']],
+      ['18', 'Words and phrases 401; sounds -ING UN- IN-; sound head copy SL 212; QSO 307, POTA 302; short story SS 103; Morse Runner in WPX contest mode',
+       ['warmup WD401-18*2 PR401-18*3 SL212-18*2 mr:18', 'warmup drill ING8-18*2 UN6-18*2 IN7-18*2 SS103-18*1', 'warmup exercise QSO307-18*2 POTA302-18*3 wpx:18:1']],
+      ['18', 'Words and phrases 402; sounds -ES RE- IR-; sound head copy SL 213; QSO 401, POTA 304; first CWT practice file (CWT 201)',
+       ['warmup WD402-18*2 PR402-18*3 SL213-18*2 icr:18', 'warmup drill ES8-18*2 RE7-18*2 IR8-18*2 CWT201-20*n mr:18', 'warmup exercise QSO401-18*2 POTA304-18*3 icr:15']],
+      ['20', 'Words and phrases 403; sounds -ES DIS- IM-; sound head copy SL 214; QSO 403, POTA 306; CWT 202; copy five stations in a live CWT',
+       ['warmup WD403-20*2 PR403-20*3 SL214-20*2 CWT202-20*n', 'warmup drill ES8-20*2 DIS7-20*2 IM8-20*2 cwt:copy5', 'warmup exercise QSO403-20*2 POTA306-20*3 mr:20']],
+      ['20', 'Words 404; sounds -LY UN- IN-; sound head copy SL 215; QSO 405, POTA 308; CWT 208; Morse Runner in WPX contest mode',
+       ['warmup WD404-20*2 SL215-20*2 CWT208-20*n', 'warmup drill LY8-20*2 UN7-20*2 IN8-20*2 wpx:20:2', 'warmup exercise QSO405-20*2 POTA308-20*3 icr:20']],
+      ['25', 'A taste of 25 WPM: words and phrases 405; sounds UN- DIS- RE-; sound head copy SL 216; QSO 407, POTA 310; CWT 212; work five stations in a live CWT',
+       ['warmup WD405-25*2 PR405-25*3 SL216-25*2 mr:25 CWT212-25*n', 'warmup drill UN8-25*2 DIS8-25*2 RE8-25*2 cwt:work5', 'warmup exercise QSO407-25*2 POTA310-25*3 mr:25']]
+    ];
+    return out;
+  })();
+
   /* CW Academy audio files, by the curriculum's names (Tim, 2026-10-30):
      'QSO101-10' -> QSO_101_10.mp3, 'WD101-10' -> WD101_10.mp3, the short
      stories ('SS101-18') on cwops.org, and the CWT files by their own
@@ -301,7 +358,7 @@
   };
   function fileUrl(code) {
     if (CWA_OLDER[code]) return CWA_OLDER[code];
-    var m = /^(QSO|WD|PR|POTA|ING|ES|ED|LY|IR|RE|IM|UN|IN|DIS|SS)(\d+)-(\d+)$/.exec(code);
+    var m = /^(QSO|WD|PR|POTA|ING|ES|ED|LY|IR|RE|IM|UN|IN|DIS|SS|SL)(\d+)-(\d+)$/.exec(code);
     if (!m || fileSpeeds(m[1] + m[2]).indexOf(Number(m[3])) < 0) return '';
     if (m[1] === 'SS') return 'https://cwops.org/wp-content/uploads/2022/11/SS' + m[2] + '_' + m[3] + '.mp3';
     return CWA_FILES + (m[1] === 'QSO' ? 'QSO_' + m[2] + '_' + m[3] : m[1] + m[2] + '_' + m[3]) + '.mp3';
@@ -309,13 +366,14 @@
   // The speeds a file comes at ('WD101' -> [10, 13, 15, 18, 20, 25, 30,
   // 35]): every speed on the Intermediate and Advanced practice files
   // pages, which share the files (checked 2026-10-30). A few stop short
-  // (CWA_TOP); the short stories stop at 25; the CWT files come at one speed.
+  // (CWA_TOP); the short stories (SS, and the SL sound head copy stories)
+  // stop at 25; the CWT files come at one speed.
   var CWA_SPEEDS = [10, 13, 15, 18, 20, 25, 30, 35];
   var CWA_TOP = { POTA107: 30, PR205: 30, QSO107: 30, WD205: 30, QSO405: 25 };
   function fileSpeeds(base) {
     var one = Object.keys(CWA_OLDER).filter(function (k) { return k.slice(0, k.indexOf('-')) === base; });
     if (one.length) return one.map(function (k) { return Number(k.slice(k.indexOf('-') + 1)); });
-    var top = /^SS/.test(base) ? 25 : CWA_TOP[base] || 35;
+    var top = /^S[SL]/.test(base) ? 25 : CWA_TOP[base] || 35;
     return CWA_SPEEDS.filter(function (v) { return v <= top; });
   }
 
@@ -554,15 +612,25 @@
         var done = 0, total = 0;
         s[2].forEach(function (day, j) {
           var list = typeof day === 'string' ? day.split(' ') : day.filter(function (x) { return x.charAt(0) !== '#'; });
+          var seen = {};
           list.forEach(function (tok) {
             var bar = tok.indexOf('|');
             var key = n + '.' + (j + 1) + '.' + (bar > 0 ? tok.slice(0, bar) : tok.replace(/[-*:].*$/, ''));
+            key = HST.course.taskKey(key, seen);
             total++;
             if (prog[key] && prog[key].done) done++;
           });
         });
         return { done: done, total: total };
       });
+    },
+    // A task's progress key, made unique within its day: the second task
+    // with the same key ('2.1.mr' twice) is '2.1.mr-2'. seen: {} per day.
+    taskKey: function (key, seen) {
+      var k = key, i = 1;
+      while (seen[k]) k = key + '-' + (++i);
+      seen[k] = true;
+      return k;
     },
     levelName: function (program, level) {
       var p = PROGRAMS[program];

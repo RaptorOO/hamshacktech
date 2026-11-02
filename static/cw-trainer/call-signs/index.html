@@ -1012,6 +1012,24 @@
           </div>
         </div>
 
+        <!-- Band conditions (Tim, 2026-11-02): copy calls the way they sound on a real band. -->
+        <div class="field" id="bandField">
+          <label for="noiseRange">Band Noise<span class="val" id="noiseVal">Off</span></label>
+          <input type="range" id="noiseRange" min="0" max="100" step="10" value="0" />
+          <div class="check-row">
+            <input type="checkbox" id="qsbCheck" />
+            <label for="qsbCheck" style="margin:0; color: var(--text-dim);">Fading (QSB)</label>
+          </div>
+          <div class="check-row">
+            <input type="checkbox" id="qrnCheck" />
+            <label for="qrnCheck" style="margin:0; color: var(--text-dim);">Static crashes (QRN)</label>
+          </div>
+          <div class="check-row">
+            <input type="checkbox" id="qrmCheck" />
+            <label for="qrmCheck" style="margin:0; color: var(--text-dim);">Another station nearby (QRM)</label>
+          </div>
+        </div>
+
         <!-- Find the Number: how often the call repeats, and how many plays before it counts as missed. -->
         <div class="row2" id="findFields">
           <div class="field">
@@ -1189,7 +1207,8 @@
       replaySec: 5, maxPlays: 10, // Find the Number
       maxTimeSec: 6, unlimited: false,
       adaptSpeed: false,          // Adaptive Speed: +1 WPM per right call, -1 per miss (Find, Builder)
-      headCopy: false, timerMin: 0, buzzer: true
+      headCopy: false, timerMin: 0, buzzer: true,
+      noise: 0, qsb: false, qrn: false, qrm: false   // band conditions during a session
     },
     running: false,
     drilling: false, drillQueue: null, drillPos: 0, drillReps: 0,
@@ -1230,7 +1249,7 @@
    "wpmField", "wpmLabel", "wpmRange", "wpmVal", "fwpmField", "fwpmRange", "fwpmVal",
    "simFields", "simMinRange", "simMinVal", "simMaxRange", "simMaxVal", "fullSpeedNote",
    "toneRange", "toneVal", "volRange", "volVal", "findFields", "replaySecRange", "replaySecVal", "maxPlaysSelect",
-   "maxTimeField", "maxTimeRange", "maxTimeVal", "unlimitedCheck", "adaptSpeedRow", "adaptSpeedCheck", "settingsFieldset", "lockNote",
+   "maxTimeField", "maxTimeRange", "maxTimeVal", "unlimitedCheck", "noiseRange", "noiseVal", "qsbCheck", "qrnCheck", "qrmCheck", "adaptSpeedRow", "adaptSpeedCheck", "settingsFieldset", "lockNote",
    "statsSub", "statTiles", "statTableCaption", "statTableHead", "statTableBody", "resetStatsBtn",
    "drillList", "drillBtn", "drillingBadge",
    "runCard", "runTitle", "runLast", "runScore", "runBest", "runWhy", "runTiles", "runMissed", "runRows",
@@ -1302,6 +1321,8 @@
     els.maxPlaysSelect.value = String(s.maxPlays);
     els.maxTimeRange.value = s.maxTimeSec; els.maxTimeVal.textContent = Number(s.maxTimeSec).toFixed(1) + " s";
     els.unlimitedCheck.checked = s.unlimited;
+    els.noiseRange.value = s.noise; els.noiseVal.textContent = s.noise ? s.noise + "%" : "Off";
+    els.qsbCheck.checked = !!s.qsb; els.qrnCheck.checked = !!s.qrn; els.qrmCheck.checked = !!s.qrm;
     els.adaptSpeedCheck.checked = !!s.adaptSpeed;
     els.maxTimeRange.disabled = s.unlimited;
     renderHeadCopyBtn();
@@ -1937,6 +1958,7 @@
       });
     }
     practiceLog.start(meta);
+    HST.audio.conditions({ noise: s.noise, qsb: s.qsb, qrn: s.qrn, qrm: s.qrm, toneHz: s.toneHz, volume: s.volume });
     els.sessionBtn.textContent = "Stop Session";
     els.sessionBtn.classList.add("running");
     els.tapHint.style.display = "none";
@@ -1953,6 +1975,7 @@
     state.timeUp = false;
     if (run) practiceLog.set({ completed: !!run.done, score: run.score, topWpm: topCopied(run.items), items: run.items });
     practiceLog.finish();
+    HST.audio.conditions(null);
     clocks.stop(!!timerRanOut);
     if (state.acceptingInput) finishAnswer(false);
     state.timerActive = false;
@@ -2109,6 +2132,10 @@
   onSetting(els.maxTimeRange, "input", function () { state.settings.maxTimeSec = parseFloat(els.maxTimeRange.value); els.maxTimeVal.textContent = state.settings.maxTimeSec.toFixed(1) + " s"; });
   onSetting(els.adaptSpeedCheck, "change", function () { state.settings.adaptSpeed = els.adaptSpeedCheck.checked; });
   onSetting(els.unlimitedCheck, "change", function () { state.settings.unlimited = els.unlimitedCheck.checked; els.maxTimeRange.disabled = state.settings.unlimited; });
+  onSetting(els.noiseRange, "input", function () { var n = parseInt(els.noiseRange.value, 10); state.settings.noise = n; els.noiseVal.textContent = n ? n + "%" : "Off"; });
+  onSetting(els.qsbCheck, "change", function () { state.settings.qsb = els.qsbCheck.checked; });
+  onSetting(els.qrnCheck, "change", function () { state.settings.qrn = els.qrnCheck.checked; });
+  onSetting(els.qrmCheck, "change", function () { state.settings.qrm = els.qrmCheck.checked; });
 
   els.resetStatsBtn.addEventListener("click", function () { state.stats = freshStats(); renderAll(); });
   els.drillBtn.addEventListener("click", function () { if (state.drilling) endDrill(); else startDrill(); });

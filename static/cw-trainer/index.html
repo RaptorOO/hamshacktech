@@ -495,6 +495,9 @@
       <label><input type="radio" name="courseProgram" value="licw"> LICW</label>
     </div>
     <label class="course-level" id="courseLevelRow" hidden>Level <select id="courseLevel"></select></label>
+    <!-- Another advisor's curriculum for this level (Tim, 2026-11-02: Buz
+         Tarlow, AC6AC, teaches Intermediate from his own prototype). -->
+    <label class="course-level" id="courseAdvisorRow" hidden>Master Advisor <select id="courseAdvisor"></select></label>
     <p class="hint"><strong>My Course</strong> (under Course) shows your class schedule and a link to your curriculum.</p>
   </div>
   <!-- Account (Milestone 8). Hidden until the site's account service is
@@ -886,7 +889,11 @@
   // (otherwise the next arrow press would go to the tool instead).
   function showTab(slug, remember, fromKeys) {
     if (slug === current) return;
-    if (current) stopTrainer(current);
+    if (current) {
+      stopTrainer(current);
+      // A recording (Keyer Practice, QSO) stops and is saved.
+      try { document.getElementById('frame-' + current).contentWindow.HST.recorderStop(); } catch (e) {}
+    }
     current = slug;
     var sec = sectionOf(slug);
     lastTools[sec.key] = slug;
@@ -988,15 +995,25 @@
     var c = HST.course.get(), p = HST.course.PROGRAMS[c.program];
     Array.prototype.forEach.call(document.querySelectorAll('input[name="courseProgram"]'), function (r) { r.checked = r.value === c.program; });
     document.getElementById('courseLevelRow').hidden = !p;
-    document.getElementById('courseLevel').innerHTML = p ? p.levels.map(function (l) {
+    // The Level list has the main levels; an advisor's own curriculum
+    // (variantOf) is picked under its level, as the Master Advisor.
+    var levels = p ? p.levels : [], cur = levels.filter(function (l) { return l.key === c.level; })[0];
+    var base = cur && cur.variantOf ? cur.variantOf : c.level;
+    document.getElementById('courseLevel').innerHTML = levels.filter(function (l) { return !l.variantOf; }).map(function (l) {
       return '<option value="' + l.key + '">' + l.name + '</option>';
-    }).join('') : '';
-    if (p) document.getElementById('courseLevel').value = c.level;
+    }).join('');
+    if (p) document.getElementById('courseLevel').value = base;
+    var variants = levels.filter(function (l) { return l.variantOf === base; });
+    document.getElementById('courseAdvisorRow').hidden = !variants.length;
+    document.getElementById('courseAdvisor').innerHTML = variants.length ? '<option value="' + base + '">Any other advisor</option>' +
+      variants.map(function (l) { return '<option value="' + l.key + '">' + l.advisor + '</option>'; }).join('') : '';
+    if (variants.length) document.getElementById('courseAdvisor').value = c.level;
   }
   Array.prototype.forEach.call(document.querySelectorAll('input[name="courseProgram"]'), function (r) {
     r.addEventListener('change', function () { if (r.checked) { HST.course.set({ program: r.value, level: '' }); renderCourse(); } });
   });
   document.getElementById('courseLevel').addEventListener('change', function (e) { HST.course.set({ level: e.target.value }); });
+  document.getElementById('courseAdvisor').addEventListener('change', function (e) { HST.course.set({ level: e.target.value }); });
   HST.course.onChange(renderCourse);
   renderCourse();
 
@@ -1226,6 +1243,8 @@
   // its own frame, so it asks the app shell through this hook).
   window.HCT = window.HCT || {};
   window.HCT.openKeyerSetup = function () { stopTrainer(current); openKeyer(); };
+  // Open: a tool frame that has focus passes the adapter's keys out here (hst-engine.js).
+  window.HCT.keyerSetupOpen = function () { return kDlg.open; };
   // My Course's task links to a tool here ([ICR](tool:icr)).
   window.HCT.openTool = function (slug) { if (TABS.indexOf(slug) >= 0) showTab(slug, true); };
   // My Course's sending tasks: open that Daily Scale in Keyer Practice.
@@ -1612,15 +1631,15 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-11-01-course-sync';
-  var RELEASE_LABEL = 'November 1, 2026';
+  var RELEASE = '2026-11-02-record-band';
+  var RELEASE_LABEL = 'November 2, 2026';
   var RELEASE_NOTES = [
-    '<strong>My Course syncs with your account.</strong> Signed in, your course, class days and every homework tick now follow you to all your devices, and come back after you clear your browser data. Your tool settings (speeds, tone and so on) still stay on each device.',
-    '<strong>Daily Scales Drill:</strong> a miss on the punctuation line (like / / / / /) now sends you back to the start of that group of five, as everywhere else in the scales, not just the one character.',
-    '<strong>Homework you ticked earlier now counts.</strong> Sound files you ticked as played in My Course before Homework time arrived (October 31) now add their length to your Practice time, on the day you ticked them. Open My Course once on the device where you ticked them.',
-    '<strong>A new Progress tab, in three parts.</strong> <strong>Overview</strong> has your practice time, streak and recent sessions, plus a bar for each class of your course showing how much of its homework you&rsquo;ve ticked in My Course.',
-    '<strong>Copying</strong> has an ICR view and a Code Groups view. ICR shows your <strong>copy speed</strong> (the fastest speed you copy at 90% or better), your recognition time week by week, and the characters to work on. Code Groups shows your speed with Farnsworth, your answer time and your <strong>head copy span</strong> (the longest group you copy whole 80% of the time). Accuracy charts now show the speed you practiced at, too.',
-    '<strong>Sending</strong> shows your letter and word spacing against perfect timing, each Daily Scales session, how much your spacing costs in speed, and the letters you send wrong, with the sending charts below.',
+    '<strong>Record your sending.</strong> Send This, Free Sending and QSO Practice have a <strong>Record</strong> button: tap it, send, tap Stop recording, and the sound is saved to your device as a WAV file you can play back, critique or send to your advisor. A QSO recording has both stations, and QSO Practice can record every contact from the start (tick Record the contact).',
+    '<strong>Band conditions.</strong> QSO Practice and Call Signs can sound like a real band: add receiver noise, fading (QSB), static crashes (QRN) and another station sending nearby (QRM).',
+    '<strong>Buz Tarlow’s Intermediate curriculum.</strong> In Buz’s (AC6AC) Intermediate class? Under Settings, My Morse code course, pick CW Academy, Intermediate, then <strong>Master Advisor: Buz Tarlow, AC6AC</strong>. My Course then follows his prototype curriculum, sound head copy files and all.',
+    '<strong>ICR:</strong> Max Time to Answer now goes down to 0 ms. At 0 you answer while the character is still playing: press the space bar (or tap the number) before it ends.',
+    '<strong>VBand and Vail adapters:</strong> fixed dits that could keep running after a dah, until you touched the dit paddle again (on some computers, when one paddle was let go while the other was still held).',
+    '<strong>iPhone and iPad with an adapter:</strong> Keyer Setup no longer plays the iPhone’s “can’t do that” alert on every dit and dah.',
     'This note appears once after each update. You can find it again under Settings.'
   ];
 

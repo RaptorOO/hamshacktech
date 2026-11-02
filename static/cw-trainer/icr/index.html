@@ -712,7 +712,7 @@
 
         <div class="control-row">
           <div class="control-head"><span>Max Time to Answer</span><b id="ttaVal">1000 ms</b></div>
-          <input type="range" id="ttaSlider" min="300" max="4000" value="1500" step="50">
+          <input type="range" id="ttaSlider" min="0" max="4000" value="1500" step="50">
           <label class="toggle-row">
             <input type="checkbox" id="ttaOffToggle">
             <span>No limit (disable timeout)</span>
@@ -1169,6 +1169,7 @@ function applyKeyboardMode(){
 // A tap on the digit pad (or a digit typed on a keyboard in pad mode).
 function padPress(d){
   if(oopsOpen || !sessionRunning || drillActive) return;
+  if(keyMode === 'playing' && !answerPhaseActive && zeroLimit()){ earlyPress = { trial: trialId, digit: d }; return; }
   if(keyMode === 'playing' && !answerPhaseActive){ showOops(); return; }   // too early
   if(awaitingRecognition) handleRecognizePress();   // the tap is the "I know it"
   if(!answerPhaseActive) return;
@@ -1219,6 +1220,14 @@ let trialId = 0;
 // cancelled if the popup opens during the feedback pause.
 let nextTrialTimer = null;
 
+// Max Time to Answer can be 0 ms (Tim, 2026-11-02): no time at all after
+// the character, so you have to know it while it's still playing. Then a
+// space bar press (or a digit tap) during the character counts, and is
+// acted on the moment the character ends, with a reaction time of 0 ms.
+// { trial, digit } -- digit is '' for the space bar.
+let earlyPress = null;
+function zeroLimit(){ return settings.ttaEnabled && settings.ttaMs === 0; }
+
 function setKeyState(mode){
   // mode: 'idle' | 'playing' | 'armed' | 'answering'
   keyMode = mode;
@@ -1263,6 +1272,13 @@ function startTrial(){
     playbackEndTime = performance.now();
     awaitingRecognition = true;
     setKeyState('armed');
+    // Pressed while the character played (Max Time to Answer 0 ms).
+    const early = earlyPress && earlyPress.trial === myTrial ? earlyPress : null;
+    earlyPress = null;
+    if(early){
+      if(early.digit) padPress(early.digit); else handleRecognizePress();
+      return;
+    }
     armTTATimer();
   }, totalMs);
 }
@@ -1331,7 +1347,10 @@ function armTTATimer(){
 }
 
 function handleRecognizePress(){
-  if(!awaitingRecognition) return;
+  if(!awaitingRecognition){
+    if(keyMode === 'playing' && sessionRunning && !answerPhaseActive && zeroLimit()) earlyPress = { trial: trialId, digit: '' };
+    return;
+  }
   awaitingRecognition = false;
   clearTimeout(ttaTimer);
   const reactionTime = Math.round(performance.now() - playbackEndTime);

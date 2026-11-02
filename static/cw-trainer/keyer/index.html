@@ -285,6 +285,7 @@
       <button class="btn" data-show="copy" id="skipBtn" type="button" title="Something new to send">Skip</button>
       <button class="btn primary" data-show="copy warmup" id="doneBtn" type="button" title="Grade what I've sent now">Done <kbd>Enter</kbd></button>
       <button class="btn" data-show="free" id="clearBtn" type="button">Clear</button>
+      <button class="btn" data-show="copy free" id="recBtn" type="button" title="Record your sending and save it as a sound file"><span class="rec-dot" aria-hidden="true"></span>Record</button>
     </div>
     <!-- On-screen paddles: always on touch screens, and when no adapter is set. -->
     <div class="pads" id="pads" hidden>
@@ -427,6 +428,8 @@
      key-up with its exact time. The live decoder shows letters as they
      arrive; the grading uses the full analysis afterwards. */
   var keyer = HST.createKeyer({ key: onKey, wpm: keyWpm });   // paddles key at this tab's own speed
+  // Record (Tim, 2026-11-02): your sending, saved as a WAV file when you stop.
+  HST.recordButton($('recBtn'), { name: function () { return 'cw-sending'; } });
   keyer.attachKeyboard(window);
   var decoder = HST.createDecoder({
     unitMs: unitMs,
@@ -1223,6 +1226,7 @@
     b.addEventListener('click', function () {
       if (prefs.mode === b.dataset.mode) return;
       endSession();
+      if (b.dataset.mode === 'warmup') HST.recorderStop();   // Record is on Send This and Free Sending
       prefs.mode = b.dataset.mode; savePrefs(); applyMode();
     });
   });
