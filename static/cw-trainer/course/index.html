@@ -64,6 +64,18 @@
   .when label { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.9rem; }
   .when input[type="date"] { padding: 6px 8px; background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 7px; font-size: 0.9rem; }
   .days { display: inline-flex; gap: 4px; }
+  /* Pre-Class (Tim, 2026-11-02): its own sessions above the full class's,
+     and the question at its end. */
+  .when .pre-check { color: var(--text); }
+  .when .pre-check input { accent-color: var(--mc); width: 16px; height: 16px; }
+  .pre-group { margin-bottom: 14px; border: 1px dashed var(--mc); border-radius: 12px; padding: 4px 10px 6px; }
+  .pre-group > summary { cursor: pointer; padding: 8px 2px; font: 600 0.95rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; color: var(--mc); }
+  .pre-group > summary .pg-note { font: 400 0.86rem 'Inter', sans-serif; letter-spacing: 0; color: var(--muted); margin-left: 8px; }
+  .full-head { font: 600 0.95rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; color: var(--mc); margin: 4px 2px 8px; }
+  .pre-ask { padding: 12px 14px; border-radius: 10px; background: var(--mc-soft); border: 1px solid var(--mc); margin-bottom: 12px; font-size: 0.95rem; }
+  .pre-ask p { margin: 0 0 10px; }
+  .pre-ask .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pre-ask .small { color: var(--muted); font-size: 0.85rem; margin: 10px 0 0; }
   .days button { min-width: 40px; padding: 5px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--well); color: var(--muted); font-size: 0.88rem; cursor: pointer; }
   .days button[aria-pressed="true"] { background: var(--mc); border-color: var(--mc); color: var(--mc-ink); font-weight: 600; }
   .times { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: -4px 0 12px; }
@@ -236,11 +248,21 @@
     <section class="card" aria-labelledby="schedTitle">
       <h2 id="schedTitle">Class schedule</h2>
       <div class="when">
-        <label for="firstClass">My first class <input type="date" id="firstClass"></label>
+        <label class="pre-check" id="preRow"><input type="checkbox" id="preOn"> Starting with a Pre-Class</label>
+        <label for="preFirst" id="preFirstRow" hidden>Pre-Class starts <input type="date" id="preFirst"></label>
+        <label for="firstClass"><span id="firstLbl">My first class</span> <input type="date" id="firstClass"></label>
         <span class="when-days"><span style="color:var(--muted);font-size:0.9rem;margin-right:8px">Meets on</span><span class="days" id="days" role="group" aria-label="Class days"></span></span>
       </div>
       <div class="times" id="times" aria-label="Class start times"></div>
       <div class="next" id="nextClass" hidden></div>
+      <div class="pre-ask" id="preAsk" hidden role="region" aria-label="Your Pre-Class is over">
+        <p id="preAskText"></p>
+        <div class="row">
+          <button class="btn primary" type="button" id="preCarry">Carry my ticks over</button>
+          <button class="btn" type="button" id="preClean">Start with a clean slate</button>
+        </div>
+        <p class="small">Either way, your Pre-Class ticks stay in the Pre-Class list below, and its practice time stays in Progress.</p>
+      </div>
       <p class="tally" id="tally"></p>
       <p class="hint" id="everyNote" hidden></p>
       <div id="schedule">
@@ -254,6 +276,7 @@
       </div>
       <p class="hint" id="speedNote"></p>
       <p class="hint">Enter your first class date, your class days and their start times (from your advisor) to see when every class is. Holidays can move a class.
+        If your advisor runs a Pre-Class before the class starts, tick <b>Starting with a Pre-Class</b> and enter both dates: My Course shows the Pre-Class sessions that fit before the full class, with their own ticks.
         This is a summary; the curriculum below is the full plan, with each class&rsquo;s homework.</p>
     </section>
 
@@ -421,9 +444,8 @@
   function dayDone(day, n, j, prog) {
     return dayTasks(day, n, j, prog).every(function (t) { return prog[t.key] && prog[t.key].done; });
   }
-  function practiceHtml(info, s, n, prog) {
+  function practiceHtml(info, s, n, prog, cls) {
     if (!s[2]) return focusHtml(s[1]);
-    var cls = sessionDates[n - 1];
     return s[2].map(function (day, j) {
       var label = dayLabel(day, j);
       // The day's date: the practice days are the days just before the
@@ -451,7 +473,6 @@
   function redoText(r) { return r ? 'Redone ' + r + (r === 1 ? ' time' : ' times') : ''; }
   var courseKey = '';
   var openSessions = null;   // { 3: true }: the session bars that are open
-  var sessionDates = [];     // each class's date (Date), when the first class is set
   // Done (with the date ticked), then Redo +1 (with the count).
   // t: the task (its plays and audio file), when there is one.
   var NTH = ['1st', '2nd', '3rd'];
@@ -514,7 +535,6 @@
 
     var first = parseDate(c.firstClass);
     var dates = first ? classDates(first, c.days, info.sessions.length) : [];
-    sessionDates = dates;
     var t = today(), now = new Date(), nextIdx = -1;
     dates.forEach(function (d, i) { if (nextIdx < 0 && overAt(d, c.times) > now) nextIdx = i; });
     $('dateHead').hidden = !first;
@@ -549,28 +569,74 @@
     var bars = info.sessions.some(function (s) { return s[2]; });
     $('sessionBars').hidden = !bars;
     $('sessionTable').hidden = bars;
+
+    /* Pre-Class (Tim, 2026-11-02; see PRE-CLASS in hst-course.js): the
+       sessions that fit between its first class and the full class's, on
+       the same class days, from Session 1, with their own ticks (preKey). */
+    var preOn = bars && c.pre;
+    $('preRow').hidden = !bars;
+    $('preOn').checked = preOn;
+    $('preFirstRow').hidden = !preOn;
+    $('preFirst').value = c.preFirst;
+    $('firstLbl').textContent = preOn ? 'Full class starts' : 'My first class';
+    var preFirst = preOn ? parseDate(c.preFirst) : null, preDates = [];
+    if (preFirst && first && preFirst < first)
+      preDates = classDates(preFirst, c.days, info.sessions.length).filter(function (d) { return d < first; });
+    var preN = preDates.length, preCk = HST.course.preKey(c.program, c.level);
+    var preProg = preN ? HST.course.progress.get(preCk) : {};
+    var preNext = -1;
+    preDates.forEach(function (d, i) { if (preNext < 0 && overAt(d, c.times) > now) preNext = i; });
+    var preOver = preN > 0 && preNext < 0;
+    var preTicked = Object.keys(preProg).filter(function (k) { return preProg[k].done || (preProg[k].plays || []).some(Boolean); }).length;
+    // The question at its end (once anything was ticked in it).
+    $('preAsk').hidden = !(preOver && !c.preDone && preTicked);
+    $('preAskText').innerHTML = 'Your <b>Pre-Class</b> is over: well done! You ticked <b>' + preTicked + '</b> ' + (preTicked === 1 ? 'task' : 'tasks') +
+      ' in it. Carry those ticks over to the full class&rsquo;s homework schedule, or start the full class with a clean slate?';
+
+    // One session's bar. pre: a Pre-Class session.
+    function sessionBar(s, i, d, prog, pre, isNext) {
+      var n = i + 1, cls = ['ses-bar'], days = s[2] || [], id = (pre ? 'p' : '') + n;
+      function classDone(s, n) { return s[2].every(function (dd, j) { return dayDone(dd, n, j, prog); }); }
+      if (d && overAt(d, c.times) <= now) cls.push('past');
+      if (isNext) cls.push('now');
+      if (classDone(s, n)) cls.push('done');
+      var time = d && c.times[d.getDay()];
+      var daysDone = days.filter(function (dd, j) { return dayDone(dd, n, j, prog); }).length, unit = 'days';
+      if (days.length === 1) {   // one list (Beginner; Fundamental 15 and 16): count its tasks
+        var ts = dayTasks(days[0], n, 0, prog);
+        days = ts; unit = 'tasks';
+        daysDone = ts.filter(function (t) { return prog[t.key] && prog[t.key].done; }).length;
+      }
+      return '<details class="' + cls.join(' ') + '" data-ses="' + id + '"' + (openSessions[id] ? ' open' : '') + '>' +
+        '<summary><span class="sb-n">' + (pre ? 'Pre-Class ' : 'Session ') + n + '</span>' +
+        (d ? '<span class="sb-date"><span class="l">' + esc(fmtLong(d)) + '</span><span class="s">' + esc(fmt(d)) + '</span></span>' : '') +
+        (time ? '<span class="sb-time">' + esc(fmtTime(time)) + '</span>' : '') +
+        '<span class="sb-br"></span><span class="sb-sp">' + (s[0] ? 'Speed: <b>' + esc(s[0]) + '</b> WPM' : '') + '</span>' +   // some sessions give none
+        '<span class="sb-prog">' + (daysDone === days.length ? '\u2713 ' : '') + daysDone + ' of ' + days.length + ' ' + unit + ' done</span></summary>' +
+        '<div class="ses-body">' + practiceHtml(info, s, n, prog, d) + '</div></details>';
+    }
+
     if (bars) {
-      if (!openSessions) { openSessions = {}; openSessions[nextIdx >= 0 ? nextIdx + 1 : 1] = true; }
-      $('sessionBars').innerHTML = info.sessions.map(function (s, i) {
-        var n = i + 1, cls = ['ses-bar'], days = s[2] || [];
-        if (first && overAt(dates[i], c.times) <= now) cls.push('past');
-        if (i === nextIdx) cls.push('now');
-        if (classDone(s, n)) cls.push('done');
-        var time = first && c.times[dates[i].getDay()];
-        var daysDone = days.filter(function (d, j) { return dayDone(d, n, j, prog); }).length, unit = 'days';
-        if (days.length === 1) {   // one list (Beginner; Fundamental 15 and 16): count its tasks
-          var ts = dayTasks(days[0], n, 0, prog);
-          days = ts; unit = 'tasks';
-          daysDone = ts.filter(function (t) { return prog[t.key] && prog[t.key].done; }).length;
-        }
-        return '<details class="' + cls.join(' ') + '" data-ses="' + n + '"' + (openSessions[n] ? ' open' : '') + '>' +
-          '<summary><span class="sb-n">Session ' + n + '</span>' +
-          (first ? '<span class="sb-date"><span class="l">' + esc(fmtLong(dates[i])) + '</span><span class="s">' + esc(fmt(dates[i])) + '</span></span>' : '') +
-          (time ? '<span class="sb-time">' + esc(fmtTime(time)) + '</span>' : '') +
-          '<span class="sb-br"></span><span class="sb-sp">' + (s[0] ? 'Speed: <b>' + esc(s[0]) + '</b> WPM' : '') + '</span>' +   // some sessions give none
-          '<span class="sb-prog">' + (daysDone === days.length ? '\u2713 ' : '') + daysDone + ' of ' + days.length + ' ' + unit + ' done</span></summary>' +
-          '<div class="ses-body">' + practiceHtml(info, s, n, prog) + '</div></details>';
-      }).join('');
+      if (!openSessions) {
+        openSessions = {};
+        if (preNext >= 0) { openSessions.pre = true; openSessions['p' + (preNext + 1)] = true; }
+        else openSessions[nextIdx >= 0 ? nextIdx + 1 : 1] = true;
+      }
+      var preHtml = '';
+      if (preN) {
+        var note = preNext >= 0 ? preN + ' sessions before the full class starts'
+          : c.preDone === 'carry' ? 'over \u00b7 its ticks were carried over to the full class'
+          : c.preDone === 'clean' ? 'over \u00b7 the full class started with a clean slate'
+          : 'over';
+        preHtml = '<details class="pre-group" data-ses="pre" data-ck="' + esc(preCk) + '"' + (openSessions.pre ? ' open' : '') + '>' +
+          '<summary>Pre-Class<span class="pg-note">' + esc(fmt(preDates[0])) + ' \u2013 ' + esc(fmt(preDates[preN - 1])) + ' \u00b7 ' + esc(note) + '</span></summary>' +
+          preDates.map(function (d, i) { return sessionBar(info.sessions[i], i, d, preProg, true, i === preNext); }).join('') +
+          (c.preDone === 'clean' && preTicked ? '<p class="hint"><button class="linkbtn" type="button" id="preCarryLate">Carry my Pre-Class ticks over after all</button></p>' : '') +
+          '</details><div class="full-head">Full class</div>';
+      }
+      $('sessionBars').innerHTML = preHtml + '<div data-ck="' + esc(courseKey) + '">' + info.sessions.map(function (s, i) {
+        return sessionBar(s, i, first ? dates[i] : null, prog, false, preNext < 0 && i === nextIdx);
+      }).join('') + '</div>';
     }
 
     $('sessions').innerHTML = bars ? '' : info.sessions.map(function (s, i) {
@@ -581,12 +647,21 @@
       return '<tr class="' + cls.join(' ') + '"><td class="n ses">' + (i + 1) + '</td>' +
         (first ? '<td class="date">' + esc(fmt(dates[i])) + (c.times[dates[i].getDay()] ? '<span class="time">' + esc(fmtTime(c.times[dates[i].getDay()])) + '</span>' : '') + '</td>' : '') +
         '<td class="speed">' + esc(speedText(s[0])) + '</td>' +
-        (s[2] ? '<td class="focus" colspan="2">' + practiceHtml(info, s, i + 1, prog) + '</td>'
+        (s[2] ? '<td class="focus" colspan="2">' + practiceHtml(info, s, i + 1, prog, first ? dates[i] : null) + '</td>'
               : '<td class="focus">' + focusHtml(s[1]) + '</td><td class="prog">' + progControls(String(i + 1), prog[i + 1] || {}, 'session ' + (i + 1)) + '</td>') + '</tr>';
     }).join('');
 
     var nx = $('nextClass');
     if (!first) nx.hidden = true;
+    else if (preNext >= 0) {
+      nx.hidden = false;
+      var pd = preDates[preNext], pToday = pd.getTime() === t.getTime(), ptime = c.times[pd.getDay()];
+      var pStarted = pToday && ptime && startOf(pd, c.times) <= now;
+      nx.innerHTML = (pStarted ? 'Pre-Class now: ' : (pToday ? 'Pre-Class today' + (ptime ? ' at ' + fmtTime(ptime) : '') : 'Next Pre-Class') + ': ') +
+        '<b>Session ' + (preNext + 1) + '</b>' + (pToday ? '' : ', <b>' + esc(fmt(pd)) + (ptime ? ' at ' + esc(fmtTime(ptime)) : '') + '</b>') +
+        ' \u2014 ' + focusHtml(info.sessions[preNext][1]) +
+        '<span class="reg">The full class starts <b>' + esc(fmt(first)) + '</b>.</span>';
+    }
     else {
       nx.hidden = false;
       var lastIdx = dates.length - 1;
@@ -616,6 +691,16 @@
   }
 
   $('firstClass').addEventListener('change', function (e) { HST.course.set({ firstClass: e.target.value }); });
+  $('preOn').addEventListener('change', function (e) { openSessions = null; HST.course.set({ pre: e.target.checked }); });
+  $('preFirst').addEventListener('change', function (e) { openSessions = null; HST.course.set({ preFirst: e.target.value, preDone: '' }); });
+  function carryPre() {
+    var c = HST.course.get();
+    HST.course.carryPre(c.program, c.level);
+    openSessions = null;
+    HST.course.set({ preDone: 'carry' });
+  }
+  $('preCarry').addEventListener('click', carryPre);
+  $('preClean').addEventListener('click', function () { openSessions = null; HST.course.set({ preDone: 'clean' }); });
   $('days').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-day]');
     if (!b) return;
@@ -632,24 +717,25 @@
   });
   // Your progress: Done (today's date, or cleared), Redo +1, and an audio
   // file's speed.
+  function ckOf(el) { var box = el.closest('[data-ck]'); return box ? box.dataset.ck : courseKey; }
   $('schedule').addEventListener('change', function (e) {
-    var t = e.target;
+    var t = e.target, ck = ckOf(t);
     if (t.dataset.act === 'done') {
-      HST.course.progress.set(courseKey, t.dataset.n, { done: t.checked ? isoToday() : '' });
-      if (t.dataset.url) homework(t.dataset.n, 0, t.checked, t.dataset.url);
+      HST.course.progress.set(ck, t.dataset.n, { done: t.checked ? isoToday() : '' });
+      if (t.dataset.url) homework(ck, t.dataset.n, 0, t.checked, t.dataset.url);
     }
     if (t.dataset.act === 'play') {
       // One play of a file ticked or unticked; the task is done once it has
       // the plays its count needs.
-      var cur = HST.course.progress.get(courseKey)[t.dataset.n] || {}, i = Number(t.dataset.i);
+      var cur = HST.course.progress.get(ck)[t.dataset.n] || {}, i = Number(t.dataset.i);
       var plays = (cur.plays || []).slice();
       while (plays.length <= i) plays.push('');
       plays[i] = t.checked ? isoToday() : '';
       var got = plays.filter(Boolean).length;
-      HST.course.progress.set(courseKey, t.dataset.n, { plays: plays, done: got >= Number(t.dataset.need) ? cur.done || isoToday() : '' });
-      if (t.dataset.url) homework(t.dataset.n, i, t.checked, t.dataset.url);
+      HST.course.progress.set(ck, t.dataset.n, { plays: plays, done: got >= Number(t.dataset.need) ? cur.done || isoToday() : '' });
+      if (t.dataset.url) homework(ck, t.dataset.n, i, t.checked, t.dataset.url);
     }
-    if (t.dataset.act === 'sp') HST.course.progress.set(courseKey, t.dataset.n, { sp: Number(t.value) });
+    if (t.dataset.act === 'sp') HST.course.progress.set(ck, t.dataset.n, { sp: Number(t.value) });
   });
   // Opening or closing a session bar (toggle doesn't bubble, so listen as it goes down).
   $('schedule').addEventListener('toggle', function (e) {
@@ -696,18 +782,19 @@
       } catch (err) {}
       return;
     }
+    if (e.target.id === 'preCarryLate') return carryPre();
     var b = e.target.closest('button[data-act="redo"]');
     if (!b) return;
-    var cur = HST.course.progress.get(courseKey)[b.dataset.n] || {};
-    HST.course.progress.set(courseKey, b.dataset.n, { redo: (cur.redo || 0) + 1 });
+    var ck = ckOf(b), cur = HST.course.progress.get(ck)[b.dataset.n] || {};
+    HST.course.progress.set(ck, b.dataset.n, { redo: (cur.redo || 0) + 1 });
   });
   /* Homework practice time (Tim, 2026-10-31): ticking that you played a
      sound file adds its length to Practice time, as Homework -- saved like
      practice added by hand ({ trainer: 'manual', kind: 'homework' }), which
      the account sync already carries. Unticking takes it off this device
      again (a copy already synced to the account stays there). */
-  function homework(key, i, on, url) {
-    var cur = HST.course.progress.get(courseKey)[key] || {}, hw = (cur.hw || []).slice();
+  function homework(ck, key, i, on, url) {
+    var cur = HST.course.progress.get(ck)[key] || {}, hw = (cur.hw || []).slice();
     while (hw.length <= i) hw.push('');
     if (on && !hw[i]) {
       var sec = HST.fileSeconds(url);
@@ -715,12 +802,12 @@
       var end = Date.now(), ms = sec * 1000;
       hw[i] = HST.history.newUid();
       HST.history.add({ uid: hw[i], trainer: 'manual', kind: 'homework', start: end - ms, end: end, durationMs: ms,
-                        charsTotal: 0, charsCorrect: 0, file: url.split('/').pop().replace(/\.mp3$/i, ''), course: courseKey, task: key });
+                        charsTotal: 0, charsCorrect: 0, file: url.split('/').pop().replace(/\.mp3$/i, ''), course: ck, task: key });
     } else if (!on && hw[i]) {
       HST.history.remove(hw[i]);
       hw[i] = '';
     } else return;
-    HST.course.progress.set(courseKey, key, { hw: hw });
+    HST.course.progress.set(ck, key, { hw: hw });
   }
 
   /* Homework time for plays ticked without it (Tim, 2026-11-01: a student's

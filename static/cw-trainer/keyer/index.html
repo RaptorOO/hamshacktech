@@ -90,6 +90,8 @@
   .tch b { font: 600 3rem/1.1 'JetBrains Mono', monospace; letter-spacing: 0.02em; }
   .tch i { font: 600 1.15rem/1 'JetBrains Mono', monospace; font-style: normal; color: var(--muted); letter-spacing: 0.08em; margin-top: 6px; }
   .tsp { width: 0.8em; }
+  /* Echo: the word is heard, not shown, until it's graded. */
+  .echo-hidden { align-self: center; color: var(--dim); font-size: 1.05rem; font-style: italic; }
   /* Each word's characters stay together, so a line wraps between words,
      never inside one (Tim, 2026-10-23). A word too long for a whole line
      (a pyramid line) still wraps inside itself. */
@@ -237,11 +239,12 @@
       <button type="button" data-mode="warmup" aria-pressed="false">Daily Scales</button>
       <button type="button" data-mode="copy" aria-pressed="true">Send This</button>
       <button type="button" data-mode="free" aria-pressed="false">Free Sending</button>
+      <button type="button" data-mode="echo" aria-pressed="false">Echo</button>
     </div>
-    <label class="inline" data-show="copy">Send
+    <label class="inline" data-show="copy echo">Send
       <select id="source"></select>
     </label>
-    <button class="btn" data-show="copy" id="ownBtn" type="button" title="Type, paste or load your own text to send">Your own text&hellip;</button>
+    <button class="btn" data-show="copy echo" id="ownBtn" type="button" title="Type, paste or load your own text to send">Your own text&hellip;</button>
     <label class="check" data-show="copy"><input type="checkbox" id="showCode"> Show Morse patterns</label>
     <!-- Daily Scales: which of Bob Carter's (WR7Q) three to send (Tim, 2026-10-23). -->
     <label class="inline" data-show="warmup">Scale
@@ -268,7 +271,7 @@
       <div class="warm" id="warm" aria-label="Warm-up text"></div>
       <div class="warm-progress" id="warmProgress" aria-live="polite"></div>
     </div>
-    <div data-show="copy">
+    <div data-show="copy echo">
       <div class="label next-label" id="targetLabel">Send this</div>
       <div class="list-info" id="listInfo"></div>
       <div class="target" id="target" aria-live="polite"></div>
@@ -281,11 +284,12 @@
     </div>
     <p class="status" id="status"></p>
     <div class="actions">
-      <button class="btn" data-show="copy warmup" id="againBtn" type="button" title="Send the same thing again">Again <kbd>Esc</kbd></button>
-      <button class="btn" data-show="copy" id="skipBtn" type="button" title="Something new to send">Skip</button>
-      <button class="btn primary" data-show="copy warmup" id="doneBtn" type="button" title="Grade what I've sent now">Done <kbd>Enter</kbd></button>
+      <button class="btn" data-show="echo" id="replayBtn" type="button" title="Hear the word again">Replay</button>
+      <button class="btn" data-show="copy warmup echo" id="againBtn" type="button" title="Send the same thing again">Again <kbd>Esc</kbd></button>
+      <button class="btn" data-show="copy echo" id="skipBtn" type="button" title="Something new to send">Skip</button>
+      <button class="btn primary" data-show="copy warmup echo" id="doneBtn" type="button" title="Grade what I've sent now">Done <kbd>Enter</kbd></button>
       <button class="btn" data-show="free" id="clearBtn" type="button">Clear</button>
-      <button class="btn" data-show="copy free" id="recBtn" type="button" title="Record your sending and save it as a sound file"><span class="rec-dot" aria-hidden="true"></span>Record</button>
+      <button class="btn" data-show="copy free echo" id="recBtn" type="button" title="Record your sending and save it as a sound file"><span class="rec-dot" aria-hidden="true"></span>Record</button>
     </div>
     <!-- On-screen paddles: always on touch screens, and when no adapter is set. -->
     <div class="pads" id="pads" hidden>
@@ -338,7 +342,7 @@
   <section class="card">
     <div class="session">
       <span>This session: <b id="sTries">0</b> <span id="sTriesLbl">tries</span></span>
-      <span data-show="copy warmup">Accuracy <b id="sAcc">—</b></span>
+      <span data-show="copy warmup echo">Accuracy <b id="sAcc">—</b></span>
       <span>Letters sent <b id="sSent">0</b></span>
       <span>Time <b id="sTime">0:00</b></span>
       <span class="spacer"></span>
@@ -349,6 +353,7 @@
       <summary>How this works</summary>
       <p><strong>Daily Scales:</strong> Bob Carter&rsquo;s (WR7Q) sending scales. <strong>Warm Up</strong>, every day before you send anything else, works every letter, number and prosign; <strong>Exercise</strong> sends every letter and number five times; <strong>Drill</strong> builds sending skill with sentences, words and punctuation. Send it top to bottom; each character turns green as you send it right. A mistake turns its group (BBBBB, or a word) red: pause, then send the whole group again, so a finished scale is all green; mistakes still count in your accuracy. There&rsquo;s no time limit.When you&rsquo;ve sent the last character and pause (or press <kbd>Enter</kbd>), you get the full timing report for your keyer speed. <kbd>Esc</kbd> starts over.</p>
       <p><strong>Send This:</strong> send what&rsquo;s shown, then pause. As you send, each character turns green when you send it right and red when you don&rsquo;t, like Daily Scales. Under <strong>Send</strong>, the lists (the pyramid, QSO exchanges, the dits exercise, pangrams) go one line at a time, in order, and pick up where you left off. <strong>Your own text&hellip;</strong> lets you type, paste or load a text file; a Morserino-style file with <code>&lt;c&gt;$</code> chapters gives one choice per chapter. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
+      <p><strong>Echo:</strong> the app plays a word from the same lists as Send This, without showing it. Send it back on your key, then pause. It&rsquo;s graded the same way as Send This, and then the word is shown: green if you got it right. The next word plays a moment later. <strong>Replay</strong> plays the word again; <strong>Again</strong> (<kbd>Esc</kbd>) plays the last word again so you can have another go. It&rsquo;s a favorite drill on the Morserino and in LICW classes, joining copying and sending.</p>
       <p><strong>The timing rules:</strong> a dah is 3 dits long; the gap inside a letter is 1 dit; between letters 3 dits; between words 7 dits. &ldquo;Character speed&rdquo; is how fast your dits and dahs go. &ldquo;Overall speed&rdquo; includes your spacing &mdash; what someone copying you actually hears. Extra space between letters (Farnsworth spacing) is fine while learning, but the closer you get to 3 and 7, the easier you are to copy.</p>
       <p><strong>With paddles</strong> the keyer makes perfect dits and dahs, so the useful feedback is spacing and which letters came out wrong. <strong>With a straight key or bug</strong> you form the elements yourself, so you&rsquo;ll also see your dah-to-dit ratio (ideally 3:1).</p>
       <p>Sessions are saved to Progress when you click End session or switch to another tool.</p>
@@ -397,10 +402,19 @@
 
   /* ---------------- this tab's own saved choices ---------------- */
   var PREFS_KEY = 'hct-cw-keyer-practice-v1';
-  var prefs = { mode: 'copy', source: 'word', showCode: false, wpm: 0, fw: 0, listPos: {}, scale: 'warmup' };   // wpm 0 = not set yet; fw 0 = Farnsworth off
+  var prefs = { mode: 'copy', source: 'word', echoSource: 'word', showCode: false, wpm: 0, fw: 0, listPos: {}, scale: 'warmup' };   // wpm 0 = not set yet; fw 0 = Farnsworth off
   try { var saved = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (saved) Object.keys(prefs).forEach(function (k) { if (k in saved) prefs[k] = saved[k]; }); } catch (e) {}
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
   if (!prefs.listPos || typeof prefs.listPos !== 'object') prefs.listPos = {};
+
+  /* Echo (Tim, 2026-11-02): the app plays a word, you send it back.
+     It's Send This with the word heard instead of shown, so it shares
+     Send This's code (copyLike), with its own Send choice (echoSource)
+     and its own place in each list ('echo:' + the list's key). */
+  function copyLike() { return prefs.mode === 'copy' || prefs.mode === 'echo'; }
+  function curSource() { return prefs.mode === 'echo' ? prefs.echoSource : prefs.source; }
+  function setSource(v) { if (prefs.mode === 'echo') prefs.echoSource = v; else prefs.source = v; }
+  function posKey(l) { return (prefs.mode === 'echo' ? 'echo:' : '') + l.key; }
 
   var KEY_NAMES = { iambicB: 'Paddles (iambic B)', iambicA: 'Paddles (iambic A)', straight: 'Straight key', bug: 'Bug' };
   var ADAPTER_NAMES = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter' };
@@ -447,10 +461,15 @@
 
   function onKey(down, t) {
     if (down) {
+      // Echo: keying while the word just graded is on show isn't an
+      // attempt (the next word hasn't played yet); keying while a word
+      // plays stops it and starts the attempt.
+      if (prefs.mode === 'echo' && holdTimer) return;
       checkAudio();
       clearTimeout(waitTimer);
       if (prefs.mode === 'copy') showNextNow();
-      if ((prefs.mode === 'copy' || prefs.mode === 'warmup') && state !== 'sending') beginAttempt();
+      if (prefs.mode === 'echo') echoStop();
+      if ((copyLike() || prefs.mode === 'warmup') && state !== 'sending') beginAttempt();
       if (prefs.mode === 'free' && !marks.length) beginLine();
       downAt = t;
       decoder.down(t);
@@ -483,8 +502,8 @@
     if (chs.length) html += '<optgroup label="' + esc(own.name ? 'Your file: ' + own.name : 'Your text') + '">' + chs.map(function (ch, i) {
       return '<option value="own:' + i + '">' + esc(ch.title) + '</option>'; }).join('') + '</optgroup>';
     $('source').innerHTML = html;
-    if (!$('source').querySelector('option[value="' + prefs.source + '"]')) prefs.source = 'word';
-    $('source').value = prefs.source;
+    if (!$('source').querySelector('option[value="' + curSource() + '"]')) setSource('word');
+    $('source').value = curSource();
   }
 
   // The list behind a line-by-line source, or null for a random one.
@@ -500,10 +519,10 @@
     return (list = null);
   }
   function sourceName() {
-    var l = listFor(prefs.source);
+    var l = listFor(curSource());
     if (l) return l.name;
-    var r = RANDOM_SOURCES.filter(function (x) { return x[0] === prefs.source; })[0];
-    return r ? r[1] : prefs.source;
+    var r = RANDOM_SOURCES.filter(function (x) { return x[0] === curSource(); })[0];
+    return r ? r[1] : curSource();
   }
   // A list's saved place is the line on screen. It moves on only when a
   // line is sent (graded) or skipped -- not on a reload, a mode change or
@@ -511,18 +530,18 @@
   // new contact (new calls, names, states).
   var advanceList = false;
   function nextLine(l) {
-    var i = Number(prefs.listPos[l.key]) || 0;
+    var i = Number(prefs.listPos[posKey(l)]) || 0;
     if (advanceList) i++;
     advanceList = false;
     if (i >= l.lines.length) { i = 0; if (l.make) l.lines = l.make(); }
-    prefs.listPos[l.key] = i; savePrefs();
+    prefs.listPos[posKey(l)] = i; savePrefs();
     return { text: l.lines[i], n: i + 1 };
   }
   var lineNo = 0, prevLineNo = 0;
 
   function newTarget(same) {
     if (!same) {
-      var src = prefs.source, l = listFor(src);
+      var src = curSource(), l = listFor(src);
       if (l) { var nx = nextLine(l); target = nx.text; lineNo = nx.n; }
       else target = src === 'letter' ? HST.content.letter() : src === 'call' ? HST.content.callSign()
              : src === 'phrase' ? HST.content.phrase() : HST.content.word();
@@ -535,14 +554,14 @@
   function drawTarget(text, n) {
     // One .tword per word, so lines only wrap between words.
     var words = text.split(' ').filter(Boolean);
-    $('target').innerHTML = words.map(function (w) {
+    $('target').innerHTML = prefs.mode === 'echo' && !echoReveal ? '<span class="echo-hidden">' + (echoPlaying ? 'Listen\u2026' : 'Send back the word you hear') + '</span>' : words.map(function (w) {
       return '<span class="tword">' + (w.match(/<[A-Z]+>|[\s\S]/g) || []).map(function (ch) {
         var pro = ch.length > 1;
         return '<span class="tch' + (pro ? ' pro' : '') + '"><b>' + esc(pro ? ch.slice(1, -1) : ch) + '</b>' + (prefs.showCode ? '<i>' + pretty(morseOf(ch)) + '</i>' : '') + '</span>';
       }).join('') + '</span>';
     }).join('<span class="tsp"></span>');
     $('target').classList.toggle('long', toks(text).length > 16);
-    var cur = listFor(prefs.source);
+    var cur = listFor(curSource());
     $('listInfo').innerHTML = cur ? esc(cur.credit) + ' &middot; <b>line ' + n + ' of ' + cur.lines.length + '</b>' : '';
     fitTarget();
   }
@@ -605,7 +624,8 @@
     analyzedTarget = target;
     marks = []; live = ''; if (prefs.mode === 'warmup') warmRunReset(); showLive();
     decoder.reset();
-    $('targetLabel').textContent = 'Send this';
+    $('targetLabel').textContent = prefs.mode === 'echo' ? 'Send it back' : 'Send this';
+    if (prefs.mode === 'echo') drawTarget(target, lineNo);
     setStatus(prefs.mode === 'warmup' ? 'Warming up… pause at the end, or press Enter.' : 'Listening… pause when you’re done.');
   }
 
@@ -630,7 +650,7 @@
   // from it (see HST.analyzeSending); Free send goes by gap length alone.
   function analyze(list) {
     return HST.analyzeSending(list || marks, { unitMs: unitMs(), automatic: automatic(), spaceRatio: spaceRatio(),
-      expectWords: (prefs.mode === 'copy' || prefs.mode === 'warmup') && analyzedTarget ? analyzedTarget.split(' ').length : 0 });
+      expectWords: (copyLike() || prefs.mode === 'warmup') && analyzedTarget ? analyzedTarget.split(' ').length : 0 });
   }
   var analyzedTarget = '';   // the target the marks being analyzed were meant to be
 
@@ -644,6 +664,7 @@
     showResult(a, g, target);
     recordAttempt(a, g);
     if (prefs.mode === 'warmup') return warmFinished(a, g);
+    if (prefs.mode === 'echo') return echoFinished(g);
     prevTarget = target; prevLineNo = lineNo;
     advanceList = true;
     newTarget(false);
@@ -654,6 +675,50 @@
     $('targetLabel').textContent = 'You sent';
     holdTimer = setTimeout(function () { holdTimer = 1; showNextNow(); }, HOLD_MS);
     setStatus(g.correct === g.total && !g.extra ? 'Nice! Send the next one whenever you’re ready.' : 'Have another go with Again, or send the next one.');
+  }
+
+  /* ---------------- Echo ----------------
+     The word plays at this tab's speed, pitch and volume; you send it
+     back, and it's graded like Send This. Then the word shows, colored,
+     for a moment, and the next one plays. */
+  var echoReveal = false, echoPlaying = false, echoPlayId = 0;
+  function echoPlay(text) {
+    echoStop();
+    var id = echoPlayId, sh = HST.shared.get();
+    echoPlaying = true;
+    if (state !== 'sending') { drawTarget(target, lineNo); $('targetLabel').textContent = 'Listen'; }
+    setStatus('Listen\u2026');
+    HST.audio.playMorse(text.match(/<[A-Z]+>|[\s\S]/g) || [], { wpm: keyWpm(), fwpm: fwpm(), toneHz: sh.toneHz, volume: sh.volume }).done.then(function () {
+      if (id !== echoPlayId) return;
+      echoPlaying = false;
+      if (state === 'sending') return;
+      drawTarget(target, lineNo);
+      $('targetLabel').textContent = 'Send it back';
+      setStatus('Now send it back, then pause.');
+    });
+  }
+  function echoStop() {
+    if (echoPlaying) HST.audio.stop();
+    echoPlaying = false; echoPlayId++;
+  }
+  // The next word (already chosen), heard.
+  function echoNext() {
+    clearTimeout(holdTimer); holdTimer = null;
+    state = 'ready';
+    paintTarget([], 0);
+    echoPlay(target);
+  }
+  function echoFinished(g) {
+    prevTarget = target; prevLineNo = lineNo;
+    advanceList = true;
+    newTarget(false);
+    // Show the word just sent, colored, then play the next one.
+    echoReveal = true; drawTarget(prevTarget, prevLineNo); echoReveal = false;
+    paintTarget(g.items, -1);
+    $('targetLabel').textContent = 'The word was';
+    var right = g.correct === g.total && !g.extra;
+    holdTimer = setTimeout(echoNext, right ? HOLD_MS : HOLD_MS + 1500);
+    setStatus(right ? 'Right! The next word plays in a moment.' : 'Not quite. Again plays it once more, or wait for the next word.');
   }
 
   /* ---------------- Free send ----------------
@@ -900,7 +965,7 @@
   }
 
   function showLive() {
-    if (prefs.mode === 'copy') { $('sent').textContent = live; copyLive(); return; }
+    if (copyLike()) { $('sent').textContent = live; copyLive(); return; }
     if (prefs.mode === 'warmup') return warmLive();
     var lines = transcript.slice(-30);
     if (live) lines = lines.concat(live);
@@ -1150,8 +1215,8 @@
     if (!sess) {
       sess = { start: Date.now(), tries: 0, right: 0, total: 0, sent: 0,
                cgSum: 0, cgN: 0, wgSum: 0, wgN: 0, wpmW: 0, overallW: 0 };
-      rec.start({ mode: prefs.mode, source: prefs.mode === 'copy' ? prefs.source : prefs.mode, keyType: cfg().keyType, wpm: keyWpm(), fwpm: fwpm(),
-                  sourceName: prefs.mode === 'copy' ? sourceName() : undefined,
+      rec.start({ mode: prefs.mode, source: copyLike() ? curSource() : prefs.mode, keyType: cfg().keyType, wpm: keyWpm(), fwpm: fwpm(),
+                  sourceName: copyLike() ? sourceName() : undefined,
                   scale: prefs.mode === 'warmup' ? scale().name : undefined });
       $('endBtn').hidden = false;
       clockTimer = setInterval(renderSession, 1000);
@@ -1189,6 +1254,7 @@
     var s = sess || { tries: 0, right: 0, total: 0, sent: 0, start: Date.now() };
     $('sTries').textContent = s.tries;
     $('sTriesLbl').textContent = prefs.mode === 'copy' ? (s.tries === 1 ? 'try' : 'tries')
+      : prefs.mode === 'echo' ? (s.tries === 1 ? 'word' : 'words')
       : prefs.mode === 'warmup' ? (s.tries === 1 ? 'warm-up' : 'warm-ups') : (s.tries === 1 ? 'line' : 'lines');
     $('sAcc').textContent = s.total ? Math.round(100 * s.right / s.total) + '%' : '—';
     $('sSent').textContent = s.sent;
@@ -1198,7 +1264,15 @@
   function endSession() {
     clearTimeout(waitTimer);
     if (prefs.mode === 'free' && marks.length) endLine();
-    else if ((prefs.mode === 'copy' || prefs.mode === 'warmup') && state === 'sending' && marks.length) finishAttempt();
+    else if ((copyLike() || prefs.mode === 'warmup') && state === 'sending' && marks.length) finishAttempt();
+    echoStop();
+    // Echo: don't play the next word after the session ends (another
+    // mode, another tool); Replay plays it.
+    if (prefs.mode === 'echo' && holdTimer) {
+      clearTimeout(holdTimer); holdTimer = null; state = 'ready';
+      drawTarget(target, lineNo); paintTarget([], 0);
+      $('targetLabel').textContent = 'Listen'; setStatus('Press Replay to hear the next word.');
+    }
     clearTimeout(idleTimer); clearInterval(clockTimer);
     keyer.reset();
     if (sess) rec.finish();
@@ -1210,14 +1284,21 @@
   window.addEventListener('pagehide', function () { if (sess) rec.finish(); });
 
   /* ---------------- controls ---------------- */
-  function applyMode() {
+  function applyMode(clicked) {
     document.querySelectorAll('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === prefs.mode)); });
     // data-show lists the modes an element belongs to ("copy warmup").
     document.querySelectorAll('[data-show]').forEach(function (el) { el.hidden = el.dataset.show.split(' ').indexOf(prefs.mode) < 0; });
     $('result').hidden = true;
     marks = []; live = ''; state = 'ready'; decoder.reset();
     showLive();
-    if (prefs.mode === 'copy') { newTarget(false); setStatus('Send what’s shown, then pause.'); }
+    if (copyLike()) renderSourcePicker();
+    if (prefs.mode === 'copy') { newTarget(false); $('targetLabel').textContent = 'Send this'; setStatus('Send what’s shown, then pause.'); }
+    else if (prefs.mode === 'echo') {
+      newTarget(false);
+      // Sound needs a click first: on a fresh load, Replay starts it.
+      if (clicked) echoPlay(target);
+      else { $('targetLabel').textContent = 'Listen'; setStatus('Press Replay to hear the first word.'); }
+    }
     else if (prefs.mode === 'warmup') warmReady();
     else setStatus('Send anything you like.');
     renderSession();
@@ -1227,14 +1308,15 @@
       if (prefs.mode === b.dataset.mode) return;
       endSession();
       if (b.dataset.mode === 'warmup') HST.recorderStop();   // Record is on Send This and Free Sending
-      prefs.mode = b.dataset.mode; savePrefs(); applyMode();
+      prefs.mode = b.dataset.mode; savePrefs(); applyMode(true);
     });
   });
   $('source').addEventListener('change', function (e) {
     endSession();
-    prefs.source = e.target.value; savePrefs();
+    setSource(e.target.value); savePrefs();
     state = 'ready'; marks = []; live = ''; showLive(); $('result').hidden = true;
     newTarget(false);
+    if (prefs.mode === 'echo') echoPlay(target);
   });
   $('showCode').addEventListener('change', function (e) { prefs.showCode = e.target.checked; savePrefs(); newTarget(true); });
   // Daily Scales: another scale ends the session (like another Send choice).
@@ -1260,11 +1342,12 @@
   }
   function useSource(src) {
     endSession();
-    prefs.source = src; savePrefs();
+    setSource(src); savePrefs();
     list = null;
     renderSourcePicker();
     state = 'ready'; marks = []; live = ''; decoder.reset(); keyer.reset(); showLive(); $('result').hidden = true;
     newTarget(false);
+    if (prefs.mode === 'echo') return echoPlay(target);
     $('targetLabel').textContent = 'Send this';
     setStatus('Send what\u2019s shown, then pause.');
   }
@@ -1292,14 +1375,14 @@
     try { HST.content.ownFile.set({ name: $('ownFileName').textContent, text: $('ownArea').value }); }
     catch (e) { $('ownNote').innerHTML = '<span class="warn">This device couldn\u2019t save it (its storage is full).</span>'; return; }
     // A new text starts each of its chapters from the top.
-    Object.keys(prefs.listPos).forEach(function (k) { if (k.indexOf('own:') === 0) delete prefs.listPos[k]; });
+    Object.keys(prefs.listPos).forEach(function (k) { if (/^(echo:)?own:/.test(k)) delete prefs.listPos[k]; });
     $('ownDlg').close();
     useSource('own:0');
   });
   $('ownRemove').addEventListener('click', function () {
     HST.content.ownFile.clear();
     $('ownDlg').close();
-    useSource(String(prefs.source).indexOf('own:') === 0 ? 'word' : prefs.source);
+    useSource(String(curSource()).indexOf('own:') === 0 ? 'word' : curSource());
   });
   $('ownCancel').addEventListener('click', function () { $('ownDlg').close(); });
   $('ownDlg').addEventListener('click', function (e) { if (e.target === $('ownDlg')) $('ownDlg').close(); });
@@ -1309,11 +1392,12 @@
     if (prefs.mode === 'warmup') { keyer.reset(); return warmReady('Start again from the first ' + WARM_T[0] + '.'); }
     if (state === 'graded' && prevTarget) {
       target = prevTarget; lineNo = prevLineNo;
-      var l = listFor(prefs.source);
-      if (l) { prefs.listPos[l.key] = prevLineNo - 1; savePrefs(); }   // sending it again doesn't skip the next one
+      var l = listFor(curSource());
+      if (l) { prefs.listPos[posKey(l)] = prevLineNo - 1; savePrefs(); }   // sending it again doesn't skip the next one
     }
     newTarget(true);
     state = 'ready'; marks = []; live = ''; decoder.reset(); keyer.reset(); showLive();
+    if (prefs.mode === 'echo') return echoPlay(target);
     $('targetLabel').textContent = 'Send this';
     setStatus('Send it again, then pause.');
   }
@@ -1322,10 +1406,18 @@
     state = 'ready'; marks = []; live = ''; decoder.reset(); keyer.reset(); showLive();
     advanceList = true;
     newTarget(false);
+    if (prefs.mode === 'echo') return echoPlay(target);
     $('targetLabel').textContent = 'Send this';
     setStatus('Send what’s shown, then pause.');
   }
   $('againBtn').addEventListener('click', again);
+  // Replay: the word you're about to send (after a graded one, the next).
+  $('replayBtn').addEventListener('click', function () {
+    clearTimeout(waitTimer);
+    if (holdTimer) return echoNext();
+    state = 'ready'; marks = []; live = ''; decoder.reset(); keyer.reset(); showLive();
+    echoPlay(target);
+  });
   $('skipBtn').addEventListener('click', skip);
   $('doneBtn').addEventListener('click', function () { if (state === 'sending') finishAttempt(); });
   $('clearBtn').addEventListener('click', function () {
@@ -1335,7 +1427,7 @@
   });
   // Enter = grade now, Esc = start over (Copy this).
   window.addEventListener('keydown', function (e) {
-    if ((prefs.mode !== 'copy' && prefs.mode !== 'warmup') || e.target.tagName === 'SELECT' || $('ownDlg').open) return;
+    if ((!copyLike() && prefs.mode !== 'warmup') || e.target.tagName === 'SELECT' || $('ownDlg').open) return;
     if (e.key === 'Enter') { e.preventDefault(); if (state === 'sending') finishAttempt(); }
     if (e.key === 'Escape') { e.preventDefault(); again(); }
   });

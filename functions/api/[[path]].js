@@ -15,6 +15,7 @@
  *   DELETE /api/devices/:id       sign out one device
  *   POST   /api/sync              upload new sessions, download others, station details,
  *                                  My Course (the course chosen and its ticks)
+ *                                  and the app's settings (syncSettings)
  *   POST   /api/history/clear     clear practice history on every device
  *   GET    /api/export            everything stored about you, as a JSON file
  *   DELETE /api/account           delete your account and all its data
@@ -115,6 +116,10 @@ const SCHEMA = [
   // as one JSON document per account. rev goes up with every change, so a
   // device that has seen this rev needn't download it again.
   `CREATE TABLE IF NOT EXISTS course (
+     user_id TEXT PRIMARY KEY, rev INTEGER NOT NULL, data TEXT NOT NULL)`,
+  // Settings (Tim, 2026-11-02): each tool's saved settings, as one JSON
+  // document per account ({ key: { v, t } }), with a rev like course's.
+  `CREATE TABLE IF NOT EXISTS settings (
      user_id TEXT PRIMARY KEY, rev INTEGER NOT NULL, data TEXT NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS hits (key TEXT NOT NULL, at INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS hits_key ON hits(key, at)`
@@ -330,6 +335,7 @@ async function sync(request, user, db) {
   if (stmts.length) await db.batch(stmts);
 
   const course = await syncCourse(body, user, db);
+  const settings = await syncSettings(body, user, db);
 
   const since = Math.max(0, Number(body.since) || 0);
   const rows = await db.prepare('SELECT seq, uid, data FROM records WHERE user_id = ? AND seq > ? ORDER BY seq LIMIT ?')
@@ -344,12 +350,13 @@ async function sync(request, user, db) {
     more: results.length === MAX_DOWNLOAD,
     clearedBefore: user.cleared_before || 0,
     station: { call: station.call, name: station.name, qth: station.qth, updated: station.stationUpdated },
-    course
+    course,
+    settings
   });
 }
 
 /* ---------------- My Course ----------------
-   { chosen: { program, level, firstClass, days, times, updated },
+   { chosen: { program, level, firstClass, days, times, pre, preFirst, preDone, updated },
      progress: { 'cwa:intermediate': { '3.1.WD103': { done, redo, sp, plays, hw, t } } } }
    Every entry carries t, when it last changed on its device; the newer
    one wins. An unticked entry is just { t }. */
@@ -365,6 +372,10 @@ function cleanChosen(c) {
     firstClass: DATE_RE.test(c.firstClass || '') ? c.firstClass : '',
     days: Array.isArray(c.days) ? c.days.map(Number).filter((d) => d >= 0 && d <= 6).slice(0, 7) : [],
     times,
+    // Pre-Class (2026-11-02): see PRE-CLASS in static/cw-trainer/shared/hst-course.js.
+    pre: !!c.pre,
+    preFirst: DATE_RE.test(c.preFirst || '') ? c.preFirst : '',
+    preDone: c.preDone === 'carry' || c.preDone === 'clean' ? c.preDone : '',
     updated: Math.max(0, Math.floor(Number(c.updated) || 0))
   };
 }
@@ -446,6 +457,46 @@ async function syncCourse(body, user, db) {
   return rev && rev !== known ? { rev, chosen: data.chosen, progress: data.progress } : { rev };
 }
 
+/* ---------------- Settings ----------------
+   Each tool's saved settings (speed, tone, keyer, each tool's choices),
+   so a student's settings come back on a new device (Tim, 2026-11-02).
+   { 'hct-cw-keyer-v1': { v: '<the saved JSON text>', t } }: per setting,
+   the newer change wins. Only the app's own setting names are kept; see
+   SETTINGS in static/cw-trainer/shared/hst-account.js. */
+const MAX_SETTINGS_BYTES = 256 * 1024;
+const MAX_SETTING_BYTES = 64 * 1024;
+const SETTING_RE = /^(hct-[\w:-]{1,60}|cwIcrTrainer|mcj-[a-z-]{1,20})$/;
+async function syncSettings(body, user, db) {
+  const inc = body.settings;
+  if (!inc || typeof inc !== 'object') return undefined;
+  const row = await db.prepare('SELECT rev, data FROM settings WHERE user_id = ?').bind(user.id).first();
+  let rev = row ? row.rev : 0;
+  let data = row ? JSON.parse(row.data) : {};
+  let changed = false;
+  const keys = inc.keys && typeof inc.keys === 'object' ? inc.keys : {};
+  for (const k of Object.keys(keys).slice(0, 60)) {
+    const e = keys[k];
+    if (!SETTING_RE.test(k) || !e || typeof e.v !== 'string' || e.v.length > MAX_SETTING_BYTES) continue;
+    const t = Math.max(0, Math.floor(Number(e.t) || 0));
+    if (data[k] && data[k].t >= t) continue;
+    data[k] = { v: e.v, t };
+    changed = true;
+  }
+  if (changed) {
+    const text = JSON.stringify(data);
+    if (text.length <= MAX_SETTINGS_BYTES) {
+      rev += 1;
+      await db.prepare('INSERT INTO settings (user_id, rev, data) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET rev = excluded.rev, data = excluded.data')
+        .bind(user.id, rev, text).run();
+    } else {
+      data = row ? JSON.parse(row.data) : {};   // too big: keep what was stored
+    }
+  }
+  // All of them only when the device hasn't seen this rev.
+  const known = Number(inc.rev) || 0;
+  return rev && rev !== known ? { rev, keys: data } : { rev };
+}
+
 async function clearHistory(user, db) {
   const now = Date.now();
   await db.batch([
@@ -459,12 +510,16 @@ async function exportData(user, db) {
   const devices = await db.prepare('SELECT label, created, last_seen FROM devices WHERE user_id = ?').bind(user.id).all();
   const rows = await db.prepare('SELECT data FROM records WHERE user_id = ? ORDER BY start').bind(user.id).all();
   const course = await db.prepare('SELECT data FROM course WHERE user_id = ?').bind(user.id).first();
+  const settings = await db.prepare('SELECT data FROM settings WHERE user_id = ?').bind(user.id).first();
   const out = {
     exported: new Date().toISOString(),
     account: { email: user.email, created: new Date(user.created).toISOString(), call: user.call || '', name: user.name || '', qth: user.qth || '' },
     devices: (devices.results || []).map((d) => ({ label: d.label, signedIn: new Date(d.created).toISOString(), lastSeen: new Date(d.last_seen).toISOString() })),
     sessions: (rows.results || []).map((r) => JSON.parse(r.data)),
-    course: course ? JSON.parse(course.data) : null
+    course: course ? JSON.parse(course.data) : null,
+    settings: settings ? Object.fromEntries(Object.entries(JSON.parse(settings.data)).map(([k, e]) => {
+      try { return [k, JSON.parse(e.v)]; } catch (err) { return [k, e.v]; }
+    })) : null
   };
   return new Response(JSON.stringify(out, null, 2), {
     headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store',
@@ -476,6 +531,7 @@ async function deleteAccount(user, db) {
   await db.batch([
     db.prepare('DELETE FROM records WHERE user_id = ?').bind(user.id),
     db.prepare('DELETE FROM course WHERE user_id = ?').bind(user.id),
+    db.prepare('DELETE FROM settings WHERE user_id = ?').bind(user.id),
     db.prepare('DELETE FROM devices WHERE user_id = ?').bind(user.id),
     db.prepare('DELETE FROM codes WHERE email = ?').bind(user.email),
     db.prepare('DELETE FROM users WHERE id = ?').bind(user.id)

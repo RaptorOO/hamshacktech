@@ -5,7 +5,11 @@
  * tab shows about it: the class schedule and the curriculum.
  *
  *   HST.course.get()            { program: '' | 'cwa' | 'licw', level, firstClass: 'YYYY-MM-DD' | '', days: [1, 4],
- *                                 times: { 1: '19:00', 4: '19:00' } }  -- each class day's start time ('' = not set)
+ *                                 times: { 1: '19:00', 4: '19:00' },  -- each class day's start time ('' = not set)
+ *                                 pre: false, preFirst: 'YYYY-MM-DD' | '', preDone: '' | 'carry' | 'clean' }
+ *                               pre: starting with a Pre-Class (see PRE-CLASS below); firstClass is then the full class's first
+ *   HST.course.preKey(program, level)    the Pre-Class's own ticks ('precwa:intermediate')
+ *   HST.course.carryPre(program, level)  copy the Pre-Class's ticks to the full class -> how many
  *   HST.course.set(patch)
  *   HST.course.onChange(fn)     fn(course) -- also when another tab/frame changes it
  *   HST.course.PROGRAMS         { cwa: { name, levels: [{ key, name, variantOf }] }, licw: {...} }
@@ -58,7 +62,10 @@
       if (/^[0-6]$/.test(d) && /^\d{2}:\d{2}$/.test(o.times[d])) times[d] = o.times[d];
     });
     var updated = Math.max(0, Math.floor(Number(o.updated) || 0));   // when it was last changed, for sync
-    return { program: program, level: level, firstClass: first, days: days.slice(0, 7).sort(), times: times, updated: updated };
+    var preFirst = /^\d{4}-\d{2}-\d{2}$/.test(o.preFirst || '') ? o.preFirst : '';
+    var preDone = o.preDone === 'carry' || o.preDone === 'clean' ? o.preDone : '';
+    return { program: program, level: level, firstClass: first, days: days.slice(0, 7).sort(), times: times,
+             pre: !!o.pre, preFirst: preFirst, preDone: preDone, updated: updated };
   }
   function saveChosen() { try { localStorage.setItem(KEY, JSON.stringify(cur)); } catch (e) {} }
   var cur;
@@ -637,8 +644,34 @@
       var l = p && p.levels.filter(function (x) { return x.key === level; })[0];
       return l ? l.name : '';
     },
-    carryOver: carryOver
+    carryOver: carryOver,
+    preKey: preKey,
+    carryPre: carryPre
   };
+
+  /* PRE-CLASS (Tim, 2026-11-02): some advisors (Buz Tarlow, AC6AC) run a
+     Pre-Class of about a month before the real class, working through the
+     same curriculum from Session 1 on the same class days. My Course shows
+     its sessions -- as many as fit before the full class starts -- with
+     their own ticks, kept under 'pre' + the course key ('precwa:intermediate';
+     the account server takes a program of letters only). When the Pre-Class
+     is over the student chooses (preDone): carry the ticks over to the full
+     class, or start with a clean slate. Either way the Pre-Class ticks stay,
+     and Progress counts each Homework session through the course it was
+     ticked in, so carried ticks don't count their time twice. */
+  function preKey(program, level) { return 'pre' + program + ':' + level; }
+  function carryPre(program, level) {
+    var all = loadProgress(), from = all[preKey(program, level)] || {}, ck = program + ':' + level, to = all[ck] || {}, n = 0, now = Date.now();
+    Object.keys(from).forEach(function (k) {
+      if (to[k] && shown(cleanEntry(to[k]))) return;   // already ticked in the full class
+      var e = shown(cleanEntry(from[k]));
+      if (!e) return;
+      e.t = now;                      // a change here, so it syncs
+      to[k] = cleanEntry(e); n++;
+    });
+    if (n) { all[ck] = to; saveProgress(all); progChanged(); }
+    return n;
+  }
 
   /* Switching to an advisor's own curriculum (Tim, 2026-11-02: a student
      in Buz's class had already ticked weeks of the standard Intermediate).
