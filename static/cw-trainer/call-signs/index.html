@@ -1216,6 +1216,7 @@
     playing: false,
     currentAudio: Promise.resolve(),
     callsUsed: {},
+    byLen: {},          // this session: { call length: [right, tries] } (not Find the Number)
     reviewing: false, reviewStartTs: 0, reviewResolver: null,
     round: null,        // { sent, target: [chars to type], wpm, fwpm, plays, replayed, answerPlays }
     typed: [],
@@ -1597,7 +1598,10 @@
       band.calls++; if (allCorrect) band.correct++;
       results.forEach(function (x) { band.chars++; if (x.correct) band.charsCorrect++; });
       if (allCorrect) o.top = Math.max(o.top, r.wpm);
-      practiceLog.set({ topWpm: o.top });
+      // Whole calls right by length, for Progress's head copy span (Tim, 2026-11-03).
+      var bl = state.byLen[r.target.length] || (state.byLen[r.target.length] = [0, 0]);
+      bl[1]++; if (allCorrect) bl[0]++;
+      practiceLog.set({ topWpm: o.top, byLen: state.byLen });
     }
     if (mode() === "run") {
       var run = state.run;
@@ -1944,6 +1948,7 @@
     state.timeUp = false;
     state.callsUsed = {};
     state.score = 0;
+    state.byLen = {};
     var meta = { mode: m };
     if (m === "find" || m === "builder") { meta.wpm = s.wpm; meta.fwpm = s.fwpm < s.wpm ? s.fwpm : 0; }
     if (m === "sim") { meta.minWpm = Math.min(s.simMin, s.simMax); meta.maxWpm = Math.max(s.simMin, s.simMax); }

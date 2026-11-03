@@ -189,10 +189,10 @@
   <section class="card" id="setupCard" aria-labelledby="setupTitle">
     <h2 id="setupTitle">Practice the placement test</h2>
     <p class="unofficial"><strong>Unofficial practice.</strong> CW Academy doesn&rsquo;t publish its Intermediate placement test,
-      so this is our best guess, based on a classmate&rsquo;s description. Use your score to practice, not to predict your real result.</p>
+      so this is our best guess, based on what students who&rsquo;ve taken it describe. Use your score to practice, not to predict your real result.</p>
     <p class="desc">At the end of Fundamental, CW Academy checks your copy before placing you in Intermediate.</p>
     <ul class="desc intro">
-      <li><b>8 questions</b>: <b>5 with two words</b> and <b>3 US call signs</b>.</li>
+      <li><b>7 questions</b>: <b>6 with two words</b> and <b>1 US call sign</b>.</li>
       <li>Each is sent <b>once</b>, at <b>25 WPM characters, 10 WPM overall</b> (Farnsworth).</li>
       <li>Blank boxes show the length of each word. When the code ends, <b>click the one you heard</b> from <b>five suggested answers</b> under each word (or the call sign), within <b>20 seconds</b>.</li>
       <li>Each word and call sign counts on its own, <b>13 in all</b>. You see your score at the end.</li>
@@ -233,7 +233,7 @@
   <!-- ================= The test ================= -->
   <section class="card" id="testCard" hidden aria-labelledby="qTitle">
     <div class="qhead">
-      <h2 id="qTitle">Question 1 of 8</h2>
+      <h2 id="qTitle">Question 1 of 7</h2>
       <div class="dots" id="dots" aria-hidden="true"></div>
     </div>
     <!-- Blank boxes for each word (or the call sign) show as soon as the
@@ -304,9 +304,10 @@
   function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 
   /* =====================================================================
-     THE TEST, as a classmate who took it described it (Tim, 2026-10-26):
-     8 questions, in random order -- 5 with two everyday words and 3 US
-     call signs. Each is sent ONCE (25 WPM characters, Farnsworth 10).
+     THE TEST, as students who took it describe it: 7 questions, in
+     random order -- 6 with two everyday words and 1 US call sign (the
+     latest report, 2026-11-03; a classmate's on 2026-10-26 had 5 with
+     two words and 3 call signs, and Tim's own one word at a time). Each is sent ONCE (25 WPM characters, Farnsworth 10).
      The blank boxes (one per letter, per word) show as soon as the
      question starts. When the code ends, five suggested answers appear
      under each word -- or the call sign -- and a 20-second clock starts.
@@ -322,7 +323,7 @@
      (Earlier version, 2026-10-14: single words / short phrases picked
      from 4 multiple-choice answers, 80% to pass.)
      ===================================================================== */
-  var WORD_QUESTIONS = 5, CALL_QUESTIONS = 3;
+  var WORD_QUESTIONS = 6, CALL_QUESTIONS = 1;
   var ANSWER_SEC = 20;
   var SUGGESTIONS = 5;         // suggested answers shown for each word of a two-word question
   var FORMAT = 'cwa13';        // saved with each test, so the chart compares like with like
