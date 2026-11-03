@@ -61,7 +61,7 @@
     background: var(--bar);
     border-bottom: 1px solid var(--border);
   }
-  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; margin-right: 18px; }   /* room before the first tab */
   .brand img { width: 30px; height: 30px; flex: none; }
   .brand h1 {
     margin: 0;
@@ -359,6 +359,9 @@
 
   /* ---------- What's new ---------- */
   .whatsnew ul { margin: 0 0 4px; padding-left: 1.2em; line-height: 1.5; }
+  .welcome .tip { margin: 18px 0 4px; padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--lime); border-radius: 8px;
+    background: var(--well); font-size: 0.9rem; line-height: 1.5; }
+  .welcome .tip p { margin: 0; }
   .whatsnew li { margin-bottom: 8px; }
   .linkish {
     border: 0; background: none; padding: 0; color: var(--lime);
@@ -385,6 +388,7 @@
   @media (max-width: 900px) {
     .home { display: none; }             /* the browser's Back works */
     .bar { gap: 10px; }
+    .brand { margin-right: 10px; }
     .sec { padding: 8px 12px; }
   }
 
@@ -682,6 +686,27 @@
   <ul id="whatsNewList"></ul>
   <div class="actions">
     <button class="btn primary" id="whatsNewDone" type="button">Got it</button>
+  </div>
+</dialog>
+
+<!-- Welcome (Tim, 2026-11-03): shown once, on a student's first visit.
+     Asks for their course (saved in Settings, as My Morse code course)
+     and points them at ICR. Wired up in the script (see "Welcome"). -->
+<dialog class="settings welcome" id="welcomeDialog" aria-labelledby="welcomeTitle">
+  <h2 id="welcomeTitle">Welcome to CW Trainer</h2>
+  <p class="lede">Are you taking a Morse code course? My Course (under Course) then shows your class schedule and curriculum. You can change this any time in Settings.</p>
+  <div class="course-pick" role="radiogroup" aria-label="Course">
+    <label><input type="radio" name="welcomeProgram" value=""> Not in a course</label>
+    <label><input type="radio" name="welcomeProgram" value="cwa"> CW Academy</label>
+    <label><input type="radio" name="welcomeProgram" value="licw"> LICW</label>
+  </div>
+  <label class="course-level" id="welcomeLevelRow" hidden>Level <select id="welcomeLevel"></select></label>
+  <div class="tip">
+    <p><strong>Start with ICR.</strong> Until you know each letter by its sound alone, without counting dits and dahs, use the ICR tool (under Copy) almost exclusively. It plays one character at a time and has you name it at once, which is how that instant recognition is built.</p>
+  </div>
+  <div class="actions">
+    <button class="btn" id="welcomeDone" type="button">Done</button>
+    <button class="btn primary" id="welcomeIcr" type="button">Go to ICR</button>
   </div>
 </dialog>
 
@@ -1653,9 +1678,14 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-11-02-echo-preclass';
-  var RELEASE_LABEL = 'November 2, 2026';
+  var RELEASE = '2026-11-03-copy-behind';
+  var RELEASE_LABEL = 'November 3, 2026';
   var RELEASE_NOTES = [
+    '<strong>Test Prep follows the latest report on the test.</strong> A student who took the Intermediate placement test this week had 6 questions with two words and 1 call sign, so Test Prep now does the same: still 13 answers in all, scored out of 13.',
+    '<strong>Copy Behind in Code Groups.</strong> CW Academy encourages copying behind: listening to several words before writing anything down, so your brain learns to hold them. In Code Groups’ Tool Settings, set <strong>Copy Behind</strong> to 2, 3, 4 or 5. That many groups or words play in a row, then you type them all, and each one is marked right or wrong. It’s off unless you turn it on.',
+    '<strong>Call Signs in Progress.</strong> Progress, Copying now has a <strong>Call Signs</strong> view next to ICR and Code Groups: your accuracy, speed, answer time and head copy span for the Call Signs tool. (The head copy span counts sessions from today on.)',
+    '<strong>Echo waits for you.</strong> Echo in Keyer Practice no longer starts playing the moment you open it. Press <strong>Start</strong>, and after a 3-second countdown the first word plays; after that each word plays as before.',
+    '<strong>A welcome for new students.</strong> First-time visitors are asked which course they’re in (it’s saved in Settings) and pointed to ICR to learn the letters by sound.',
     '<strong>Echo, a new drill in Keyer Practice.</strong> The app plays a word without showing it; send it back on your key, then pause. It turns green if you got it right, and then the word is shown. <strong>Replay</strong> plays it again. It’s a favorite on the Morserino and in LICW classes.',
     '<strong>Pre-Class in My Course.</strong> If your advisor runs a Pre-Class before the class starts, tick <strong>Starting with a Pre-Class</strong> under Class schedule and enter both dates. My Course shows the Pre-Class sessions that fit before the full class, with their own ticks, and when the Pre-Class is over it asks whether to carry your ticks over to the full class or start with a clean slate.',
     '<strong>Your settings are backed up.</strong> Signed in, your speeds, tone, keyer and each tool’s settings now sync with your account, so a new device or a cleared browser gets them back. (The kind of adapter you use stays with each device.)',
@@ -1700,10 +1730,45 @@
     if (seen === RELEASE) return;
     if (!seen && !window.HCT_RETURNING) {          // brand-new visitor: no notes
       try { localStorage.setItem(SEEN_KEY, RELEASE); } catch (e) {}
+      setTimeout(showWelcome, 400);                // the welcome instead
       return;
     }
     setTimeout(showWhatsNew, 400);                 // let the first tab draw first
   })();
+
+  // ------------------------------------------------------------------
+  // Welcome (Tim, 2026-11-03). Shown once, on a student's first visit to
+  // this device (not to anyone who has used the app here before, see
+  // HCT_RETURNING), never again (WELCOME_KEY). The course picked is saved
+  // straight into My Morse code course in Settings.
+  // ------------------------------------------------------------------
+  var WELCOME_KEY = 'hct-cw-welcomed';
+  var wcDlg = document.getElementById('welcomeDialog');
+  function renderWelcome() {
+    var c = HST.course.get(), p = HST.course.PROGRAMS[c.program];
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="welcomeProgram"]'), function (r) { r.checked = r.value === (c.program || ''); });
+    document.getElementById('welcomeLevelRow').hidden = !p;
+    var levels = p ? p.levels.filter(function (l) { return !l.variantOf; }) : [];
+    document.getElementById('welcomeLevel').innerHTML = levels.map(function (l) { return '<option value="' + l.key + '">' + l.name + '</option>'; }).join('');
+    if (p) document.getElementById('welcomeLevel').value = c.level;
+  }
+  function showWelcome() {
+    try { if (localStorage.getItem(WELCOME_KEY)) return; localStorage.setItem(WELCOME_KEY, '1'); } catch (e) {}
+    if (document.querySelector('dialog[open]')) return;   // something else is up: skip it
+    renderWelcome();
+    wcDlg.showModal();
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="welcomeProgram"]'), function (r) {
+    r.addEventListener('change', function () {
+      if (!r.checked) return;
+      var p = HST.course.PROGRAMS[r.value], first = p ? p.levels.filter(function (l) { return !l.variantOf; })[0] : null;
+      HST.course.set({ program: r.value, level: first ? first.key : '' });   // the first level until they pick theirs
+      renderWelcome();
+    });
+  });
+  document.getElementById('welcomeLevel').addEventListener('change', function (e) { HST.course.set({ level: e.target.value }); });
+  document.getElementById('welcomeDone').addEventListener('click', function () { wcDlg.close(); });
+  document.getElementById('welcomeIcr').addEventListener('click', function () { wcDlg.close(); showTab('icr', true); });
 
   // ------------------------------------------------------------------
   // Install button. Always shown in a browser tab (CSS hides it inside the

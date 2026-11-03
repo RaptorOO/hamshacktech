@@ -474,6 +474,15 @@
     flex-shrink: 0;
   }
   .blank-word { display: flex; gap: inherit; }
+  /* Copy Behind: each group of the set in its own outline, marked right
+     or wrong once the answers are shown. */
+  .cb-item { position: relative; display: flex; gap: inherit; padding: 5px; border: 1px dashed var(--border); border-radius: 12px; }
+  .cb-item.ok { border: 1px solid var(--good); }
+  .cb-item.miss { border: 1px solid var(--bad); }
+  .cb-item[data-mark]::after { content: attr(data-mark); position: absolute; top: -0.75em; right: -0.5em; width: 1.4em; height: 1.4em; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; color: #fff; }
+  .cb-item.ok::after { background: var(--good); }
+  .cb-item.miss::after { background: var(--bad); }
   /* A prosign is one sound, so one box; you type its two letters (BT). */
   .blank.pro { width: auto; min-width: clamp(52px, 12vw, 76px); padding: 0 6px; text-decoration: overline; }
   /* Your file (Practice Group) */
@@ -1080,6 +1089,19 @@
           </select>
         </div>
 
+        <!-- Copy Behind (Tim, 2026-11-03): CW Academy's copy behind. -->
+        <div class="field">
+          <label for="copyBehindSelect">Copy Behind</label>
+          <select id="copyBehindSelect">
+            <option value="0">Off</option>
+            <option value="2">2 in a row</option>
+            <option value="3">3 in a row</option>
+            <option value="4">4 in a row</option>
+            <option value="5">5 in a row</option>
+          </select>
+          <p class="check-note">Plays that many groups or words in a row before you can type, so you learn to hold them in your head. Then type them all; each one is marked right or wrong.</p>
+        </div>
+
         <div class="field">
           <label for="wpmRange">Character Speed (WPM)<span class="val" id="wpmVal">20</span></label>
           <input type="range" id="wpmRange" min="5" max="40" step="1" value="20" />
@@ -1589,6 +1611,7 @@
       callMix: "mixed",  // Call Signs group only: "mixed" | "us" | "intl"
       wordPool: 500,     // Common Words group only: how many of GENERAL_WORDS to draw from (100/500/1000/2000)
       headCopy: false,   // Head Copy Mode: no typing allowed while code is playing
+      copyBehind: 0,     // Copy Behind: 2-5 groups play in a row, then you type them all (0 = off)
       timerMin: 0,       // Practice Timer length in minutes; 0 = off
       buzzer: true,      // buzz on a missed group or timeout (the Buzzer chip mutes it)
       walkMin: 15,       // Walk Mode: how long to play, in minutes
@@ -1669,6 +1692,7 @@
     callMixField: $("callMixField"), callMixSelect: $("callMixSelect"),
     wordPoolField: $("wordPoolField"), wordPoolSelect: $("wordPoolSelect"),
     groupSizeField: $("groupSizeField"), groupSizeLabel: $("groupSizeLabel"), groupSizeSelect: $("groupSizeSelect"),
+    copyBehindSelect: $("copyBehindSelect"),
     wpmRange: $("wpmRange"), wpmVal: $("wpmVal"),
     fwpmRange: $("fwpmRange"), fwpmVal: $("fwpmVal"),
     toneRange: $("toneRange"), toneVal: $("toneVal"),
@@ -1732,6 +1756,7 @@
     showCwaChars();
     updateGroupSizeFieldUI(s.group);
     els.groupSizeSelect.value = String(s.groupSize);
+    els.copyBehindSelect.value = String(copyBehindN() > 1 ? copyBehindN() : 0);
     els.wpmRange.value = s.wpm; els.wpmVal.textContent = s.wpm;
     els.fwpmRange.max = s.wpm; // Farnsworth can never exceed character speed
     els.fwpmRange.value = Math.min(s.fwpm, s.wpm); els.fwpmVal.textContent = els.fwpmRange.value;
@@ -1988,16 +2013,23 @@
   // row visibly reads as two words rather than one run-together string.
   // Each word's boxes sit in their own .blank-word group, so a long
   // phrase only wraps between words on a narrow screen, never mid-word.
+  // Copy Behind: each group of the set sits in its own .cb-item.
   function renderBlanksForRound(chars) {
     els.blanksRow.innerHTML = "";
     els.blanksRow.classList.toggle("long", chars.length > 12);   // phrases: smaller boxes
-    var word = null;
-    chars.forEach(function (ch) {
+    var word = null, box = els.blanksRow, items = state.items, k = 0;
+    chars.forEach(function (ch, i) {
+      if (items && k < items.length && i === items[k][0]) {
+        box = document.createElement("div"); box.className = "cb-item"; els.blanksRow.appendChild(box); word = null;
+      }
       var d = document.createElement("div");
-      if (ch === " ") { d.className = "blank-gap"; els.blanksRow.appendChild(d); word = null; return; }
-      if (!word) { word = document.createElement("div"); word.className = "blank-word"; els.blanksRow.appendChild(word); }
-      d.className = ch.length > 1 ? "blank pro" : "blank";
-      word.appendChild(d);
+      if (ch === " ") { d.className = "blank-gap"; box.appendChild(d); word = null; }
+      else {
+        if (!word) { word = document.createElement("div"); word.className = "blank-word"; box.appendChild(word); }
+        d.className = ch.length > 1 ? "blank pro" : "blank";
+        word.appendChild(d);
+      }
+      if (items && k < items.length && i === items[k][1] - 1) { box = els.blanksRow; word = null; k++; }
     });
   }
   // The answer boxes (and word gaps) in order, one per character.
@@ -2005,8 +2037,15 @@
 
   // True while Head Copy Mode is holding back typing — i.e. the mode is
   // on and the group's first send is still sounding.
+  // Copy Behind holds typing back too, until the whole set has played.
   function inputLocked() {
-    return state.settings.headCopy && state.playing;
+    return (state.settings.headCopy || !!state.items) && state.playing;
+  }
+  // Copy Behind: how many groups play in a row (1 = off).
+  function copyBehindN() { var n = Number(state.settings.copyBehind); return n >= 2 && n <= 5 ? n : 1; }
+  function sendingLabel() {
+    if (state.items) return "Listen \u2014 copy behind (" + state.items.length + ")";
+    return state.settings.headCopy ? "Listen \u2014 head copy" : "Sending\u2026";
   }
 
   function renderHeadCopyBtn() {
@@ -2048,7 +2087,12 @@
     }
   }
 
-  function renderBlanksReveal(results) {
+  function renderBlanksReveal(results, oks) {
+    if (state.items) els.blanksRow.querySelectorAll(".cb-item").forEach(function (box, k) {
+      box.classList.add(oks[k] ? "ok" : "miss");
+      box.setAttribute("data-mark", oks[k] ? "\u2713" : "\u2717");
+      box.setAttribute("aria-label", "Group " + (k + 1) + (oks[k] ? ": right" : ": wrong"));
+    });
     var cells = blankCells();
     for (var i = 0; i < cells.length; i++) {
       var r = results[i];
@@ -2213,9 +2257,13 @@
     }
     state.lastResults = results;
 
+    // Copy Behind: each group of the set is scored on its own (a group
+    // typed in full before the time ran out still counts as right).
+    var items = state.items || [[0, n]], oks = items.map(function (it) {
+      return (!timedOut || !!state.items) && results.slice(it[0], it[1]).every(function (r) { return r.correct; });
+    });
+    allCorrect = oks.every(Boolean);
     var o = state.stats.overall;
-    o.groupsPlayed++;
-    if (allCorrect) o.groupsCorrect++;
     if (timedOut) o.timeouts++;
     // "Answer time" is measured from when the group finished sending
     // (timerStartTs) where possible — that's the fair reaction-time
@@ -2227,20 +2275,26 @@
     var responseMs = Math.max(0, performance.now() - referenceTs);
     o.totalResponseMs += responseMs;
     o.responseCount++;
-    practiceLog.round(allCorrect, responseMs, !!timedOut);
-    if (allCorrect) { o.currentStreak++; o.bestStreak = Math.max(o.bestStreak, o.currentStreak); }
-    else o.currentStreak = 0;
+    items.forEach(function (it, k) {
+      var ok = oks[k];
+      // Copy Behind's time is for the whole set, so Progress's answer
+      // time (per group) leaves it out.
+      practiceLog.round(ok, state.items ? null : responseMs, !!timedOut && k === 0);
+      o.groupsPlayed++;
+      if (ok) { o.groupsCorrect++; o.currentStreak++; o.bestStreak = Math.max(o.bestStreak, o.currentStreak); }
+      else o.currentStreak = 0;
 
-    var sz = getSizeStat(n);
-    sz.groupsPlayed++;
-    if (allCorrect) sz.groupsCorrect++;
-    results.forEach(function (r) {
-      if (r.actual === " ") return; // word gap — excluded from char-level accuracy, same as above
-      sz.charsPlayed++; if (r.correct) sz.charsCorrect++;
-      o.charsPlayed++; if (r.correct) o.charsCorrect++;
+      var sz = getSizeStat(it[1] - it[0]);
+      sz.groupsPlayed++;
+      if (ok) sz.groupsCorrect++;
+      results.slice(it[0], it[1]).forEach(function (r) {
+        if (r.actual === " ") return; // word gap — excluded from char-level accuracy, same as above
+        sz.charsPlayed++; if (r.correct) sz.charsCorrect++;
+        o.charsPlayed++; if (r.correct) o.charsCorrect++;
+      });
     });
 
-    return { allCorrect: allCorrect, results: results };
+    return { allCorrect: allCorrect, results: results, oks: oks };
   }
 
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -2248,7 +2302,17 @@
   function runLoop() {
     if (!state.running) return;
     if (state.timeUp) { endTimedSession(); return; }   // the timer ran out during the last group
-    var chars = buildRound();
+    // Copy Behind (Tim, 2026-11-03): n groups in a row with a word gap
+    // between them; state.items holds each one's [start, end) in chars.
+    var n = copyBehindN(), items = [], chars = [];
+    for (var k = 0; k < n; k++) {
+      var g = buildRound();
+      if (!g) { chars = null; break; }
+      if (k) chars.push(" ");
+      items.push([chars.length, chars.length + g.length]);
+      chars = chars.concat(g);
+    }
+    state.items = n > 1 && chars ? items : null;
 
     if (!chars) {
       stopSession(emptyRoundMessage());
@@ -2264,7 +2328,7 @@
     state.currentChars = chars;
     renderBlanksForRound(chars);
     updateMeter(1, " ", false);
-    setStatus("sending", state.settings.headCopy ? "Listen \u2014 head copy" : "Sending\u2026");
+    setStatus("sending", sendingLabel());
     updateDrillFlag();
 
     // Input is accepted from the moment the group starts \u2014 matching the
@@ -2297,11 +2361,12 @@
       if (state.roundToken !== myToken) return null; // abandoned \u2014 e.g. Drill started a fresh round instead
       if (!state.running) return null;
       var outcome = evaluateGroup(timedOut);
-      if (state.settings.adaptSpeed) HST.shared.adaptWpm(outcome.allCorrect);   // the next group's speed
+      if (state.settings.adaptSpeed) outcome.oks.forEach(function (ok) { HST.shared.adaptWpm(ok); });   // the next group's speed
       if (timedOut || !outcome.allCorrect) playBuzzer();   // missed group or timeout (unless muted)
+      var right = outcome.oks.filter(Boolean).length, of = state.items ? " \u00b7 " + right + " of " + outcome.oks.length + " right" : "";
       setStatus(timedOut ? "timeout" : (outcome.allCorrect ? "correct" : "miss"),
-        timedOut ? "\u23f1 Time's up" : (outcome.allCorrect ? "\u2713 Correct" : "\u2717 Missed"));
-      renderBlanksReveal(outcome.results);
+        (timedOut ? "\u23f1 Time's up" : (outcome.allCorrect ? "\u2713 Correct" : "\u2717 Missed")) + of);
+      renderBlanksReveal(outcome.results, outcome.oks);
       updateMeter(0, " ", false);
       renderAll();
       saveSettings();
@@ -2339,10 +2404,16 @@
     renderBlanksTyping(); // swaps the dashed "wait" box for the live caret in Head Copy Mode
     updateReplayBtn();
     if (state.settings.unlimited) updateMeter(1, "Unlimited time", false);
-    // Phrases: half a second more for each character past five, so a
-    // 30-character sentence isn't a race against the Max Time to Answer.
-    else startTimer(state.settings.maxTimeSec +
-      (state.settings.group === "phrases" || state.settings.group === "file" ? 0.5 * Math.max(0, state.currentChars.length - 5) : 0));
+    else startTimer(answerTime());
+  }
+  // Phrases: half a second more for each character past five, so a
+  // 30-character sentence isn't a race against the Max Time to Answer.
+  // Copy Behind: the Max Time to Answer for each group of the set.
+  function answerTime() {
+    var s = state.settings, long = s.group === "phrases" || s.group === "file";
+    return (state.items || [[0, state.currentChars.length]]).reduce(function (t, it) {
+      return t + s.maxTimeSec + (long ? 0.5 * Math.max(0, it[1] - it[0] - 5) : 0);
+    }, 0);
   }
 
   // ---- Review pause (after a missed or timed-out group) --------------
@@ -2634,8 +2705,10 @@
     ensureAudioCtx();
     state.running = true;
     state.callsUsed = {}; // fresh session, fresh pool of call signs
-    practiceLog.start({ group: state.settings.group, wpm: state.settings.wpm,
-                    fwpm: state.settings.fwpm < state.settings.wpm ? state.settings.fwpm : 0, groupSize: state.settings.groupSize });
+    var meta = { group: state.settings.group, wpm: state.settings.wpm,
+                 fwpm: state.settings.fwpm < state.settings.wpm ? state.settings.fwpm : 0, groupSize: state.settings.groupSize };
+    if (copyBehindN() > 1) meta.copyBehind = copyBehindN();
+    practiceLog.start(meta);
     els.sessionBtn.textContent = "Stop Session";
     els.sessionBtn.classList.add("running");
     els.tapHint.style.display = "none";
@@ -2654,6 +2727,7 @@
   // Timer chip can show that it expired.
   function stopSession(idleMessage, timerRanOut) {
     state.running = false;
+    state.items = null;
     state.timeUp = false;
     practiceLog.finish(); // save this session to Practice History (no-op if nothing was practiced)
     stopClocks(!!timerRanOut);
@@ -2789,7 +2863,7 @@
     renderHeadCopyBtn();
     saveSettings();
     if (state.running && !state.reviewing) { // during a review the revealed answer must stay put
-      if (state.playing) setStatus("sending", state.settings.headCopy ? "Listen \u2014 head copy" : "Sending\u2026");
+      if (state.playing) setStatus("sending", sendingLabel());
       renderBlanksTyping();
     }
   });
@@ -3000,6 +3074,10 @@
   els.maxTimeRange.addEventListener("input", function () {
     state.settings.maxTimeSec = parseFloat(els.maxTimeRange.value);
     els.maxTimeVal.textContent = state.settings.maxTimeSec.toFixed(1) + " s";
+    saveSettings();
+  });
+  els.copyBehindSelect.addEventListener("change", function () {
+    state.settings.copyBehind = parseInt(els.copyBehindSelect.value, 10) || 0;
     saveSettings();
   });
   els.adaptSpeedCheck.addEventListener("change", function () {

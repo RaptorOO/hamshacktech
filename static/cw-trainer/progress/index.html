@@ -25,6 +25,7 @@
     --jep: #818cf8;        /* indigo-400: Jeopardy (its blue board) everywhere on this page */
     --tp: #fb923c;         /* orange-400: Test Prep everywhere on this page */
     --cs: #67e8f9;         /* cyan-300: Call Signs everywhere on this page */
+    --cs2: #d6d3d1;        /* stone-300: Call Signs' second series (key2's blue is too close to cyan) */
     /* Practice added by hand (outside the app), one color per kind */
     --zoom: #38bdf8;       /* sky-400 */
     --onair: #c084fc;      /* purple-400 */
@@ -76,7 +77,7 @@
   .legend { display: flex; gap: 14px; font-size: 0.88rem; color: var(--muted); margin: 0 0 6px; }
   .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: currentColor; }
   .legend .icr { color: var(--icr); } .legend .cg { color: var(--cg); }
-  .legend .key { color: var(--key); } .legend .key2 { color: var(--key2); } .legend .qso { color: var(--qso); font-weight: 500; }
+  .legend .key { color: var(--key); } .legend .key2 { color: var(--key2); } .legend .cs2 { color: var(--cs2); font-weight: 500; } .legend .qso { color: var(--qso); font-weight: 500; }
   .legend .jep { color: var(--jep); font-weight: 500; }
   .legend .tp { color: var(--tp); font-weight: 500; }
   .legend .cs { color: var(--cs); font-weight: 500; }
@@ -303,11 +304,12 @@
       </div>
     </div>
 
-    <!-- COPYING: an ICR view and a Code Groups view. -->
+    <!-- COPYING: an ICR view, a Code Groups view and a Call Signs view. -->
     <div class="panel" id="pCopy" role="tabpanel" aria-labelledby="tab-copy" hidden>
       <div class="seg" role="group" aria-label="Copying tool">
         <button type="button" data-view="icr">ICR</button>
         <button type="button" data-view="cg">Code Groups</button>
+        <button type="button" data-view="cs">Call Signs</button>
       </div>
       <div class="grid" id="vIcr">
         <section class="card wide">
@@ -354,6 +356,31 @@
           <h2>Head copy span: <span id="spanVal">—</span></h2>
           <p class="note">Code Groups: whole groups right, by length (random characters). Your span is the longest at 80% or better.</p>
           <div id="spanBars"></div>
+        </section>
+      </div>
+      <!-- Call Signs (Tim, 2026-11-03): Code Groups' four cards, for the Call Signs tool. -->
+      <div class="grid" id="vCs" hidden>
+        <section class="card wide">
+          <h2>Accuracy and speed</h2>
+          <p class="note">Call Signs: characters copied correctly, % (left), and the character speed, WPM (right).</p>
+          <div class="legend"><span class="cs">Accuracy</span><span class="cs2 dash">Speed</span></div>
+          <div id="chCsAcc"></div>
+        </section>
+        <section class="card">
+          <h2>Speed</h2>
+          <p class="note">Character speed and Farnsworth speed, WPM.</p>
+          <div class="legend"><span class="cs">Character</span><span class="cs2">Farnsworth</span></div>
+          <div id="chCsWpm"></div>
+        </section>
+        <section class="card">
+          <h2>Answer time</h2>
+          <p class="note">From the end of the call to your last keystroke, seconds. Lower is better.</p>
+          <div id="chCsAns"></div>
+        </section>
+        <section class="card wide">
+          <h2>Head copy span: <span id="csSpanVal">—</span></h2>
+          <p class="note">Call Signs: whole calls right, by length (not Find the Number). Your span is the longest at 80% or better.</p>
+          <div id="csSpanBars"></div>
         </section>
       </div>
     </div>
@@ -532,8 +559,14 @@
           var b = buckets[i][seriesOf(s)];
           if (!b) return;
           b.ms += s.durationMs || 0;
-          if (s.trainer === 'qso' || s.trainer === 'test-prep' || s.trainer === 'call-signs' || s.trainer === 'jeopardy' || s.trainer === 'manual') return;   // practice time only
-          b.chars += s.charsTotal; b.correct += s.charsCorrect;
+          if (s.trainer === 'qso' || s.trainer === 'test-prep' || s.trainer === 'jeopardy' || s.trainer === 'manual') return;   // practice time only
+          b.chars += s.charsTotal || 0; b.correct += s.charsCorrect || 0;
+          if (s.trainer === 'call-signs') {                   // its speed can change call by call
+            var w = csWpm(s), cn = s.charsTotal || 0;
+            b.wpmW += w * cn; b.fwW += (s.fwpm && s.fwpm < w ? s.fwpm : w) * cn;
+            b.timeSum += s.timeSum || 0; b.timeCount += s.timeCount || 0;
+            return;
+          }
           if (s.trainer === 'keyer') {                        // sending: weight by letters sent
             var n = s.sentChars || 0;
             b.sent += n; b.wpmW += (s.wpm || 0) * n; b.overallW += (s.overallWpm || s.wpm || 0) * n;
@@ -548,6 +581,14 @@
       }
     });
     return buckets;
+  }
+  // A Call Signs session's character speed: a Speed Run's calls averaged
+  // (Adaptive Speed changes it), the Simulator's range's middle, or its one speed.
+  function csWpm(s) {
+    var it = (s.items || []).filter(function (x) { return x.wpm; });
+    if (s.mode === 'run' && it.length) return Math.round(it.reduce(function (t, x) { return t + x.wpm; }, 0) / it.length);
+    if (s.wpm) return s.wpm;
+    return s.minWpm && s.maxWpm ? Math.round((s.minWpm + s.maxWpm) / 2) : 0;
   }
   function blank() { return { ms: 0, chars: 0, correct: 0, wpmW: 0, fwW: 0, timeSum: 0, timeCount: 0, sent: 0, overallW: 0, gapSum: 0, gapN: 0 }; }
   function bucketLabel(b) { return b.step === 1 ? shortDate(b.start) : 'Wk of ' + shortDate(b.start); }
@@ -679,20 +720,25 @@
     var whole = function (v) { return Math.round(v); };
     barChart($('chTime'), buckets, 'Practice minutes');
     // Copying: accuracy (left axis) and the speed practiced at (right).
-    [['icr', 'chIcrAcc', 'ICR accuracy and speed'], ['code-groups', 'chCgAcc', 'Code Groups accuracy and speed']].forEach(function (a) {
+    [['icr', 'chIcrAcc', 'ICR accuracy and speed'], ['code-groups', 'chCgAcc', 'Code Groups accuracy and speed'],
+     ['call-signs', 'chCsAcc', 'Call Signs accuracy and speed']].forEach(function (a) {
       var k = a[0];
       lineChart($(a[1]), buckets, [{ name: 'Accuracy', color: COLORS[k], value: function (b) { return pct(b[k].correct, b[k].chars); } }],
         { ceil: 100, yFmt: whole, tip: function (v) { return v + '%'; }, label: a[2],
           right: { yFmt: whole, tip: function (v) { return v + ' WPM'; },
-                   series: [{ name: 'Speed', color: 'var(--key2)', value: function (b) { var x = b[k]; return x.chars ? Math.round(x.wpmW / x.chars) : null; } }] } });
+                   series: [{ name: 'Speed', color: k === 'call-signs' ? 'var(--cs2)' : 'var(--key2)', value: function (b) { var x = b[k]; return x.chars ? Math.round(x.wpmW / x.chars) : null; } }] } });
     });
-    lineChart($('chCgWpm'), buckets, [
-      { name: 'Character', color: COLORS['code-groups'], value: function (b) { var x = b['code-groups']; return x.chars ? Math.round(x.wpmW / x.chars) : null; } },
-      { name: 'Farnsworth', color: 'var(--key2)', value: function (b) { var x = b['code-groups']; return x.chars ? Math.round(x.fwW / x.chars) : null; } }
-    ], { yFmt: whole, tip: function (v) { return v + ' WPM'; }, label: 'Code Groups speed' });
-    lineChart($('chAns'), buckets, [{ name: 'Code Groups', color: COLORS['code-groups'],
-      value: function (b) { var x = b['code-groups']; return x.timeCount ? Math.round(x.timeSum / x.timeCount / 100) / 10 : null; } }],
-      { yFmt: function (v) { return (Math.round(v * 10) / 10).toString(); }, tip: function (v) { return v.toFixed(1) + ' s'; }, label: 'Code Groups answer time' });
+    // Speed and answer time: Code Groups, and the same for Call Signs.
+    [['code-groups', 'chCgWpm', 'chAns', 'Code Groups'], ['call-signs', 'chCsWpm', 'chCsAns', 'Call Signs']].forEach(function (a) {
+      var k = a[0];
+      lineChart($(a[1]), buckets, [
+        { name: 'Character', color: COLORS[k], value: function (b) { var x = b[k]; return x.chars ? Math.round(x.wpmW / x.chars) : null; } },
+        { name: 'Farnsworth', color: k === 'call-signs' ? 'var(--cs2)' : 'var(--key2)', value: function (b) { var x = b[k]; return x.chars ? Math.round(x.fwW / x.chars) : null; } }
+      ], { yFmt: whole, tip: function (v) { return v + ' WPM'; }, label: a[3] + ' speed' });
+      lineChart($(a[2]), buckets, [{ name: a[3], color: COLORS[k],
+        value: function (b) { var x = b[k]; return x.timeCount ? Math.round(x.timeSum / x.timeCount / 100) / 10 : null; } }],
+        { yFmt: function (v) { return (Math.round(v * 10) / 10).toString(); }, tip: function (v) { return v.toFixed(1) + ' s'; }, label: a[3] + ' answer time' });
+    });
     {   // with or without Keyer history: each chart says when it has nothing yet (Tim, 2026-11-01)
       lineChart($('chSendAcc'), buckets, [{ name: 'Sending', color: COLORS.keyer,
         value: function (b) { return pct(b.keyer.correct, b.keyer.chars); } }],
@@ -938,6 +984,7 @@
       var icr = s.trainer === 'icr';
       var what = GROUP_NAMES[s.group] || s.group || '';
       if (!icr && s.groupSize && ['qso', 'calls', 'phrases'].indexOf(s.group) < 0) what += s.group === 'words' ? ' · ' + s.groupSize + '-letter' : ' · ' + s.groupSize + '/group';
+      if (s.copyBehind) what += ' · copy behind ' + s.copyBehind;
       var wpm = s.wpm + (s.fwpm && s.fwpm < s.wpm ? '/' + s.fwpm : '');
       return '<tr><td>' + esc(when) + '</td><td><span class="tag ' + (icr ? 'icr">ICR' : 'cg">Code Groups') + '</span></td><td>' +
              esc(what) + '</td><td class="num">' + esc(wpm) + '</td><td class="num">' + HST.fmtClock(s.durationMs || 0) +
@@ -946,14 +993,14 @@
   }
 
   /* ---------------- tabs (Tim, 2026-11-01) ----------------
-     Overview, Copying (an ICR view and a Code Groups view) and Sending.
+     Overview, Copying (ICR, Code Groups and Call Signs views) and Sending.
      The tab and view picked are remembered on this device. */
   var TAB_KEY = 'hct-cw-progress-tab', VIEW_KEY = 'hct-cw-progress-copy';
   var TAB_IDS = ['overview', 'copy', 'send'];
   var tab = 'overview', view = 'icr';
   try {
     if (TAB_IDS.indexOf(localStorage.getItem(TAB_KEY)) >= 0) tab = localStorage.getItem(TAB_KEY);
-    if (localStorage.getItem(VIEW_KEY) === 'cg') view = 'cg';
+    if (['cg', 'cs'].indexOf(localStorage.getItem(VIEW_KEY)) >= 0) view = localStorage.getItem(VIEW_KEY);
   } catch (e) {}
   function showTab() {
     document.querySelectorAll('.ptabs button').forEach(function (b) {
@@ -967,6 +1014,7 @@
     document.querySelectorAll('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === view)); });
     $('vIcr').hidden = view !== 'icr';
     $('vCg').hidden = view !== 'cg';
+    $('vCs').hidden = view !== 'cs';
     // Charts are drawn at their card's width, which a hidden card hasn't got.
     if (lastBuckets && !$('content').hidden) drawCharts(lastBuckets);
   }
@@ -1065,14 +1113,31 @@
       var o = sizes[s.groupSize] || (sizes[s.groupSize] = { r: 0, c: 0 });
       o.r += s.rounds; o.c += s.roundsCorrect || 0;
     });
-    var lens = Object.keys(sizes).map(Number).sort(function (a, b) { return a - b; }), span = null;
+    spanHtml(sizes, 'spanVal', 'spanBars', 'var(--cg)', 'groups',
+      'Practice Code Groups with letters, numbers or mixed characters and your span shows up here.');
+
+    // Call Signs: whole calls right, by length (byLen, since 2026-11-03).
+    var calls = {};
+    rows.forEach(function (s) {
+      if (s.trainer !== 'call-signs' || !s.byLen) return;
+      Object.keys(s.byLen).forEach(function (n) {
+        var o = calls[n] || (calls[n] = { r: 0, c: 0 });
+        o.c += s.byLen[n][0] || 0; o.r += s.byLen[n][1] || 0;
+      });
+    });
+    spanHtml(calls, 'csSpanVal', 'csSpanBars', 'var(--cs)', 'calls',
+      'Practice Call Signs (Simulator, Builder or Speed Run) and your span shows up here.');
+  }
+  // A head copy span card: sizes { length: { r: tries, c: right } }.
+  function spanHtml(sizes, valId, barsId, color, what, empty) {
+    var lens = Object.keys(sizes).map(Number).filter(function (n) { return sizes[n].r; }).sort(function (a, b) { return a - b; }), span = null;
     lens.forEach(function (n) { if (sizes[n].r >= SPAN_MIN && sizes[n].c / sizes[n].r >= 0.8) span = n; });
-    $('spanVal').textContent = span ? span + (span === 1 ? ' character' : ' characters') : lens.length ? 'not yet' : '—';
-    $('spanBars').innerHTML = !lens.length ? nodata('Practice Code Groups with letters, numbers or mixed characters and your span shows up here.')
+    $(valId).textContent = span ? span + (span === 1 ? ' character' : ' characters') : lens.length ? 'not yet' : '—';
+    $(barsId).innerHTML = !lens.length ? nodata(empty)
       : '<div class="hrows">' + lens.map(function (n) {
           var o = sizes[n], p = Math.round(100 * o.c / o.r), good = p >= 80 && o.r >= SPAN_MIN;
-          return '<div class="hrow" title="' + o.c + ' of ' + o.r + ' groups right"><span class="lbl">' + n + (n === 1 ? ' character' : ' characters') + '</span>' +
-            '<span class="track"><i style="width:' + p + '%;--c:' + (good ? 'var(--cg)' : DIM_BAR) + '"></i></span><span class="num">' + p + '%</span></div>';
+          return '<div class="hrow" title="' + o.c + ' of ' + o.r + ' ' + what + ' right"><span class="lbl">' + n + (n === 1 ? ' character' : ' characters') + '</span>' +
+            '<span class="track"><i style="width:' + p + '%;--c:' + (good ? color : DIM_BAR) + '"></i></span><span class="num">' + p + '%</span></div>';
         }).join('') + '</div>';
   }
 

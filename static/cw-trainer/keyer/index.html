@@ -92,6 +92,7 @@
   .tsp { width: 0.8em; }
   /* Echo: the word is heard, not shown, until it's graded. */
   .echo-hidden { align-self: center; color: var(--dim); font-size: 1.05rem; font-style: italic; }
+  .echo-count { align-self: center; font-size: 2.4rem; font-weight: 700; line-height: 1; }
   /* Each word's characters stay together, so a line wraps between words,
      never inside one (Tim, 2026-10-23). A word too long for a whole line
      (a pyramid line) still wraps inside itself. */
@@ -284,6 +285,7 @@
     </div>
     <p class="status" id="status"></p>
     <div class="actions">
+      <button class="btn primary" data-show="echo" id="echoStartBtn" type="button" title="Count down 3 seconds, then play the first word">Start</button>
       <button class="btn" data-show="echo" id="replayBtn" type="button" title="Hear the word again">Replay</button>
       <button class="btn" data-show="copy warmup echo" id="againBtn" type="button" title="Send the same thing again">Again <kbd>Esc</kbd></button>
       <button class="btn" data-show="copy echo" id="skipBtn" type="button" title="Something new to send">Skip</button>
@@ -353,7 +355,7 @@
       <summary>How this works</summary>
       <p><strong>Daily Scales:</strong> Bob Carter&rsquo;s (WR7Q) sending scales. <strong>Warm Up</strong>, every day before you send anything else, works every letter, number and prosign; <strong>Exercise</strong> sends every letter and number five times; <strong>Drill</strong> builds sending skill with sentences, words and punctuation. Send it top to bottom; each character turns green as you send it right. A mistake turns its group (BBBBB, or a word) red: pause, then send the whole group again, so a finished scale is all green; mistakes still count in your accuracy. There&rsquo;s no time limit.When you&rsquo;ve sent the last character and pause (or press <kbd>Enter</kbd>), you get the full timing report for your keyer speed. <kbd>Esc</kbd> starts over.</p>
       <p><strong>Send This:</strong> send what&rsquo;s shown, then pause. As you send, each character turns green when you send it right and red when you don&rsquo;t, like Daily Scales. Under <strong>Send</strong>, the lists (the pyramid, QSO exchanges, the dits exercise, pangrams) go one line at a time, in order, and pick up where you left off. <strong>Your own text&hellip;</strong> lets you type, paste or load a text file; a Morserino-style file with <code>&lt;c&gt;$</code> chapters gives one choice per chapter. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
-      <p><strong>Echo:</strong> the app plays a word from the same lists as Send This, without showing it. Send it back on your key, then pause. It&rsquo;s graded the same way as Send This, and then the word is shown: green if you got it right. The next word plays a moment later. <strong>Replay</strong> plays the word again; <strong>Again</strong> (<kbd>Esc</kbd>) plays the last word again so you can have another go. It&rsquo;s a favorite drill on the Morserino and in LICW classes, joining copying and sending.</p>
+      <p><strong>Echo:</strong> press <strong>Start</strong>, and after a 3-second countdown the app plays a word from the same lists as Send This, without showing it. Send it back on your key, then pause. It&rsquo;s graded the same way as Send This, and then the word is shown: green if you got it right. The next word plays a moment later. <strong>Replay</strong> plays the word again; <strong>Again</strong> (<kbd>Esc</kbd>) plays the last word again so you can have another go. It&rsquo;s a favorite drill on the Morserino and in LICW classes, joining copying and sending.</p>
       <p><strong>The timing rules:</strong> a dah is 3 dits long; the gap inside a letter is 1 dit; between letters 3 dits; between words 7 dits. &ldquo;Character speed&rdquo; is how fast your dits and dahs go. &ldquo;Overall speed&rdquo; includes your spacing &mdash; what someone copying you actually hears. Extra space between letters (Farnsworth spacing) is fine while learning, but the closer you get to 3 and 7, the easier you are to copy.</p>
       <p><strong>With paddles</strong> the keyer makes perfect dits and dahs, so the useful feedback is spacing and which letters came out wrong. <strong>With a straight key or bug</strong> you form the elements yourself, so you&rsquo;ll also see your dah-to-dit ratio (ideally 3:1).</p>
       <p>Sessions are saved to Progress when you click End session or switch to another tool.</p>
@@ -464,7 +466,8 @@
       // Echo: keying while the word just graded is on show isn't an
       // attempt (the next word hasn't played yet); keying while a word
       // plays stops it and starts the attempt.
-      if (prefs.mode === 'echo' && holdTimer) return;
+      // Before Start (and during its countdown) keying isn't an attempt either.
+      if (prefs.mode === 'echo' && (holdTimer || !echoOn)) return;
       checkAudio();
       clearTimeout(waitTimer);
       if (prefs.mode === 'copy') showNextNow();
@@ -554,7 +557,7 @@
   function drawTarget(text, n) {
     // One .tword per word, so lines only wrap between words.
     var words = text.split(' ').filter(Boolean);
-    $('target').innerHTML = prefs.mode === 'echo' && !echoReveal ? '<span class="echo-hidden">' + (echoPlaying ? 'Listen\u2026' : 'Send back the word you hear') + '</span>' : words.map(function (w) {
+    $('target').innerHTML = prefs.mode === 'echo' && !echoReveal ? '<span class="echo-hidden">' + (echoPlaying ? 'Listen\u2026' : echoOn ? 'Send back the word you hear' : 'Press Start to begin') + '</span>' : words.map(function (w) {
       return '<span class="tword">' + (w.match(/<[A-Z]+>|[\s\S]/g) || []).map(function (ch) {
         var pro = ch.length > 1;
         return '<span class="tch' + (pro ? ' pro' : '') + '"><b>' + esc(pro ? ch.slice(1, -1) : ch) + '</b>' + (prefs.showCode ? '<i>' + pretty(morseOf(ch)) + '</i>' : '') + '</span>';
@@ -683,6 +686,7 @@
      for a moment, and the next one plays. */
   var echoReveal = false, echoPlaying = false, echoPlayId = 0;
   function echoPlay(text) {
+    if (!echoOn) return echoReady();
     echoStop();
     var id = echoPlayId, sh = HST.shared.get();
     echoPlaying = true;
@@ -708,6 +712,42 @@
     paintTarget([], 0);
     echoPlay(target);
   }
+  /* Start (Tim, 2026-11-03): Echo waits for Start, counts down 3, 2, 1,
+     then plays the first word; after that each word plays by itself as
+     before, until the session ends (End session, another mode, another
+     tool), and then it waits for Start again. */
+  var echoOn = false, echoCount = null;
+  function echoButtons() {
+    if (prefs.mode !== 'echo') return;
+    $('echoStartBtn').hidden = echoOn || !!echoCount;
+    ['replayBtn', 'againBtn', 'skipBtn', 'doneBtn'].forEach(function (id) { $(id).hidden = !echoOn; });
+  }
+  function echoCountStop() { clearInterval(echoCount); echoCount = null; }
+  function echoReady() {
+    echoOn = false; echoCountStop(); echoStop();
+    state = 'ready';
+    drawTarget(target, lineNo); paintTarget([], 0);
+    $('targetLabel').textContent = 'Listen';
+    setStatus('Press Start. The first word plays after a 3-second countdown.');
+    echoButtons();
+  }
+  function echoStart() {
+    HST.audio.unlock();   // inside the click, as browsers require
+    echoCountStop();
+    var left = 3;
+    function show() { $('target').innerHTML = '<span class="echo-count">' + left + '</span>'; }
+    $('targetLabel').textContent = 'Get ready';
+    setStatus('The first word plays when the count reaches zero.');
+    show();
+    echoCount = setInterval(function () {
+      if (--left > 0) return show();
+      echoCountStop();
+      echoOn = true; echoButtons();
+      echoPlay(target);
+    }, 1000);
+    echoButtons();
+  }
+  $('echoStartBtn').addEventListener('click', echoStart);
   function echoFinished(g) {
     prevTarget = target; prevLineNo = lineNo;
     advanceList = true;
@@ -1267,11 +1307,10 @@
     else if ((copyLike() || prefs.mode === 'warmup') && state === 'sending' && marks.length) finishAttempt();
     echoStop();
     // Echo: don't play the next word after the session ends (another
-    // mode, another tool); Replay plays it.
-    if (prefs.mode === 'echo' && holdTimer) {
-      clearTimeout(holdTimer); holdTimer = null; state = 'ready';
-      drawTarget(target, lineNo); paintTarget([], 0);
-      $('targetLabel').textContent = 'Listen'; setStatus('Press Replay to hear the next word.');
+    // mode, another tool); Start begins again.
+    if (prefs.mode === 'echo') {
+      clearTimeout(holdTimer); holdTimer = null;
+      echoReady();
     }
     clearTimeout(idleTimer); clearInterval(clockTimer);
     keyer.reset();
@@ -1284,7 +1323,7 @@
   window.addEventListener('pagehide', function () { if (sess) rec.finish(); });
 
   /* ---------------- controls ---------------- */
-  function applyMode(clicked) {
+  function applyMode() {
     document.querySelectorAll('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === prefs.mode)); });
     // data-show lists the modes an element belongs to ("copy warmup").
     document.querySelectorAll('[data-show]').forEach(function (el) { el.hidden = el.dataset.show.split(' ').indexOf(prefs.mode) < 0; });
@@ -1295,9 +1334,7 @@
     if (prefs.mode === 'copy') { newTarget(false); $('targetLabel').textContent = 'Send this'; setStatus('Send what’s shown, then pause.'); }
     else if (prefs.mode === 'echo') {
       newTarget(false);
-      // Sound needs a click first: on a fresh load, Replay starts it.
-      if (clicked) echoPlay(target);
-      else { $('targetLabel').textContent = 'Listen'; setStatus('Press Replay to hear the first word.'); }
+      echoReady();   // Start plays the first word
     }
     else if (prefs.mode === 'warmup') warmReady();
     else setStatus('Send anything you like.');
@@ -1308,7 +1345,7 @@
       if (prefs.mode === b.dataset.mode) return;
       endSession();
       if (b.dataset.mode === 'warmup') HST.recorderStop();   // Record is on Send This and Free Sending
-      prefs.mode = b.dataset.mode; savePrefs(); applyMode(true);
+      prefs.mode = b.dataset.mode; savePrefs(); applyMode();
     });
   });
   $('source').addEventListener('change', function (e) {
