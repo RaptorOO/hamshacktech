@@ -32,6 +32,15 @@
  * changed since the last one (courseSentAt) and gets the whole course back
  * only when the account's copy has changed (courseRev). A tick or untick
  * syncs a few seconds later, like a new session.
+ *
+ * Settings sync too (Tim, 2026-11-02): each tool's saved settings (see
+ * SETTINGS below), so they come back on a new device. Each sync sends the
+ * ones that changed since the last (setSent), and the newer change wins on
+ * the account. A device's first settings sync only takes the account's (a
+ * new device's defaults mustn't replace the student's settings), then sends
+ * what the account didn't have. Settings that arrive reach the app's own
+ * stores at once; each open tool reloads the next time it's shown
+ * (HST.account.onSettings).
  */
 (function () {
   'use strict';
@@ -39,12 +48,67 @@
   var HST = window.HST;
   var KEY = 'hct-cw-account-v1';
   var QSO_KEY = 'hct-cw-qso-v1';         // the QSO tab's saved station details
-  var listeners = [];
+  var listeners = [], setListeners = [];
+
+  /* The settings backed up: each tool's saved choices. local: fields
+     that stay with the device (the adapter plugged in; ICR's session in
+     progress). Not here: drafts of practice in progress, which tab was
+     open, My Course (synced on its own), your own text. */
+  var SETTINGS = [
+    { k: /^hct-cw-shared-v1(:[a-z-]{1,20})?$/ },   // each tool's speed, tone and volume
+    { k: 'hct-cw-keyer-v1', local: ['adapter', 'input'] },
+    { k: 'hct-cw-experimental-v1' },
+    { k: 'hct-cw-keyer-practice-v1' },
+    { k: 'hct-cw-qso-v1' },
+    { k: 'hct-cw-test-prep-v1' },
+    { k: 'hct-cw-call-signs-v2' },
+    { k: 'hct-settings-v1' },                       // Code Groups
+    { k: 'cwIcrTrainer', local: ['session'] },
+    { k: 'mcj-settings' },                          // Jeopardy
+    { k: 'mcj-online' }
+  ];
+  function settingRule(key) {
+    return SETTINGS.filter(function (r) { return typeof r.k === 'string' ? r.k === key : r.k.test(key); })[0] || null;
+  }
+  // One setting as sent: its saved JSON without the device's own fields.
+  function readSetting(key) {
+    var rule = settingRule(key), o;
+    if (!rule) return null;
+    try { o = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; }
+    if (!o || typeof o !== 'object') return null;
+    (rule.local || []).forEach(function (f) { delete o[f]; });
+    var text = JSON.stringify(o);
+    return text.length <= 60000 ? text : null;
+  }
+  function readSettings() {
+    var out = {};
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i), v = readSetting(k);
+        if (v != null) out[k] = v;
+      }
+    } catch (e) {}
+    return out;
+  }
+  // Take a setting from the account (keeping the device's own fields).
+  function applySetting(key, text) {
+    var rule = settingRule(key), o, here;
+    if (!rule) return false;
+    try { o = JSON.parse(text); } catch (e) { return false; }
+    if (!o || typeof o !== 'object') return false;
+    try { here = JSON.parse(localStorage.getItem(key) || 'null') || {}; } catch (e) { here = {}; }
+    (rule.local || []).forEach(function (f) { if (f in here) o[f] = here[f]; else delete o[f]; });
+    var value = JSON.stringify(o);
+    try { localStorage.setItem(key, value); } catch (e) { return false; }
+    // This page's own stores hear it as if another window had changed it.
+    try { window.dispatchEvent(new StorageEvent('storage', { key: key, newValue: value })); } catch (e) {}
+    return true;
+  }
 
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY) || 'null') || {}; } catch (e) { return {}; }
   }
-  var st = load();     // { token, deviceId, user, since, clearedBefore, lastSync, courseRev, courseSentAt }
+  var st = load();     // { token, deviceId, user, since, clearedBefore, lastSync, courseRev, courseSentAt, setRev, setSent }
   var syncing = false, lastError = '', again = false;
 
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
@@ -167,13 +231,17 @@
       // My Course: what changed here since the last sync (all of it the first time).
       var courseMark = Date.now(), courseOut = HST.course ? HST.course.syncOut(st.courseSentAt || 0) : null;
       var course = HST.course ? { rev: st.courseRev || 0, chosen: courseOut && courseOut.chosen, progress: courseOut ? courseOut.progress : {} } : null;
+      // Settings: the ones changed since the last sync (none the first time).
+      var setFirst = !st.setSent, setNow = readSettings(), setUp = {}, setT = Date.now();
+      if (!setFirst) Object.keys(setNow).forEach(function (k) { if (setNow[k] !== st.setSent[k]) setUp[k] = { v: setNow[k], t: setT }; });
+      var settings = { rev: setFirst ? 0 : st.setRev || 0, keys: setUp };
 
       // One round: up to 500 sessions up, up to 1,000 down. Repeats while
       // there's more either way.
       function round() {
         var batch = pending.splice(0, 500);
         var upload = batch.map(function (r) { var c = {}; Object.keys(r).forEach(function (k) { if (k !== 'id' && k !== 'synced') c[k] = r[k]; }); return c; });
-        return api('sync', { body: { since: st.since || 0, sessions: upload, station: station, course: course } }).then(function (j) {
+        return api('sync', { body: { since: st.since || 0, sessions: upload, station: station, course: course, settings: settings } }).then(function (j) {
           station = null;                                   // only needs sending once
           // My Course: take the account's copy where it's newer.
           if (course && j.course) {
@@ -182,6 +250,22 @@
             st.courseSentAt = courseMark;
           }
           course = null;
+          // Settings: take the account's where they differ (they're the newest).
+          if (settings && j.settings) {
+            var sent = st.setSent || {}, got = [];
+            Object.keys(setUp).forEach(function (k) { sent[k] = setUp[k].v; });
+            var keys = j.settings.keys || {};
+            Object.keys(keys).forEach(function (k) {
+              var v = keys[k] && keys[k].v;
+              if (typeof v !== 'string' || !settingRule(k)) return;
+              if (v !== readSetting(k) && applySetting(k, v)) got.push(k);
+              sent[k] = v;
+            });
+            st.setSent = sent; st.setRev = j.settings.rev || 0;
+            if (setFirst) syncSoon(3000);       // then send what the account didn't have
+            if (got.length) setListeners.forEach(function (fn) { try { fn(got); } catch (e) { console.error(e); } });
+          }
+          settings = null;
           var acc = {};
           j.accepted.forEach(function (u) { acc[u] = 1; });
           var marked = batch.filter(function (r) { return acc[r.uid]; });
@@ -234,6 +318,8 @@
     config: config, state: state, start: start, verify: verify, sync: sync, me: me,
     signOut: signOut, signOutDevice: signOutDevice, deleteAccount: deleteAccount,
     clearEverywhere: clearEverywhere, download: download,
-    onChange: function (fn) { listeners.push(fn); }
+    onChange: function (fn) { listeners.push(fn); },
+    // fn(keys): settings that just came from the account.
+    onSettings: function (fn) { setListeners.push(fn); }
   };
 })();

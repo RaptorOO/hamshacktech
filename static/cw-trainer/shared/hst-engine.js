@@ -364,16 +364,22 @@
     var proc = ctx.createScriptProcessor(4096, 1, 1);
     var mute = ctx.createGain(); mute.gain.value = 0;   // the processor only runs when connected onward
     out.connect(lp); recBus.connect(lp); lp.connect(proc); proc.connect(mute); mute.connect(ctx.destination);
-    var r = { lp: lp, proc: proc, mute: mute, parts: [], n: 0, pos: 0, step: ctx.sampleRate / REC_RATE, onLimit: onLimit };
+    var r = { lp: lp, proc: proc, mute: mute, parts: [], n: 0, pos: 0, prev: 0, step: ctx.sampleRate / REC_RATE, onLimit: onLimit };
     proc.onaudioprocess = function (e) {
       if (rec !== r) return;
       var d = e.inputBuffer.getChannelData(0), o = [];
       // Resample to 16 kHz (linear), carrying the position across blocks.
+      // A position just before this block (-1 <= p < 0) falls between the
+      // last sample of the block before (prev) and this block's first.
+      // (Tim, 2026-11-02: reading d[-1] there gave a silent sample at most
+      // block joins, ten or more clicks a second -- "scratchy like a
+      // vinyl record".)
       for (var p = r.pos; p < d.length - 1; p += r.step) {
-        var i = Math.floor(p), f = p - i, v = d[i] * (1 - f) + d[i + 1] * f;
+        var i = Math.floor(p), f = p - i, v = (i < 0 ? r.prev : d[i]) * (1 - f) + d[i + 1] * f;
         o.push(Math.max(-32768, Math.min(32767, Math.round(v * 32767))));
       }
       r.pos = p - d.length;
+      r.prev = d[d.length - 1];
       r.parts.push(Int16Array.from(o)); r.n += o.length;
       if (r.n >= REC_MAX_S * REC_RATE && r.onLimit) { var fn = r.onLimit; r.onLimit = null; setTimeout(fn, 0); }
     };
