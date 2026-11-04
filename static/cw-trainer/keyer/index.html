@@ -52,7 +52,11 @@
 
   /* ---------- Tool Settings ---------- */
   .card.console h2 { margin: 0 0 12px; font: 700 1.05rem/1.2 'Oswald', sans-serif; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text); }   /* same as Code Groups */
-  .cgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 22px; }
+  .cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; }
+  .cgroup + .cgroup { margin-top: 16px; }
+  .ghead { margin: 0 0 8px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); }
+  .ghead span { font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--muted); margin-left: 6px; }
+  @media (max-width: 520px) { .cgrid { grid-template-columns: 1fr; } }
   .cset label { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.88rem; margin-bottom: 6px; }
   .cset output { color: var(--lime); font-family: 'JetBrains Mono', ui-monospace, monospace; }
   .cset input[type="range"] { width: 100%; accent-color: var(--lime); }
@@ -316,34 +320,48 @@
        Saved for this tab only; nothing here changes the other tools. ===== -->
   <section class="card console" aria-labelledby="consoleTitle">
     <h2 id="consoleTitle">Tool Settings</h2>
-    <div class="cgrid">
-      <div class="cset">
-        <label for="cWpm"><span id="cWpmLabel">Keyer speed</span> <output id="cWpmVal"></output></label>
-        <input type="range" id="cWpm" min="5" max="40" step="1">
+    <!-- Grouped (Tim, 2026-11-03): in Echo, the copy settings (the word
+         you hear) first, then the send settings (your keying); the
+         sidetone always last. Each group is one row of two. -->
+    <div class="cgroup" data-show="echo">
+      <h3 class="ghead">Copy <span>the word you hear</span></h3>
+      <div class="cgrid">
+        <div class="cset">
+          <label for="cEchoWpm">Copy speed <output id="cEchoWpmVal"></output></label>
+          <input type="range" id="cEchoWpm" min="5" max="40" step="1">
+        </div>
+        <div class="cset">
+          <label for="cEchoFw">Copy Farnsworth <output id="cEchoFwVal"></output></label>
+          <select id="cEchoFw"></select>
+        </div>
       </div>
-      <div class="cset">
-        <label for="cTone">Sidetone pitch <output id="cToneVal"></output></label>
-        <input type="range" id="cTone" min="300" max="1000" step="10">
+    </div>
+    <div class="cgroup">
+      <h3 class="ghead" data-show="echo">Send <span>your keying</span></h3>
+      <div class="cgrid">
+        <div class="cset">
+          <label for="cWpm"><span id="cWpmLabel">Keyer speed</span> <output id="cWpmVal"></output></label>
+          <input type="range" id="cWpm" min="5" max="40" step="1">
+        </div>
+        <!-- Farnsworth: practice SENDING with extra space between letters and
+             words, e.g. 25/10 (characters at 25 WPM, overall 10 WPM). -->
+        <div class="cset">
+          <label for="cFw">Farnsworth sending <output id="cFwVal"></output></label>
+          <select id="cFw"></select>
+        </div>
       </div>
-      <div class="cset">
-        <label for="cVol">Sidetone volume <output id="cVolVal"></output></label>
-        <input type="range" id="cVol" min="0" max="100" step="5">
-      </div>
-      <!-- Farnsworth: practice SENDING with extra space between letters and
-           words, e.g. 25/10 (characters at 25 WPM, overall 10 WPM). -->
-      <div class="cset">
-        <label for="cFw">Farnsworth spacing <output id="cFwVal"></output></label>
-        <select id="cFw"></select>
-      </div>
-      <!-- Echo's copy speed (Tim, 2026-11-03): how fast the word you copy
-           is played, apart from the speed you key at. -->
-      <div class="cset" data-show="echo">
-        <label for="cEchoWpm">Copy speed <output id="cEchoWpmVal"></output></label>
-        <input type="range" id="cEchoWpm" min="5" max="40" step="1">
-      </div>
-      <div class="cset" data-show="echo">
-        <label for="cEchoFw">Copy Farnsworth <output id="cEchoFwVal"></output></label>
-        <select id="cEchoFw"></select>
+    </div>
+    <div class="cgroup">
+      <h3 class="ghead" data-show="echo">Sidetone</h3>
+      <div class="cgrid">
+        <div class="cset">
+          <label for="cTone">Sidetone pitch <output id="cToneVal"></output></label>
+          <input type="range" id="cTone" min="300" max="1000" step="10">
+        </div>
+        <div class="cset">
+          <label for="cVol">Sidetone volume <output id="cVolVal"></output></label>
+          <input type="range" id="cVol" min="0" max="100" step="5">
+        </div>
       </div>
     </div>
     <p class="help ckey" id="fwNote" hidden></p>
