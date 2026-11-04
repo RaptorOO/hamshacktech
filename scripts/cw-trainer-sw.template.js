@@ -104,8 +104,17 @@ self.addEventListener('message', (event) => {
 
 // Fetch: answer from the saved copy when there is one ("cache first"),
 // otherwise go to the network as normal.
+//
+// Only our own files. Anything from another site (CW Academy's MP3s on
+// cwops.org, played in My Course's player) and any partial "range" request
+// (how audio players load sound) goes straight to the network, untouched:
+// passing them through here broke the player in a student's installed app
+// on Windows (audio error 4, the requests showing 0 B; Tim, 2026-11-03),
+// and nothing from another site is saved here anyway.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  if (new URL(event.request.url).origin !== self.location.origin) return;
+  if (event.request.headers.has('range')) return;
   event.respondWith(
     // ignoreSearch: "/cw-trainer/?source=pwa" still matches "/cw-trainer/".
     caches.match(event.request, { cacheName: CACHE, ignoreSearch: true })

@@ -63,6 +63,7 @@
     { k: 'hct-cw-test-prep-v1' },
     { k: 'hct-cw-call-signs-v2' },
     { k: 'hct-settings-v1' },                       // Code Groups
+    { k: 'hct-cw-speed-practice-v1' },              // Code Groups' Speed Practice: its ladder and runs
     { k: 'cwIcrTrainer', local: ['session'] },
     { k: 'mcj-settings' },                          // Jeopardy
     { k: 'mcj-online' }

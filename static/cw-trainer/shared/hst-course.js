@@ -65,7 +65,7 @@
     var preFirst = /^\d{4}-\d{2}-\d{2}$/.test(o.preFirst || '') ? o.preFirst : '';
     var preDone = o.preDone === 'carry' || o.preDone === 'clean' ? o.preDone : '';
     return { program: program, level: level, firstClass: first, days: days.slice(0, 7).sort(), times: times,
-             pre: !!o.pre, preFirst: preFirst, preDone: preDone, updated: updated };
+             pre: !!o.pre, preFirst: preFirst, preDone: preDone, updated: updated, guess: !!o.guess };
   }
   function saveChosen() { try { localStorage.setItem(KEY, JSON.stringify(cur)); } catch (e) {} }
   var cur;
@@ -124,13 +124,13 @@
           ['', 'New: J K 0 8 and <BT>',
            [['#', 'cch|Copy the characters in the [Morse Code Trainer](mct) (Copying, Session 9)', 'cwd|Copy the words in the [Morse Code Trainer](mct) (Copying, Session 9)', 'cab|Copy the CW abbreviations in the [Morse Code Trainer](mct) (Copying, Session 9)', 'cnu|Copy the numbers in the [Morse Code Trainer](mct) (Copying, Session 9)', 'ccs|Copy the call signs in the [Morse Code Trainer](mct) (Copying, Session 9)', 'cph|Copy the phrases in the [Morse Code Trainer](mct) (Copying, Session 9)', 'sch|Send the characters in the [Morse Code Trainer](mct) (Sending, Session 9)', 'swd|Send the words in the [Morse Code Trainer](mct) (Sending, Session 9)', 'sab|Send the CW abbreviations in the [Morse Code Trainer](mct) (Sending, Session 9)', 'snu|Send the numbers in the [Morse Code Trainer](mct) (Sending, Session 9)', 'scs|Send the call signs in the [Morse Code Trainer](mct) (Sending, Session 9)', 'sph|Send the phrases in the [Morse Code Trainer](mct) (Sending, Session 9)', 'drill|Send the Daily Sending Drill: every character so far, five times each (AAAAA BBBBB CCCCC \u2026)']]],
           ['', 'New: X Z . <BK> <SK> — every character is in',
-           [['#', 'cch|Copy the characters in the [Morse Code Trainer](mct) (Copying, Session 10)', 'cwd|Copy the words in the [Morse Code Trainer](mct) (Copying, Session 10)', 'cab|Copy the CW abbreviations in the [Morse Code Trainer](mct) (Copying, Session 10)', 'cnu|Copy the numbers in the [Morse Code Trainer](mct) (Copying, Session 10)', 'ccs|Copy the call signs in the [Morse Code Trainer](mct) (Copying, Session 10)', 'cph|Copy the phrases in the [Morse Code Trainer](mct) (Copying, Session 10)', 'sch|Send the characters in the [Morse Code Trainer](mct) (Sending, Session 10)', 'swd|Send the words in the [Morse Code Trainer](mct) (Sending, Session 10)', 'sab|Send the CW abbreviations in the [Morse Code Trainer](mct) (Sending, Session 10)', 'snu|Send the numbers in the [Morse Code Trainer](mct) (Sending, Session 10)', 'scs|Send the call signs in the [Morse Code Trainer](mct) (Sending, Session 10)', 'sph|Send the phrases in the [Morse Code Trainer](mct) (Sending, Session 10)', 'drill|Send the Daily Sending Drill: every character so far, five times each (AAAAA BBBBB CCCCC \u2026)', 'icr|Start ICR: [MorseCode.World ICR](mctchar), CW Academy tab, sessions 1\u201310, single characters (or the [ICR](tool:icr) tab here)']]],
+           [['#', 'cch|Copy the characters in the [Morse Code Trainer](mct) (Copying, Session 10)', 'cwd|Copy the words in the [Morse Code Trainer](mct) (Copying, Session 10)', 'cab|Copy the CW abbreviations in the [Morse Code Trainer](mct) (Copying, Session 10)', 'cnu|Copy the numbers in the [Morse Code Trainer](mct) (Copying, Session 10)', 'ccs|Copy the call signs in the [Morse Code Trainer](mct) (Copying, Session 10)', 'cph|Copy the phrases in the [Morse Code Trainer](mct) (Copying, Session 10)', 'sch|Send the characters in the [Morse Code Trainer](mct) (Sending, Session 10)', 'swd|Send the words in the [Morse Code Trainer](mct) (Sending, Session 10)', 'sab|Send the CW abbreviations in the [Morse Code Trainer](mct) (Sending, Session 10)', 'snu|Send the numbers in the [Morse Code Trainer](mct) (Sending, Session 10)', 'scs|Send the call signs in the [Morse Code Trainer](mct) (Sending, Session 10)', 'sph|Send the phrases in the [Morse Code Trainer](mct) (Sending, Session 10)', 'drill|Send the Daily Sending Drill: every character so far, five times each (AAAAA BBBBB CCCCC \u2026)', 'icr|Start ICR: single characters from sessions 1\u201310 in [ICR](tool:icr?cwa=10) (CW Academy Beginners, Class 10)']]],
           ['25/6', 'Your first QSO scripts; single-character ICR',
-           [['#', 'pers|Fill in the Personalization section of the [Morse Code Trainer](mct) (your call, name, QTH and more)', 'copy|Copy the QSO scripts in the [Morse Code Trainer](mct) (Copying, Session 11)', 'send|Send your side of the QSO scripts in the [Morse Code Trainer](mct) (Sending, Session 11)', 'icr|ICR, single characters from sessions 1\u201310: [MorseCode.World ICR](mctchar) (or the [ICR](tool:icr) tab here)']]],
+           [['#', 'pers|Fill in the Personalization section of the [Morse Code Trainer](mct) (your call, name, QTH and more)', 'copy|Copy the QSO scripts in the [Morse Code Trainer](mct) (Copying, Session 11)', 'send|Send your side of the QSO scripts in the [Morse Code Trainer](mct) (Sending, Session 11)', 'icr|ICR, single characters from sessions 1\u201310: [ICR](tool:icr?cwa=10) (CW Academy Beginners, Class 10)']]],
           ['25/6', 'QSO scripts with weather, rig and antenna; ICR',
-           [['#', 'copy|Copy the QSO scripts in the [Morse Code Trainer](mct) (Copying, Session 12)', 'send|Send your side of the QSO scripts in the [Morse Code Trainer](mct) (Sending, Session 12)', 'icr|ICR, single characters from sessions 1\u201310: [MorseCode.World ICR](mctchar) (or the [ICR](tool:icr) tab here)']]],
+           [['#', 'copy|Copy the QSO scripts in the [Morse Code Trainer](mct) (Copying, Session 12)', 'send|Send your side of the QSO scripts in the [Morse Code Trainer](mct) (Sending, Session 12)', 'icr|ICR, single characters from sessions 1\u201310: [ICR](tool:icr?cwa=10) (CW Academy Beginners, Class 10)']]],
           ['25/6', 'QSO scripts: signing off; ICR',
-           [['#', 'copy|Copy the QSO scripts in the [Morse Code Trainer](mct) (Copying, Session 13)', 'send|Send your side of the QSO scripts in the [Morse Code Trainer](mct) (Sending, Session 13)', 'icr|ICR, single characters from sessions 1\u201310: [MorseCode.World ICR](mctchar) (or the [ICR](tool:icr) tab here)']]],
+           [['#', 'copy|Copy the QSO scripts in the [Morse Code Trainer](mct) (Copying, Session 13)', 'send|Send your side of the QSO scripts in the [Morse Code Trainer](mct) (Sending, Session 13)', 'icr|ICR, single characters from sessions 1\u201310: [ICR](tool:icr?cwa=10) (CW Academy Beginners, Class 10)']]],
           ['', 'Listen to slower CW on the air; send your call, QTH and name',
            [['#', 'cq|Listen on the HF CW bands: copy the call signs of slower stations calling CQ', 'qso|Listen to slower stations in a QSO and copy what you can', 'send|Practice sending your call sign, QTH and name, over and over']]],
           ['', 'Listen on the air and pick out your own call sign',
@@ -204,11 +204,13 @@
         //                             curriculum's name; *1-2 once or twice,
         //                             *n several times; no * when the
         //                             curriculum gives no count)
-        //   icr:10                    LCWO (or MorseCode.World) ICR at 10 WPM
+        //   icr:10                    the curriculum's "ICR" at 10 WPM: CW Academy's speed practice
+        //                             (its LCWO guidelines), done in Code Groups' Speed Practice
+        //                             (Tim, 2026-11-03; was LCWO or MorseCode.World ICR)
         //   mr:10                     Morse Runner single calls, 10 WPM, 15 minutes
         //   wpx:18:1                  Morse Runner WPX contest, 18 WPM, activity 1
         //   cwt:copy5, cwt:work5      a live CWT: copy, or work, 5 stations
-        every: 'Practice on three days before each session. Each day is a list of tasks: send a Daily Morse Code Scale (tap it to open it in Keyer Practice), copy the audio files (tap one to play it, or pick another speed), then finish on LCWO or Morse Runner. Tick each task as you finish it.',
+        every: 'Practice on three days before each session. Each day is a list of tasks: send a Daily Morse Code Scale (tap it to open it in Keyer Practice), copy the audio files (tap one to play it, or pick another speed), then finish with Speed Practice (tap Letters, Words, Figures or Your characters to open it in Code Groups) or Morse Runner. Tick each task as you finish it.',
         // Each session's place in the curriculum (its table of contents
         // links): session n is #_Toc(172984023 + n).
         sessionAnchor: function (n) { return '#_Toc' + (172984023 + n); },
@@ -312,7 +314,7 @@
     Object.keys(std).forEach(function (k) { out[k] = std[k]; });
     out.about = 'Buz Tarlow\u2019s (AC6AC) prototype curriculum for his Intermediate classes: the standard Intermediate with more listening, and "sound head copy" (hearing each letter as a sound, so words form the way they do in speech).';
     out.curriculum = 'https://cwa.cwops.org/wp-content/uploads/Intermediate_Prototype-ver2.24.htm';
-    out.every = 'Practice on three days before each session. Each day is a list of tasks: send a Daily Morse Code Scale (tap it to open it in Keyer Practice), copy the audio files (tap one to play it, or pick another speed) and listen to the sound head copy file, then finish on LCWO or Morse Runner. Tick each task as you finish it.';
+    out.every = 'Practice on three days before each session. Each day is a list of tasks: send a Daily Morse Code Scale (tap it to open it in Keyer Practice), copy the audio files (tap one to play it, or pick another speed) and listen to the sound head copy file, then finish with Speed Practice (tap Letters, Words, Figures or Your characters to open it in Code Groups) or Morse Runner. Tick each task as you finish it.';
     out.sessions = [
       ['10', 'Words and phrases 101; sounds -ING -ES IR- RE-; sound head copy SL 201; QSO 101, POTA 102; Morse Runner single calls',
        ['warmup WD101-10*2 PR101-10*3 SL201-10*2 icr:10', 'warmup drill ING4-10*2 ES4-10*2 IR4-10*2 RE4-10*2 mr:10', 'warmup QSO101-10*2 POTA102-10*3 icr:10']],
@@ -550,10 +552,15 @@
     fileSpeeds: fileSpeeds,
     link: function (key) { return LINKS[key] || ''; },
     get: copy,
-    set: function (patch) {
+    /* set(patch, { guess: true }): a first guess (the welcome on a new
+       device, Tim 2026-11-03), not a choice: the account's course wins over
+       it (see syncIn), and it's sent with no time, so it only becomes the
+       account's when the account has none. Any later change is a choice. */
+    set: function (patch, opts) {
       var next = copy();
       Object.keys(patch).forEach(function (k) { next[k] = patch[k]; });
       next.updated = Date.now();
+      next.guess = !!(opts && opts.guess);
       cur = clean(next);
       saveChosen();
       notify();
@@ -567,7 +574,11 @@
                            the Homework time of a play unticked there) */
     syncOut: function (since) {
       var out = { progress: {} }, n = 0, all = loadProgress();
-      if (cur.program && (!since || cur.updated > since)) { out.chosen = copy(); n++; }
+      if (cur.program && (!since || cur.updated > since)) {
+        out.chosen = copy(); n++;
+        if (cur.guess) out.chosen.updated = 0;       // a guess never replaces the account's course
+        delete out.chosen.guess;
+      }
       Object.keys(all).forEach(function (ck) {
         Object.keys(all[ck] || {}).forEach(function (key) {
           var e = cleanEntry(all[ck][key]);
@@ -581,8 +592,13 @@
     syncIn: function (data) {
       if (!data) return;
       var c = data.chosen;
-      // The newer course wins; a device with none chosen takes the account's (one chosen before sync has no time).
-      if (c && c.program && (!cur.program || (Number(c.updated) || 0) > (cur.updated || 0))) { cur = clean(c); saveChosen(); notify(); }
+      // The newer course wins; a device with none chosen takes the account's (one chosen before sync has no time),
+      // and so does one with only the welcome's guess (Tim, 2026-11-03: his iPhone's welcome replaced his course).
+      if (c && c.program && (!cur.program || cur.guess || (Number(c.updated) || 0) > (cur.updated || 0))) {
+        var was = JSON.stringify(cur);
+        cur = clean(c); cur.guess = false; saveChosen();
+        if (JSON.stringify(cur) !== was) notify();
+      }
       var all = loadProgress(), changed = false, gone = [];
       Object.keys(data.progress || {}).forEach(function (ck) {
         var mine = all[ck] || (all[ck] = {}), theirs = data.progress[ck] || {};

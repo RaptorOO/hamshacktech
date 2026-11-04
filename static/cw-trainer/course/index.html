@@ -358,11 +358,10 @@
 
   // A session's three practice days, when the course lists them (Tim,
   // 2026-10-30): each day is a list of tasks -- send a Daily Scale, copy
-  // the audio files, then LCWO or Morse Runner -- each with its own Done and
+  // the audio files, then Speed Practice or Morse Runner -- each with its own Done and
   // Redo. Then a link to that session in the online curriculum.
   var SCALE_NAMES = { warmup: 'Warm Up', drill: 'Drill', exercise: 'Exercise' };
   var TIMES = { '1': 'once', '1-2': 'once or twice', '2': '2 times', '3': '3 times', n: 'several times' };
-  var LCWO_ICR = 'https://lcwo.net/icr', MCW_ICR = 'https://morsecode.world/international/trainer/adaptive-icr.html';
   var MORSE_RUNNER = 'https://github.com/w7sst/MorseRunner/releases', CWT = 'https://cwops.org/cwops-tests/';
   function ext(href, text) { return '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(text) + '</a>'; }
   // One task token ('warmup', 'WD101-10*2', 'icr:10'; see hst-course.js)
@@ -389,8 +388,15 @@
           }).join('') + '</select>' : '') };
     }
     var a = tok.split(':');
-    if (a[0] === 'icr') return { what: 'LCWO ICR',
-      html: ext(LCWO_ICR, 'LCWO ICR') + ' exercise, ' + a[1] + ' WPM <span class="also">(or ' + ext(MCW_ICR, 'MorseCode.World ICR') + ')</span>' };
+    // The curriculum's "ICR" practice: CW Academy's speed practice (its
+    // LCWO guidelines), done in Code Groups' Speed Practice (Tim,
+    // 2026-11-03; was LCWO ICR, or MorseCode.World's). The speed is the
+    // class speed, the lowest step of its ladders.
+    if (a[0] === 'icr') return { what: 'Speed Practice at ' + a[1] + ' WPM',
+      html: 'Speed Practice, ' + a[1] + ' WPM: ' + [['letters', 'Letters'], ['words', 'Words'], ['figures', 'Figures'], ['custom', 'Your characters']].map(function (x) {
+        var q = 'sp=' + x[0] + '&class=' + a[1];
+        return '<a href="../?tab=code-groups&amp;' + q.replace('&', '&amp;') + '" target="_top" data-tool="code-groups" data-q="' + q.replace('&', '&amp;') + '">' + x[1] + '</a>';
+      }).join(' \u00b7 ') + ' <span class="also">Code Groups</span>' };
     if (a[0] === 'mr') return { what: 'Morse Runner',
       html: ext(MORSE_RUNNER, 'Morse Runner') + ': single calls, ' + a[1] + ' WPM, 15 minutes' };
     if (a[0] === 'wpx') return { what: 'Morse Runner WPX contest',
@@ -412,7 +418,10 @@
         var sc = tgt.slice(6);
         out += '<a class="scale" href="../?tab=keyer&amp;scale=' + sc + '" target="_top" data-scale="' + sc + '">' + label + '</a>';
       } else if (tgt.indexOf('tool:') === 0) {
-        out += '<a href="../?tab=' + tgt.slice(5) + '" target="_top" data-tool="' + tgt.slice(5) + '">' + label + '</a>';
+        // tool:icr, or with a set-up: tool:icr?cwa=10
+        var tq = tgt.slice(5).split('?'), tslug = tq[0], tqs = tq[1] || '';
+        out += '<a href="../?tab=' + tslug + (tqs ? '&amp;' + esc(tqs) : '') + '" target="_top" data-tool="' + tslug + '"' +
+               (tqs ? ' data-q="' + esc(tqs) + '"' : '') + '>' + label + '</a>';
       } else {
         out += ext(HST.course.link(tgt) || tgt, m[1]);
       }
@@ -771,7 +780,7 @@
     var tl = e.target.closest('a[data-tool]');
     if (tl) {
       try {
-        if (window.parent !== window && window.parent.HCT && window.parent.HCT.openTool) { e.preventDefault(); window.parent.HCT.openTool(tl.dataset.tool); }
+        if (window.parent !== window && window.parent.HCT && window.parent.HCT.openTool) { e.preventDefault(); window.parent.HCT.openTool(tl.dataset.tool, tl.dataset.q || ''); }
       } catch (err) {}
       return;
     }
