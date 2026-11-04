@@ -262,6 +262,7 @@
   .walk-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 10px; }
   .walk-row .walk-btn { margin: 10px 0 0; }
   .sp-dialog { max-width: 620px; }
+  .sp-dialog .walk-seg { display: grid; grid-template-columns: repeat(3, 1fr); }
   .sp-dialog .walk-seg button { padding: 9px 4px; font-size: 0.85rem; }
   .sp-lede { font-size: 0.9rem !important; margin: 0 0 14px !important; }
   .sp-locked .walk-seg, .sp-locked .walk-speed, .sp-locked .sp-field { opacity: 0.55; pointer-events: none; }
@@ -269,6 +270,7 @@
   .sp-field { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 14px; font-size: 0.9rem; color: var(--text-dim); }
   .sp-field select, .sp-field input { font-family: var(--font-mono); font-size: 0.95rem; padding: 6px 8px; background: var(--recess);
     color: var(--text); border: 1px solid var(--border-strong); border-radius: 8px; }
+  .sp-field[hidden] { display: none; }   /* the flex layout above would show it anyway */
   .sp-field input { width: 9em; text-transform: uppercase; letter-spacing: 0.08em; }
   .sp-link { border: 0; background: none; padding: 0; color: var(--accent2); font: inherit; cursor: pointer; text-decoration: underline; }
   .sp-what { font-size: 0.86rem !important; margin: 0 0 12px !important; }
@@ -937,8 +939,10 @@
     <div id="spSetup">
       <div class="walk-seg" role="group" aria-label="Exercise">
         <button type="button" id="spTab-letters">Letters</button>
-        <button type="button" id="spTab-words">Words</button>
         <button type="button" id="spTab-figures">Figures</button>
+        <button type="button" id="spTab-mixed">Mixed</button>
+        <button type="button" id="spTab-words">Words</button>
+        <button type="button" id="spTab-abbrev">Abbreviations</button>
         <button type="button" id="spTab-custom">Your characters</button>
       </div>
       <div class="walk-speed">
@@ -953,9 +957,17 @@
         <button type="button" class="sp-link" id="spFill">Use the ones I miss most</button>
         <span id="spFillNote"></span>
       </div>
+      <!-- Fundamental's runs (Tim, 2026-11-04): 2- and 3-minute runs, and
+           LCWO's "extra word spacing" between groups. -->
+      <div class="sp-field" id="spRunRow">
+        <label for="spRunMin">Run length</label>
+        <select id="spRunMin"><option value="1">1 minute</option><option value="2">2 minutes</option><option value="3">3 minutes</option></select>
+        <label for="spGap">Extra space</label>
+        <select id="spGap"><option value="0">None</option><option value="1">1 word space</option><option value="2">2 word spaces</option><option value="3">3 word spaces</option></select>
+      </div>
       <div class="sp-field">
         <label for="spClass">Class speed</label> <select id="spClass"></select>
-        <span>No step goes below your class speed, or below 10 WPM.</span>
+        <span>No step goes below your class speed.</span>
       </div>
       <p class="sp-what" id="spWhat"></p>
       <div class="walk-label">Your runs at this step</div>
@@ -3236,10 +3248,37 @@
   renderBlanksIdle(state.settings.groupSize);
   renderAll();
 
+  /* A homework link (Fundamental's LCWO Plain Text Training, Tim
+     2026-11-04): ?group=phrases&class=9 opens Code Groups on that Practice
+     Group, with characters at 25 WPM spaced out to the class speed. */
+  function setGroup(g, cls) {
+    if (!els.groupSelect.querySelector('option[value="' + g + '"]')) return;
+    if (state.drilling) endDrill();
+    cancelCountdown();
+    if (state.running) stopSession();
+    state.settings.group = g;
+    cls = Math.round(Number(cls) || 0);
+    if (cls >= 5 && cls <= 40) {
+      HST.shared.set({ wpm: Math.max(25, cls) });
+      state.settings.fwpm = cls;
+    }
+    saveSettings();
+    applySettingsToUI();
+    renderBlanksIdle(state.settings.groupSize);
+  }
+  (function () {
+    var q = new URLSearchParams(location.search);
+    if (q.get("group")) setGroup(q.get("group"), q.get("class"));
+  })();
+
   // For Speed Practice (speed-practice.js, Tim 2026-11-03).
   window.HSTCodeGroups = {
     log: practiceLog,                               // runs are saved as Code Groups sessions (mode 'speed')
     sound: function () { return state.settings; },  // tone, volume and the Custom characters
+    // CW abbreviations (Speed Practice's Abbreviations, for Fundamental's
+    // LCWO Word Training of abbreviations): QSO Elements of letters and figures.
+    abbreviations: function () { return QSO_ELEMENTS.filter(function (w) { return /^[A-Z0-9]+$/.test(w); }); },
+    setGroup: setGroup,
     // Everyday English words of 2 to n letters, from the 1,000 most common
     // (Speed Practice's Words: "up to n", like LCWO's English word list;
     // not the ham abbreviations in COMMON_WORDS).

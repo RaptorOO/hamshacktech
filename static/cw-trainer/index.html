@@ -1005,8 +1005,9 @@
     document.getElementById('frame-keyer').dataset.src = 'keyer/?scale=' + params.get('scale');
   }
   // Homework set-ups (Tim, 2026-11-03): ?tab=code-groups&sp=letters&class=13
-  // (Speed Practice) and ?tab=icr&cwa=10 (CW Academy Beginners, classes 1-10).
-  if (wanted === 'code-groups' || wanted === 'icr') prepareTool(wanted, params, true);
+  // (Speed Practice), ?tab=icr&cwa=10 (CW Academy Beginners, classes 1-10),
+  // and (2026-11-04) ?tab=code-groups&group=phrases, ?tab=call-signs&mode=run.
+  if (wanted === 'code-groups' || wanted === 'icr' || wanted === 'call-signs') prepareTool(wanted, params, true);
   var saved = null;
   try { saved = localStorage.getItem(TAB_KEY); } catch (e) {}
   if (TABS.indexOf(wanted) >= 0) showTab(wanted, true);
@@ -1290,17 +1291,35 @@
   // Open: a tool frame that has focus passes the adapter's keys out here (hst-engine.js).
   window.HCT.keyerSetupOpen = function () { return kDlg.open; };
   /* A tool opened set up for a homework task (Tim, 2026-11-03).
-       code-groups  sp=letters|words|figures|custom, class=13: Speed Practice
+       code-groups  sp=letters|figures|mixed|words|abbrev|custom, class=13: Speed Practice,
+                    plus (Fundamental, 2026-11-04) size=2-5, min=1-3, gap=0-3, goal=80
+                    group=phrases, class=9: that Practice Group at that speed
        icr          cwa=1..10: the CW Academy Beginners group through that class
+       call-signs   mode=run: Speed Run
      fresh: the tool hasn't loaded yet (page load). */
   function prepareTool(slug, q, fresh) {
     var frame = document.getElementById('frame-' + slug);
-    if (slug === 'code-groups' && /^(letters|words|figures|custom)$/.test(q.get('sp') || '')) {
-      var cls = Math.max(5, Math.min(40, parseInt(q.get('class'), 10) || 0)) || '';
-      var src = 'code-groups/?sp=' + q.get('sp') + (cls ? '&class=' + cls : '');
+    function num(k, lo, hi) { var n = parseInt(q.get(k), 10); return n >= lo && n <= hi ? n : ''; }
+    if (slug === 'code-groups' && /^(letters|figures|mixed|words|abbrev|custom)$/.test(q.get('sp') || '')) {
+      var o = { size: num('size', 2, 5), min: num('min', 1, 3), gap: num('gap', 0, 3), goal: num('goal', 80, 80) }, cls = num('class', 5, 40);
+      var src = 'code-groups/?sp=' + q.get('sp') + (cls ? '&class=' + cls : '') +
+        Object.keys(o).map(function (k) { return o[k] !== '' ? '&' + k + '=' + o[k] : ''; }).join('');
       if (fresh || frame.dataset.src) { frame.dataset.src = src; return; }
-      try { frame.contentWindow.HSTSpeedPractice.open(q.get('sp'), cls); }
+      try { frame.contentWindow.HSTSpeedPractice.open(q.get('sp'), cls, o); }
       catch (e) { frame.src = src; }       // still loading
+    }
+    if (slug === 'code-groups' && /^[a-z-]{2,20}$/.test(q.get('group') || '')) {
+      var gcls = num('class', 5, 40), gsrc = 'code-groups/?group=' + q.get('group') + (gcls ? '&class=' + gcls : '');
+      if (fresh || frame.dataset.src) { frame.dataset.src = gsrc; return; }
+      try { frame.contentWindow.HSTCodeGroups.setGroup(q.get('group'), gcls); }
+      catch (e) { frame.src = gsrc; }
+    }
+    if (slug === 'call-signs' && q.get('mode') === 'run') {
+      var cs = {};
+      try { cs = JSON.parse(localStorage.getItem('hct-cw-call-signs-v2') || '{}') || {}; } catch (e) {}
+      cs.mode = 'run';
+      try { localStorage.setItem('hct-cw-call-signs-v2', JSON.stringify(cs)); } catch (e) {}
+      if (!fresh && !frame.dataset.src) { try { frame.contentWindow.location.reload(); } catch (e) {} }
     }
     if (slug === 'icr' && /^([1-9]|10)$/.test(q.get('cwa') || '')) {
       var o = {};
@@ -1715,33 +1734,14 @@
   // first-time visitors), and from the Settings panel any time.
   // For each release: change RELEASE and replace the notes.
   // ------------------------------------------------------------------
-  var RELEASE = '2026-11-03-learning-track';
-  var RELEASE_LABEL = 'November 3, 2026';
+  // Only this release's notes (Tim, 2026-11-04: the list had grown far too
+  // long). Earlier notes are in the git history of this file.
+  var RELEASE = '2026-11-04-fundamental';
+  var RELEASE_LABEL = 'November 4, 2026';
   var RELEASE_NOTES = [
-    '<strong>Speed Practice in Code Groups.</strong> CW Academy’s speed practice, without going to LCWO: 1-minute runs of letters, figures or your own characters (type as you go, then check), and runs of 20 short words. It keeps your runs, and when you’re averaging 90% (Words: fewer than 3 errors) it suggests the next step: a faster speed, then one more character. Open it with the <strong>Speed Practice</strong> button in Code Groups. In My Course, the Intermediate homework’s ICR practice now opens it, and the Beginner homework’s ICR opens our ICR with your class’s characters.',
-    '<strong>Your course follows you to a new device.</strong> Sign in on your phone or tablet and your Learning Track (your course, level and class dates) and the homework you’ve ticked come with you. A new device’s welcome no longer replaces the course on your account, and it offers to sign you in. If your course looks wrong on a device, pick it again once in Settings and it’s fixed everywhere.',
-    '<strong>My Course’s player, fixed for some installed apps.</strong> On some Windows computers the sound files wouldn’t play in the bar at the bottom of My Course, only in a new tab. The app no longer gets in the way of CW Academy’s files, so they play in the bar again.',
-    '<strong>Word length works again in Code Groups.</strong> Choosing a different Word Length (Common Words) or Characters per Group now changes the boxes and what’s played.',
-    '<strong>Echo: your own copy speed, and Done ends the session.</strong> Echo’s Tool Settings have a <strong>Copy speed</strong> and <strong>Copy Farnsworth</strong> for the word you hear, apart from the speed you key at. <strong>Done</strong> now ends the session; Start begins a new one.',
-    '<strong>Learning Track.</strong> In Settings, “My Morse code course” is now called <strong>Learning Track</strong>.',
-    '<strong>Test Prep follows the latest report on the test.</strong> A student who took the Intermediate placement test this week had 6 questions with two words and 1 call sign, so Test Prep now does the same: still 13 answers in all, scored out of 13.',
-    '<strong>Copy Behind in Code Groups.</strong> CW Academy encourages copying behind: listening to several words before writing anything down, so your brain learns to hold them. In Code Groups’ Tool Settings, set <strong>Copy Behind</strong> to 2, 3, 4 or 5. That many groups or words play in a row, then you type them all, and each one is marked right or wrong. It’s off unless you turn it on.',
-    '<strong>Call Signs in Progress.</strong> Progress, Copying now has a <strong>Call Signs</strong> view next to ICR and Code Groups: your accuracy, speed, answer time and head copy span for the Call Signs tool. (The head copy span counts sessions from today on.)',
-    '<strong>Echo waits for you.</strong> Echo in Keyer Practice no longer starts playing the moment you open it. Press <strong>Start</strong>, and after a 3-second countdown the first word plays; after that each word plays as before.',
-    '<strong>A welcome for new students.</strong> First-time visitors are asked which course they’re in (it’s saved in Settings) and pointed to ICR to learn the letters by sound.',
-    '<strong>Echo, a new drill in Keyer Practice.</strong> The app plays a word without showing it; send it back on your key, then pause. It turns green if you got it right, and then the word is shown. <strong>Replay</strong> plays it again. It’s a favorite on the Morserino and in LICW classes.',
-    '<strong>Pre-Class in My Course.</strong> If your advisor runs a Pre-Class before the class starts, tick <strong>Starting with a Pre-Class</strong> under Class schedule and enter both dates. My Course shows the Pre-Class sessions that fit before the full class, with their own ticks, and when the Pre-Class is over it asks whether to carry your ticks over to the full class or start with a clean slate.',
-    '<strong>Your settings are backed up.</strong> Signed in, your speeds, tone, keyer and each tool’s settings now sync with your account, so a new device or a cleared browser gets them back. (The kind of adapter you use stays with each device.)',
-    '<strong>Clearer recordings.</strong> Recordings no longer crackle like an old vinyl record.',
-    '<strong>A bigger player in My Course.</strong> Tap a sound file and it now plays in a bar across the bottom of My Course, with a full-width slider to move around in it, and it keeps playing while you tick your boxes. Open in a new tab is still there if you want it.',
-    '<strong>Switching to Buz’s curriculum keeps your ticks.</strong> Picking Buz Tarlow, AC6AC as your Master Advisor now brings over everything you ticked in the standard Intermediate, with the dates you ticked it; your practice time isn’t counted twice. Only his extra tasks (the sound head copy files) start unticked. Your standard Intermediate ticks stay too, if you switch back.',
-    '<strong>Record your sending.</strong> Send This, Free Sending and QSO Practice have a <strong>Record</strong> button: tap it, send, tap Stop recording, and the sound is saved to your device as a WAV file you can play back, critique or send to your advisor. A QSO recording has both stations, and QSO Practice can record every contact from the start (tick Record the contact).',
-    '<strong>Band conditions.</strong> QSO Practice and Call Signs can sound like a real band: add receiver noise, fading (QSB), static crashes (QRN) and another station sending nearby (QRM).',
-    '<strong>Buz Tarlow’s Intermediate curriculum.</strong> In Buz’s (AC6AC) Intermediate class? Under Settings, Learning Track, pick CW Academy, Intermediate, then <strong>Master Advisor: Buz Tarlow, AC6AC</strong>. My Course then follows his prototype curriculum, sound head copy files and all.',
-    '<strong>ICR:</strong> Max Time to Answer now goes down to 0 ms. At 0 you answer while the character is still playing: press the space bar (or tap the number) before it ends.',
-    '<strong>VBand and Vail adapters:</strong> fixed dits that could keep running after a dah, until you touched the dit paddle again (on some computers, when one paddle was let go while the other was still held).',
-    '<strong>iPhone and iPad with an adapter:</strong> hear a system tone when you send several dits or dahs? Change Settings, General, Keyboard, <strong>Dictation Shortcut</strong> to anything but Control (Command works). Keyer Setup shows this tip on iPhone and iPad.',
-    'This note appears once after each update. You can find it again under Settings.'
+    '<strong>Fundamental homework, all in the app.</strong> The Fundamental class\u2019s LCWO practice now opens right here: Code Groups and Word Training runs open <strong>Speed Practice</strong> set up as the homework asks (group size, 1, 2 or 3 minutes, extra space between groups, the session\u2019s speed), Plain Text Training opens Code Groups\u2019 <strong>Phrases &amp; Sayings</strong>, and Call Sign Training opens the <strong>Call Signs</strong> Speed Run.',
+    '<strong>More in Speed Practice.</strong> New <strong>Mixed</strong> (letters and figures) and <strong>Abbreviations</strong> exercises, a <strong>Run length</strong> of 1, 2 or 3 minutes, <strong>Extra space</strong> between groups, and class speeds under 10 WPM.',
+    '<strong>Speed Practice runs at the right speed.</strong> Groups in a run were played with almost no space between them, so runs came out faster than the speed shown. Each group is now followed by a full word space.'
   ];
 
   // The installed app keeps its own "seen" record (Tim, 2026-10-28). The

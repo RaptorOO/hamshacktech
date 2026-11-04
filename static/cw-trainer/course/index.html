@@ -417,6 +417,11 @@
       if (tgt.indexOf('scale:') === 0) {
         var sc = tgt.slice(6);
         out += '<a class="scale" href="../?tab=keyer&amp;scale=' + sc + '" target="_top" data-scale="' + sc + '">' + label + '</a>';
+      } else if (tgt.indexOf('sp:') === 0 || tgt.indexOf('cg:') === 0) {
+        // Code Groups, set up (Fundamental, Tim 2026-11-04): sp:letters?class=6&size=2
+        // is Speed Practice; cg:phrases?class=9 a Practice Group.
+        var sq = tgt.slice(3).split('?'), sqs = (tgt[0] === 's' ? 'sp=' : 'group=') + sq[0] + (sq[1] ? '&' + sq[1] : '');
+        out += '<a href="../?tab=code-groups&amp;' + esc(sqs) + '" target="_top" data-tool="code-groups" data-q="' + esc(sqs) + '">' + label + '</a>';
       } else if (tgt.indexOf('tool:') === 0) {
         // tool:icr, or with a set-up: tool:icr?cwa=10
         var tq = tgt.slice(5).split('?'), tslug = tq[0], tqs = tq[1] || '';
