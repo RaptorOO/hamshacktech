@@ -9,8 +9,13 @@
  *   Figures          1-minute runs of figure groups      3, then 4 per group
  *   Your characters  1-minute runs of your own set       2, then 3 per group
  *
- * Each step is a group size and an effective (overall) speed: 10, 13, 15,
- * 18, 20 WPM, never below the class speed. Characters are sent at 25 WPM
+ * Each step is a group size and an effective (overall) speed: the class
+ * speed, then 10, 13, 15, 18, 20 WPM.
+ *
+ * Fundamental's homework (Tim, 2026-11-04) adds Mixed and CW abbreviations,
+ * runs of 2 or 3 minutes, extra space between groups (LCWO's "extra word
+ * spacing"), an 80% goal, class speeds under 10, and group sizes the
+ * homework names (?size=4): see open(). Characters are sent at 25 WPM
  * (or the step's speed, if faster) and spaced out to the step's speed, as
  * LCWO does with "real speed" off. Once the last 3 runs at a step average
  * 90% or better (Words: fewer than 3 errors), the panel suggests the next
@@ -39,17 +44,21 @@
   var KEY = 'hct-cw-speed-practice-v1';
   var SPEEDS = [10, 13, 15, 18, 20];
   var CHAR_WPM = 25;          // character speed (LCWO's usual for CW Academy)
-  var RUN_MS = 60000;         // a run of groups lasts 1 minute
+  var RUN_MIN = [1, 2, 3];    // a run of groups lasts 1 minute (Fundamental: also 2 or 3)
   var WORDS_PER_RUN = 20;
   var NEED = 3;               // runs at a step averaged for the suggestion
-  var GOAL_ACC = 90, GOAL_ERR = 3;
+  var GOAL_ERR = 3;           // Words: fewer than 3 errors a run (the accuracy goal is sp.goal: 90, or Fundamental's 80)
+  // sizes: the ladder's group sizes (a homework link may set another, 2 to 5).
+  // abbrev has no sizes: every abbreviation, whatever its length.
   var EX = {
     letters: { name: 'Letters', sizes: [3, 4, 5], words: false },
-    words:   { name: 'Words', sizes: [3, 4, 5], words: true },
     figures: { name: 'Figures', sizes: [3, 4], words: false },
+    mixed:   { name: 'Mixed', sizes: [3, 4, 5], words: false },
+    words:   { name: 'Words', sizes: [3, 4, 5], words: true },
+    abbrev:  { name: 'Abbreviations', sizes: [0], words: true },
     custom:  { name: 'Your characters', sizes: [2, 3], words: false }
   };
-  var ORDER = ['letters', 'words', 'figures', 'custom'];
+  var ORDER = ['letters', 'figures', 'mixed', 'words', 'abbrev', 'custom'];
   var ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), DIGITS = '0123456789'.split('');
 
   /* ---------------- saved state ---------------- */
@@ -58,10 +67,13 @@
     try { o = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
     o = o && typeof o === 'object' ? o : {};
     var out = { classWpm: clampWpm(o.classWpm) || 10, cur: EX[o.cur] ? o.cur : 'letters',
+                runMin: RUN_MIN.indexOf(o.runMin) >= 0 ? o.runMin : 1, gap: Math.min(3, Math.max(0, Math.round(Number(o.gap) || 0))),
+                goal: o.goal === 80 ? 80 : 90,
                 custom: typeof o.custom === 'string' ? o.custom : '', misses: o.misses && typeof o.misses === 'object' ? o.misses : {}, ex: {} };
     ORDER.forEach(function (k) {
       var e = (o.ex && o.ex[k]) || {};
-      out.ex[k] = { size: EX[k].sizes.indexOf(e.size) >= 0 ? e.size : EX[k].sizes[0], wpm: clampWpm(e.wpm) || 0,
+      var okSize = k === 'abbrev' ? e.size === 0 : e.size >= 2 && e.size <= 5;
+      out.ex[k] = { size: okSize ? e.size : EX[k].sizes[0], wpm: clampWpm(e.wpm) || 0,
                     runs: Array.isArray(e.runs) ? e.runs.slice(-30) : [] };
     });
     return out;
@@ -73,7 +85,7 @@
   window.addEventListener('storage', function (e) { if (e.key === KEY && !busy()) { sp = load(); render(); } });
 
   /* ---------------- the ladder ---------------- */
-  function floor() { return Math.max(10, sp.classWpm); }
+  function floor() { return Math.max(5, sp.classWpm); }   // Fundamental's classes run at 6-11 WPM
   function speeds() { var f = floor(); return [f].concat(SPEEDS.filter(function (s) { return s > f; })); }
   function step(k) {
     var e = sp.ex[k || sp.cur];
@@ -84,14 +96,16 @@
     var e = step(k), s = speeds(), i = s.indexOf(e.wpm), sizes = EX[k].sizes, j = sizes.indexOf(e.size);
     if (i < 0) { var up = s.filter(function (w) { return w > e.wpm; })[0]; if (up) return { size: e.size, wpm: up }; i = s.length - 1; }
     if (i < s.length - 1) return { size: e.size, wpm: s[i + 1] };
-    if (j < sizes.length - 1) return { size: sizes[j + 1], wpm: floor() };
+    var bigger = sizes.filter(function (n) { return n > e.size; })[0];   // a homework size may be off the ladder
+    if (bigger) return { size: bigger, wpm: floor() };
     return null;
   }
   function prevStep(k) {
     var e = step(k), s = speeds(), i = s.indexOf(e.wpm), sizes = EX[k].sizes, j = sizes.indexOf(e.size);
     if (i > 0) return { size: e.size, wpm: s[i - 1] };
     if (i < 0) { var down = s.filter(function (w) { return w < e.wpm; }).pop(); if (down) return { size: e.size, wpm: down }; }
-    if (j > 0) return { size: sizes[j - 1], wpm: s[s.length - 1] };
+    var smaller = sizes.filter(function (n) { return n < e.size; }).pop();
+    if (smaller) return { size: smaller, wpm: s[s.length - 1] };
     return null;
   }
   function stepRuns(k) {
@@ -103,12 +117,12 @@
     var rs = stepRuns(k).slice(-NEED), words = EX[k].words;
     if (!rs.length) return { n: 0 };
     var sum = rs.reduce(function (t, r) { return t + (words ? r.err : r.acc); }, 0), avg = sum / rs.length;
-    return { n: rs.length, avg: avg, ready: rs.length >= NEED && (words ? avg < GOAL_ERR : avg >= GOAL_ACC) };
+    return { n: rs.length, avg: avg, ready: rs.length >= NEED && (words ? avg < GOAL_ERR : avg >= sp.goal) };
   }
   function charWpm(w) { return Math.max(CHAR_WPM, w); }
   function stepText(k, s) {
     s = s || step(k);
-    var unit = EX[k].words ? 'up to ' + s.size + ' letters' : s.size + ' per group';
+    var unit = k === 'abbrev' ? 'CW abbreviations' : EX[k].words ? 'up to ' + s.size + ' letters' : s.size + ' per group';
     return unit + ' · ' + s.wpm + ' WPM';
   }
 
@@ -118,17 +132,17 @@
     (sp.custom || '').toUpperCase().split('').forEach(function (c) { if (HST.MORSE[c] && c !== ' ' && !seen[c]) { seen[c] = 1; out.push(c); } });
     return out;
   }
-  function charset(k) { return k === 'letters' ? ALPHA : k === 'figures' ? DIGITS : customSet(); }
+  function charset(k) { return k === 'letters' ? ALPHA : k === 'figures' ? DIGITS : k === 'mixed' ? ALPHA.concat(DIGITS) : customSet(); }
   function group(k, n) {
     var cs = charset(k), g = '';
     for (var i = 0; i < n; i++) g += cs[Math.floor(Math.random() * cs.length)];
     return g;
   }
   var wordDeck = { key: '', cards: [] };
-  function nextWord(n) {
-    var key = 'w' + n;
+  function nextWord(k, n) {
+    var key = k + n;
     if (wordDeck.key !== key || !wordDeck.cards.length) {
-      var c = CG.wordsUpTo(n).slice();
+      var c = (k === 'abbrev' ? CG.abbreviations() : CG.wordsUpTo(n)).slice();
       for (var i = c.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = c[i]; c[i] = c[j]; c[j] = t; }
       wordDeck = { key: key, cards: c };
     }
@@ -198,12 +212,14 @@
     $('spCustomRow').hidden = k !== 'custom';
     $('spCustom').value = sp.custom;
     $('spWhat').textContent = EX[k].words
-      ? 'A run is ' + WORDS_PER_RUN + ' words, one at a time: type each and press Enter. Move up when you’re making fewer than ' + GOAL_ERR + ' errors a run.'
-      : 'A run is 1 minute of groups without a break: type as you go, with a space between groups, then check. Move up when you average ' + GOAL_ACC + '% or better.';
+      ? 'A run is ' + WORDS_PER_RUN + (k === 'abbrev' ? ' abbreviations' : ' words') + ', one at a time: type each and press Enter. Move up when you’re making fewer than ' + GOAL_ERR + ' errors a run.'
+      : 'A run is ' + sp.runMin + (sp.runMin === 1 ? ' minute' : ' minutes') + ' of groups without a break: type as you go, with a space between groups, then check. Move up when you average ' + sp.goal + '% or better.';
+    $('spRunRow').hidden = EX[k].words;
+    $('spRunMin').value = String(sp.runMin); $('spGap').value = String(sp.gap);
     // This step's runs, newest first.
     var rs = stepRuns(k).slice(-8).reverse();
     $('spRuns').innerHTML = rs.length ? rs.map(function (r) {
-      var good = EX[k].words ? r.err < GOAL_ERR : r.acc >= GOAL_ACC;
+      var good = EX[k].words ? r.err < GOAL_ERR : r.acc >= sp.goal;
       return '<span class="sp-run' + (good ? ' good' : '') + '">' + (EX[k].words ? r.err + ' err' : r.acc + '%') + '</span>';
     }).join('') : '<span class="sp-none">No runs at this step yet.</span>';
     var adv = '';
@@ -236,6 +252,8 @@
     for (var w = 5; w <= 30; w++) o.push('<option value="' + w + '">' + w + ' WPM</option>');
     $('spClass').innerHTML = o.join('');
   })();
+  $('spRunMin').addEventListener('change', function () { sp.runMin = Number($('spRunMin').value) || 1; save(); render(); });
+  $('spGap').addEventListener('change', function () { sp.gap = Number($('spGap').value) || 0; save(); render(); });
   $('spClass').addEventListener('change', function () { sp.classWpm = clampWpm($('spClass').value) || 10; save(); render(); });
   $('spCustom').addEventListener('input', function () { sp.custom = $('spCustom').value.toUpperCase(); save(); render(); });
   // Your characters: the ones you've missed most in Letters and Figures runs.
@@ -258,7 +276,8 @@
     CG.stopAll();
     var k = sp.cur, e = step(k);
     if (k === 'custom' && customSet().length < 2) return;
-    run = { k: k, size: e.size, wpm: e.wpm, cw: charWpm(e.wpm), sent: [], id: Date.now(), over: false, results: [] };
+    run = { k: k, size: e.size, wpm: e.wpm, cw: charWpm(e.wpm), sent: [], id: Date.now(), over: false, results: [],
+            min: sp.runMin, gap: sp.gap };
     run.fw = run.wpm < run.cw ? run.wpm : 0;
     $('spResult').hidden = true;
     $('spPlay').hidden = false;
@@ -277,9 +296,14 @@
     run.countdown = t;
   }
 
-  // 1 minute of groups, one after another with a word space between them.
+  /* The run: groups one after another with a word space between them
+     (plus sp.gap more word spaces, LCWO's "extra word spacing"). The
+     engine drops a space at the end of what it plays, so the word space
+     is waited out here (fixed 2026-11-04: the first version had almost
+     no gap between groups, so runs came out faster than the step). */
   function streamLoop(id) {
-    var t0 = Date.now(), s = sound();
+    var t0 = Date.now(), s = sound(), RUN_MS = run.min * 60000;
+    var gapMs = 7 * HST.timing(run.cw, run.fw).ts * (1 + run.gap);
     run.t0 = t0;
     var tick = setInterval(function () {
       if (!run || run.id !== id || run.over) return clearInterval(tick);
@@ -290,7 +314,9 @@
       if (Date.now() - t0 >= RUN_MS) return streamOver(id);
       var g = group(run.k, run.size);
       run.sent.push(g);
-      HST.audio.playMorse(g.split('').concat(' '), { wpm: run.cw, fwpm: run.fw, toneHz: s.toneHz, volume: s.volume }).done.then(next);
+      var p = HST.audio.playMorse(g.split(''), { wpm: run.cw, fwpm: run.fw, toneHz: s.toneHz, volume: s.volume });
+      // done comes ~170 ms after the sound ends (50 ms lead + 120 ms): count that as part of the gap.
+      p.done.then(function () { setTimeout(next, Math.max(0, gapMs - 170)); });
     })();
   }
   function streamOver(id) {
@@ -336,7 +362,7 @@
     function play() {
       if (!run || run.id !== id) return;
       if (run.n >= WORDS_PER_RUN) return wordsOver(id);
-      run.word = nextWord(run.size);
+      run.word = nextWord(run.k, run.size);
       run.sent.push(run.word);
       run.answered = false;
       run.played = Date.now();
@@ -365,7 +391,7 @@
     CG.log.set({ errors: err, accuracy: acc });
     CG.log.finish();
     finishRun({ acc: acc, err: err, n: run.n },
-      run.right + ' of ' + run.n + ' words right • ' + err + (err === 1 ? ' error' : ' errors'),
+      run.right + ' of ' + run.n + (run.k === 'abbrev' ? ' right • ' : ' words right • ') + err + (err === 1 ? ' error' : ' errors'),
       run.results.map(function (p) {
         return '<span class="sp-pair ' + (p.sent === p.typed ? 'ok' : 'bad') + '"><b>' + esc(p.sent) + '</b><i>' + esc(p.typed || '—') + '</i></span>';
       }).join(''));
@@ -375,8 +401,10 @@
   });
 
   function runMeta() {
-    return { mode: 'speed', speedPractice: run.k, group: { letters: 'letters', words: 'words', figures: 'numbers', custom: 'custom' }[run.k],
-             groupSize: run.size, wpm: run.cw, fwpm: run.fw, classWpm: sp.classWpm, custom: run.k === 'custom' ? sp.custom : undefined };
+    return { mode: 'speed', speedPractice: run.k,
+             group: { letters: 'letters', words: 'words', figures: 'numbers', mixed: 'mixed', abbrev: 'qso', custom: 'custom' }[run.k],
+             groupSize: run.size || undefined, wpm: run.cw, fwpm: run.fw, classWpm: sp.classWpm, custom: run.k === 'custom' ? sp.custom : undefined,
+             runMin: EX[run.k].words ? undefined : run.min, extraGap: run.gap || undefined };
   }
   function finishRun(score, line, detail) {
     var e = sp.ex[run.k];
@@ -410,11 +438,24 @@
   $('spCloseBtn').addEventListener('click', function () { dlg.close(); });
   dlg.addEventListener('close', stop);
 
-  function open(k, classWpm) {
+  /* open(exercise, classWpm, o): from a homework link, o = { size, min,
+     gap, goal } as the task asks (Fundamental, Tim 2026-11-04); what it
+     leaves out goes back to the usual (1 minute, no extra space, 90%). A
+     size the homework names becomes the step's size, at the class speed
+     if that's a change. Opened with the button: as it was left. */
+  function open(k, classWpm, o) {
     CG.stopAll();
     if (EX[k]) sp.cur = k;
     var c = clampWpm(classWpm);
     if (c) sp.classWpm = c;
+    if (EX[k] && (c || o)) {
+      o = o || {};
+      sp.runMin = RUN_MIN.indexOf(Number(o.min)) >= 0 ? Number(o.min) : 1;
+      sp.gap = Math.min(3, Math.max(0, Math.round(Number(o.gap) || 0)));
+      sp.goal = Number(o.goal) === 80 ? 80 : 90;
+      var n = Math.round(Number(o.size) || 0), e = sp.ex[k];
+      if (n >= 2 && n <= 5 && k !== 'abbrev' && n !== e.size) { e.size = n; e.wpm = 0; }   // 0: the class speed (step())
+    }
     if (!sp.custom) sp.custom = (CG.sound().custom || '').toUpperCase().replace(/\s+/g, '');
     save();
     $('spResult').hidden = true; $('spFillNote').textContent = '';
@@ -426,5 +467,7 @@
 
   // Opened from a homework link: code-groups/?sp=letters&class=13
   var q = new URLSearchParams(location.search);
-  if (EX[q.get('sp')]) setTimeout(function () { open(q.get('sp'), q.get('class')); }, 0);
+  if (EX[q.get('sp')]) setTimeout(function () {
+    open(q.get('sp'), q.get('class'), { size: q.get('size'), min: q.get('min'), gap: q.get('gap'), goal: q.get('goal') });
+  }, 0);
 })();
