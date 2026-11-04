@@ -257,6 +257,40 @@
   .timer-actions .btn-secondary { margin-top: 0; }
   .timer-actions .btn-primary { border-color: var(--accent); color: var(--accent); }
 
+  /* Speed Practice (Tim, 2026-11-03; speed-practice.js): CW Academy's
+     speed practice, reusing the Walk Mode dialog's pieces. */
+  .walk-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 10px; }
+  .walk-row .walk-btn { margin: 10px 0 0; }
+  .sp-dialog { max-width: 620px; }
+  .sp-dialog .walk-seg button { padding: 9px 4px; font-size: 0.85rem; }
+  .sp-lede { font-size: 0.9rem !important; margin: 0 0 14px !important; }
+  .sp-locked .walk-seg, .sp-locked .walk-speed, .sp-locked .sp-field { opacity: 0.55; pointer-events: none; }
+  .sp-sub { text-align: center; font-size: 0.82rem; color: var(--text-dim); margin: -8px 0 14px; }
+  .sp-field { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 14px; font-size: 0.9rem; color: var(--text-dim); }
+  .sp-field select, .sp-field input { font-family: var(--font-mono); font-size: 0.95rem; padding: 6px 8px; background: var(--recess);
+    color: var(--text); border: 1px solid var(--border-strong); border-radius: 8px; }
+  .sp-field input { width: 9em; text-transform: uppercase; letter-spacing: 0.08em; }
+  .sp-link { border: 0; background: none; padding: 0; color: var(--accent2); font: inherit; cursor: pointer; text-decoration: underline; }
+  .sp-what { font-size: 0.86rem !important; margin: 0 0 12px !important; }
+  .sp-runs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
+  .sp-run { font-family: var(--font-mono); font-size: 0.85rem; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border-strong); color: var(--text-dim); }
+  .sp-run.good { border-color: var(--good); color: var(--good); }
+  .sp-none { font-size: 0.85rem; color: var(--text-dim); }
+  .sp-advice { font-size: 0.9rem !important; color: var(--text) !important; margin: 0 0 12px !important; }
+  .sp-play { margin: 0 0 14px; }
+  .sp-play textarea, .sp-play input { width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-size: 1.15rem; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 10px 12px; background: var(--recess); color: var(--text); border: 1px solid var(--border-strong); border-radius: 8px; }
+  .sp-play textarea { min-height: 7.5em; resize: vertical; }
+  .sp-result { border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 8px; padding: 10px 12px; margin: 0 0 14px; }
+  .sp-result-line { font-family: var(--font-mono); font-weight: 700; color: var(--accent); margin: 0 0 8px; }
+  .sp-pairs { display: flex; flex-wrap: wrap; gap: 6px; max-height: 12em; overflow-y: auto; }
+  .sp-pair { display: inline-flex; flex-direction: column; align-items: center; font-family: var(--font-mono); font-size: 0.85rem;
+    padding: 3px 7px; border-radius: 6px; border: 1px solid var(--border); }
+  .sp-pair b { font-weight: 700; } .sp-pair i { font-style: normal; color: var(--text-dim); }
+  .sp-pair.ok { border-color: rgba(74, 222, 128, 0.5); } .sp-pair.ok b { color: var(--good); }
+  .sp-pair.bad { border-color: rgba(246, 106, 125, 0.6); } .sp-pair.bad i { color: var(--bad); }
+  .sp-feed { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; max-height: 6em; overflow: hidden; }
+
   /* ---------------------------------------------------------------------
      Practice module — the "front panel" of the app
      --------------------------------------------------------------------- */
@@ -895,6 +929,60 @@
     </div>
   </dialog>
 
+  <!-- Speed Practice (Tim, 2026-11-03): CW Academy's speed practice, as
+       its guidelines set it up on LCWO. Wired up in speed-practice.js. -->
+  <dialog class="info-dialog sp-dialog" id="spDialog" aria-labelledby="spTitle">
+    <h2 id="spTitle">Speed Practice</h2>
+    <p class="sp-lede">CW Academy&rsquo;s speed practice, done here: short runs at one speed and group size, then up a step once you&rsquo;re copying them well. Five or more runs a day.</p>
+    <div id="spSetup">
+      <div class="walk-seg" role="group" aria-label="Exercise">
+        <button type="button" id="spTab-letters">Letters</button>
+        <button type="button" id="spTab-words">Words</button>
+        <button type="button" id="spTab-figures">Figures</button>
+        <button type="button" id="spTab-custom">Your characters</button>
+      </div>
+      <div class="walk-speed">
+        <button type="button" id="spPrev" aria-label="Easier step">&minus;</button>
+        <output id="spStep"></output>
+        <button type="button" id="spNext" aria-label="Harder step">+</button>
+      </div>
+      <p class="sp-sub" id="spStepSub"></p>
+      <div class="sp-field" id="spCustomRow" hidden>
+        <label for="spCustom">Your characters</label>
+        <input id="spCustom" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <button type="button" class="sp-link" id="spFill">Use the ones I miss most</button>
+        <span id="spFillNote"></span>
+      </div>
+      <div class="sp-field">
+        <label for="spClass">Class speed</label> <select id="spClass"></select>
+        <span>No step goes below your class speed, or below 10 WPM.</span>
+      </div>
+      <p class="sp-what" id="spWhat"></p>
+      <div class="walk-label">Your runs at this step</div>
+      <div class="sp-runs" id="spRuns"></div>
+      <p class="sp-advice" id="spAdvice"></p>
+    </div>
+    <div class="sp-result" id="spResult" hidden>
+      <p class="sp-result-line" id="spResultLine"></p>
+      <div class="sp-pairs" id="spResultDetail"></div>
+    </div>
+    <div class="sp-play" id="spPlay" hidden>
+      <p class="walk-meta" id="spMeta" aria-live="polite"></p>
+      <textarea id="spTyped" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="What you copied, with a space between groups"></textarea>
+      <div id="spWordRow">
+        <input id="spWord" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="The word you heard; Enter to answer">
+        <div class="sp-feed" id="spWordFeed"></div>
+      </div>
+    </div>
+    <div class="timer-actions">
+      <button type="button" class="btn-secondary btn-primary" id="spStartBtn">Start a run</button>
+      <button type="button" class="btn-secondary btn-primary" id="spUpBtn" hidden>Move up</button>
+      <button type="button" class="btn-secondary btn-primary" id="spCheckBtn" hidden>Check Results</button>
+      <button type="button" class="btn-secondary danger" id="spStopBtn" hidden>Stop</button>
+      <button type="button" class="btn-secondary" id="spCloseBtn">Close</button>
+    </div>
+  </dialog>
+
   <!-- ===================================================================
        PRACTICE MODULE
        =================================================================== -->
@@ -966,7 +1054,11 @@
       <span class="countdown" id="countdown" aria-live="assertive" hidden></span>
     </span>
     <!-- Walk Mode: listen-only practice that keeps playing in your pocket (see WALK MODE in the script). -->
-    <button class="walk-btn" id="walkBtn" type="button" title="Listen-only practice that keeps playing in your pocket">Walk Mode</button>
+    <div class="walk-row">
+      <button class="walk-btn" id="walkBtn" type="button" title="Listen-only practice that keeps playing in your pocket">Walk Mode</button>
+      <!-- Speed Practice (Tim, 2026-11-03): see speed-practice.js. -->
+      <button class="walk-btn" id="spBtn" type="button" title="CW Academy's speed practice: 1-minute runs and word runs, with a ladder of speeds">Speed Practice</button>
+    </div>
     <button class="next-btn" id="nextBtn" type="button" hidden>Next &#9656;</button>
     <div class="tap-hint" id="tapHint">Tap the practice box, then start — your keyboard stays live for the whole session.</div>
 
@@ -3076,6 +3168,14 @@
     els.maxTimeVal.textContent = state.settings.maxTimeSec.toFixed(1) + " s";
     saveSettings();
   });
+  // Characters per Group / Word Length. (Lost by accident on 2026-10-29
+  // with the CW Academy Beginners group, so the choice did nothing; put
+  // back 2026-11-03 after Tim found it in Common Words.)
+  els.groupSizeSelect.addEventListener("change", function () {
+    state.settings.groupSize = parseInt(els.groupSizeSelect.value, 10) || 3;
+    renderBlanksIdle(state.settings.groupSize);
+    saveSettings();
+  });
   els.copyBehindSelect.addEventListener("change", function () {
     state.settings.copyBehind = parseInt(els.copyBehindSelect.value, 10) || 0;
     saveSettings();
@@ -3135,8 +3235,28 @@
   applySettingsToUI();
   renderBlanksIdle(state.settings.groupSize);
   renderAll();
+
+  // For Speed Practice (speed-practice.js, Tim 2026-11-03).
+  window.HSTCodeGroups = {
+    log: practiceLog,                               // runs are saved as Code Groups sessions (mode 'speed')
+    sound: function () { return state.settings; },  // tone, volume and the Custom characters
+    // Everyday English words of 2 to n letters, from the 1,000 most common
+    // (Speed Practice's Words: "up to n", like LCWO's English word list;
+    // not the ham abbreviations in COMMON_WORDS).
+    wordsUpTo: function (n) {
+      var seen = {};
+      return GENERAL_WORDS.slice(0, 1000).filter(function (w) { if (seen[w] || w.length < 2 || w.length > n) return false; seen[w] = 1; return true; });
+    },
+    stopAll: function () {
+      if (state.drilling) endDrill();
+      cancelCountdown();
+      if (state.running) stopSession();
+      if (walk.player) walkStop();
+    }
+  };
 })();
 </script>
+<script src="speed-practice.js"></script>
 
 </body>
 </html>

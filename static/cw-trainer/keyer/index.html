@@ -335,6 +335,16 @@
         <label for="cFw">Farnsworth spacing <output id="cFwVal"></output></label>
         <select id="cFw"></select>
       </div>
+      <!-- Echo's copy speed (Tim, 2026-11-03): how fast the word you copy
+           is played, apart from the speed you key at. -->
+      <div class="cset" data-show="echo">
+        <label for="cEchoWpm">Copy speed <output id="cEchoWpmVal"></output></label>
+        <input type="range" id="cEchoWpm" min="5" max="40" step="1">
+      </div>
+      <div class="cset" data-show="echo">
+        <label for="cEchoFw">Copy Farnsworth <output id="cEchoFwVal"></output></label>
+        <select id="cEchoFw"></select>
+      </div>
     </div>
     <p class="help ckey" id="fwNote" hidden></p>
     <p class="help ckey" id="followNote" hidden></p>
@@ -355,7 +365,7 @@
       <summary>How this works</summary>
       <p><strong>Daily Scales:</strong> Bob Carter&rsquo;s (WR7Q) sending scales. <strong>Warm Up</strong>, every day before you send anything else, works every letter, number and prosign; <strong>Exercise</strong> sends every letter and number five times; <strong>Drill</strong> builds sending skill with sentences, words and punctuation. Send it top to bottom; each character turns green as you send it right. A mistake turns its group (BBBBB, or a word) red: pause, then send the whole group again, so a finished scale is all green; mistakes still count in your accuracy. There&rsquo;s no time limit.When you&rsquo;ve sent the last character and pause (or press <kbd>Enter</kbd>), you get the full timing report for your keyer speed. <kbd>Esc</kbd> starts over.</p>
       <p><strong>Send This:</strong> send what&rsquo;s shown, then pause. As you send, each character turns green when you send it right and red when you don&rsquo;t, like Daily Scales. Under <strong>Send</strong>, the lists (the pyramid, QSO exchanges, the dits exercise, pangrams) go one line at a time, in order, and pick up where you left off. <strong>Your own text&hellip;</strong> lets you type, paste or load a text file; a Morserino-style file with <code>&lt;c&gt;$</code> chapters gives one choice per chapter. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
-      <p><strong>Echo:</strong> press <strong>Start</strong>, and after a 3-second countdown the app plays a word from the same lists as Send This, without showing it. Send it back on your key, then pause. It&rsquo;s graded the same way as Send This, and then the word is shown: green if you got it right. The next word plays a moment later. <strong>Replay</strong> plays the word again; <strong>Again</strong> (<kbd>Esc</kbd>) plays the last word again so you can have another go. It&rsquo;s a favorite drill on the Morserino and in LICW classes, joining copying and sending.</p>
+      <p><strong>Echo:</strong> press <strong>Start</strong>, and after a 3-second countdown the app plays a word from the same lists as Send This, without showing it. It plays at the <strong>Copy speed</strong> and <strong>Copy Farnsworth</strong> in Tool Settings, which can differ from your keyer speed. Send it back on your key, then pause. It&rsquo;s graded the same way as Send This, and then the word is shown: green if you got it right. The next word plays a moment later. <strong>Replay</strong> plays the word again; <strong>Again</strong> (<kbd>Esc</kbd>) plays the last word again so you can have another go. <strong>Done</strong> (<kbd>Enter</kbd>) ends the session. It&rsquo;s a favorite drill on the Morserino and in LICW classes, joining copying and sending.</p>
       <p><strong>The timing rules:</strong> a dah is 3 dits long; the gap inside a letter is 1 dit; between letters 3 dits; between words 7 dits. &ldquo;Character speed&rdquo; is how fast your dits and dahs go. &ldquo;Overall speed&rdquo; includes your spacing &mdash; what someone copying you actually hears. Extra space between letters (Farnsworth spacing) is fine while learning, but the closer you get to 3 and 7, the easier you are to copy.</p>
       <p><strong>With paddles</strong> the keyer makes perfect dits and dahs, so the useful feedback is spacing and which letters came out wrong. <strong>With a straight key or bug</strong> you form the elements yourself, so you&rsquo;ll also see your dah-to-dit ratio (ideally 3:1).</p>
       <p>Sessions are saved to Progress when you click End session or switch to another tool.</p>
@@ -404,7 +414,9 @@
 
   /* ---------------- this tab's own saved choices ---------------- */
   var PREFS_KEY = 'hct-cw-keyer-practice-v1';
-  var prefs = { mode: 'copy', source: 'word', echoSource: 'word', showCode: false, wpm: 0, fw: 0, listPos: {}, scale: 'warmup' };   // wpm 0 = not set yet; fw 0 = Farnsworth off
+  var prefs = { mode: 'copy', source: 'word', echoSource: 'word', showCode: false, wpm: 0, fw: 0, listPos: {}, scale: 'warmup',
+                echoWpm: 0, echoFw: 0 };   // wpm 0 = not set yet; fw 0 = Farnsworth off;
+                                           // echoWpm/echoFw: Echo's copy speed (0 = the keyer speed) and its Farnsworth
   try { var saved = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (saved) Object.keys(prefs).forEach(function (k) { if (k in saved) prefs[k] = saved[k]; }); } catch (e) {}
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
   if (!prefs.listPos || typeof prefs.listPos !== 'object') prefs.listPos = {};
@@ -436,6 +448,8 @@
      that long as a letter gap, not a word break. 1 = standard spacing. */
   function fwpm() { var f = Number(prefs.fw) || 0; return f && f < keyWpm() ? f : 0; }
   function spaceRatio() { if (!fwpm()) return 1; var t = HST.timing(keyWpm(), fwpm()); return t.ts / t.ta; }
+  function echoWpm() { return Math.min(40, Math.max(5, Number(prefs.echoWpm) || keyWpm())); }
+  function echoFwpm() { var f = Number(prefs.echoFw) || 0; return f && f < echoWpm() ? f : 0; }
   function speedText() { return keyWpm() + (fwpm() ? '/' + fwpm() : '') + ' WPM'; }
 
   /* ---------------- the key ----------------
@@ -692,7 +706,7 @@
     echoPlaying = true;
     if (state !== 'sending') { drawTarget(target, lineNo); $('targetLabel').textContent = 'Listen'; }
     setStatus('Listen\u2026');
-    HST.audio.playMorse(text.match(/<[A-Z]+>|[\s\S]/g) || [], { wpm: keyWpm(), fwpm: fwpm(), toneHz: sh.toneHz, volume: sh.volume }).done.then(function () {
+    HST.audio.playMorse(text.match(/<[A-Z]+>|[\s\S]/g) || [], { wpm: echoWpm(), fwpm: echoFwpm(), toneHz: sh.toneHz, volume: sh.volume }).done.then(function () {
       if (id !== echoPlayId) return;
       echoPlaying = false;
       if (state === 'sending') return;
@@ -1025,6 +1039,7 @@
      progress. (Called from setStatus, which every state change uses.) */
   function updateDone() {
     var b = $('doneBtn'), on = state === 'sending';
+    if (prefs.mode === 'echo') { b.disabled = false; b.title = 'End this Echo session'; return; }   // Done ends Echo (Tim, 2026-11-03)
     b.disabled = !on;
     b.title = on ? 'Grade what you\u2019ve sent now (it\u2019s also graded when you pause)'
                  : 'Start sending first. Each try is graded by itself when you pause.';
@@ -1456,7 +1471,13 @@
     echoPlay(target);
   });
   $('skipBtn').addEventListener('click', skip);
-  $('doneBtn').addEventListener('click', function () { if (state === 'sending') finishAttempt(); });
+  // Done: grade now; in Echo, which grades by itself after a pause, it
+  // ends the session instead (Tim, 2026-11-03), and Start begins again.
+  function done() {
+    if (prefs.mode === 'echo') return endSession();
+    if (state === 'sending') finishAttempt();
+  }
+  $('doneBtn').addEventListener('click', done);
   $('clearBtn').addEventListener('click', function () {
     clearTimeout(waitTimer);
     if (marks.length) endLine();
@@ -1465,7 +1486,7 @@
   // Enter = grade now, Esc = start over (Copy this).
   window.addEventListener('keydown', function (e) {
     if ((!copyLike() && prefs.mode !== 'warmup') || e.target.tagName === 'SELECT' || $('ownDlg').open) return;
-    if (e.key === 'Enter') { e.preventDefault(); if (state === 'sending') finishAttempt(); }
+    if (e.key === 'Enter') { e.preventDefault(); if (prefs.mode !== 'echo' || echoOn) done(); }
     if (e.key === 'Escape') { e.preventDefault(); again(); }
   });
 
@@ -1508,6 +1529,12 @@
       $('fwNote').textContent = 'Farnsworth ' + speedText() + ': send your letters at ' + keyWpm() + ' WPM, but leave about ' +
         r1(GAP.ch) + ' dits between letters and ' + r1(GAP.word) + ' between words (instead of 3 and 7), for an overall ' + fwpm() + ' WPM.';
     }
+    $('cEchoWpm').value = echoWpm(); $('cEchoWpmVal').textContent = echoWpm() + ' WPM';
+    var eo = ['<option value="0">Off (standard spacing)</option>'];
+    for (var ew = 5; ew < echoWpm(); ew++) eo.push('<option value="' + ew + '">' + ew + ' WPM overall</option>');
+    $('cEchoFw').innerHTML = eo.join('');
+    $('cEchoFw').value = String(echoFwpm());
+    $('cEchoFwVal').textContent = echoFwpm() ? echoWpm() + '/' + echoFwpm() : 'Off';
     $('cTone').value = sh.toneHz; $('cToneVal').textContent = sh.toneHz + ' Hz';
     $('cVol').value = sh.volume; $('cVolVal').textContent = sh.volume + '%';
   }
@@ -1516,6 +1543,8 @@
     prefs.fw = Number(e.target.value); savePrefs(); decoder.reset(); renderConsole();
     if (prefs.mode === 'warmup' && state !== 'sending') warmReady();
   });
+  $('cEchoWpm').addEventListener('input', function (e) { prefs.echoWpm = Number(e.target.value); savePrefs(); renderConsole(); });
+  $('cEchoFw').addEventListener('change', function (e) { prefs.echoFw = Number(e.target.value); savePrefs(); renderConsole(); });
   $('cTone').addEventListener('input', function (e) { HST.shared.set({ toneHz: Number(e.target.value) }); });
   $('cVol').addEventListener('input', function (e) { HST.shared.set({ volume: Number(e.target.value) }); });
   HST.shared.onChange(renderConsole);

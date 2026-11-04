@@ -983,7 +983,9 @@
       }
       var icr = s.trainer === 'icr';
       var what = GROUP_NAMES[s.group] || s.group || '';
-      if (!icr && s.groupSize && ['qso', 'calls', 'phrases'].indexOf(s.group) < 0) what += s.group === 'words' ? ' · ' + s.groupSize + '-letter' : ' · ' + s.groupSize + '/group';
+      if (!icr && s.groupSize && ['qso', 'calls', 'phrases'].indexOf(s.group) < 0) what += s.group === 'words' ? ' · ' + (s.mode === 'speed' ? 'up to ' + s.groupSize + ' letters' : s.groupSize + '-letter') : ' · ' + s.groupSize + '/group';
+      // Speed Practice (Tim, 2026-11-03): a 1-minute run, or a run of words.
+      if (s.mode === 'speed') what = 'Speed Practice · ' + what + (s.accuracy != null ? ' · ' + (s.group === 'words' ? (s.errors || 0) + ' errors' : s.accuracy + '%') : '');
       if (s.copyBehind) what += ' · copy behind ' + s.copyBehind;
       var wpm = s.wpm + (s.fwpm && s.fwpm < s.wpm ? '/' + s.fwpm : '');
       return '<tr><td>' + esc(when) + '</td><td><span class="tag ' + (icr ? 'icr">ICR' : 'cg">Code Groups') + '</span></td><td>' +
