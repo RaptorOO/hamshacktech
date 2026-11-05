@@ -599,178 +599,122 @@
     .clock-chip.expired{ animation: none; background: var(--red-soft); }
   }
 </style>
+<link rel="stylesheet" href="../shared/hst-copy.css">
 </head>
-<body>
+<body class="cl">
 <div class="wrap">
 
-
-  <!-- PRACTICE STAGE -->
-  <div class="panel practice">
-
-    <!-- Session clocks: a stopwatch that counts up from Start Session, and
-         an optional practice timer that counts down and rings a bell
-         (then stops the session) when it reaches zero. -->
-    <div class="clock-row">
-      <div class="clock-chip" id="elapsedChip" title="Time since Start Session">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>
-        <span>Elapsed</span>
-        <span class="clock-val" id="elapsedVal" role="timer" aria-live="off">0:00</span>
+  <!-- PRACTICE CARD: the standard Copy layout (shared/hst-copy.css; Tim,
+       2026-11-04). Modes top left, the clock strip top right, one line
+       about the mode, the stage, Start, then the settings as chips. -->
+  <section class="panel practice cl-card" aria-label="Practice">
+    <div class="cl-top">
+      <div class="cl-modes" role="group" aria-label="Mode">
+        <button type="button" class="cl-mode" id="stdModeBtn" aria-pressed="true">Standard</button>
+        <!-- Car Mode: listen-only practice (see CAR MODE in the script). -->
+        <button type="button" class="cl-mode" id="carBtn" aria-pressed="false" title="Listen-only practice for the car">Car Mode</button>
+        <!-- Walk Mode: Car Mode for your pocket, with the character spoken. -->
+        <button type="button" class="cl-mode" id="walkBtn" aria-pressed="false" title="Listen-only practice that keeps playing in your pocket">Walk Mode</button>
       </div>
-      <button type="button" class="clock-chip" id="timerBtn" aria-haspopup="dialog" aria-controls="timerDialog"
-              title="Set a practice timer — a bell rings and the session stops when it runs out">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-        <span>Timer</span>
-        <span class="clock-val" id="timerVal" role="timer" aria-live="off">Off</span>
-      </button>
-      <!-- Mutes the wrong-answer buzzer and the timeout beep. Saved. -->
-      <button type="button" class="clock-chip" id="buzzBtn" aria-pressed="true" title="Buzz on a wrong answer — click to mute or unmute">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="mute" d="m22 9-6 6M16 9l6 6"/></svg>
-        <span>Buzzer</span>
-        <span class="clock-val" id="buzzVal">On</span>
-      </button>
+
+      <!-- Session clocks: a stopwatch that counts up from Start Session, and
+           an optional practice timer that counts down and rings a bell
+           (then stops the session) when it reaches zero. -->
+      <div class="clock-row cl-strip">
+        <div class="clock-chip" id="elapsedChip" title="Time since Start Session">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>
+          <span>Elapsed</span>
+          <span class="clock-val" id="elapsedVal" role="timer" aria-live="off">0:00</span>
+        </div>
+        <button type="button" class="clock-chip" id="timerBtn" aria-haspopup="dialog" aria-controls="timerDialog"
+                title="Set a practice timer — a bell rings and the session stops when it runs out">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span>Timer</span>
+          <span class="clock-val" id="timerVal" role="timer" aria-live="off">Off</span>
+        </button>
+        <!-- Mutes the wrong-answer buzzer and the timeout beep. Saved. -->
+        <button type="button" class="clock-chip" id="buzzBtn" aria-pressed="true" title="Buzz on a wrong answer — click to mute or unmute">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="mute" d="m22 9-6 6M16 9l6 6"/></svg>
+          <span>Buzzer</span>
+          <span class="clock-val" id="buzzVal">On</span>
+        </button>
+        <button type="button" class="info-btn" id="infoBtn" aria-label="How ICR works" title="How ICR works">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
+        </button>
+      </div>
+    </div>
+    <p class="cl-desc" id="modeDesc">One character plays. Press the space bar the instant you recognize it, then type it.</p>
+
+    <div class="cl-stage">
+      <div class="key-stage">
+        <div class="key-status" id="keyStatus">Tap Start Session to begin</div>
+
+        <div class="reaction-readout" id="reactionReadout">— ms</div>
+
+        <div class="answer-row" id="answerRow" style="display:none;">
+          <input type="text" maxlength="2" class="answer-input waiting" id="answerInput" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="The character you heard">
+        </div>
+
+        <!-- Phones practicing numbers: tap the digit (see numberPadMode). -->
+        <div class="digit-pad" id="digitPad" hidden>
+          <button type="button" data-d="1">1</button><button type="button" data-d="2">2</button><button type="button" data-d="3">3</button>
+          <button type="button" data-d="4">4</button><button type="button" data-d="5">5</button><button type="button" data-d="6">6</button>
+          <button type="button" data-d="7">7</button><button type="button" data-d="8">8</button><button type="button" data-d="9">9</button>
+          <button type="button" data-d="0" class="zero">0</button>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+      </div>
     </div>
 
-    <div class="key-stage">
-      <div class="key-status" id="keyStatus">Tap Start Session to begin</div>
-
-      <div class="reaction-readout" id="reactionReadout">— ms</div>
-
-      <div class="answer-row" id="answerRow" style="display:none;">
-        <input type="text" maxlength="2" class="answer-input waiting" id="answerInput" autocomplete="off" autocapitalize="characters" spellcheck="false">
-      </div>
-
-      <!-- Phones practicing numbers: tap the digit (see numberPadMode). -->
-      <div class="digit-pad" id="digitPad" hidden>
-        <button type="button" data-d="1">1</button><button type="button" data-d="2">2</button><button type="button" data-d="3">3</button>
-        <button type="button" data-d="4">4</button><button type="button" data-d="5">5</button><button type="button" data-d="6">6</button>
-        <button type="button" data-d="7">7</button><button type="button" data-d="8">8</button><button type="button" data-d="9">9</button>
-        <button type="button" data-d="0" class="zero">0</button>
-      </div>
-
-      <div class="feedback" id="feedback"></div>
-
+    <div class="cl-actions">
       <div class="start-row" id="startRow">
-        <button class="btn primary" id="startBtn">Start Session</button>
-        <!-- Car Mode: listen-only practice (see CAR MODE in the script). -->
-        <button class="btn ghost" id="carBtn" type="button" title="Listen-only practice for the car">Car Mode</button>
-        <!-- Walk Mode: Car Mode for your pocket, with the character spoken. -->
-        <button class="btn ghost" id="walkBtn" type="button" title="Listen-only practice that keeps playing in your pocket">Walk Mode</button>
+        <button class="btn primary cl-start" id="startBtn" type="button">Start Session</button>
       </div>
       <div class="start-row" id="stopRow" style="display:none;">
-        <button class="btn danger" id="stopSessionBtn">Stop Session</button>
+        <button class="btn danger cl-start cl-stop" id="stopSessionBtn" type="button">Stop Session</button>
       </div>
     </div>
-  </div>
-
-  <!-- SETTINGS / STATS / DRILL -->
-  <div class="grid">
-
-  <section class="panel card" aria-label="Tool settings">
-      <h2>Tool Settings</h2>
-      <p class="sub">What to practice, how it sounds, and how long you have to answer.</p>
-      <div>
-
-        <div class="control-row">
-          <div class="control-head"><span>Practice Group</span></div>
-          <select id="groupSelect">
-            <option value="letters">Letters (A–Z)</option>
-            <option value="numbers">Numbers (0–9)</option>
-            <option value="punctuation">Punctuation</option>
-            <option value="dits">Dits Exercise</option>
-            <option value="all">All</option>
-            <option value="cwa-beginner">CW Academy Beginners</option>
-            <option value="custom">Custom</option>
-          </select>
-        </div>
-
-        <div class="control-row" id="cwaRow" style="display:none;">
-          <div class="control-head"><span>Characters Learned</span></div>
-          <select id="cwaClassSelect" aria-describedby="cwaChars"></select>
-          <p class="nospace-note" id="cwaChars"></p>
-          <p class="nospace-note">Prosigns (AR, BT, BK, SK) play as one sound; type their two letters.</p>
-        </div>
-
-        <div class="control-row" id="customRow" style="display:none;">
-          <div class="control-head"><span>Custom Characters</span></div>
-          <input type="text" id="customInput" placeholder="e.g. A E I S T N 5 .">
-        </div>
-
-        <div class="control-row">
-          <div class="control-head"><span>Character Speed (WPM)</span><b id="wpmVal">20</b></div>
-          <input type="range" id="wpmSlider" min="5" max="40" value="20" step="1">
-        </div>
-
-        <div class="control-row">
-          <div class="control-head"><span>Tone</span><b id="toneVal">600 Hz</b></div>
-          <input type="range" id="toneSlider" min="300" max="1000" value="600" step="10">
-        </div>
-
-        <div class="control-row">
-          <div class="control-head"><span>Volume</span><b id="volVal">70%</b></div>
-          <input type="range" id="volSlider" min="0" max="100" value="70" step="5">
-        </div>
-
-        <div class="control-row">
-          <div class="control-head"><span>Max Time to Answer</span><b id="ttaVal">1000 ms</b></div>
-          <input type="range" id="ttaSlider" min="0" max="4000" value="1500" step="50">
-          <label class="toggle-row">
-            <input type="checkbox" id="ttaOffToggle">
-            <span>No limit (disable timeout)</span>
-          </label>
-        </div>
-
-        <!-- Spacebar Mode off: say it out loud, then the answer plays (see SAY IT). -->
-        <div class="control-row">
-          <label class="toggle-row">
-            <input type="checkbox" id="noSpaceToggle">
-            <span>Turn Off Spacebar Mode</span>
-          </label>
-          <div class="nospace-note" id="noSpaceNote" hidden>
-            Say each character out loud; the answer plays <b id="noSpaceNoteMs">1500 ms</b> after it.
-            <button type="button" class="linkbtn" id="noSpaceEditBtn">Change</button>
-          </div>
-        </div>
-
-        <!-- Adaptive ICR and Adaptive Speed (Tim, 2026-10-31). -->
-        <div class="control-row">
-          <label class="toggle-row">
-            <input type="checkbox" id="adaptiveToggle">
-            <span>Adaptive ICR</span>
-          </label>
-          <p class="nospace-note adapt-note">The characters you miss most come up more often.</p>
-          <label class="toggle-row">
-            <input type="checkbox" id="adaptSpeedToggle">
-            <span>Adaptive Speed</span>
-          </label>
-          <p class="nospace-note adapt-note">Character Speed goes up 1 WPM for each right answer and down 1 for each miss.</p>
-        </div>
-
-      </div>
-  </section>
-
-  <section class="panel card" aria-label="Session statistics">
-    <h2>Statistics</h2>
-    <p class="sub">This session, since last reset.</p>
-    <div class="stat-tiles">
-      <div class="meter"><div class="val" id="mStreak">0</div><div class="lbl">Current Streak</div></div>
-      <div class="meter"><div class="val" id="mBest">0</div><div class="lbl">Best Streak</div></div>
-      <div class="meter"><div class="val" id="mPct">—</div><div class="lbl">Accuracy</div></div>
-      <div class="meter"><div class="val" id="mCount">0</div><div class="lbl">Characters Practiced</div></div>
-      <div class="meter"><div class="val" id="mAvg">—</div><div class="lbl">Avg Reaction (ms)</div></div>
-      <div class="meter"><div class="val" id="mTimeouts">0</div><div class="lbl">Timeouts</div></div>
+    <div class="cl-quick">
+      <span class="cl-quick-items" id="clQuickItems"></span>
+      <button type="button" class="cl-settings-btn" data-cl-open aria-controls="clDrawer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+        Settings
+      </button>
     </div>
-    <button class="btn-secondary danger" id="resetSessionBtn" type="button">Reset Session Stats</button>
   </section>
 
-  <section class="panel card" aria-label="Drill panel">
-    <h2>Most Missed Characters</h2>
-    <p class="sub">The 5 characters missed most often this session.</p>
-    <div class="weak-list" id="weakList"><span class="empty-note">Practice a few characters to populate this list.</span></div>
-    <button class="btn-secondary" id="drillBtn" type="button" disabled>Drill These Characters</button>
-    <button class="btn-secondary danger" id="stopDrillBtn" type="button" style="display:none;">Stop Drill</button>
-    <div class="drill-status" id="drillStatus"></div>
+  <!-- THIS SESSION: four tiles, as in every Copy tool. -->
+  <section class="cl-card" aria-label="This session">
+    <div class="cl-head">
+      <div><h2 class="cl-h2">This Session</h2><p class="cl-sub">Since you started or last reset.</p></div>
+      <button class="cl-reset" id="resetSessionBtn" type="button">Reset</button>
+    </div>
+    <div class="cl-tiles">
+      <div class="cl-tile"><span class="v" id="mPct">—</span><span class="l">Accuracy</span></div>
+      <div class="cl-tile"><span class="v" id="mStreak">0</span><span class="l">Streak</span><span class="s">best <span id="mBest">0</span></span></div>
+      <div class="cl-tile"><span class="v" id="mCount">0</span><span class="l">Characters</span><span class="s"><span id="mTimeouts">0</span> timeouts</span></div>
+      <div class="cl-tile"><span class="v" id="mAvg">—</span><span class="l">Avg Reaction (ms)</span></div>
+    </div>
   </section>
 
+  <div class="cl-two">
+    <section class="cl-card" aria-label="Most missed characters">
+      <h2 class="cl-h2">Most Missed</h2>
+      <p class="cl-sub">The 5 characters you miss most, and how often you get each right.</p>
+      <div class="cl-missed cl-grow" id="weakList"><span class="empty-note">Practice a few characters to fill this in.</span></div>
+      <button class="cl-btn" id="drillBtn" type="button" disabled>Drill These Characters</button>
+      <button class="cl-btn" id="stopDrillBtn" type="button" style="display:none;">Stop Drill</button>
+      <div class="cl-status" id="drillStatus"></div>
+    </section>
+    <section class="cl-card" aria-label="Slowest characters">
+      <h2 class="cl-h2">Slowest to Recognize</h2>
+      <p class="cl-sub">Your recent average time, slowest first.</p>
+      <table class="cl-table">
+        <thead><tr><th>Char</th><th>Time</th><th></th></tr></thead>
+        <tbody id="slowBody"><tr><td colspan="3" class="empty-note">Practice a few characters to fill this in.</td></tr></tbody>
+      </table>
+    </section>
   </div>
 
   <footer class="hst-foot">
@@ -778,6 +722,98 @@
     <div class="hst-copy">&copy; HamShackTech LLC 2026</div>
   </footer>
 </div>
+
+<!-- SETTINGS DRAWER (a sheet from the bottom on phones; shared/hst-copy.js).
+     The same sections in every Copy tool. -->
+<div class="cl-scrim" id="clScrim" hidden></div>
+<aside class="cl-drawer" id="clDrawer" role="dialog" aria-modal="true" aria-labelledby="clDrawerTitle">
+  <div class="cl-dh">
+    <div><h2 class="cl-h2" id="clDrawerTitle">Settings</h2><p class="cl-sub">ICR · saved for next time</p></div>
+    <button type="button" class="cl-x" data-cl-close aria-label="Close settings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="cl-dbody">
+    <details class="cl-sec" open>
+      <summary>What to copy</summary>
+      <div class="control-row">
+        <div class="control-head"><label for="groupSelect">Practice Group</label></div>
+        <select id="groupSelect">
+          <option value="letters">Letters (A–Z)</option>
+          <option value="numbers">Numbers (0–9)</option>
+          <option value="punctuation">Punctuation</option>
+          <option value="dits">Dits Exercise</option>
+          <option value="all">All</option>
+          <option value="cwa-beginner">CW Academy Beginners</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="control-row" id="cwaRow" style="display:none;">
+        <div class="control-head"><label for="cwaClassSelect">Characters Learned</label></div>
+        <select id="cwaClassSelect" aria-describedby="cwaChars"></select>
+        <p class="nospace-note" id="cwaChars"></p>
+        <p class="nospace-note">Prosigns (AR, BT, BK, SK) play as one sound; type their two letters.</p>
+      </div>
+      <div class="control-row" id="customRow" style="display:none;">
+        <div class="control-head"><label for="customInput">Custom Characters</label></div>
+        <input type="text" id="customInput" placeholder="e.g. A E I S T N 5 .">
+      </div>
+    </details>
+
+    <details class="cl-sec" open>
+      <summary>Speed</summary>
+      <div class="control-row">
+        <div class="control-head"><label for="wpmSlider">Character Speed (WPM)</label><b id="wpmVal">20</b></div>
+        <input type="range" id="wpmSlider" min="5" max="40" value="20" step="1">
+        <label class="toggle-row"><input type="checkbox" id="adaptSpeedToggle"><span>Adaptive Speed</span></label>
+        <p class="nospace-note adapt-note">Character Speed goes up 1 WPM for each right answer and down 1 for each miss.</p>
+      </div>
+    </details>
+
+    <details class="cl-sec" open>
+      <summary>Sound</summary>
+      <div class="cl-pair">
+        <div class="control-row">
+          <div class="control-head"><label for="toneSlider">Tone</label><b id="toneVal">600 Hz</b></div>
+          <input type="range" id="toneSlider" min="300" max="1000" value="600" step="10">
+        </div>
+        <div class="control-row">
+          <div class="control-head"><label for="volSlider">Volume</label><b id="volVal">70%</b></div>
+          <input type="range" id="volSlider" min="0" max="100" value="70" step="5">
+        </div>
+      </div>
+    </details>
+
+    <details class="cl-sec" open>
+      <summary>Timing</summary>
+      <div class="control-row">
+        <div class="control-head"><label for="ttaSlider">Max Time to Answer</label><b id="ttaVal">1.5 s</b></div>
+        <input type="range" id="ttaSlider" min="0" max="4000" value="1500" step="50">
+        <label class="toggle-row"><input type="checkbox" id="ttaOffToggle"><span>Unlimited time (no buzzer)</span></label>
+      </div>
+    </details>
+
+    <details class="cl-sec" open>
+      <summary>Options</summary>
+      <!-- Adaptive ICR (Tim, 2026-10-31). -->
+      <div class="control-row">
+        <label class="toggle-row"><input type="checkbox" id="adaptiveToggle"><span>Adaptive ICR</span></label>
+        <p class="nospace-note adapt-note">The characters you miss most come up more often.</p>
+      </div>
+      <!-- Spacebar Mode off: say it out loud, then the answer plays (see SAY IT). -->
+      <div class="control-row">
+        <label class="toggle-row"><input type="checkbox" id="noSpaceToggle"><span>Turn Off Spacebar Mode</span></label>
+        <div class="nospace-note adapt-note" id="noSpaceNote" hidden>
+          Say each character out loud; the answer plays <b id="noSpaceNoteMs">1500 ms</b> after it.
+          <button type="button" class="linkbtn" id="noSpaceEditBtn">Change</button>
+        </div>
+      </div>
+    </details>
+  </div>
+  <div class="cl-df">
+    <button type="button" class="cl-start" data-cl-close>Done</button>
+  </div>
+</aside>
 
 <!-- "OOPS!" POPUP — explains the space-bar-first flow when someone types a
      character too early. Hidden until showOops() reveals it. -->
@@ -888,6 +924,7 @@
 <script src="../shared/hst-engine.js"></script>
 <script src="../shared/hst-course.js"></script>
 <script src="../shared/hst-listen.js"></script>
+<script src="../shared/hst-copy.js"></script>
 <script>
 /* =====================================================================
    CW ICR TRAINER — application script
@@ -1817,7 +1854,7 @@ function startDrill(){
   stopAudioImmediate();
 
   els.drillBtn.disabled = true;
-  els.stopDrillBtn.style.display = 'inline-block';
+  els.stopDrillBtn.style.display = 'block';
   els.startRow.style.display = 'none';
   els.stopRow.style.display = 'none';
   els.answerRow.style.display = 'none';
@@ -1885,20 +1922,41 @@ function updateStatsDisplay(){
   els.mTimeouts.textContent = session.timeouts;
 }
 
+// Answer time in seconds, as in every Copy tool: 1500 -> "1.5 s", 1550 -> "1.55 s".
+function fmtSec(ms){ return (ms / 1000).toFixed(2).replace(/0$/, '') + ' s'; }
+
+/* Most Missed, the standard way (shared/hst-copy.css): each character with
+   how often you get it right (its recent miss rate, the one Adaptive ICR
+   uses). Then the Slowest to Recognize table beside it. */
 function renderWeakList(){
   const weak = weakestCharacters(5);
   if(weak.length === 0){
-    els.weakList.innerHTML = '<span class="empty-note">Practice a few characters to populate this list.</span>';
+    els.weakList.innerHTML = '<span class="empty-note">Practice a few characters to fill this in.</span>';
     els.drillBtn.disabled = true;
+  } else {
+    els.weakList.innerHTML = weak.map(ch => {
+      const right = Math.round((1 - ensureCharStat(ch).ewmaMiss) * 100);
+      return '<span class="cl-m"><b>' + HST.charLabel(ch) + '</b><span>' + right + '%</span></span>';
+    }).join('');
+    els.drillBtn.disabled = drillActive;
+  }
+  renderSlowest();
+}
+function renderSlowest(){
+  const slow = Object.keys(charStats)
+    .filter(c => activeSet.includes(c) && charStats[c].attempts > 0)
+    .sort((a, b) => charStats[b].ewmaRT - charStats[a].ewmaRT)
+    .slice(0, 5);
+  if(!slow.length){
+    els.slowBody.innerHTML = '<tr><td colspan="3" class="empty-note">Practice a few characters to fill this in.</td></tr>';
     return;
   }
-  const maxW = Math.max(...weak.map(weightFor));
-  els.weakList.innerHTML = weak.map(ch => {
-    const pct = Math.round((weightFor(ch) / maxW) * 100);
-    return '<span class="weak-chip">' + HST.charLabel(ch) +
-      '<span class="bar"><i style="width:' + pct + '%"></i></span></span>';
+  const top = Math.max(...slow.map(c => charStats[c].ewmaRT), 1);
+  els.slowBody.innerHTML = slow.map(c => {
+    const ms = Math.round(charStats[c].ewmaRT);
+    return '<tr><td>' + HST.charLabel(c) + '</td><td>' + ms.toLocaleString() + ' ms</td>' +
+      '<td><span class="cl-bar"><i style="width:' + Math.round(ms / top * 100) + '%"></i></span></td></tr>';
   }).join('');
-  els.drillBtn.disabled = drillActive;
 }
 
 // CW Academy Beginners: "Through class 1".."Through class 10", and the
@@ -1926,7 +1984,7 @@ function refreshSettingsUI(){
   els.volSlider.value = settings.volume;
   els.volVal.textContent = settings.volume + '%';
   els.ttaSlider.value = settings.ttaMs;
-  els.ttaVal.textContent = settings.ttaEnabled ? settings.ttaMs + ' ms' : 'Off';
+  els.ttaVal.textContent = settings.ttaEnabled ? fmtSec(settings.ttaMs) : 'Off';
   els.ttaSlider.disabled = !settings.ttaEnabled;
   els.ttaOffToggle.checked = !settings.ttaEnabled;
   els.adaptiveToggle.checked = !!settings.adaptive;
@@ -2093,13 +2151,33 @@ function wireEvents(){
   renderBuzz();
   wireCarMode();
   wireNoSpace();
+  // The (i) in the clock strip: the How ICR works card (the same one a
+  // too-early key press opens).
+  els.infoBtn.addEventListener('click', showOops);
+  // Car and Walk Mode open from the mode chips, so they're off while a
+  // session runs (they used to sit in the Start row, hidden then).
+  const lockModes = () => {
+    const idle = els.startRow.style.display !== 'none';
+    els.carBtn.disabled = els.walkBtn.disabled = !idle;
+  };
+  new MutationObserver(lockModes).observe(els.startRow, { attributes: true, attributeFilter: ['style'] });
+  lockModes();
+  // The settings chips under Start (shared/hst-copy.js).
+  window.HSTCopy.summary = () => [
+    els.groupSelect.selectedOptions[0] ? els.groupSelect.selectedOptions[0].textContent : '',
+    settings.wpm + ' WPM' + (settings.adaptSpeed ? ' · adaptive' : ''),
+    settings.toneHz + ' Hz · ' + settings.volume + '%',
+    settings.noSpace ? 'Say it out loud' : settings.ttaEnabled ? fmtSec(settings.ttaMs) + ' to answer' : 'No time limit',
+    settings.adaptive ? 'Adaptive ICR' : ''
+  ];
+  window.HSTCopy.refresh();
 
   els.wpmSlider.addEventListener('input', () => HST.shared.set({ wpm: Number(els.wpmSlider.value) }));
   els.toneSlider.addEventListener('input', () => HST.shared.set({ toneHz: Number(els.toneSlider.value) }));
   els.volSlider.addEventListener('input', () => HST.shared.set({ volume: Number(els.volSlider.value) }));
   els.ttaSlider.addEventListener('input', () => {
     settings.ttaMs = Number(els.ttaSlider.value);
-    els.ttaVal.textContent = settings.ttaMs + ' ms';
+    els.ttaVal.textContent = fmtSec(settings.ttaMs);
     saveState();
   });
   els.adaptiveToggle.addEventListener('change', () => { settings.adaptive = els.adaptiveToggle.checked; saveState(); });
@@ -2107,7 +2185,7 @@ function wireEvents(){
   els.ttaOffToggle.addEventListener('change', () => {
     settings.ttaEnabled = !els.ttaOffToggle.checked;
     els.ttaSlider.disabled = !settings.ttaEnabled;
-    els.ttaVal.textContent = settings.ttaEnabled ? settings.ttaMs + ' ms' : 'Off';
+    els.ttaVal.textContent = settings.ttaEnabled ? fmtSec(settings.ttaMs) : 'Off';
     saveState();
   });
 
@@ -2150,7 +2228,7 @@ function init(){
   ['mStreak','mBest','mPct','mCount','mAvg','mTimeouts',
    'keyStatus','reactionReadout','answerRow','answerInput','digitPad',
    'feedback','startRow','startBtn','stopRow','stopSessionBtn',
-   'weakList','drillBtn','stopDrillBtn','drillStatus',
+   'weakList','drillBtn','stopDrillBtn','drillStatus','slowBody','infoBtn','stdModeBtn',
    'groupSelect','customRow','customInput','cwaRow','cwaClassSelect','cwaChars','wpmSlider','wpmVal',
    'toneSlider','toneVal','volSlider','volVal',
    'ttaSlider','ttaVal','ttaOffToggle','adaptiveToggle','adaptSpeedToggle','resetSessionBtn',

@@ -47,8 +47,8 @@
     --warn: #a3e635;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
     --font-display: "Oswald", "Arial Narrow", sans-serif;
-    --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;      /* the same fonts as ICR (Tim, 2026-11-04) */
+    --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
     --radius: 10px;
     --radius-lg: 16px;
   }
@@ -806,8 +806,9 @@
   .drilling-badge.show { display: block; }
 
 </style>
+<link rel="stylesheet" href="../shared/hst-copy.css">
 </head>
-<body>
+<body class="cl">
 <div class="wrap">
 
 
@@ -995,99 +996,161 @@
     </div>
   </dialog>
 
-  <!-- ===================================================================
-       PRACTICE MODULE
+    <!-- ===================================================================
+       PRACTICE CARD: the standard Copy layout (shared/hst-copy.css; Tim,
+       2026-11-04). Modes top left, the clock strip top right, one line
+       about the mode, the stage, the action row, the settings as chips.
        =================================================================== -->
-  <section class="panel practice" aria-label="Practice module">
-    <!-- Session clocks: a stopwatch that counts up from Start Session, and
-         an optional practice timer that counts down and rings a bell
-         (then stops the session) when it reaches zero. -->
-    <div class="clock-row">
-      <div class="clock-chip" id="elapsedChip" title="Time since Start Session">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>
-        <span>Elapsed</span>
-        <span class="clock-val" id="elapsedVal" role="timer" aria-live="off">0:00</span>
+  <section class="panel practice cl-card" aria-label="Practice module">
+    <div class="cl-top">
+      <div class="cl-modes" role="group" aria-label="Mode">
+        <button type="button" class="cl-mode" id="stdModeBtn" aria-pressed="true">Standard</button>
+        <!-- Speed Practice (Tim, 2026-11-03): see speed-practice.js. -->
+        <button type="button" class="cl-mode" id="spBtn" aria-pressed="false" title="CW Academy's speed practice: 1-minute runs and word runs, with a ladder of speeds">Speed Practice</button>
+        <!-- Walk Mode: listen-only practice that keeps playing in your pocket (see WALK MODE in the script). -->
+        <button type="button" class="cl-mode" id="walkBtn" aria-pressed="false" title="Listen-only practice that keeps playing in your pocket">Walk Mode</button>
       </div>
-      <button type="button" class="clock-chip" id="timerBtn" aria-haspopup="dialog" aria-controls="timerDialog"
-              title="Set a practice timer — a bell rings and the session stops when it runs out">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-        <span>Timer</span>
-        <span class="clock-val" id="timerVal" role="timer" aria-live="off">Off</span>
-      </button>
-      <!-- Mutes the missed-group / timeout buzzer. Saved. -->
-      <button type="button" class="clock-chip" id="buzzBtn" aria-pressed="true" title="Buzz on a missed group — click to mute or unmute">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="mute" d="m22 9-6 6M16 9l6 6"/></svg>
-        <span>Buzzer</span>
-        <span class="clock-val" id="buzzVal">On</span>
-      </button>
-      <button type="button" class="info-btn" id="infoBtn" aria-haspopup="dialog" aria-controls="infoDialog" aria-label="About this trainer" title="About this trainer">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
-      </button>
+
+      <!-- Session clocks: a stopwatch that counts up from Start Session, and
+           an optional practice timer that counts down and rings a bell
+           (then stops the session) when it reaches zero. -->
+      <div class="clock-row cl-strip">
+        <div class="clock-chip" id="elapsedChip" title="Time since Start Session">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>
+          <span>Elapsed</span>
+          <span class="clock-val" id="elapsedVal" role="timer" aria-live="off">0:00</span>
+        </div>
+        <button type="button" class="clock-chip" id="timerBtn" aria-haspopup="dialog" aria-controls="timerDialog"
+                title="Set a practice timer — a bell rings and the session stops when it runs out">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span>Timer</span>
+          <span class="clock-val" id="timerVal" role="timer" aria-live="off">Off</span>
+        </button>
+        <!-- Mutes the missed-group / timeout buzzer. Saved. -->
+        <button type="button" class="clock-chip" id="buzzBtn" aria-pressed="true" title="Buzz on a missed group — click to mute or unmute">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="mute" d="m22 9-6 6M16 9l6 6"/></svg>
+          <span>Buzzer</span>
+          <span class="clock-val" id="buzzVal">On</span>
+        </button>
+        <button type="button" class="info-btn" id="infoBtn" aria-haspopup="dialog" aria-controls="infoDialog" aria-label="About this trainer" title="About this trainer">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
+        </button>
+      </div>
+    </div>
+    <p class="cl-desc">A group plays. Type what you heard before the clock runs out; each group is scored on its own.</p>
+
+    <div class="cl-stage">
+      <div class="status-row">
+        <span class="status-pill" id="statusPill" data-mode="idle">Idle</span>
+        <span class="status-pill drill-flag" id="drillFlag" style="display:none;"></span>
+      </div>
+      <div class="answer-row">
+        <div class="blanks" id="blanksRow" aria-live="polite"></div>
+      </div>
+      <div class="meter" aria-hidden="true">
+        <div class="meter-fill" id="meterFill" style="transform: scaleX(0);"></div>
+      </div>
+      <div class="meter-label" id="meterLabel">&nbsp;</div>
     </div>
 
-    <div class="status-row">
-      <span class="status-pill" id="statusPill" data-mode="idle">Idle</span>
-      <span class="status-pill drill-flag" id="drillFlag" style="display:none;"></span>
-    </div>
-
-    <div class="answer-row">
+    <div class="cl-actions">
       <!-- Head Copy Mode: a latching toggle. When on, keystrokes are
            ignored while code is playing, so the whole group has to be
            held in your head and written only after it finishes. Not part
-           of the locked settings fieldset, so it can be flipped mid-session;
-           the change applies the next time code plays. -->
-      <button type="button" class="side-btn toggle side-left" id="headCopyBtn" aria-pressed="false"
+           of the locked settings, so it can be flipped mid-session; the
+           change applies the next time code plays. -->
+      <button type="button" class="cl-act toggle" id="headCopyBtn" aria-pressed="false"
               title="When on, you can't type until the whole group has finished playing">
-        <span>Head Copy<br>Mode</span>
+        <span>Head Copy</span>
         <span class="toggle-state" id="headCopyState">Off</span>
       </button>
-
-      <div class="blanks" id="blanksRow" aria-live="polite"></div>
-
+      <span class="session-wrap">
+        <button class="session-btn cl-start" id="sessionBtn" type="button">Start Session</button>
+        <!-- 3-2-1 countdown after Start Session (see startSession). -->
+        <span class="countdown" id="countdown" aria-live="assertive" hidden></span>
+      </span>
+      <button class="next-btn" id="nextBtn" type="button" hidden>Next &#9656;</button>
       <!-- Replay: plays the group again, but only AFTER a missed or
            timed-out group's results are showing — never while you're
            still answering, so every answer has to come from one listen.
            The trainer holds on those results until Next / Enter / Space. -->
-      <button type="button" class="side-btn side-right" id="replayBtn" disabled
-              title="After a miss, hear the group again">
+      <button type="button" class="cl-act" id="replayBtn" disabled title="After a miss, hear the group again">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
         <span>Replay</span>
       </button>
     </div>
-
-    <div class="meter" aria-hidden="true">
-      <div class="meter-fill" id="meterFill" style="transform: scaleX(0);"></div>
+    <div class="cl-quick">
+      <span class="cl-quick-items" id="clQuickItems"></span>
+      <button type="button" class="cl-settings-btn" data-cl-open aria-controls="clDrawer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+        Settings
+      </button>
     </div>
-    <div class="meter-label" id="meterLabel">&nbsp;</div>
-
-    <span class="session-wrap">
-      <button class="session-btn" id="sessionBtn" type="button">Start Session</button>
-      <!-- 3-2-1 countdown after Start Session (see startSession). -->
-      <span class="countdown" id="countdown" aria-live="assertive" hidden></span>
-    </span>
-    <!-- Walk Mode: listen-only practice that keeps playing in your pocket (see WALK MODE in the script). -->
-    <div class="walk-row">
-      <button class="walk-btn" id="walkBtn" type="button" title="Listen-only practice that keeps playing in your pocket">Walk Mode</button>
-      <!-- Speed Practice (Tim, 2026-11-03): see speed-practice.js. -->
-      <button class="walk-btn" id="spBtn" type="button" title="CW Academy's speed practice: 1-minute runs and word runs, with a ladder of speeds">Speed Practice</button>
-    </div>
-    <button class="next-btn" id="nextBtn" type="button" hidden>Next &#9656;</button>
     <div class="tap-hint" id="tapHint">Tap the practice box, then start — your keyboard stays live for the whole session.</div>
 
     <input class="hidden-input" id="hiddenInput" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text" aria-label="Type the characters you heard" />
   </section>
 
-  <!-- ===================================================================
-       SETTINGS / STATS / DRILL
-       =================================================================== -->
-  <div class="grid">
+  <!-- THIS SESSION: four tiles, as in every Copy tool. -->
+  <section class="cl-card" aria-label="Session statistics">
+    <div class="cl-head">
+      <div><h2 class="cl-h2">This Session</h2><p class="cl-sub">Since you started or last reset.</p></div>
+      <button class="cl-reset" id="resetStatsBtn" type="button">Reset</button>
+    </div>
+    <div class="cl-tiles">
+      <div class="cl-tile"><span class="v" id="stCharAcc">—</span><span class="l">Accuracy</span><span class="s"><span id="stCharsPlayed">0</span> characters</span></div>
+      <div class="cl-tile"><span class="v" id="stGroupAcc">—</span><span class="l">Full Groups Right</span></div>
+      <div class="cl-tile"><span class="v" id="stGroupsPlayed">0</span><span class="l">Groups</span><span class="s"><span id="stTimeouts">0</span> timeouts</span></div>
+      <div class="cl-tile"><span class="v" id="stAvgTime">—</span><span class="l">Avg Answer Time</span></div>
+    </div>
+  </section>
 
-    <section class="panel card" aria-label="Tool settings">
-      <h2>Tool Settings</h2>
-      <p class="sub">Locked while a session is running — stop first to change.</p>
-      <div class="lock-note" id="lockNote">Session running — stop to edit settings.</div>
+  <div class="cl-two">
+    <section class="cl-card" aria-label="Most missed characters">
+      <h2 class="cl-h2">Most Missed</h2>
+      <p class="cl-sub">The 5 characters you miss most, and how often you get each right.</p>
+      <div class="drilling-badge" id="drillingBadge">Drilling weak characters</div>
+      <ul class="cl-missed cl-grow" id="drillList">
+        <li class="empty-note">Play a session to find your weak characters.</li>
+      </ul>
+      <button class="cl-btn" id="drillBtn" type="button" disabled>Drill These Characters</button>
+    </section>
+    <section class="cl-card" aria-label="Accuracy by group size">
+      <h2 class="cl-h2">By Group Size</h2>
+      <p class="cl-sub">How longer groups hold up.</p>
+      <table class="cl-table" id="sizeTable">
+        <caption>Accuracy by Group Size</caption>
+        <thead>
+          <tr><th>Size</th><th>Groups</th><th>Group %</th><th>Char %</th></tr>
+        </thead>
+        <tbody id="sizeTableBody">
+          <tr><td colspan="4" class="empty-note">No groups played yet.</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
 
-      <fieldset id="settingsFieldset">
+  <footer class="hst-foot">
+    <div class="hst-73"><b>73</b> Practice often, don&rsquo;t quit and have fun</div>
+    <div class="hst-copy">&copy; HamShackTech LLC 2026</div>
+  </footer>
+</div>
+
+<!-- SETTINGS DRAWER (a sheet from the bottom on phones; shared/hst-copy.js).
+     The same sections in every Copy tool. -->
+<div class="cl-scrim" id="clScrim" hidden></div>
+<aside class="cl-drawer" id="clDrawer" role="dialog" aria-modal="true" aria-labelledby="clDrawerTitle">
+  <div class="cl-dh">
+    <div><h2 class="cl-h2" id="clDrawerTitle">Settings</h2><p class="cl-sub">Code Groups · saved for next time</p></div>
+    <button type="button" class="cl-x" data-cl-close aria-label="Close settings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="cl-dbody">
+    <div class="lock-note" id="lockNote">Session running — stop it to change these.</div>
+    <fieldset id="settingsFieldset">
+      <details class="cl-sec" open>
+        <summary>What to copy</summary>
         <div class="field">
           <label for="groupSelect">Practice Group</label>
           <select id="groupSelect">
@@ -1179,49 +1242,53 @@
 
         <!-- Doubles as "Characters per Group" (Letters/Numbers/Mixed/Custom)
              and "Word Length" (Common Words) — the label text is swapped by
-             JS to match, per Tim's request to reuse this same control for
-             picking word length. Hidden entirely for QSO Elements, since
-             those elements (CQ, RST, HW CPY?, etc.) have their own natural
-             length rather than a chosen one. -->
-        <div class="field" id="groupSizeField">
-          <label for="groupSizeSelect" id="groupSizeLabel">Characters per Group</label>
-          <select id="groupSizeSelect">
-            <option value="2">2</option>
-            <option value="3" selected>3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
+             JS to match. Hidden entirely for QSO Elements, since those
+             elements (CQ, RST, HW CPY?, etc.) have their own natural length. -->
+        <div class="row2">
+          <div class="field" id="groupSizeField">
+            <label for="groupSizeSelect" id="groupSizeLabel">Characters per Group</label>
+            <select id="groupSizeSelect">
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+          <!-- Copy Behind (Tim, 2026-11-03): CW Academy's copy behind. -->
+          <div class="field">
+            <label for="copyBehindSelect">Copy Behind</label>
+            <select id="copyBehindSelect">
+              <option value="0">Off</option>
+              <option value="2">2 in a row</option>
+              <option value="3">3 in a row</option>
+              <option value="4">4 in a row</option>
+              <option value="5">5 in a row</option>
+            </select>
+          </div>
         </div>
+        <p class="cl-note" style="margin-top:-6px">Copy Behind plays that many groups or words in a row before you can type, so you learn to hold them in your head. Then type them all; each one is marked right or wrong.</p>
+      </details>
 
-        <!-- Copy Behind (Tim, 2026-11-03): CW Academy's copy behind. -->
-        <div class="field">
-          <label for="copyBehindSelect">Copy Behind</label>
-          <select id="copyBehindSelect">
-            <option value="0">Off</option>
-            <option value="2">2 in a row</option>
-            <option value="3">3 in a row</option>
-            <option value="4">4 in a row</option>
-            <option value="5">5 in a row</option>
-          </select>
-          <p class="check-note">Plays that many groups or words in a row before you can type, so you learn to hold them in your head. Then type them all; each one is marked right or wrong.</p>
-        </div>
-
+      <details class="cl-sec" open>
+        <summary>Speed</summary>
         <div class="field">
           <label for="wpmRange">Character Speed (WPM)<span class="val" id="wpmVal">20</span></label>
           <input type="range" id="wpmRange" min="5" max="40" step="1" value="20" />
           <!-- Adaptive Speed (Tim, 2026-10-31). -->
           <div class="check-row">
             <input type="checkbox" id="adaptSpeedCheck" />
-            <label for="adaptSpeedCheck" style="margin:0; color: var(--text-dim);">Adaptive Speed</label>
+            <label for="adaptSpeedCheck">Adaptive Speed</label>
           </div>
           <p class="check-note">Character Speed goes up 1 WPM for each group you get right and down 1 for each miss.</p>
         </div>
-
         <div class="field">
           <label for="fwpmRange">Farnsworth Speed (WPM)<span class="val" id="fwpmVal">15</span></label>
           <input type="range" id="fwpmRange" min="5" max="40" step="1" value="15" />
         </div>
+      </details>
 
+      <details class="cl-sec" open>
+        <summary>Sound</summary>
         <div class="row2">
           <div class="field">
             <label for="toneRange">Tone<span class="val" id="toneVal">600 Hz</span></label>
@@ -1232,68 +1299,31 @@
             <input type="range" id="volRange" min="0" max="100" step="5" value="70" />
           </div>
         </div>
+      </details>
 
+      <details class="cl-sec" open>
+        <summary>Timing</summary>
         <div class="field">
           <label for="maxTimeRange">Max Time to Answer<span class="val" id="maxTimeVal">6.0 s</span></label>
           <input type="range" id="maxTimeRange" min="1" max="20" step="0.5" value="6" />
           <div class="check-row">
             <input type="checkbox" id="unlimitedCheck" />
-            <label for="unlimitedCheck" style="margin:0; color: var(--text-dim);">Unlimited time (no buzzer)</label>
+            <label for="unlimitedCheck">Unlimited time (no buzzer)</label>
           </div>
         </div>
-      </fieldset>
-    </section>
-
-    <section class="panel card" aria-label="Session statistics">
-      <h2>Statistics</h2>
-      <p class="sub">This session, since last reset.</p>
-
-      <div class="stat-tiles">
-        <div class="tile"><div class="v" id="stGroupsPlayed">0</div><div class="l">Groups Played</div></div>
-        <div class="tile"><div class="v" id="stGroupAcc">—</div><div class="l">Full-Group Accuracy</div></div>
-        <div class="tile"><div class="v" id="stCharAcc">—</div><div class="l">Character Accuracy</div></div>
-        <div class="tile"><div class="v" id="stCharsPlayed">0</div><div class="l">Characters Practiced</div></div>
-        <div class="tile"><div class="v" id="stAvgTime">—</div><div class="l">Avg Answer Time</div></div>
-        <div class="tile"><div class="v" id="stTimeouts">0</div><div class="l">Timeouts</div></div>
-      </div>
-
-      <table class="size-table" id="sizeTable">
-        <caption>Accuracy by Group Size</caption>
-        <thead>
-          <tr><th>Size</th><th>Groups</th><th>Group %</th><th>Char %</th></tr>
-        </thead>
-        <tbody id="sizeTableBody">
-          <tr><td colspan="4" class="empty-note">No groups played yet.</td></tr>
-        </tbody>
-      </table>
-
-      <button class="btn-secondary danger" id="resetStatsBtn" type="button">Reset Session Stats</button>
-    </section>
-
-    <section class="panel card" aria-label="Drill panel">
-      <h2>Most Missed Characters</h2>
-      <p class="sub">The 5 characters missed most often this session.</p>
-      <div class="drilling-badge" id="drillingBadge">Drilling weak characters</div>
-
-      <ul class="drill-list" id="drillList">
-        <li class="empty-note">Play a session to find your weak characters.</li>
-      </ul>
-
-      <button class="btn-secondary" id="drillBtn" type="button" disabled>Drill These Characters</button>
-    </section>
-
+      </details>
+    </fieldset>
   </div>
-
-  <footer class="hst-foot">
-    <div class="hst-73"><b>73</b> Practice often, don&rsquo;t quit and have fun</div>
-    <div class="hst-copy">&copy; HamShackTech LLC 2026</div>
-  </footer>
-</div>
+  <div class="cl-df">
+    <button type="button" class="cl-start" data-cl-close>Done</button>
+  </div>
+</aside>
 
 <script src="../shared/hst-engine.js"></script>
 <script src="../shared/hst-course.js"></script>
 <script src="../shared/hst-content.js"></script>
 <script src="../shared/hst-listen.js"></script>
+<script src="../shared/hst-copy.js"></script>
 <script>
 (function () {
   "use strict";
@@ -2266,14 +2296,12 @@
     if (!worst.length) {
       els.drillList.innerHTML = '<li class="empty-note">Play a session to find your weak characters.</li>';
     } else {
+      // The standard Most Missed chips (shared/hst-copy.css): the character
+      // and how often you get it right.
       els.drillList.innerHTML = worst.map(function (e) {
         var ch = e[0], s = e[1];
         var acc = Math.round((s.correct / s.played) * 100);
-        return '<li class="drill-row">' +
-          '<span class="drill-char">' + HST.charLabel(ch) + "</span>" +
-          '<span class="drill-bar-track"><span class="drill-bar-fill" style="width:' + acc + '%;"></span></span>' +
-          '<span class="drill-pct">' + acc + "% (" + s.correct + "/" + s.played + ")</span>" +
-          "</li>";
+        return '<li class="cl-m" title="' + s.correct + ' of ' + s.played + ' right"><b>' + HST.charLabel(ch) + "</b><span>" + acc + "%</span></li>";
       }).join("");
     }
 
@@ -3247,6 +3275,21 @@
   applySettingsToUI();
   renderBlanksIdle(state.settings.groupSize);
   renderAll();
+
+  // The settings chips under Start (shared/hst-copy.js).
+  window.HSTCopy.summary = function () {
+    var s = state.settings, o = els.groupSelect.selectedOptions[0];
+    var size = els.groupSizeField.style.display === "none" ? "" :
+      s.groupSize + (els.groupSizeLabel.textContent.indexOf("Word") === 0 ? " letters" : " per group");
+    var fw = s.fwpm && s.fwpm < s.wpm ? s.wpm + " / " + s.fwpm + " WPM" : s.wpm + " WPM";
+    return [
+      o ? o.textContent : "", size, fw + (s.adaptSpeed ? " · adaptive" : ""),
+      s.toneHz + " Hz · " + s.volume + "%",
+      s.unlimited ? "No time limit" : Number(s.maxTimeSec).toFixed(1) + " s to answer",
+      Number(s.copyBehind) >= 2 ? "Copy Behind " + s.copyBehind : ""
+    ];
+  };
+  window.HSTCopy.refresh();
 
   /* A homework link (Fundamental's LCWO Plain Text Training, Tim
      2026-11-04): ?group=phrases&class=9 opens Code Groups on that Practice
