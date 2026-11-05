@@ -47,8 +47,8 @@
     --warn: #a3e635;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
     --font-display: "Oswald", "Arial Narrow", sans-serif;
-    --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;      /* the same fonts as ICR (Tim, 2026-11-04) */
+    --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
     --radius: 10px;
     --radius-lg: 16px;
   }
@@ -776,8 +776,9 @@
   svg.chart text { fill: var(--text-faint); font: 12.5px var(--font-body); }
   .chart-sum { color: var(--text-dim); font-size: 0.9rem; margin: 8px 0 0; }
 </style>
+<link rel="stylesheet" href="../shared/hst-copy.css">
 </head>
-<body>
+<body class="cl">
 <div class="wrap">
 
 
@@ -822,80 +823,90 @@
   </dialog>
 
   <!-- ===================================================================
-       PRACTICE MODULE
+       PRACTICE CARD: the standard Copy layout (shared/hst-copy.css; Tim,
+       2026-11-04). The four modes top left, the clock strip top right, one
+       line about the mode, the stage, the action row, the settings as chips.
        =================================================================== -->
-  <section class="panel practice" aria-label="Practice module">
-    <div class="mode-bar" role="group" aria-label="Practice mode" id="modeBar">
-      <button type="button" data-mode="find">Find the Number</button>
-      <button type="button" data-mode="builder">Call Sign Builder</button>
-      <button type="button" data-mode="sim">Call Sign Simulator</button>
-      <button type="button" data-mode="run">Speed Run</button>
-    </div>
-    <p class="mode-desc" id="modeDesc"></p>
-
-    <div class="clock-row">
-      <div class="clock-chip" id="elapsedChip" title="Time since Start Session">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>
-        <span>Elapsed</span>
-        <span class="clock-val" id="elapsedVal" role="timer" aria-live="off">0:00</span>
+  <section class="panel practice cl-card" aria-label="Practice module">
+    <div class="cl-top">
+      <div class="mode-bar cl-modes" role="group" aria-label="Practice mode" id="modeBar">
+        <button type="button" class="cl-mode" data-mode="find">Find the Number</button>
+        <button type="button" class="cl-mode" data-mode="builder">Builder</button>
+        <button type="button" class="cl-mode" data-mode="sim">Simulator</button>
+        <button type="button" class="cl-mode" data-mode="run">Speed Run</button>
       </div>
-      <button type="button" class="clock-chip" id="timerBtn" aria-haspopup="dialog" aria-controls="timerDialog"
-              title="Set a practice timer — a bell rings and the session stops when it runs out">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-        <span>Timer</span>
-        <span class="clock-val" id="timerVal" role="timer" aria-live="off">Off</span>
-      </button>
-      <button type="button" class="clock-chip" id="buzzBtn" aria-pressed="true" title="Buzz on a missed call — click to mute or unmute">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="mute" d="m22 9-6 6M16 9l6 6"/></svg>
-        <span>Buzzer</span>
-        <span class="clock-val" id="buzzVal">On</span>
-      </button>
-      <!-- Speed Run and Simulator: the speed of the call now playing. -->
-      <div class="clock-chip" id="speedChip" hidden>
-        <span>Speed</span>
-        <span class="clock-val" id="speedVal">—</span>
+
+      <div class="clock-row cl-strip">
+        <div class="clock-chip" id="elapsedChip" title="Time since Start Session">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>
+          <span>Elapsed</span>
+          <span class="clock-val" id="elapsedVal" role="timer" aria-live="off">0:00</span>
+        </div>
+        <button type="button" class="clock-chip" id="timerBtn" aria-haspopup="dialog" aria-controls="timerDialog"
+                title="Set a practice timer — a bell rings and the session stops when it runs out">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span>Timer</span>
+          <span class="clock-val" id="timerVal" role="timer" aria-live="off">Off</span>
+        </button>
+        <button type="button" class="clock-chip" id="buzzBtn" aria-pressed="true" title="Buzz on a missed call — click to mute or unmute">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="mute" d="m22 9-6 6M16 9l6 6"/></svg>
+          <span>Buzzer</span>
+          <span class="clock-val" id="buzzVal">On</span>
+        </button>
+        <!-- Speed Run and Simulator: the speed of the call now playing. -->
+        <div class="clock-chip" id="speedChip" hidden>
+          <span>Speed</span>
+          <span class="clock-val" id="speedVal">—</span>
+        </div>
+        <!-- Find the Number and Speed Run: points this session / run. -->
+        <div class="clock-chip" id="scoreChip" hidden>
+          <span>Score</span>
+          <span class="clock-val" id="scoreVal">0</span>
+        </div>
+        <button type="button" class="info-btn" id="infoBtn" aria-haspopup="dialog" aria-controls="infoDialog" aria-label="About this trainer" title="About this trainer">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
+        </button>
       </div>
-      <!-- Find the Number and Speed Run: points this session / run. -->
-      <div class="clock-chip" id="scoreChip" hidden>
-        <span>Score</span>
-        <span class="clock-val" id="scoreVal">0</span>
+    </div>
+    <p class="mode-desc cl-desc" id="modeDesc"></p>
+
+    <div class="cl-stage">
+      <div class="status-row">
+        <span class="status-pill" id="statusPill" data-mode="idle">Idle</span>
+        <span class="status-pill drill-flag" id="drillFlag" style="display:none;"></span>
       </div>
-      <button type="button" class="info-btn" id="infoBtn" aria-haspopup="dialog" aria-controls="infoDialog" aria-label="About this trainer" title="About this trainer">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
-      </button>
+      <div class="answer-row">
+        <div class="blanks" id="blanksRow" aria-live="polite"></div>
+      </div>
+      <div class="meter" aria-hidden="true">
+        <div class="meter-fill" id="meterFill" style="transform: scaleX(0);"></div>
+      </div>
+      <div class="meter-label" id="meterLabel">&nbsp;</div>
     </div>
 
-    <div class="status-row">
-      <span class="status-pill" id="statusPill" data-mode="idle">Idle</span>
-      <span class="status-pill drill-flag" id="drillFlag" style="display:none;"></span>
-    </div>
-
-    <div class="answer-row">
-      <button type="button" class="side-btn toggle side-left" id="headCopyBtn" aria-pressed="false"
+    <div class="cl-actions">
+      <button type="button" class="cl-act toggle" id="headCopyBtn" aria-pressed="false"
               title="When on, you can't type until the whole call has finished playing">
-        <span>Head Copy<br>Mode</span>
+        <span>Head Copy</span>
         <span class="toggle-state" id="headCopyState">Off</span>
       </button>
-
-      <div class="blanks" id="blanksRow" aria-live="polite"></div>
-
-      <button type="button" class="side-btn side-right" id="replayBtn" disabled
-              title="After a miss, hear the call again at the same speed">
+      <span class="session-wrap">
+        <button class="session-btn cl-start" id="sessionBtn" type="button">Start Session</button>
+        <span class="countdown" id="countdown" aria-live="assertive" hidden></span>
+      </span>
+      <button class="next-btn" id="nextBtn" type="button" hidden>Next &#9656;</button>
+      <button type="button" class="cl-act" id="replayBtn" disabled title="After a miss, hear the call again at the same speed">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
         <span>Replay</span>
       </button>
     </div>
-
-    <div class="meter" aria-hidden="true">
-      <div class="meter-fill" id="meterFill" style="transform: scaleX(0);"></div>
+    <div class="cl-quick">
+      <span class="cl-quick-items" id="clQuickItems"></span>
+      <button type="button" class="cl-settings-btn" data-cl-open aria-controls="clDrawer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+        Settings
+      </button>
     </div>
-    <div class="meter-label" id="meterLabel">&nbsp;</div>
-
-    <span class="session-wrap">
-      <button class="session-btn" id="sessionBtn" type="button">Start Session</button>
-      <span class="countdown" id="countdown" aria-live="assertive" hidden></span>
-    </span>
-    <button class="next-btn" id="nextBtn" type="button" hidden>Next &#9656;</button>
     <div class="tap-hint" id="tapHint">Tap the practice box, then start — your keyboard stays live for the whole session.</div>
 
     <input class="hidden-input" id="hiddenInput" type="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text" aria-label="Type the call sign you heard" />
@@ -904,15 +915,15 @@
   <!-- ===================================================================
        SPEED RUN RESULTS (Speed Run mode only)
        =================================================================== -->
-  <section class="panel card run-card" id="runCard" aria-label="Speed Run results" hidden>
-    <h2 id="runTitle">Speed Run</h2>
+  <section class="panel card run-card cl-card" id="runCard" aria-label="Speed Run results" hidden>
+    <h2 class="cl-h2" id="runTitle">Speed Run</h2>
     <div id="runLast">
       <div class="run-head">
         <span class="run-score" id="runScore"></span>
         <span class="run-best" id="runBest" hidden>NEW BEST</span>
         <span class="run-why" id="runWhy"></span>
       </div>
-      <div class="stat-tiles" id="runTiles"></div>
+      <div class="cl-tiles" id="runTiles"></div>
       <p class="run-missed" id="runMissed"></p>
     </div>
     <div class="run-cols">
@@ -931,17 +942,56 @@
     </div>
   </section>
 
-  <!-- ===================================================================
-       SETTINGS / STATS / DRILL
-       =================================================================== -->
-  <div class="grid">
+  <!-- THIS SESSION: four tiles, as in every Copy tool. -->
+  <section class="cl-card" aria-label="Session statistics">
+    <div class="cl-head">
+      <div><h2 class="cl-h2">This Session</h2><p class="cl-sub" id="statsSub">Since you started or last reset.</p></div>
+      <button class="cl-reset" id="resetStatsBtn" type="button">Reset</button>
+    </div>
+    <div class="cl-tiles" id="statTiles"></div>
+  </section>
 
-    <section class="panel card" aria-label="Tool settings">
-      <h2>Tool Settings</h2>
-      <p class="sub">Locked while a session is running — stop first to change.</p>
-      <div class="lock-note" id="lockNote">Session running — stop to edit settings.</div>
+  <div class="cl-two">
+    <section class="cl-card" aria-label="Most missed characters">
+      <h2 class="cl-h2">Most Missed</h2>
+      <p class="cl-sub">The 5 characters you miss most, and how often you get each right.</p>
+      <div class="drilling-badge" id="drillingBadge">Drilling weak characters</div>
+      <ul class="cl-missed cl-grow" id="drillList">
+        <li class="empty-note">Play a session to find your weak characters.</li>
+      </ul>
+      <button class="cl-btn" id="drillBtn" type="button" disabled>Drill These Characters</button>
+    </section>
+    <section class="cl-card" aria-label="Session table">
+      <h2 class="cl-h2" id="statTableCaption">Accuracy by Speed</h2>
+      <p class="cl-sub" id="statTableSub">This session.</p>
+      <table class="cl-table">
+        <thead id="statTableHead"></thead>
+        <tbody id="statTableBody"></tbody>
+      </table>
+    </section>
+  </div>
 
-      <fieldset id="settingsFieldset">
+  <footer class="hst-foot">
+    <div class="hst-73"><b>73</b> Practice often, don&rsquo;t quit and have fun</div>
+    <div class="hst-copy">&copy; HamShackTech LLC 2026</div>
+  </footer>
+</div>
+
+<!-- SETTINGS DRAWER (a sheet from the bottom on phones; shared/hst-copy.js).
+     The same sections in every Copy tool. -->
+<div class="cl-scrim" id="clScrim" hidden></div>
+<aside class="cl-drawer" id="clDrawer" role="dialog" aria-modal="true" aria-labelledby="clDrawerTitle">
+  <div class="cl-dh">
+    <div><h2 class="cl-h2" id="clDrawerTitle">Settings</h2><p class="cl-sub">Call Signs · saved for next time</p></div>
+    <button type="button" class="cl-x" data-cl-close aria-label="Close settings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="cl-dbody">
+    <div class="lock-note" id="lockNote">Session running — stop it to change these.</div>
+    <fieldset id="settingsFieldset">
+      <details class="cl-sec" open>
+        <summary>What to copy</summary>
         <div class="field" id="callMixField">
           <label for="callMixSelect">Call Sign Mix</label>
           <select id="callMixSelect">
@@ -950,7 +1000,6 @@
             <option value="intl">International only</option>
           </select>
         </div>
-
         <div class="row2" id="runFields">
           <div class="field">
             <label for="runCallsSelect">Calls per Run</label>
@@ -968,26 +1017,27 @@
             </select>
           </div>
         </div>
+      </details>
 
+      <details class="cl-sec" open>
+        <summary>Speed</summary>
         <div class="field" id="wpmField">
           <label for="wpmRange"><span id="wpmLabel">Character Speed (WPM)</span><span class="val" id="wpmVal">20</span></label>
           <input type="range" id="wpmRange" min="5" max="40" step="1" value="20" />
           <!-- Adaptive Speed (Tim, 2026-10-31): Find the Number and Call Sign
                Builder only; Speed Run has its own, the Simulator its range. -->
           <div id="adaptSpeedRow">
-          <div class="check-row">
-            <input type="checkbox" id="adaptSpeedCheck" />
-            <label for="adaptSpeedCheck" style="margin:0; color: var(--text-dim);">Adaptive Speed</label>
-          </div>
-          <p class="check-note">Character Speed goes up 1 WPM for each call you get right and down 1 for each miss.</p>
+            <div class="check-row">
+              <input type="checkbox" id="adaptSpeedCheck" />
+              <label for="adaptSpeedCheck">Adaptive Speed</label>
+            </div>
+            <p class="check-note">Character Speed goes up 1 WPM for each call you get right and down 1 for each miss.</p>
           </div>
         </div>
-
         <div class="field" id="fwpmField">
           <label for="fwpmRange">Farnsworth Speed (WPM)<span class="val" id="fwpmVal">15</span></label>
           <input type="range" id="fwpmRange" min="5" max="40" step="1" value="15" />
         </div>
-
         <!-- Call Sign Simulator: each call picks a speed between these. -->
         <div id="simFields">
           <div class="field">
@@ -999,8 +1049,11 @@
             <input type="range" id="simMaxRange" min="5" max="50" step="1" value="30" />
           </div>
         </div>
-        <p class="sub" id="fullSpeedNote" style="margin-top:-6px">Calls are sent at full speed (no Farnsworth), the way you'll hear them on the air.</p>
+        <p class="cl-note" id="fullSpeedNote" style="margin:-4px 0 12px">Calls are sent at full speed (no Farnsworth), the way you'll hear them on the air.</p>
+      </details>
 
+      <details class="cl-sec" open>
+        <summary>Sound</summary>
         <div class="row2">
           <div class="field">
             <label for="toneRange">Tone<span class="val" id="toneVal">600 Hz</span></label>
@@ -1011,25 +1064,27 @@
             <input type="range" id="volRange" min="0" max="100" step="5" value="70" />
           </div>
         </div>
-
         <!-- Band conditions (Tim, 2026-11-02): copy calls the way they sound on a real band. -->
         <div class="field" id="bandField">
           <label for="noiseRange">Band Noise<span class="val" id="noiseVal">Off</span></label>
           <input type="range" id="noiseRange" min="0" max="100" step="10" value="0" />
           <div class="check-row">
             <input type="checkbox" id="qsbCheck" />
-            <label for="qsbCheck" style="margin:0; color: var(--text-dim);">Fading (QSB)</label>
+            <label for="qsbCheck">Fading (QSB)</label>
           </div>
           <div class="check-row">
             <input type="checkbox" id="qrnCheck" />
-            <label for="qrnCheck" style="margin:0; color: var(--text-dim);">Static crashes (QRN)</label>
+            <label for="qrnCheck">Static crashes (QRN)</label>
           </div>
           <div class="check-row">
             <input type="checkbox" id="qrmCheck" />
-            <label for="qrmCheck" style="margin:0; color: var(--text-dim);">Another station nearby (QRM)</label>
+            <label for="qrmCheck">Another station nearby (QRM)</label>
           </div>
         </div>
+      </details>
 
+      <details class="cl-sec" open>
+        <summary>Timing</summary>
         <!-- Find the Number: how often the call repeats, and how many plays before it counts as missed. -->
         <div class="row2" id="findFields">
           <div class="field">
@@ -1045,49 +1100,24 @@
             </select>
           </div>
         </div>
-
         <div class="field" id="maxTimeField">
           <label for="maxTimeRange">Max Time to Answer<span class="val" id="maxTimeVal">6.0 s</span></label>
           <input type="range" id="maxTimeRange" min="1" max="20" step="0.5" value="6" />
           <div class="check-row">
             <input type="checkbox" id="unlimitedCheck" />
-            <label for="unlimitedCheck" style="margin:0; color: var(--text-dim);">Unlimited time (no buzzer)</label>
+            <label for="unlimitedCheck">Unlimited time (no buzzer)</label>
           </div>
         </div>
-      </fieldset>
-    </section>
-
-    <section class="panel card" aria-label="Session statistics">
-      <h2>Statistics</h2>
-      <p class="sub" id="statsSub">This session, since last reset.</p>
-      <div class="stat-tiles" id="statTiles"></div>
-      <table class="size-table">
-        <caption id="statTableCaption">Accuracy by Speed</caption>
-        <thead id="statTableHead"></thead>
-        <tbody id="statTableBody"></tbody>
-      </table>
-      <button class="btn-secondary danger" id="resetStatsBtn" type="button">Reset Session Stats</button>
-    </section>
-
-    <section class="panel card" aria-label="Drill panel">
-      <h2>Most Missed Characters</h2>
-      <p class="sub">The 5 characters missed most often this session.</p>
-      <div class="drilling-badge" id="drillingBadge">Drilling weak characters</div>
-      <ul class="drill-list" id="drillList">
-        <li class="empty-note">Play a session to find your weak characters.</li>
-      </ul>
-      <button class="btn-secondary" id="drillBtn" type="button" disabled>Drill These Characters</button>
-    </section>
-
+      </details>
+    </fieldset>
   </div>
-
-  <footer class="hst-foot">
-    <div class="hst-73"><b>73</b> Practice often, don&rsquo;t quit and have fun</div>
-    <div class="hst-copy">&copy; HamShackTech LLC 2026</div>
-  </footer>
-</div>
+  <div class="cl-df">
+    <button type="button" class="cl-start" data-cl-close>Done</button>
+  </div>
+</aside>
 
 <script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-copy.js"></script>
 <script>
 (function () {
   "use strict";
@@ -1457,25 +1487,31 @@
   }
 
   function fmtPct(c, t) { return t ? Math.round(c / t * 100) + "%" : "—"; }
-  function tile(v, l) { return '<div class="tile"><div class="v">' + esc(v) + '</div><div class="l">' + esc(l) + "</div></div>"; }
+  // A stat tile, the standard way (shared/hst-copy.css): value, label, and an optional line under it.
+  function tile(v, l, sub) {
+    return '<div class="cl-tile"><span class="v">' + esc(v) + '</span><span class="l">' + esc(l) + "</span>" +
+      (sub ? '<span class="s">' + esc(sub) + "</span>" : "") + "</div>";
+  }
 
+  // Four tiles in every mode, as in every Copy tool (Tim, 2026-11-04).
   function renderStatsPanel() {
     var o = state.stats.overall, m = mode(), t = [];
-    t.push(tile(o.calls, "Calls Played"));
-    t.push(tile(fmtPct(o.callsCorrect, o.calls), m === "find" ? "Numbers Found" : "Call Accuracy"));
     if (m === "find") {
+      t.push(tile(fmtPct(o.callsCorrect, o.calls), "Numbers Found"));
+      t.push(tile(o.calls, "Calls Played"));
       t.push(tile(o.found ? (o.playsSum / o.found).toFixed(1) : "—", "Avg Plays to Find"));
       t.push(tile(o.score, "Points"));
     } else {
-      t.push(tile(fmtPct(o.charsCorrect, o.chars), "Character Accuracy"));
-      t.push(tile(o.responseCount ? Math.round(o.totalResponseMs / o.responseCount) + " ms" : "—", "Avg Answer Time"));
-      t.push(tile(o.timeouts, "Timeouts"));
+      t.push(tile(fmtPct(o.callsCorrect, o.calls), "Call Accuracy", o.calls + (o.calls === 1 ? " call" : " calls")));
+      t.push(tile(fmtPct(o.charsCorrect, o.chars), "Character Accuracy", o.timeouts + (o.timeouts === 1 ? " timeout" : " timeouts")));
+      t.push(tile(o.responseCount ? (o.totalResponseMs / o.responseCount / 1000).toFixed(1) + " s" : "—", "Avg Answer Time"));
       t.push(tile(o.top ? o.top + " WPM" : "—", "Fastest Call Copied"));
     }
     els.statTiles.innerHTML = t.join("");
+    $("statTableSub").textContent = m === "find" ? "How many plays each number took." : "How faster calls hold up.";
 
     if (m === "find") {
-      els.statTableCaption.textContent = "Plays Needed";
+      els.statTableCaption.textContent = "Plays Needed";   // the card's title
       els.statTableHead.innerHTML = "<tr><th>Plays</th><th>Found</th><th>Points</th></tr>";
       var rows = [1, 2, 3, 4, 5].map(function (p) {
         var n = state.stats.perPlays[p] || 0;
@@ -1510,9 +1546,8 @@
     els.drillList.innerHTML = !worst.length ? '<li class="empty-note">Play a session to find your weak characters.</li>' :
       worst.map(function (e) {
         var acc = Math.round(e[1].correct / e[1].played * 100);
-        return '<li class="drill-row"><span class="drill-char">' + esc(e[0]) + '</span>' +
-          '<span class="drill-bar-track"><span class="drill-bar-fill" style="width:' + acc + '%;"></span></span>' +
-          '<span class="drill-pct">' + acc + "% (" + e[1].correct + "/" + e[1].played + ")</span></li>";
+        // The standard Most Missed chips (shared/hst-copy.css).
+        return '<li class="cl-m" title="' + e[1].correct + ' of ' + e[1].played + ' right"><b>' + esc(e[0]) + "</b><span>" + acc + "%</span></li>";
       }).join("");
     els.drillBtn.disabled = !anyMisses;
     els.drillBtn.textContent = state.drilling ? "Stop Drill" : "Drill These Characters";
@@ -2177,6 +2212,23 @@
   renderBlanksIdle(idleBoxes());
   renderAll();
   renderRunCard();
+
+  // The settings chips under Start (shared/hst-copy.js); they follow the mode.
+  window.HSTCopy.summary = function () {
+    var s = state.settings, m = mode(), o = els.callMixSelect.selectedOptions[0];
+    var speed = m === "sim" ? Math.min(s.simMin, s.simMax) + "–" + Math.max(s.simMin, s.simMax) + " WPM" :
+      m === "run" ? s.wpm + " WPM" + (s.runAdapt ? " start" : "") :
+      (s.fwpm && s.fwpm < s.wpm ? s.wpm + " / " + s.fwpm + " WPM" : s.wpm + " WPM") + (s.adaptSpeed ? " · adaptive" : "");
+    return [
+      m === "builder" ? "" : (o ? o.textContent : ""),
+      m === "run" ? s.runCalls + " calls" : "",
+      speed,
+      s.toneHz + " Hz · " + s.volume + "%",
+      s.noise ? "Band noise " + s.noise + "%" : "",
+      m === "find" ? "Every " + s.replaySec + " s" : s.unlimited ? "No time limit" : Number(s.maxTimeSec).toFixed(1) + " s to answer"
+    ];
+  };
+  window.HSTCopy.refresh();
 })();
 </script>
 
