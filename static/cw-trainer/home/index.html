@@ -44,6 +44,10 @@
   .head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-bottom: 6px; }
   .greet { margin: 0 0 16px; color: var(--muted); font: 500 1.1rem/1.4 'Oswald', sans-serif; letter-spacing: 0.02em; }
   .greet b { color: var(--icr); font-weight: 600; }
+  /* The same badge as My Course (Tim, 2026-11-04). */
+  .dev-badge { margin-left: auto; padding: 5px 12px; border-radius: 6px; background: var(--icr); color: var(--lime-ink);
+               font: 600 0.9rem/1.2 'Oswald', sans-serif; letter-spacing: 0.08em; white-space: nowrap; }
+  @media (max-width: 600px) { .dev-badge { font-size: 0.72rem; padding: 4px 9px; } }
 
   /* ---------- tiles ---------- */
   .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
@@ -70,7 +74,6 @@
   .journey text { font-family: 'Inter', system-ui, sans-serif; fill: var(--dim); font-size: 12px; }
   .journey .lvl { fill: var(--muted); font-size: 12px; font-weight: 500; }
   .journey .lvl.mine { fill: var(--hw); font-weight: 600; }
-  .journey .ms { fill: var(--muted); font-size: 11.5px; }
   .journey .you { fill: var(--icr); font: 600 14px 'Oswald', sans-serif; letter-spacing: 0.02em; }
   .jsum { margin: 10px 0 0; color: var(--muted); }
   .jsum b { color: var(--text); }
@@ -81,8 +84,6 @@
   .jkey .k-you { color: var(--icr); }
   .jkey .k-cls { color: var(--hw); }
   .jkey .k-cls::before { border-radius: 1px; transform: rotate(45deg); }
-  .jkey .k-ms { color: var(--dim); }
-  .jkey .k-ms::before { width: 2px; border-radius: 0; height: 11px; vertical-align: -1px; }
   .jkey em { font-style: normal; color: var(--muted); }
 
   /* ---------- course ---------- */
@@ -158,6 +159,7 @@
   <div class="head hst-masthead">
     <img class="hst-mascot" src="../icons/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
     <h1 class="hst-title">Home</h1>
+    <span class="dev-badge">UNDER DEVELOPMENT</span>
   </div>
   <p class="greet" id="greet"></p>
 
@@ -488,27 +490,21 @@
   }
 
   /* ---------------- My CW Journey ----------------
-     A road from 0 to 30 WPM: the CW Academy levels along it, the old FCC
-     license Morse tests and CWops membership as milestones, your copy
-     speed, and your class's speed when you're in a course. */
+     A road from 0 to 30 WPM: the CW Academy levels along it, your copy
+     speed, and your class's speed when you're in a course. (The license
+     test and CWops milestones came off, Tim 2026-11-04.) */
   var LEVELS = [
     { key: 'beginner', name: 'Beginner', short: 'Beg.', from: 0, to: 6 },
     { key: 'fundamental', name: 'Fundamental', short: 'Fund.', from: 6, to: 10 },
     { key: 'intermediate', name: 'Intermediate', short: 'Inter.', from: 10, to: 20 },
     { key: 'advanced', name: 'Advanced', short: 'Adv.', from: 20, to: 30 }
   ];
-  var MILESTONES = [
-    { wpm: 5, name: 'Novice', tip: '5 WPM: the old FCC Novice license Morse test' },
-    { wpm: 13, name: 'General', tip: '13 WPM: the old FCC General license Morse test' },
-    { wpm: 20, name: 'Extra', tip: '20 WPM: the old FCC Amateur Extra license Morse test' },
-    { wpm: 25, name: 'CWops', tip: '25 WPM: the speed CWops members operate at' }
-  ];
   var MAX = 30;
   var last = { speed: null, cls: null, level: '' };
   function drawJourney() {
     var el = $('jChart'), W = Math.max(280, el.clientWidth || 600), padL = 14, padR = 16;
     var x = function (w) { return padL + (W - padL - padR) * Math.min(w, MAX) / MAX; };
-    var yLvl = 16, yTrack = 52, th = 16, yAxis = yTrack + th + 18, yMs = yAxis + 22, H = yMs + 8;
+    var yLvl = 16, yTrack = 52, th = 16, yAxis = yTrack + th + 18, H = yAxis + 16;
     var svg = '';
     var sp = last.speed ? last.speed.wpm : 0;
     // Level names over the road, and a faint band for each.
@@ -522,13 +518,6 @@
     // The road, filled up to your speed.
     svg += '<rect x="' + x(0) + '" y="' + yTrack + '" width="' + (x(MAX) - x(0)).toFixed(1) + '" height="' + th + '" rx="8" fill="var(--well)" stroke="var(--border)"/>';
     if (sp > 0) svg += '<rect x="' + x(0) + '" y="' + yTrack + '" width="' + Math.max(th, x(sp) - x(0)).toFixed(1) + '" height="' + th + '" rx="8" fill="var(--icr)"/>';
-    // Milestones: a line through the road and the name under the axis.
-    MILESTONES.forEach(function (m) {
-      var mx = x(m.wpm).toFixed(1), passed = sp >= m.wpm;
-      svg += '<g><title>' + esc(m.tip) + '</title><line x1="' + mx + '" x2="' + mx + '" y1="' + (yTrack - 4) + '" y2="' + (yMs - 12) + '" stroke="' + (passed ? 'var(--lime-ink)' : 'var(--dim)') +
-             '" stroke-width="2" stroke-dasharray="' + (passed ? '0' : '3 3') + '"/>' +
-             '<text class="ms" x="' + mx + '" y="' + yMs + '" text-anchor="middle">' + (passed ? '✓ ' : '') + m.name + '</text></g>';
-    });
     // WPM scale
     for (var w = 0; w <= MAX; w += 5) {
       svg += '<text x="' + x(w).toFixed(1) + '" y="' + yAxis + '" text-anchor="middle">' + w + '</text>';
@@ -561,10 +550,10 @@
     drawJourney();
     var sp = last.speed, sum = '';
     if (sp) {
-      var next = MILESTONES.filter(function (m) { return m.wpm > sp.wpm; })[0];
       var lvl = LEVELS.filter(function (l) { return sp.wpm >= l.from && sp.wpm < l.to; })[0];
+      var next = LEVELS.filter(function (l) { return l.from > sp.wpm; })[0];
       sum = 'You copy at <b class="y">' + sp.wpm + ' WPM</b>' + (lvl ? ', in CW Academy ' + lvl.name + ' territory' : ', past the end of the road. Outstanding!') + '. ' +
-        (next ? 'Next milestone: <b>' + next.name + '</b> at ' + next.wpm + ' WPM, ' + (next.wpm - sp.wpm) + ' WPM to go.' : sp.wpm < MAX ? 'Next stop: ' + MAX + ' WPM.' : '');
+        (next ? 'Next stop: <b>' + next.name + '</b> at ' + next.from + ' WPM, ' + (next.from - sp.wpm) + ' WPM to go.' : sp.wpm < MAX ? 'Next stop: ' + MAX + ' WPM.' : '');
     } else {
       sum = 'Finish a <a href="../?tab=code-groups" data-tool="code-groups">Code Groups</a> or <a href="../?tab=call-signs" data-tool="call-signs">Call Signs</a> session of ' + MIN_CHARS +
         ' characters or more with ' + Math.round(GOOD * 100) + '% right, and your place on the road shows here.';
@@ -572,8 +561,7 @@
     if (last.cls) sum += ' Your class works at <b class="c">' + last.cls.wpm + ' WPM</b>.';
     $('jSum').innerHTML = sum;
     $('jKey').innerHTML = '<span class="k-you">You: the fastest speed you copied ' + Math.round(GOOD * 100) + '%+ in the last ' + RECENT_DAYS + ' days <em>(Code Groups, Call Signs)</em></span>' +
-      (last.cls ? '<span class="k-cls">Your class (Session ' + last.cls.session + ')</span>' : '') +
-      '<span class="k-ms">Old FCC license Morse tests and CWops</span>';
+      (last.cls ? '<span class="k-cls">Your class (Session ' + last.cls.session + ')</span>' : '');
   }
 
   /* ---------------- practice time pie ---------------- */
@@ -690,13 +678,8 @@
     $('tTotal').textContent = fmtMin(all);
     $('tTotalSub').textContent = plural(rows.length, 'session');
     var h = new Date().getHours(), hello = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-    var g = hello + '! ';
-    if (!rows.length) g += 'Welcome to the CW Trainer. Every minute you practice shows up here.';
-    else if (st.practicedToday && st.current > 1) g += 'You&rsquo;re on a <b>' + st.current + '-day</b> streak. Keep it going!';
-    else if (st.practicedToday) g += 'You&rsquo;ve practiced today. Come back tomorrow to start a streak.';
-    else if (st.current > 0) g += 'Practice today to make your streak <b>' + (st.current + 1) + ' days</b>.';
-    else g += 'Ready for today&rsquo;s practice?';
-    $('greet').innerHTML = g;
+    // Tim, 2026-11-04: "[Good afternoon] Welcome to HamShackTech CW Trainer."
+    $('greet').textContent = hello + '! Welcome to HamShackTech CW Trainer.';
   }
 
   /* ---------------- render ---------------- */
