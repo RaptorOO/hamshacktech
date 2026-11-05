@@ -45,6 +45,17 @@
   /* A card title with a link at its right end (the course card's "Change my course"). */
   .card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; margin-bottom: 10px; }
   .card-head h2 { margin: 0; }
+  .card-head .head-right { display: inline-flex; align-items: baseline; gap: 10px; }
+  .card-head.shut { margin-bottom: 0; }
+  /* Disclosure triangles (Tim, 2026-11-04): the course card's details and
+     the note under the tally fold away, and start closed every time. */
+  .fold-btn { width: 26px; height: 26px; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--well);
+              color: var(--muted); font-size: 0.7rem; line-height: 1; cursor: pointer; align-self: center; flex: none; }
+  .fold-btn:hover { border-color: var(--mc); color: var(--mc); }
+  .fold-btn::before { content: "\25B6"; display: inline-block; transition: transform 0.15s; }
+  .fold-btn[aria-expanded="true"]::before { transform: rotate(90deg); }
+  .tally-row { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; }
+  .tally-row .tally { margin: 0; }
   .desc { color: var(--muted); font-size: 0.92rem; margin: 0 0 12px; }
   .desc b { color: var(--text); font-weight: 500; }
   .hint { color: var(--dim); font-size: 0.88rem; line-height: 1.5; margin: 8px 0 0; }
@@ -98,7 +109,7 @@
   /* Your progress (Tim, 2026-10-30): Done with its date and Redo +1 with
      a count, for each practice day (or each class, when a course doesn't
      list the days). */
-  .tally { margin: 0 0 6px; font-weight: 500; }
+  .tally { margin: 0 0 6px; font-weight: 500; }   /* in .tally-row, which has the margin */
   .tally b { color: var(--mc); font-weight: 600; }
   #everyNote { margin: 0 0 10px; }
   th.prog, td.prog { width: 250px; }
@@ -236,13 +247,18 @@
   <div id="cwaContent" hidden>
     <section class="card" aria-labelledby="aboutTitle">
       <!-- The course's name is this card's title (Tim, 2026-10-30). -->
-      <div class="card-head">
+      <div class="card-head shut" id="aboutHead">
         <h2 id="aboutTitle"></h2>
-        <button class="linkbtn" type="button" data-open-settings>Change my course</button>
+        <span class="head-right">
+          <button class="linkbtn" type="button" data-open-settings>Change my course</button>
+          <button class="fold-btn" type="button" id="aboutBtn" aria-expanded="false" aria-controls="aboutBody" aria-label="Show the course details" title="Show or hide the course details"></button>
+        </span>
       </div>
-      <p class="desc" id="about"></p>
-      <div class="tiles" id="tiles"></div>
-      <p class="hint" id="meets"></p>
+      <div id="aboutBody" hidden>
+        <p class="desc" id="about"></p>
+        <div class="tiles" id="tiles"></div>
+        <p class="hint" id="meets"></p>
+      </div>
     </section>
 
     <section class="card" aria-labelledby="schedTitle">
@@ -263,7 +279,10 @@
         </div>
         <p class="small">Either way, your Pre-Class ticks stay in the Pre-Class list below, and its practice time stays in Progress.</p>
       </div>
-      <p class="tally" id="tally"></p>
+      <div class="tally-row">
+        <p class="tally" id="tally"></p>
+        <button class="fold-btn" type="button" id="everyBtn" aria-expanded="false" aria-controls="everyNote" aria-label="Show the note about the practice days" title="Show or hide the note" hidden></button>
+      </div>
       <p class="hint" id="everyNote" hidden></p>
       <div id="schedule">
       <div id="sessionBars" hidden></div>
@@ -317,6 +336,22 @@
     b.addEventListener('click', function () {
       try { window.parent.document.getElementById('settingsBtn').click(); } catch (e) {}
     });
+  });
+
+  // The two disclosure triangles (Tim, 2026-11-04). Both start closed each
+  // time the page loads; nothing is saved.
+  $('aboutBtn').addEventListener('click', function () {
+    var open = this.getAttribute('aria-expanded') !== 'true';
+    this.setAttribute('aria-expanded', open);
+    this.setAttribute('aria-label', (open ? 'Hide' : 'Show') + ' the course details');
+    $('aboutBody').hidden = !open;
+    $('aboutHead').classList.toggle('shut', !open);
+  });
+  $('everyBtn').addEventListener('click', function () {
+    var open = this.getAttribute('aria-expanded') !== 'true';
+    this.setAttribute('aria-expanded', open);
+    this.setAttribute('aria-label', (open ? 'Hide' : 'Show') + ' the note about the practice days');
+    $('everyNote').hidden = !open;
   });
 
   function parseDate(s) {
@@ -574,7 +609,8 @@
       tally += ' \u00b7 <b>' + daysDone + '</b> of ' + dayTotal + (info.noDays ? ' tasks' : ' practice days');
     }
     $('tally').innerHTML = tally;
-    $('everyNote').hidden = !info.every;
+    $('everyBtn').hidden = !info.every;
+    $('everyNote').hidden = !info.every || $('everyBtn').getAttribute('aria-expanded') !== 'true';
     $('everyNote').textContent = info.every || '';
 
     // Courses that list their days: a header bar per session, opened with
