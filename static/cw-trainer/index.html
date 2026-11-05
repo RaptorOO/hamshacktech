@@ -71,7 +71,8 @@
   }
   .brand h1 .site { color: var(--muted); font-weight: 500; }
 
-  /* Five tabs (Tim, 2026-10-29): Copy, Send, Course, Play, Progress.
+  /* Six tabs: Home (Tim, 2026-11-04; the app opens to it), then Copy, Send,
+     Course, Play, Progress (2026-10-29).
      Each holds one or more tools; Copy, Send and Course show a row of tool
      cards under the title bar to choose between them (see "Tool row").
      On computers and tablets the tabs sit in the title bar; on phones the
@@ -382,7 +383,7 @@
 
   /* ---------- narrower windows ----------
      As the window narrows, the "HamShackTech" word goes first, then the
-     Home button, then the tabs tighten. The name, the five tabs, Install
+     Home button, then the tabs tighten. The name, the six tabs, Install
      app and the gear all fit on an iPad held upright. */
   @media (max-width: 1100px) { .brand h1 .site { display: none; } }   /* "CW Trainer" */
   @media (max-width: 900px) {
@@ -394,7 +395,7 @@
 
   /* ---------- phones: the tabs move to a bar along the bottom ----------
      Below 700px the title bar keeps the name, Install app and the gear;
-     the five tabs sit at the bottom like most phone apps (Tim, 2026-10-29,
+     the tabs sit at the bottom like most phone apps (Tim, 2026-10-29,
      replacing the menu button of 2026-10-20). The bar is part of the page
      layout, not floating over it, so it never covers a tool. */
   @media (max-width: 700px) {
@@ -422,10 +423,13 @@
     .tool-cards::-webkit-scrollbar { display: none; }
     .tool { flex: 0 0 72%; max-width: 300px; scroll-snap-align: start; }
   }
+  @media (max-width: 440px) {            /* six tabs across a phone (Home, 2026-11-04) */
+    .bottom-tabs .sec { font-size: 0.9rem; padding: 8px 1px; }
+  }
   @media (max-width: 360px) {            /* smallest phones (e.g. iPhone SE 1st gen) */
     .bar { gap: 8px; padding-left: 8px; padding-right: 8px; }
     .brand h1 { font-size: 1.05rem; }
-    .bottom-tabs .sec { font-size: 0.92rem; padding: 8px 2px; }
+    .bottom-tabs .sec { font-size: 0.8rem; padding: 8px 0; }   /* six tabs (Home, 2026-11-04) */
   }
 </style>
 </head>
@@ -439,7 +443,7 @@
     <img src="icons/apple-touch-icon.png" alt="" width="30" height="30">
     <h1><span class="site">HamShackTech</span> CW Trainer</h1>
   </div>
-  <!-- The five tabs; the script fills this and the phone bar at the bottom. -->
+  <!-- The six tabs; the script fills this and the phone bar at the bottom. -->
   <nav class="sections" id="topTabs" role="tablist" aria-label="Sections"></nav>
   <div class="spacer"></div>
   <button class="install" id="installBtn" type="button" aria-label="Install app" title="Install app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span class="label">Install app</span></button>
@@ -734,11 +738,12 @@
 </dialog>
 
 <main>
-  <!-- One frame per tool. The first one shown loads right away; the others
-       load the first time they're opened (data-src), so only one starts up
-       at launch. The script labels each by its tool card or tab. -->
+  <!-- One frame per tool. Each loads the first time it's opened (data-src),
+       so only one starts up at launch (Home, unless a link opens a tool). The script labels each by its tool card or tab. -->
+  <iframe id="frame-home" role="tabpanel"
+          title="Home" data-src="home/" hidden></iframe>
   <iframe id="frame-icr" role="tabpanel"
-          title="ICR" src="icr/"></iframe>
+          title="ICR" data-src="icr/" hidden></iframe>
   <iframe id="frame-code-groups" role="tabpanel"
           title="Code Groups" data-src="code-groups/" hidden></iframe>
   <iframe id="frame-call-signs" role="tabpanel"
@@ -757,7 +762,7 @@
           title="Jeopardy" data-src="jeopardy/" hidden></iframe>
 </main>
 
-<!-- Phones: the same five tabs, along the bottom (see "phones" in the CSS). -->
+<!-- Phones: the same six tabs, along the bottom (see "phones" in the CSS). -->
 <nav class="sections bottom-tabs" id="bottomTabs" role="tablist" aria-label="Sections"></nav>
 
 <script>
@@ -778,7 +783,7 @@
   'use strict';
 
   // ------------------------------------------------------------------
-  // Tabs and tools (Tim, 2026-10-29). Five tabs, each holding one or more
+  // Tabs and tools (Tim, 2026-10-29; Home 2026-11-04). Six tabs, each holding one or more
   // tools; every tool still has its own frame and its own slug (icr,
   // code-groups, ...), which is what ?tab= links, Stop on switching and the
   // rest of this script use. `current` is the open tool's slug.
@@ -786,6 +791,7 @@
   var TAB_KEY = 'hct-cw-trainer-app-tab';      // the last tool used (a slug)
   var LAST_KEY = 'hct-cw-trainer-tab-tools';   // the last tool used in each tab
   var SECTIONS = [
+    { key: 'home',     name: 'Home',     tools: ['home'] },
     { key: 'copy',     name: 'Copy',     tools: ['icr', 'code-groups', 'call-signs'] },
     { key: 'send',     name: 'Send',     tools: ['keyer', 'qso'] },
     { key: 'learn',    name: 'Course',   tools: ['course', 'test-prep'] },
@@ -794,6 +800,7 @@
   ];
   // Each tool's name, its color from the Progress tab, and a line about it.
   var TOOLS = {
+    home:          { name: 'Home' },
     icr:           { name: 'Instant Character Recognition', color: '#a3e635', blurb: 'Identify each character the instant you hear it' },
     'code-groups': { name: 'Code Groups', color: '#34d399', blurb: 'Copy random groups before the clock runs out' },
     'call-signs':  { name: 'Call Signs',  color: '#67e8f9', blurb: 'Copy made-up calls in real formats' },
@@ -863,7 +870,7 @@
     }                                    // (Progress has nothing to stop)
   }
 
-  // The five tabs, in the title bar and in the phone bar at the bottom.
+  // The six tabs, in the title bar and in the phone bar at the bottom.
   ['topTabs', 'bottomTabs'].forEach(function (navId) {
     var nav = document.getElementById(navId);
     nav.innerHTML = SECTIONS.map(function (sec) {
@@ -965,7 +972,7 @@
     document.getElementById('frame-' + slug).setAttribute('aria-labelledby',
       sec.tools.length > 1 ? 'tool-' + slug : 'topTabs-' + sec.key);
 
-    if (remember) {
+    if (remember && slug !== 'home') {   // Home's Continue button opens the last real tool
       try { localStorage.setItem(TAB_KEY, slug); localStorage.setItem(LAST_KEY, JSON.stringify(lastTools)); } catch (e) {}
     }
 
@@ -974,6 +981,9 @@
     if (slug === 'progress') {
       try { document.getElementById('frame-progress').contentWindow.HSTProgress.refresh(); } catch (e) {}
     }
+    if (slug === 'home') {   // the same for Home (and its Continue button)
+      try { document.getElementById('frame-home').contentWindow.HSTHome.refresh(); } catch (e) {}
+    }
 
     // Hand keyboard focus to the trainer so typing goes straight to it.
     if (fromKeys) return;
@@ -981,11 +991,11 @@
     setTimeout(function () { try { active.contentWindow.focus(); } catch (e) {} }, 0);
   }
 
-  // Which tool to open: a ?tab= link wins -- a tool (icr, code-groups,
+  // Which tool to open: a ?tab= link wins -- a tool (home, icr, code-groups,
   // call-signs, keyer, qso, test-prep, course, progress, jeopardy; the CW
   // Tools page and the old trainer addresses use these) or a tab (copy,
-  // send, play: its last tool). Otherwise the tool used last time; ICR the
-  // very first time.
+  // send, play: its last tool). Otherwise Home: the app always opens to it
+  // (Tim, 2026-11-04; it was the tool used last time).
   var params = new URLSearchParams(location.search);
   var wanted = params.get('tab');
   SECTIONS.forEach(function (sec) {
@@ -1008,10 +1018,8 @@
   // (Speed Practice), ?tab=icr&cwa=10 (CW Academy Beginners, classes 1-10),
   // and (2026-11-04) ?tab=code-groups&group=phrases, ?tab=call-signs&mode=run.
   if (wanted === 'code-groups' || wanted === 'icr' || wanted === 'call-signs') prepareTool(wanted, params, true);
-  var saved = null;
-  try { saved = localStorage.getItem(TAB_KEY); } catch (e) {}
   if (TABS.indexOf(wanted) >= 0) showTab(wanted, true);
-  else showTab(TABS.indexOf(saved) >= 0 ? saved : 'icr', false);
+  else showTab('home', false);
 
   // ------------------------------------------------------------------
   // Settings panel: Keyer Setup, account, What's new and the app version.
@@ -1736,12 +1744,12 @@
   // ------------------------------------------------------------------
   // Only this release's notes (Tim, 2026-11-04: the list had grown far too
   // long). Earlier notes are in the git history of this file.
-  var RELEASE = '2026-11-04-fundamental';
+  var RELEASE = '2026-11-04-home';
   var RELEASE_LABEL = 'November 4, 2026';
   var RELEASE_NOTES = [
-    '<strong>Fundamental homework, all in the app.</strong> The Fundamental class\u2019s LCWO practice now opens right here: Code Groups and Word Training runs open <strong>Speed Practice</strong> set up as the homework asks (group size, 1, 2 or 3 minutes, extra space between groups, the session\u2019s speed), Plain Text Training opens Code Groups\u2019 <strong>Phrases &amp; Sayings</strong>, and Call Sign Training opens the <strong>Call Signs</strong> Speed Run.',
-    '<strong>More in Speed Practice.</strong> New <strong>Mixed</strong> (letters and figures) and <strong>Abbreviations</strong> exercises, a <strong>Run length</strong> of 1, 2 or 3 minutes, <strong>Extra space</strong> between groups, and class speeds under 10 WPM.',
-    '<strong>Speed Practice runs at the right speed.</strong> Groups in a run were played with almost no space between them, so runs came out faster than the speed shown. Each group is now followed by a full word space.'
+    '<strong>A new Home tab.</strong> The app now opens to <strong>Home</strong>: your practice today against the hour-a-day target, your streak and your week, <strong>My CW Journey</strong> (where your copy speed puts you on the road from 0 to 30 WPM), your next class and homework if you’re in a course, where your practice time goes, the characters you miss most, and a button to pick up where you left off.',
+    '<strong>Send This shows your spacing.</strong> In Keyer Practice, <strong>You sent</strong> now keeps what you actually sent, so a letter gap long enough to count as a word space stays on screen.',
+    '<strong>A tidier My Course.</strong> The course details and the note under your progress count fold away behind a triangle; tap it to open them.'
   ];
 
   // The installed app keeps its own "seen" record (Tim, 2026-10-28). The

@@ -695,7 +695,10 @@
     state = 'graded';
     var a = analyze();
     var g = prefs.mode === 'warmup' ? warmGrade() : HST.gradeSending(target, a.text);   // analyzedTarget === target here
-    live = a.text; showLive();
+    // You sent keeps what the live decoder heard, gaps and all, so a
+    // letter space stretched into a word space stays on screen (Tim,
+    // 2026-11-04); the grade and the timing report use the analysis.
+    if (!copyLike()) { live = a.text; showLive(); }
     showResult(a, g, target);
     recordAttempt(a, g);
     if (prefs.mode === 'warmup') return warmFinished(a, g);
