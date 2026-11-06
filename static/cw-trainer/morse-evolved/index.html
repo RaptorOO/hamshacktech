@@ -67,7 +67,6 @@
     <div class="tx-goal">SEND: <b id="txTarget"></b></div>
     <div class="tx-live" id="txLive" aria-live="polite"></div>
     <div class="tx-row">
-      <div class="keys" id="keys"></div>
       <button id="txDone" class="btn">DONE</button>
       <button id="txClear" class="btn ghost">CLEAR</button>
     </div>
@@ -104,7 +103,13 @@
     <button id="replayBtn" class="btn">REPLAY</button>
     <button id="slowBtn" class="btn">SLOWER</button>
     <button id="decodeBtn" class="btn ghost">DECODE</button>
+    <div class="ctl-label">NOTEBOOK</div>
+    <button id="submitBtn" class="btn" disabled>CHECK COPY</button>
+    <button id="nextBtn" class="btn big" hidden>CONTINUE</button>
   </section>
+
+  <!-- Copy results, on a small HUD panel on the bench -->
+  <div class="copy-msg" id="copyMsg" aria-live="polite"></div>
 
   <!-- The notebook, lying on the bench. You type; it's written in pencil. -->
   <section class="notebook" aria-label="Notebook">
@@ -113,14 +118,8 @@
       <label for="copyIn" class="sr">What you copied</label>
       <textarea id="copyIn" spellcheck="false" autocomplete="off" autocapitalize="characters" disabled></textarea>
       <div class="hint-line" id="hintLine">copy what you hear...</div>
-      <div class="grade" id="grade" aria-live="polite"></div>
     </div>
   </section>
-  <div class="note-actions">
-    <button id="submitBtn" class="btn" disabled>CHECK COPY</button>
-    <button id="nextBtn" class="btn big" hidden>CONTINUE</button>
-    <div class="copy-msg" id="copyMsg"></div>
-  </div>
 </div>
 
 <!-- Start screen: mission, keyer setup with a test pad, Start Mission
@@ -165,7 +164,7 @@
           <div class="test-head">TEST YOUR KEY <span id="testHow"></span></div>
           <div class="test-elems" id="testElems">&nbsp;</div>
           <div class="test-live" id="testLive"></div>
-          <div class="test-row"><div class="keys" id="testKeys"></div><button class="btn ghost small" id="testClear" type="button">CLEAR</button></div>
+          <div class="test-row"><button class="btn ghost small" id="testClear" type="button">CLEAR</button></div>
           <div class="test-note" id="testNote"></div>
         </div>
       </div>

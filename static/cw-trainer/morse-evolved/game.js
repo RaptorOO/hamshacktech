@@ -334,24 +334,8 @@
       autoTimer = setTimeout(checkSend, unitMs() * 8);
     }
   }
-  // On-screen key(s). keyer.touch() applies the paddle swap itself, so the
-  // labels follow the swap too.
-  function buildKeys(box) {
-    var s = HST.keyerSettings.get(), k = s.keyType;
-    box.innerHTML = '';
-    var pads = (k === 'straight') ? [['KEY', 'dit']] : [[s.reversed ? 'DAH' : 'DIT', 'dit'], [s.reversed ? 'DIT' : 'DAH', 'dah']];
-    pads.forEach(function (p) {
-      var el = document.createElement('button');
-      el.className = 'key'; el.textContent = p[0]; el.type = 'button';
-      function dn(e) { e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('down'); keyer.touch(p[1], true); }
-      function up() { if (!el.classList.contains('down')) return; el.classList.remove('down'); keyer.touch(p[1], false); }
-      el.addEventListener('pointerdown', dn);
-      el.addEventListener('pointerup', up);
-      el.addEventListener('pointercancel', up);
-      el.addEventListener('lostpointercapture', up);
-      box.appendChild(el);
-    });
-  }
+  // (No on-screen DIT/DAH keys: Tim, 2026-11-06 -- nobody can really key
+  // on them, and they took up room. Keys, paddles and adapters only.)
   var KEY_NAMES = { straight: 'straight key', bug: 'bug', iambicA: 'iambic paddles (Mode A)', iambicB: 'iambic paddles (Mode B)' };
   function keyHelp() {
     var k = keyType();
@@ -384,7 +368,6 @@
     $('sendWpmIn').disabled = following();
     $('testHow').textContent = s.keyType === 'straight' ? 'Left Ctrl or [ is the key'
       : 'Left Ctrl or [ = ' + (s.reversed ? 'dah' : 'dit') + ', Right Ctrl or ] = ' + (s.reversed ? 'dit' : 'dah');
-    buildKeys($('testKeys'));
     renderTestNote();
   }
   function renderTestNote() {
@@ -425,7 +408,7 @@
   $('swapIn').addEventListener('change', function () { HST.keyerSettings.set({ reversed: this.checked }); });
   $('sendWpmIn').addEventListener('input', function () { setSendWpm(+this.value); keyer.reset(); renderSetup(); });
   $('testClear').addEventListener('click', clearTest);
-  function refreshTx() { if (phase === 'tx') { buildKeys($('keys')); $('txHelp').textContent = keyHelp(); } }
+  function refreshTx() { if (phase === 'tx') $('txHelp').textContent = keyHelp(); }
   HST.keyerSettings.onChange(function () { keyer.reset(); decoder.reset(); clearTest(); renderSetup(); refreshTx(); });
   HST.adapterKeying.onChange(function () { decoder.reset(); testDecoder.reset(); renderSetup(); refreshTx(); });
 
@@ -487,6 +470,7 @@
     // The CW starts once Roger has finished talking, so the two never overlap.
     say('signal', 'excited', function () {
       setTimeout(function () {
+        openNotebook();                  // copy as you hear it (Tim, 2026-11-06)
         playCW(mode.rx, mode.fwpm).then(function () {
           if (phase === 'rx') enterCopy();
         });
@@ -494,10 +478,17 @@
     });
   }
 
+  // The notebook opens the moment the signal starts, so you can write the
+  // letters down as you hear them instead of copying in your head.
+  function openNotebook() {
+    var ta = $('copyIn');
+    ta.disabled = false; ta.focus();
+    renderWriting();
+  }
   function enterCopy() {
     phase = 'copy';
     var ta = $('copyIn');
-    ta.disabled = false; ta.focus();
+    if (ta.disabled) { ta.disabled = false; ta.focus(); }
     $('submitBtn').disabled = false;
     $('replayBtn').disabled = $('slowBtn').disabled = $('decodeBtn').disabled = false;
     renderWriting();
@@ -532,7 +523,7 @@
     }
     flush();
     $('writing').innerHTML = out.join('');
-    $('hintLine').hidden = !!v || phase !== 'copy';
+    $('hintLine').hidden = !!v || (phase !== 'copy' && phase !== 'rx');
     $('paper').classList.toggle('focus', caretAt >= 0);
   }
   ['input', 'keyup', 'click', 'select', 'focus', 'blur'].forEach(function (ev) { $('copyIn').addEventListener(ev, renderWriting); });
@@ -551,8 +542,8 @@
   function decodeReveal() {
     if (phase !== 'copy') return;
     stats.decoded = true;
-    $('grade').innerHTML = '<div class="printout">DECODER: ' + esc(plain(mode.rx)).replace(/ /g, '&nbsp;') + '</div>';
-    $('copyMsg').textContent = 'The decoder is free — no penalty.';
+    $('copyMsg').innerHTML = '<div class="r-head">DECODER</div><div class="diff"><span class="ok">' +
+      esc(plain(mode.rx)).replace(/ /g, '&nbsp;') + '</span></div><div class="r-note">Free to use — no penalty.</div>';
     $('contactName').textContent = 'XANDER';
     say('noshame', 'amused');
     $('nextBtn').hidden = false;
@@ -568,15 +559,15 @@
     stats.bestAcc = Math.max(stats.bestAcc, r.acc);
     var pct = Math.round(r.acc * 100);
     var gotFact = got.indexOf(KEY_FACT) >= 0;
-    // Marked on the page in red pencil: the score circled, your copy with
-    // wrong letters struck through and a _ where something is missing.
-    var html = '<div class="score">' + pct + '%</div>';
-    if (r.acc < 1) html += '<div class="gdiff">' + diffHtml(r.ops) + '</div>';
-    html += '<div class="note">' + (r.acc === 1 ? 'Perfect copy!' : gotFact ? 'Got his name.' : 'Listen again.') + '</div>';
-    $('grade').innerHTML = html;
-    $('copyMsg').innerHTML = r.acc === 1 ? 'Perfect copy.'
-      : gotFact ? 'Good enough — you got the station’s name. Fix it up or continue.'
-      : '<span class="warn">Struck-through letters are wrong, _ is missing. Try REPLAY or SLOWER.</span>';
+    // The result shows on the radio-side HUD panel, in the same style as
+    // the transmit results (Tim, 2026-11-06: the red circled score looked
+    // like a supermarket sign): your copy with right letters green, wrong
+    // ones red and a _ where something is missing.
+    $('copyMsg').innerHTML = '<div class="r-head">COPY ACCURACY <b class="' + (r.acc === 1 ? 'good' : gotFact ? 'ok' : 'low') + '">' + pct + '%</b></div>' +
+      '<div class="diff">' + diffHtml(r.ops) + '</div>' +
+      '<div class="r-note">' + (r.acc === 1 ? 'Perfect copy.'
+        : gotFact ? 'Good enough — you have the station’s name. Fix it up or continue.'
+        : '<span class="warn">Red is wrong, _ is missing. Try REPLAY or SLOWER.</span>') + '</div>';
     if (gotFact || r.acc === 1) {
       $('contactName').textContent = 'XANDER';
       $('nextBtn').hidden = false;
@@ -604,7 +595,6 @@
     $('txPanel').hidden = false;
     $('txTarget').textContent = plain(mode.tx);
     $('txResult').innerHTML = '';
-    buildKeys($('keys'));
     $('txHelp').textContent = keyHelp();
     clearSend();
     setStatus('TRANSMIT');
