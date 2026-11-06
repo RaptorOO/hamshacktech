@@ -1,0 +1,4 @@
+Patrick Hand (patrick-hand-latin-400-normal.woff2)
+Copyright (c) 2010-2012 Patrick Wagesreiter (mail@patrickwagesreiter.at)
+Licensed under the SIL Open Font License, Version 1.1: see ../../fonts/OFL.txt
+or https://openfontlicense.org
