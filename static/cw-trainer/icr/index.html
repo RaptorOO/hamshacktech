@@ -211,14 +211,18 @@
     margin-top: 6px;
     min-height: 62px;
   }
-  .answer-input{
-    width: 64px;
-    height: 64px;
+  /* input.answer-input[type=text]: the general "select, input[type=text]" rule
+     further down (14px, full width) is more specific than a bare class and
+     was shrinking the typed character (Tim, 2026-11-05). */
+  input.answer-input[type=text]{
+    width: 76px;
+    height: 76px;
     text-align:center;
     font-family: var(--font-mono);
-    font-size: 30px;
+    font-size: 40px;
     font-weight: 700;
     text-transform: uppercase;
+    padding: 0;
     background: #140f0d;
     border: 2px solid var(--amber);
     border-radius: 8px;
@@ -231,7 +235,7 @@
      stays mounted and focused the whole session (see JS notes) so the iOS
      keyboard doesn't repeatedly open/close between trials, but it's dimmed
      to signal "not your turn yet" until the key is pressed. */
-  .answer-input.waiting{
+  input.answer-input.waiting{
     border-color: var(--border-light);
     opacity: 0.45;
   }

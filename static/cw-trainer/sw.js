@@ -17,14 +17,14 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = '09b7339740bb';
+const VERSION = '30cc17e63390';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline, each with its fingerprint (see
 // fingerprint() in the build script).
 const PRECACHE = [
-  ['/cw-trainer/call-signs/', '75e7b9ca6cff75f4'],
-  ['/cw-trainer/code-groups/', '438203c90079aef8'],
+  ['/cw-trainer/call-signs/', '42ec643c17d86ef4'],
+  ['/cw-trainer/code-groups/', 'b18d518b51e6ae29'],
   ['/cw-trainer/code-groups/speed-practice.js', 'e5b592ae9aa63fd0'],
   ['/cw-trainer/course/', 'bf744cc77c8129ff'],
   ['/cw-trainer/fonts/bebas-neue-latin-400-normal.woff2', 'a7c90c89240c134f'],
@@ -50,16 +50,16 @@ const PRECACHE = [
   ['/cw-trainer/fonts/source-sans-3-latin-400-normal.woff2', '0f73f35e08cde0a2'],
   ['/cw-trainer/fonts/source-sans-3-latin-600-normal.woff2', '14527d193b0e30bc'],
   ['/cw-trainer/fonts/source-sans-3-latin-700-normal.woff2', 'ae35266f2ab0d531'],
-  ['/cw-trainer/home/', '6b6bfda9305fefe2'],
+  ['/cw-trainer/home/', 'f28e7906253c762c'],
   ['/cw-trainer/icons/android-chrome-192x192.png', '2876ba447f3fad3c'],
   ['/cw-trainer/icons/android-chrome-512x512.png', '0af384dbeded6f44'],
   ['/cw-trainer/icons/apple-touch-icon.png', '6877a92df205dbd5'],
   ['/cw-trainer/icons/favicon-32x32.png', '5cc015c2d45188f7'],
-  ['/cw-trainer/icr/', '076d5c3d52c5a5f9'],
-  ['/cw-trainer/', '01b51145f07a3a0a'],
-  ['/cw-trainer/jeopardy/answers.js', '4afd4de2da8d724a'],
+  ['/cw-trainer/icr/', '1468a49054726eeb'],
+  ['/cw-trainer/', 'cfdd8c82aad630ef'],
+  ['/cw-trainer/jeopardy/answers.js', 'cb648e2391934f83'],
   ['/cw-trainer/jeopardy/', '27a2dcd680b9a609'],
-  ['/cw-trainer/jeopardy/online.js', '0b9cc79f05880d24'],
+  ['/cw-trainer/jeopardy/online.js', 'b8a37a3663962d5e'],
   ['/cw-trainer/keyer/', '075190cd6abeb29f'],
   ['/cw-trainer/manifest.webmanifest', '95ad85868753605c'],
   ['/cw-trainer/progress/', '7875202f78b9e4b7'],

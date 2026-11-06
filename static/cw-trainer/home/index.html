@@ -135,6 +135,27 @@
   .tips { margin: 0; padding-left: 18px; color: var(--muted); }
   .tips li { margin: 3px 0; }
 
+  /* ---------- On Air Practice (Tim, 2026-11-05) ---------- */
+  .tzpick { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.88rem; }
+  .tzpick select { height: 34px; padding: 0 30px 0 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--well); color: var(--text); font: 500 0.9rem 'Inter', sans-serif; }
+  .air-day { margin: 0 0 8px; color: var(--muted); font-size: 0.9rem; }
+  .air-list { list-style: none; margin: 0; padding: 0; }
+  .air-list li { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 4px 16px; padding: 10px 0; border-top: 1px solid var(--grid); }
+  .air-list li:first-child { border-top: 0; }
+  .air-time { font: 600 0.98rem/1.35 'JetBrains Mono', monospace; color: var(--text); }
+  .air-time .t { display: inline-block; white-space: nowrap; }   /* a long local time wraps between start and end, never inside one */
+  .air-time .tz { display: block; font: 500 0.78rem 'Inter', sans-serif; color: var(--dim); letter-spacing: 0.04em; }
+  .air-what b { font-weight: 600; }
+  .air-what .where { color: var(--muted); font-size: 0.9rem; }
+  .air-what .info { margin: 3px 0 0; color: var(--dim); font-size: 0.88rem; }
+  .air-what .more { margin: 4px 0 0; font-size: 0.9rem; }
+  .air-what .more a { font-weight: 600; }
+  .air-tag { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; font: 600 0.75rem/1.5 'Inter', sans-serif; vertical-align: 1px; }
+  .air-tag.now { background: var(--icr); color: var(--lime-ink); }
+  .air-tag.soon { border: 1px solid var(--icr); color: var(--icr); }
+  .air-tag.done { border: 1px solid var(--border); color: var(--dim); }
+  li.past .air-time, li.past .air-what b { color: var(--dim); }
+
   @media (max-width: 760px) {
     .tiles { grid-template-columns: 1fr 1fr; }
     .grid { grid-template-columns: 1fr; }
@@ -143,6 +164,7 @@
     .wrap { padding: 16px 12px 40px; }
     .tile { padding: 12px; gap: 10px; }
     .tile .val { font-size: 1.35rem; }
+    .air-list li { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -176,18 +198,26 @@
     <p class="jsum" id="jSum"></p>
   </section>
 
-  <div class="grid" id="courseGrid" hidden>
-    <section class="card course-card" aria-labelledby="ncTitle">
-      <h2 id="ncTitle">Next Class</h2>
-      <div id="nextClass"></div>
+  <!-- Half-width cards, two to a row (one column on phones; Tim,
+       2026-11-05): On Air Practice and practice time side by side, then
+       Next Class when you've chosen a course. Next Homework and Keep
+       Going came off. -->
+  <div class="grid" id="lowerGrid">
+    <!-- On Air Practice (Tim, 2026-11-05): today's events from the
+         "CW Trainer Contests" Google Calendar, via /api/contests. -->
+    <section class="card" aria-labelledby="airTitle">
+      <div class="card-head">
+        <h2 id="airTitle">On Air Practice</h2>
+        <span class="spacer"></span>
+        <label class="tzpick">Display Times
+          <select id="airTz">
+            <option value="utc">UTC</option>
+            <option value="local">Local</option>
+          </select>
+        </label>
+      </div>
+      <div id="air"><p class="note">Loading today&rsquo;s events&hellip;</p></div>
     </section>
-    <section class="card course-card" aria-labelledby="hwTitle">
-      <h2 id="hwTitle">Next Homework</h2>
-      <div id="nextHw"></div>
-    </section>
-  </div>
-
-  <div class="grid">
     <section class="card" aria-labelledby="pTitle">
       <div class="card-head">
         <h2 id="pTitle">Where My Practice Time Goes</h2>
@@ -200,10 +230,9 @@
       </div>
       <div id="pie"></div>
     </section>
-    <section class="card" aria-labelledby="wTitle">
-      <h2 id="wTitle">Keep Going</h2>
-      <div id="pickUp"></div>
-      <div id="weak"></div>
+    <section class="card course-card" id="nextClassCard" aria-labelledby="ncTitle" hidden>
+      <h2 id="ncTitle">Next Class</h2>
+      <div id="nextClass"></div>
     </section>
   </div>
 
@@ -359,63 +388,13 @@
     return st;
   }
 
-  // A task's text, with the links My Course gives it (the ones that open a
-  // tool here work the same way; see task() and textTask() there).
-  var SCALES = { warmup: 'Warm Up', drill: 'Drill', exercise: 'Exercise' };
-  var TIMES = { '1': 'once', '1-2': 'once or twice', '2': '2 times', '3': '3 times', n: 'several times' };
   function ext(href, text) { return '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(text) + '</a>'; }
-  function tokenHtml(tok) {
-    if (SCALES[tok]) return 'Send the <a href="../?tab=keyer&amp;scale=' + tok + '" data-scale="' + tok + '">' + SCALES[tok] + '</a> <span class="also">Daily Scales</span>';
-    var f = /^([A-Z]+\d+)-(\d+)(?:\*(.+))?$/.exec(tok);
-    if (f) return (/^SL/.test(f[1]) ? 'Sound head copy ' : 'Copy ') + '<b>' + esc(f[1]) + '</b> at ' + f[2] + ' WPM' + (f[3] ? ' <span class="also">(' + esc(TIMES[f[3]] || f[3]) + ')</span>' : '');
-    var a = tok.split(':');
-    if (a[0] === 'icr') return 'Speed Practice, ' + a[1] + ' WPM: ' + [['letters', 'Letters'], ['words', 'Words'], ['figures', 'Figures'], ['custom', 'Your characters']].map(function (x) {
-      var q = 'sp=' + x[0] + '&class=' + a[1];
-      return '<a href="../?tab=code-groups&amp;' + esc(q) + '" data-tool="code-groups" data-q="' + esc(q) + '">' + x[1] + '</a>';
-    }).join(' · ');
-    if (a[0] === 'mr') return 'Morse Runner: single calls, ' + esc(a[1]) + ' WPM, 15 minutes';
-    if (a[0] === 'wpx') return 'Morse Runner: WPX contest, ' + esc(a[1]) + ' WPM, 15 minutes';
-    if (a[0] === 'cwt') return 'Live CWT: ' + (a[1] === 'work5' ? 'work 5 stations' : 'copy 5 running stations');
-    return esc(tok);
-  }
-  function textHtml(text) {
-    var out = '', last = 0, re = /\[([^\]]+)\]\(([^)]+)\)/g, m;
-    while ((m = re.exec(text))) {
-      out += esc(text.slice(last, m.index));
-      var tgt = m[2], label = esc(m[1]);
-      if (tgt.indexOf('scale:') === 0) {
-        out += '<a href="../?tab=keyer&amp;scale=' + esc(tgt.slice(6)) + '" data-scale="' + esc(tgt.slice(6)) + '">' + label + '</a>';
-      } else if (tgt.indexOf('sp:') === 0 || tgt.indexOf('cg:') === 0) {
-        var sq = tgt.slice(3).split('?'), qs = (tgt[0] === 's' ? 'sp=' : 'group=') + sq[0] + (sq[1] ? '&' + sq[1] : '');
-        out += '<a href="../?tab=code-groups&amp;' + esc(qs) + '" data-tool="code-groups" data-q="' + esc(qs) + '">' + label + '</a>';
-      } else if (tgt.indexOf('tool:') === 0) {
-        var tq = tgt.slice(5).split('?');
-        out += '<a href="../?tab=' + esc(tq[0]) + (tq[1] ? '&amp;' + esc(tq[1]) : '') + '" data-tool="' + esc(tq[0]) + '"' + (tq[1] ? ' data-q="' + esc(tq[1]) + '"' : '') + '>' + label + '</a>';
-      } else {
-        out += ext(HST.course.link(tgt) || tgt, m[1]);
-      }
-      last = re.lastIndex;
-    }
-    return out + esc(text.slice(last));
-  }
-  function dayTasks(day, n, j) {
-    var list = typeof day === 'string' ? day.split(' ') : day.filter(function (x) { return x.charAt(0) !== '#'; });
-    var seen = {};
-    return list.map(function (tok) {
-      var bar = tok.indexOf('|');
-      var key = HST.course.taskKey(n + '.' + (j + 1) + '.' + (bar > 0 ? tok.slice(0, bar) : tok.replace(/[-*:].*$/, '')), seen);
-      return { key: key, html: bar > 0 ? textHtml(tok.slice(bar + 1)) : tokenHtml(tok) };
-    });
-  }
-  function dayLabel(day, j) { return typeof day === 'string' || day[0].charAt(0) !== '#' ? 'Day ' + (j + 1) : day[0].slice(1); }
 
   function renderCourse(st) {
-    $('courseGrid').hidden = !st;
+    $('nextClassCard').hidden = !st;
     if (!st) return;
-    var openCourse = '<a href="../?tab=course" data-tool="course">Open My Course</a>';
     if (!st.info) {
       $('nextClass').innerHTML = '<p class="note">The class schedule for your course is coming to My Course soon.</p>';
-      $('nextHw').innerHTML = '<p class="note">' + openCourse + '</p>';
       return;
     }
     var c = st.c, info = st.info;
@@ -423,7 +402,6 @@
     if (!st.first) {
       $('nextClass').innerHTML = '<p class="big">' + esc(title) + '</p><p class="note">Set the date of your first class in My Course and your class days, and Home will show your next class and homework here.</p>' +
         '<button class="btn violet" type="button" data-tool="course">Set my class dates</button>';
-      $('nextHw').innerHTML = '<p class="note">Your homework shows here once your first class date is set.</p>';
       return;
     }
     if (st.idx < 0) {
@@ -431,12 +409,11 @@
       $('nextClass').innerHTML = '<p class="big">' + esc(title) + '</p><p class="focus">Your course finished on <b>' + esc(fmt(last)) + '</b>. Well done!</p>' +
         '<p class="note">CW Academy runs ' + esc(info.semesters) + '. Ready for the next level? ' + ext(info.register, 'Sign up for a class') +
         ', then choose your new level in <a href="#" data-open-settings>Settings</a>.</p>';
-      $('nextHw').innerHTML = '<p class="focus">No homework left. Keep practicing every day to hold on to your speed.</p>';
       return;
     }
     // Next class
     var now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    var d = st.dates[st.idx], s = info.sessions[st.idx], time = c.times[d.getDay()];
+    var d = st.dates[st.idx], time = c.times[d.getDay()];
     var isToday = d.getTime() === today.getTime(), started = isToday && time && startOf(d, c.times) <= now;
     var daysAway = Math.round((d - today) / DAY);
     var when = started ? 'Now' : isToday ? 'Today' + (time ? ' at ' + fmtTime(time) : '') :
@@ -449,34 +426,6 @@
       (st.pre ? '<p class="note">The full class starts ' + esc(fmt(st.first)) + '.</p>' : '') +
       '<div class="btns"><button class="btn violet" type="button" data-tool="course">Open My Course</button></div>';
 
-    // Next homework: the next class's practice (the days just before it);
-    // the first day with something left, or its whole list.
-    var prog = st.prog || {}, n = st.idx + 1, html = '';
-    function isDone(k) { return !!(prog[k] && prog[k].done); }
-    if (!s[2]) {
-      html = '<p class="big">' + esc(name) + '</p><p class="focus">' + esc(s[1]) + '</p>' +
-        (isDone(String(n)) ? '<p class="doneall">✓ Done</p>' : '');
-    } else {
-      var days = s[2], pick = -1;
-      for (var j = 0; j < days.length; j++) {
-        if (!dayTasks(days[j], n, j).every(function (t) { return isDone(t.key); })) { pick = j; break; }
-      }
-      if (pick < 0) {
-        html = '<p class="big">For ' + esc(name) + '</p><p class="doneall">✓ All done. Nice work!</p>';
-        var ns = info.sessions[st.idx + 1];
-        if (ns) html += '<p class="note">Up next after class: Session ' + (st.idx + 2) + ', ' + esc(ns[1]) + '.</p>';
-      } else {
-        var day = days[pick], label = dayLabel(day, pick), tasks = dayTasks(day, n, pick);
-        var dayDate = label === 'Day ' + (pick + 1) && days.length > 1 ? new Date(d.getFullYear(), d.getMonth(), d.getDate() - (days.length - pick)) : null;
-        var left = tasks.filter(function (t) { return !isDone(t.key); }).length;
-        var shown = tasks.length > 6 ? tasks.filter(function (t) { return !isDone(t.key); }).slice(0, 6) : tasks;
-        html = '<p class="note">For ' + esc(name) + ' · ' + plural(left, 'task') + ' left' + (days.length > 1 ? ' on this day' : '') + '</p>' +
-          (days.length > 1 ? '<p class="big">' + esc(label) + (dayDate ? '<span class="daytag">' + esc(fmt(dayDate)) + '</span>' : '') + '</p>' : '') +
-          '<ul class="tasks">' + shown.map(function (t) { return '<li class="' + (isDone(t.key) ? 'done' : '') + '">' + t.html + '</li>'; }).join('') + '</ul>' +
-          (shown.length < left ? '<p class="more">and ' + (left - shown.length) + ' more in My Course</p>' : '');
-      }
-    }
-    $('nextHw').innerHTML = html + '<div class="btns"><button class="btn violet" type="button" data-tool="course">Tick it off in My Course</button></div>';
   }
 
   /* ---------------- My CW Journey ----------------
@@ -599,52 +548,6 @@
       }).join('') + '</ul>';
   }
 
-  /* ---------------- keep going ----------------
-     Pick up the tool you used last, the characters you miss most (ICR and
-     Code Groups, last 30 days), and a nudge toward what you haven't
-     practiced lately. */
-  var TOOL_NAMES = { icr: 'ICR', 'code-groups': 'Code Groups', 'call-signs': 'Call Signs', keyer: 'Keyer Practice', qso: 'QSO Practice',
-                     course: 'My Course', 'test-prep': 'Test Prep', jeopardy: 'Jeopardy', progress: 'Progress' };
-  function renderKeepGoing(rows) {
-    var lastTool = '';
-    try { lastTool = localStorage.getItem('hct-cw-trainer-app-tab') || ''; } catch (e) {}
-    var html = '';
-    if (TOOL_NAMES[lastTool]) {
-      html += '<p class="note">Pick up where you left off.</p><div class="btns"><button class="btn primary" type="button" data-tool="' + lastTool + '">Continue in ' + TOOL_NAMES[lastTool] + '</button></div>';
-    } else {
-      html += '<p class="note">New here? Start by learning to recognize characters instantly.</p><div class="btns"><button class="btn primary" type="button" data-tool="icr">Start with ICR</button></div>';
-    }
-    // Sending: a nudge when copying is all you've done for a week.
-    var since = Date.now() - 7 * DAY, recent = rows.filter(function (s) { return s.start >= since; });
-    var copied = recent.some(function (s) { return s.trainer === 'icr' || s.trainer === 'code-groups' || s.trainer === 'call-signs'; });
-    var sent = recent.some(function (s) { return s.trainer === 'keyer' || s.trainer === 'qso'; });
-    if (copied && !sent) html += '<p class="note" style="margin-top:12px">No sending practice this week. A few minutes on the key keeps your fist in step with your ear: <a href="../?tab=keyer" data-tool="keyer">Keyer Practice</a>.</p>';
-    $('pickUp').innerHTML = html;
-
-    // Characters to work on
-    var tally = {}, from = Date.now() - RECENT_DAYS * DAY;
-    rows.forEach(function (s) {
-      if (s.start < from || (s.trainer !== 'icr' && s.trainer !== 'code-groups') || !s.chars) return;
-      Object.keys(s.chars).forEach(function (ch) {
-        var v = s.chars[ch]; if (!Array.isArray(v)) return;
-        var t = tally[ch] || (tally[ch] = [0, 0]); t[0] += v[0] || 0; t[1] += v[1] || 0;
-      });
-    });
-    var weak = Object.keys(tally).filter(function (ch) { return tally[ch][1] >= 5 && tally[ch][0] / tally[ch][1] < 0.9; })
-      .sort(function (a, b) { return tally[a][0] / tally[a][1] - tally[b][0] / tally[b][1]; }).slice(0, 8);
-    var w = '<hr class="sep"><h2 style="margin-bottom:2px">Characters to Work On</h2>';
-    if (weak.length) {
-      w += '<p class="note">Copied right less than 90% of the time in ICR and Code Groups, last ' + RECENT_DAYS + ' days.</p><div class="chars">' +
-        weak.map(function (ch) { return '<span class="chip"><b>' + esc(ch) + '</b><span>' + Math.round(100 * tally[ch][0] / tally[ch][1]) + '%</span></span>'; }).join('') + '</div>' +
-        '<div class="btns"><button class="btn" type="button" data-tool="code-groups" data-q="sp=custom">Practice them in Speed Practice</button></div>';
-    } else if (Object.keys(tally).length) {
-      w += '<p class="note">Every character you practiced in the last ' + RECENT_DAYS + ' days was copied right 90% of the time or more. Time to add speed or new characters!</p>';
-    } else {
-      w += '<p class="note">Practice in ICR or Code Groups and the characters you miss most show here.</p>';
-    }
-    $('weak').innerHTML = w;
-  }
-
   /* ---------------- tiles and greeting ---------------- */
   var TARGET_MIN = 60;   // the Progress tab's Target Time: an hour a day
   function renderTiles(rows) {
@@ -670,6 +573,116 @@
     $('greet').textContent = hello + '! Welcome to HamShackTech CW Trainer.';
   }
 
+  /* ---------------- On Air Practice ----------------
+     Today's events from Tim's "CW Trainer Contests" Google Calendar
+     (functions/api/contests.js reads it), in UTC or local time. "Today"
+     is today in the zone you pick; local time is this device's own time
+     zone. The events are fetched for the days around now and kept for
+     15 minutes; the panel redraws every minute so "On now" stays right. */
+  var TZ_KEY = 'hct-cw-home-tz';
+  var airTz = 'local';
+  try { var tzv = localStorage.getItem(TZ_KEY); if (tzv === 'utc' || tzv === 'local') airTz = tzv; } catch (e) {}
+  var LOCAL_ZONE = (function () { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return ''; } })();
+  var air = { events: null, configured: true, failed: false, at: 0 };
+  $('airTz').value = airTz;
+  $('airTz').addEventListener('change', function () {
+    airTz = $('airTz').value;
+    try { localStorage.setItem(TZ_KEY, airTz); } catch (e) {}
+    renderAir();
+  });
+
+  function zoneOf() { return airTz === 'utc' ? 'UTC' : undefined; }   // undefined = this device's zone
+  function dayKey(ms) {   // YYYY-MM-DD in the chosen zone
+    return new Intl.DateTimeFormat('en-CA', { timeZone: zoneOf(), year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms));
+  }
+  function airClock(ms) {
+    return airTz === 'utc'
+      ? new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms))
+      : new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(ms));
+  }
+  function airZoneName(ms) {
+    if (airTz === 'utc') return 'UTC';
+    try {
+      var p = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).formatToParts(new Date(ms));
+      for (var i = 0; i < p.length; i++) if (p[i].type === 'timeZoneName') return p[i].value;
+    } catch (e) {}
+    return 'Local';
+  }
+  function airDayName(ms) {
+    return new Intl.DateTimeFormat('en-US', { timeZone: zoneOf(), weekday: 'long', month: 'short', day: 'numeric' }).format(new Date(ms));
+  }
+  function inWords(ms) {
+    var m = Math.round(ms / 60000);
+    if (m < 60) return m + ' min';
+    var h = Math.floor(m / 60), r = m % 60;
+    if (h < 24) return h + ' h' + (r ? ' ' + r + ' min' : '');
+    var d = Math.round(h / 24);
+    return d + (d === 1 ? ' day' : ' days');
+  }
+
+  function loadAir(force) {
+    if (!force && air.events && Date.now() - air.at < 15 * 60000) return;
+    var now = Date.now();
+    fetch('/api/contests?from=' + new Date(now - DAY).toISOString() + '&to=' + new Date(now + 8 * DAY).toISOString(), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        air.configured = d.configured !== false;
+        air.failed = !d.ok;
+        if (d.ok) { air.events = d.events || []; air.at = Date.now(); }
+        renderAir();
+      })
+      .catch(function () { air.failed = true; renderAir(); });
+  }
+
+  function airItem(e, now) {
+    var s = Date.parse(e.start), en = Date.parse(e.end);
+    var time, tag = '';
+    if (e.allDay) time = 'All day';
+    else time = '<span class="t">' + airClock(s) + '</span>' + (en > s ? '<span class="t">–' + airClock(en) + '</span>' : '') + '<span class="tz">' + esc(airZoneName(s)) + '</span>';
+    if (!e.allDay) {
+      if (now >= s && now < en) tag = '<span class="air-tag now">On now</span>';
+      else if (s > now) tag = '<span class="air-tag soon">in ' + esc(inWords(s - now)) + '</span>';
+      else tag = '<span class="air-tag done">Ended</span>';
+    }
+    var first = (e.details || '').split('\n')[0];
+    return '<li class="' + (!e.allDay && en <= now ? 'past' : '') + '"><div class="air-time">' + time + '</div>' +
+      '<div class="air-what"><b>' + esc(e.title) + '</b>' + tag +
+      (e.location ? '<div class="where">' + esc(e.location) + '</div>' : '') +
+      (first ? '<p class="info">' + esc(first) + '</p>' : '') +
+      // More Info: the event's page (Tim, 2026-11-05), on its own line under the event.
+      (e.link ? '<p class="more"><a href="' + esc(e.link) + '" target="_blank" rel="noopener">More Info</a></p>' : '') +
+      '</div></li>';
+  }
+
+  function renderAir() {
+    var box = $('air'), now = Date.now();
+    if (!air.configured) { box.innerHTML = '<p class="note">On-air practice events, like the K1USN Slow Speed Test, will show here.</p>'; return; }
+    if (!air.events) {
+      box.innerHTML = '<p class="note">' + (air.failed ? 'Couldn&rsquo;t load today&rsquo;s events. Check your connection; this panel tries again in a few minutes.' : 'Loading today&rsquo;s events&hellip;') + '</p>';
+      return;
+    }
+    var today = dayKey(now);
+    var list = air.events.filter(function (e) {
+      if (e.allDay) return e.date === today;
+      return dayKey(Date.parse(e.start)) === today || (Date.parse(e.start) < now && Date.parse(e.end) > now);
+    });
+    var html = '<p class="air-day">' + esc(airDayName(now)) + (airTz === 'local' && LOCAL_ZONE ? ' · ' + esc(LOCAL_ZONE.replace(/_/g, ' ')) : ' · UTC') + '</p>';
+    if (list.length) html += '<ul class="air-list">' + list.map(function (e) { return airItem(e, now); }).join('') + '</ul>';
+    else {
+      html += '<p class="note">No on-air events today.</p>';
+      var next = air.events.filter(function (e) { return !e.allDay && Date.parse(e.start) > now; })[0];
+      if (next) {
+        var ns = Date.parse(next.start);
+        html += '<p class="note">Next: <b style="color:var(--text)">' + esc(next.title) + '</b>, ' + esc(airDayName(ns)) + ' at ' +
+          esc(airClock(ns)) + ' ' + esc(airZoneName(ns)) + ' (in ' + esc(inWords(ns - now)) + ').</p>';
+      }
+    }
+    if (air.failed) html += '<p class="note">Showing what was loaded earlier; couldn&rsquo;t check for changes just now.</p>';
+    box.innerHTML = html;
+  }
+  loadAir(true);
+  setInterval(function () { if (document.hidden) return; loadAir(false); renderAir(); }, 60000);
+
   /* ---------------- render ---------------- */
   var lastRows = [];
   function refresh() {
@@ -681,7 +694,6 @@
       renderJourney(rows, st);
       renderCourse(st);
       renderPie(rows);
-      renderKeepGoing(rows);
     }).catch(function (e) { console.error(e); });
   }
   refresh();

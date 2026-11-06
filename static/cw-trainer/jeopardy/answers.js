@@ -12,7 +12,8 @@
                  (11AM, 1PM, 1830Z -- no colons: students don't learn it)
      CALL SIGNS  the same rules as the Code Groups trainer's Call Signs
                  (code-groups/index.html): FCC 1x2 / 2x2 / 2x3 formats,
-                 UK and other DX formats; about 3 in 4 US
+                 UK and other DX formats; about 3 in 4 US; never
+                 starting with a number
      NAMES       first names, cars and historic places, 6 letters at most
                  (the name itself), alone or as on-the-air phrases
                  (NAME BOB, OP IS SUE, YL ANN)
@@ -86,7 +87,10 @@
 
   /* ---------------- CALL SIGNS ----------------
      The Code Groups trainer's rules (code-groups/index.html,
-     usCallSign / ukCallSign / intlCallSign), kept the same here. */
+     usCallSign / ukCallSign / intlCallSign), with one difference: no
+     call here starts with a number (Tim, 2026-11-05: players took the
+     UK Intermediate 2E0ABC-style calls and Japan's 7K1ABC for invalid
+     call signs). Every call is 4 to 6 characters. */
   function range2(a, from, to) {
     var out = [];
     for (var c = from.charCodeAt(0); c <= to.charCodeAt(0); c++) out.push(a + String.fromCharCode(c));
@@ -105,25 +109,25 @@
     do { first = pick(ALPHA); } while (first === 'Q');
     return pick(US_2X3) + digit + first + letters(2);
   }
-  // UK: G + digit + 3 letters (older G2/G3/G4 may have 2), M + 0/1/3/6/7 + 3,
-  // 2E + 0/1 + 3, with a regional letter (M Scotland, W Wales, I N. Ireland,
-  // D Isle of Man, J Jersey, U Guernsey) half the time.
+  // UK: G + digit + 3 letters (older G2/G3/G4 may have 2) or M + 0/1/3/6/7 + 3,
+  // with a regional letter (M Scotland, W Wales, I N. Ireland, D Isle of Man,
+  // J Jersey, U Guernsey) half the time. (The Intermediate 2E0 series is
+  // left out: it starts with a number.)
   function ukCallSign() {
     kind = 'UK';
     var region = Math.random() < 0.5 ? '' : pick(['M', 'W', 'I', 'D', 'J', 'U']);
-    var series = pick(['G', 'M', '2']);
+    var series = pick(['G', 'M']);
     if (series === 'G') {
       var gDigit = pick(['0', '1', '2', '3', '4', '6', '7', '8']);
       var gLen = (gDigit === '2' || gDigit === '3' || gDigit === '4') && Math.random() < 0.3 ? 2 : 3;
       return 'G' + region + gDigit + letters(gLen);
     }
-    if (series === 'M') return 'M' + region + pick(['0', '1', '3', '6', '7']) + letters(3);
-    return '2' + (region || 'E') + pick(['0', '1']) + letters(3);
+    return 'M' + region + pick(['0', '1', '3', '6', '7']) + letters(3);
   }
   var INTL = [
     [['VE', 'VA'], '123456789', [2, 3]],                       // Canada
     [['DL', 'DJ', 'DK', 'DF', 'DO'], '123456789', [2, 3]],     // Germany
-    [['JA', 'JH', 'JR', 'JE', 'JF', 'JG', '7K'], '0123456789', [3]],   // Japan
+    [['JA', 'JH', 'JR', 'JE', 'JF', 'JG'], '0123456789', [3]],         // Japan (not 7K: starts with a number)
     [['VK'], '12345678', [2, 3]],                               // Australia
     [['ZL'], '1234', [2, 3]],                                   // New Zealand
     [['I', 'IK', 'IZ', 'IW'], '0123456789', [2, 3]],            // Italy
