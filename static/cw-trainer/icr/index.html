@@ -598,6 +598,16 @@
   .car-dialog.walk .walk-only{ display:block; }
   .car-dialog.walk .car-only{ display:none; }
 
+  /* How-to video popup (Tim, 2026-11-06). The video lives at /videos/, outside
+     /cw-trainer/, so the service worker doesn't put 15 MB in everyone's
+     offline copy; preload="none" means nothing downloads until Play. */
+  .timer-dialog.video-dialog{ max-width: 860px; padding: 18px 18px 14px; }
+  .video-dialog video{
+    display:block; width:100%; aspect-ratio: 16 / 9; height:auto;
+    background:#000; border-radius: 8px; margin: 0 0 14px;
+  }
+  .video-dialog .timer-actions{ justify-content: flex-end; }
+
   @media (prefers-reduced-motion: reduce){
     *{ transition: none !important; }
     .clock-chip.expired{ animation: none; background: var(--red-soft); }
@@ -641,6 +651,11 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7"/><path class="mute" d="m22 9-6 6M16 9l6 6"/></svg>
           <span>Buzzer</span>
           <span class="clock-val" id="buzzVal">On</span>
+        </button>
+        <!-- The how-to video: a one-minute narrated walkthrough of this page. -->
+        <button type="button" class="info-btn" id="videoBtn" aria-haspopup="dialog" aria-controls="videoDialog"
+                aria-label="Watch the how-to video" title="Watch the how-to video">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10.5 6-3.5v10l-6-3.5"/></svg>
         </button>
         <button type="button" class="info-btn" id="infoBtn" aria-label="How ICR works" title="How ICR works">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
@@ -899,6 +914,16 @@
   </div>
   <div class="timer-actions">
     <button type="button" class="btn primary" id="noSpaceDoneBtn">Got It</button>
+  </div>
+</dialog>
+
+<dialog class="timer-dialog video-dialog" id="videoDialog" aria-labelledby="videoTitle">
+  <h2 id="videoTitle">How to use ICR</h2>
+  <video id="howToVideo" controls playsinline preload="none" poster="/videos/icr-how-to.jpg">
+    <source src="/videos/icr-how-to.mp4" type="video/mp4">
+  </video>
+  <div class="timer-actions">
+    <button type="button" class="btn" id="videoCloseBtn">Close</button>
   </div>
 </dialog>
 
@@ -2036,7 +2061,7 @@ function wireEvents(){
   document.addEventListener('keydown', (e) => {
     // The Practice Timer popup handles its own keys (typing minutes,
     // Enter, Escape) — don't let the space-bar/Oops logic below touch them.
-    if(els.timerDialog.open || els.noSpaceDialog.open) return;
+    if(els.timerDialog.open || els.noSpaceDialog.open || els.videoDialog.open) return;
     // Spacebar Mode off: no keys to press during a session (Space mustn't scroll).
     if(settings.noSpace && sessionRunning && !drillActive){
       if(isSpaceKey(e)) e.preventDefault();
@@ -2158,6 +2183,16 @@ function wireEvents(){
   // The (i) in the clock strip: the How ICR works card (the same one a
   // too-early key press opens).
   els.infoBtn.addEventListener('click', showOops);
+  // The video camera beside it: the how-to video popup. A running session
+  // stops first so its characters don't play over the narration; closing
+  // the popup (Close, Escape or the backdrop) pauses the video.
+  els.videoBtn.addEventListener('click', () => {
+    if(sessionRunning) stopSession();
+    els.videoDialog.showModal();
+  });
+  els.videoCloseBtn.addEventListener('click', () => els.videoDialog.close());
+  els.videoDialog.addEventListener('click', (e) => { if(e.target === els.videoDialog) els.videoDialog.close(); });
+  els.videoDialog.addEventListener('close', () => els.howToVideo.pause());
   // Car and Walk Mode open from the mode chips, so they're off while a
   // session runs (they used to sit in the Start row, hidden then).
   const lockModes = () => {
@@ -2241,7 +2276,8 @@ function init(){
    'timerDialog','timerPresets','timerInput','timerSetBtn','timerOffBtn','timerCancelBtn',
    'carBtn','carDialog','carSetup','carPlaying','carPresets','carMinInput','carChar','carPlayCount','carLeft',
    'carPlayBtn','carStopBtn','carCloseBtn','walkBtn','carTitle','carSlower','carFaster','carWpmVal','carGap','carGapVal','carStatus',
-   'noSpaceToggle','noSpaceNote','noSpaceNoteMs','noSpaceEditBtn','noSpaceDialog','sayDelaySlider','sayDelayVal','noSpaceDoneBtn'
+   'noSpaceToggle','noSpaceNote','noSpaceNoteMs','noSpaceEditBtn','noSpaceDialog','sayDelaySlider','sayDelayVal','noSpaceDoneBtn',
+   'videoBtn','videoDialog','howToVideo','videoCloseBtn'
   ].forEach(id => els[id] = document.getElementById(id));
 
   loadState();
