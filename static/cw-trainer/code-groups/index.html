@@ -1660,7 +1660,7 @@
   //   G + digit + 3 letters   e.g. G4ABC  (Full licence; older G3/G4 calls may have 2 letters)
   //   M + 0/1 + 3 letters     e.g. M0ABC  (Full)
   //   M + 3/6/7 + 3 letters   e.g. M7ABC  (Foundation)
-  //   2E + 0/1 + 3 letters    e.g. 2E0ABC (Intermediate)
+  //   (Intermediate 2E0ABC calls are left out: they start with a number.)
   // A "regional secondary locator" letter after the first character
   // shows which part of the UK/Crown Dependencies the station is in:
   // GM/MM/2M = Scotland, GW/MW/2W = Wales, GI/MI/2I = Northern Ireland,
@@ -1668,14 +1668,15 @@
   // (G4ABC), except that Intermediate calls use "E" for England (2E0ABC).
   function ukCallSign() {
     var region = Math.random() < 0.5 ? "" : pick(["M", "W", "I", "D", "J", "U"]);
-    var series = pick(["G", "M", "2"]);
+    // No Intermediate 2E0-style calls: they start with a number, and
+    // students took them for invalid call signs (Tim, 2026-11-05).
+    var series = pick(["G", "M"]);
     if (series === "G") {
       var gDigit = pick(["0", "1", "2", "3", "4", "6", "7", "8"]);
       var gLen = (gDigit === "2" || gDigit === "3" || gDigit === "4") && Math.random() < 0.3 ? 2 : 3;
       return "G" + region + gDigit + letters(gLen);
     }
-    if (series === "M") return "M" + region + pick(["0", "1", "3", "6", "7"]) + letters(3);
-    return "2" + (region || "E") + pick(["0", "1"]) + letters(3);
+    return "M" + region + pick(["0", "1", "3", "6", "7"]) + letters(3);
   }
 
   // A sampler of other common DX call structures. Each entry: prefix
@@ -1683,7 +1684,7 @@
   var INTL_FORMATS = [
     { country: "Canada",      prefixes: ["VE", "VA"],                  digits: "123456789", suffix: [2, 3] },
     { country: "Germany",     prefixes: ["DL", "DJ", "DK", "DF", "DO"], digits: "123456789", suffix: [2, 3] },
-    { country: "Japan",       prefixes: ["JA", "JH", "JR", "JE", "JF", "JG", "7K"], digits: "0123456789", suffix: [3] },
+    { country: "Japan",       prefixes: ["JA", "JH", "JR", "JE", "JF", "JG"], digits: "0123456789", suffix: [3] },
     { country: "Australia",   prefixes: ["VK"],                        digits: "12345678",  suffix: [2, 3] },
     { country: "New Zealand", prefixes: ["ZL"],                        digits: "1234",      suffix: [2, 3] },
     { country: "Italy",       prefixes: ["I", "IK", "IZ", "IW"],       digits: "0123456789", suffix: [2, 3] },

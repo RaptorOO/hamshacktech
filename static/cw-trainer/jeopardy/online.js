@@ -586,10 +586,13 @@
   }
 
   /* Your answer as you sent it. Each letter sits after the gap you
-     actually left (read from the timing of your key), so letters run
-     together or spread out the way you sent them, and a word space
-     shows as a real gap. Measured in dits: 3 between letters, 7
-     between words is standard; 5 or more counts as a word space. */
+     actually left (read from the timing of your key), so a word space
+     shows as a real gap and a letter gap only when it was too long.
+     Measured in dits: 3 between letters, 7 between words is standard;
+     5 or more counts as a word space. A standard letter gap (up to about
+     3.5 dits) shows no extra space at all, so tight sending reads as one
+     word (Tim, 2026-11-05: even tight sending showed gaps between letters;
+     a 3-dit gap used to add 0.16 em, which in Oswald looks like a space). */
   function renderSent(cl, fallback) {
     const box = el('sentText');
     let a = null;
@@ -606,8 +609,8 @@
     box.innerHTML = chars.map((c, k) => {
       const g = k ? a.gaps[k - 1] : null;
       let em = 0;
-      if (g && g.kind === 'word') em = Math.max(0.6, Math.min(1.8, 0.75 + (g.units - 7) * 0.08));
-      else if (g) em = Math.max(0.04, Math.min(0.4, 0.04 + (g.units - 2) * 0.12));
+      if (g && g.kind === 'word') em = Math.max(0.5, Math.min(1.4, 0.6 + (g.units - 7) * 0.08));
+      else if (g) em = Math.max(0, Math.min(0.35, (g.units - 3.5) * 0.15));
       return '<span class="sc' + (g && g.kind === 'word' ? ' w' : '') + '" style="margin-left:' + em.toFixed(2) + 'em">' + esc(c.text) + '</span>';
     }).join('');
   }
