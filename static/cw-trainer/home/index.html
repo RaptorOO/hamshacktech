@@ -139,6 +139,14 @@
   .tzpick { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.88rem; }
   .tzpick select { height: 34px; padding: 0 30px 0 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--well); color: var(--text); font: 500 0.9rem 'Inter', sans-serif; }
   .air-day { margin: 0 0 8px; color: var(--muted); font-size: 0.9rem; }
+  /* The left column: Next Class above On Air Practice, which grows to the pie's height. */
+  .col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .col > .card { margin: 0; }
+  .col > .card:last-child { flex: 1; }
+  .air-dh { margin: 14px 0 2px; padding-top: 10px; border-top: 1px solid var(--border); font: 600 0.95rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; color: var(--text); }
+  .air-dh:first-of-type { margin-top: 4px; padding-top: 0; border-top: 0; }
+  .air-dh span { color: var(--dim); font: 500 0.82rem 'Inter', sans-serif; letter-spacing: 0; margin-left: 6px; }
+  .air-none { margin: 2px 0 0; color: var(--dim); font-size: 0.9rem; }
   .air-list { list-style: none; margin: 0; padding: 0; }
   .air-list li { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 4px 16px; padding: 10px 0; border-top: 1px solid var(--grid); }
   .air-list li:first-child { border-top: 0; }
@@ -198,26 +206,32 @@
     <p class="jsum" id="jSum"></p>
   </section>
 
-  <!-- Half-width cards, two to a row (one column on phones; Tim,
-       2026-11-05): On Air Practice and practice time side by side, then
-       Next Class when you've chosen a course. Next Homework and Keep
-       Going came off. -->
+  <!-- Two half-width columns (one on phones; Tim, 2026-11-05): on the
+       left Next Class (when you've chosen a course) above On Air
+       Practice, on the right where your practice time goes. Next Homework
+       and Keep Going came off. -->
   <div class="grid" id="lowerGrid">
-    <!-- On Air Practice (Tim, 2026-11-05): today's events from the
-         "CW Trainer Contests" Google Calendar, via /api/contests. -->
-    <section class="card" aria-labelledby="airTitle">
-      <div class="card-head">
-        <h2 id="airTitle">On Air Practice</h2>
-        <span class="spacer"></span>
-        <label class="tzpick">Display Times
-          <select id="airTz">
-            <option value="utc">UTC</option>
-            <option value="local">Local</option>
-          </select>
-        </label>
-      </div>
-      <div id="air"><p class="note">Loading today&rsquo;s events&hellip;</p></div>
-    </section>
+    <div class="col">
+      <section class="card course-card" id="nextClassCard" aria-labelledby="ncTitle" hidden>
+        <h2 id="ncTitle">Next Class</h2>
+        <div id="nextClass"></div>
+      </section>
+      <!-- On Air Practice (Tim, 2026-11-05): today's events from the
+           "CW Trainer Contests" Google Calendar, via /api/contests. -->
+      <section class="card" aria-labelledby="airTitle">
+        <div class="card-head">
+          <h2 id="airTitle">On Air Practice</h2>
+          <span class="spacer"></span>
+          <label class="tzpick">Display Times
+            <select id="airTz">
+              <option value="utc">UTC</option>
+              <option value="local">Local</option>
+            </select>
+          </label>
+        </div>
+        <div id="air"><p class="note">Loading today&rsquo;s events&hellip;</p></div>
+      </section>
+    </div>
     <section class="card" aria-labelledby="pTitle">
       <div class="card-head">
         <h2 id="pTitle">Where My Practice Time Goes</h2>
@@ -229,10 +243,6 @@
         </div>
       </div>
       <div id="pie"></div>
-    </section>
-    <section class="card course-card" id="nextClassCard" aria-labelledby="ncTitle" hidden>
-      <h2 id="ncTitle">Next Class</h2>
-      <div id="nextClass"></div>
     </section>
   </div>
 
@@ -654,28 +664,38 @@
       '</div></li>';
   }
 
+  // A YYYY-MM-DD day key, n days on (plain calendar arithmetic).
+  function addDayKey(key, n) {
+    var p = key.split('-').map(Number), d = new Date(Date.UTC(p[0], p[1] - 1, p[2] + n));
+    return d.toISOString().slice(0, 10);
+  }
+  function keyName(key) {
+    var p = key.split('-').map(Number);
+    return new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'long', month: 'short', day: 'numeric' }).format(new Date(Date.UTC(p[0], p[1] - 1, p[2], 12)));
+  }
+  var AIR_DAYS = 4;   // today and the next 3 days (Tim, 2026-11-05)
+
   function renderAir() {
     var box = $('air'), now = Date.now();
     if (!air.configured) { box.innerHTML = '<p class="note">On-air practice events, like the K1USN Slow Speed Test, will show here.</p>'; return; }
     if (!air.events) {
-      box.innerHTML = '<p class="note">' + (air.failed ? 'Couldn&rsquo;t load today&rsquo;s events. Check your connection; this panel tries again in a few minutes.' : 'Loading today&rsquo;s events&hellip;') + '</p>';
+      box.innerHTML = '<p class="note">' + (air.failed ? 'Couldn&rsquo;t load the on-air events. Check your connection; this panel tries again in a few minutes.' : 'Loading on-air events&hellip;') + '</p>';
       return;
     }
     var today = dayKey(now);
-    var list = air.events.filter(function (e) {
-      if (e.allDay) return e.date === today;
-      return dayKey(Date.parse(e.start)) === today || (Date.parse(e.start) < now && Date.parse(e.end) > now);
-    });
-    var html = '<p class="air-day">' + esc(airDayName(now)) + (airTz === 'local' && LOCAL_ZONE ? ' · ' + esc(LOCAL_ZONE.replace(/_/g, ' ')) : ' · UTC') + '</p>';
-    if (list.length) html += '<ul class="air-list">' + list.map(function (e) { return airItem(e, now); }).join('') + '</ul>';
-    else {
-      html += '<p class="note">No on-air events today.</p>';
-      var next = air.events.filter(function (e) { return !e.allDay && Date.parse(e.start) > now; })[0];
-      if (next) {
-        var ns = Date.parse(next.start);
-        html += '<p class="note">Next: <b style="color:var(--text)">' + esc(next.title) + '</b>, ' + esc(airDayName(ns)) + ' at ' +
-          esc(airClock(ns)) + ' ' + esc(airZoneName(ns)) + ' (in ' + esc(inWords(ns - now)) + ').</p>';
-      }
+    var html = '<p class="air-day">' + (airTz === 'local' && LOCAL_ZONE ? esc(LOCAL_ZONE.replace(/_/g, ' ')) + ' time' : 'UTC') + '</p>';
+    for (var i = 0; i < AIR_DAYS; i++) {
+      var key = addDayKey(today, i);
+      var list = air.events.filter(function (e) {
+        if (e.allDay) return e.date === key;
+        var s = Date.parse(e.start);
+        // today also keeps one that started yesterday and is still on
+        return dayKey(s) === key || (i === 0 && s < now && Date.parse(e.end) > now);
+      });
+      html += '<h3 class="air-dh">' + esc(i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : keyName(key).split(',')[0]) +
+        '<span>' + esc(keyName(key).replace(/^[A-Za-z]+, /, '')) + '</span></h3>';
+      html += list.length ? '<ul class="air-list">' + list.map(function (e) { return airItem(e, now); }).join('') + '</ul>'
+                          : '<p class="air-none">No on-air events.</p>';
     }
     if (air.failed) html += '<p class="note">Showing what was loaded earlier; couldn&rsquo;t check for changes just now.</p>';
     box.innerHTML = html;
