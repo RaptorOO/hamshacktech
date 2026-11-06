@@ -52,7 +52,8 @@ body::before {
 /* ---------- the cockpit scene ---------- */
 .scene { position: absolute; inset: 0; }
 .pose {
-  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  background: center / cover no-repeat;
   opacity: 0; transition: opacity 0.12s linear;   /* a quick cut: a slow fade showed two Rogers at once */
 }
 .pose.on { opacity: 1; z-index: 1; transition: none; }   /* new pose appears at once, on top; the old one fades out under it */
@@ -150,7 +151,7 @@ body::before {
   container-type: inline-size; z-index: 1;
   filter: drop-shadow(0 calc(var(--u) * 0.6) calc(var(--u) * 0.9) rgba(0,0,0,0.85));
 }
-.radio-art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.radio-art { position: absolute; inset: 0; background: url(art/radio-cut.webp) center / 100% 100% no-repeat; }
 .screen { position: absolute; overflow: hidden; border-radius: 3px; }
 .freq {
   left: 32.2%; top: 31.6%; width: 49.6%; height: 16.5%;
@@ -167,8 +168,8 @@ body::before {
   left: 16.1%; top: 32.2%; width: 12.6%; height: 20.2%;
   background: #031008; display: flex; align-items: center; justify-content: center;
 }
-.portrait img { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.85) contrast(1.1); }
-.portrait img.flicker { animation: flicker 0.6s steps(6) 1; }
+.portrait .contact-img { position: absolute; inset: 0; background: center / cover no-repeat; filter: saturate(0.85) contrast(1.1); }
+.portrait .contact-img.flicker { animation: flicker 0.6s steps(6) 1; }
 @keyframes flicker { 0%,40%,80% { opacity: 0.15; } 20%,60%,100% { opacity: 1; } }
 .portrait::after {           /* scan lines */
   content: ''; position: absolute; inset: 0; pointer-events: none;
@@ -368,6 +369,6 @@ body::before {
   .start-cols { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .portrait img.flicker, .flicker-light, .dot, .writing .caret { animation: none; }
+  .portrait .contact-img.flicker, .flicker-light, .dot, .writing .caret { animation: none; }
   .pose { transition: none; }
 }

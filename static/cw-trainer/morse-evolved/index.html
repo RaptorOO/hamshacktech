@@ -34,10 +34,13 @@
 <div class="stage" id="stage">
   <!-- The cockpit, one picture per Roger pose; the current one fades in. -->
   <div class="scene" aria-hidden="true">
-    <img class="pose on" data-pose="neutral" src="art/cockpit-neutral.webp" alt="">
-    <img class="pose" data-pose="excited" src="art/cockpit-excited.webp" alt="">
-    <img class="pose" data-pose="frustrated" src="art/cockpit-frustrated.webp" alt="">
-    <img class="pose" data-pose="amused" src="art/cockpit-amused.webp" alt="">
+    <!-- Backgrounds, not <img> (Tim, 2026-11-06): Edge's "Image Magnify"
+         opens any picture under the mouse when Ctrl is tapped twice, and
+         key adapters send Ctrl for every dit and dah. -->
+    <div class="pose on" data-pose="neutral" style="background-image:url(art/cockpit-neutral.webp)"></div>
+    <div class="pose" data-pose="excited" style="background-image:url(art/cockpit-excited.webp)"></div>
+    <div class="pose" data-pose="frustrated" style="background-image:url(art/cockpit-frustrated.webp)"></div>
+    <div class="pose" data-pose="amused" style="background-image:url(art/cockpit-amused.webp)"></div>
     <canvas id="sparks" width="1280" height="720"></canvas>
     <div class="flicker-light"></div>
   </div>
@@ -76,14 +79,14 @@
 
   <!-- Foreground, on the workbench: the radio -->
   <section class="radio" aria-label="Radio">
-    <img class="radio-art" src="art/radio-cut.webp" alt="">
+    <div class="radio-art"></div>
     <div class="screen freq" id="freqScreen">
       <div class="band" id="bandLabel">--</div>
       <div class="freq-num" id="freqNum">--.----</div>
       <div class="status" id="radioStatus">STANDBY</div>
     </div>
     <div class="screen portrait" id="portraitScreen">
-      <img id="contactImg" alt="" hidden>
+      <div id="contactImg" class="contact-img" hidden></div>
       <div class="no-signal" id="noSignal">NO SIGNAL</div>
       <div class="contact-name" id="contactName"></div>
     </div>

@@ -463,7 +463,7 @@
     bandNoise(mode.noise, mode.qsb);
     setStatus('SIGNAL');
     var img = $('contactImg');
-    img.src = 'art/contact-xander.webp'; img.hidden = false;
+    img.style.backgroundImage = 'url(art/contact-xander.webp)'; img.hidden = false;
     $('noSignal').hidden = true;
     img.classList.remove('flicker'); void img.offsetWidth; img.classList.add('flicker');
     phase = 'rx';
