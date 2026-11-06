@@ -919,7 +919,9 @@
 
 <dialog class="timer-dialog video-dialog" id="videoDialog" aria-labelledby="videoTitle">
   <h2 id="videoTitle">How to use ICR</h2>
-  <video id="howToVideo" controls playsinline preload="none" poster="/videos/icr-how-to.jpg">
+  <!-- No Download item in the player's menu, and no right-click "Save video
+       as" (Tim, 2026-11-06): stops casual saving, not a determined copier. -->
+  <video id="howToVideo" controls controlslist="nodownload" playsinline preload="none" poster="/videos/icr-how-to.jpg">
     <source src="/videos/icr-how-to.mp4" type="video/mp4">
   </video>
   <div class="timer-actions">
@@ -2193,6 +2195,7 @@ function wireEvents(){
   els.videoCloseBtn.addEventListener('click', () => els.videoDialog.close());
   els.videoDialog.addEventListener('click', (e) => { if(e.target === els.videoDialog) els.videoDialog.close(); });
   els.videoDialog.addEventListener('close', () => els.howToVideo.pause());
+  els.howToVideo.addEventListener('contextmenu', (e) => e.preventDefault());
   // Car and Walk Mode open from the mode chips, so they're off while a
   // session runs (they used to sit in the Start row, hidden then).
   const lockModes = () => {
