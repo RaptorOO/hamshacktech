@@ -451,6 +451,11 @@
       var on = recBtn === me && HST.audio.recording();
       btn.classList.toggle('rec-on', on);
       btn.setAttribute('aria-pressed', String(on));
+      // A Record cell in a status strip (Keyer and QSO Practice, Tim
+      // 2026-11-05) keeps its label and only changes its value: Off, or
+      // the time recorded so far.
+      var val = o.valueEl;
+      if (val) { val.textContent = on ? HST.fmtClock(Date.now() - t0) : 'Off'; return; }
       btn.innerHTML = on ? '<span class="rec-dot" aria-hidden="true"></span>Stop recording <span class="rec-time">' + HST.fmtClock(Date.now() - t0) + '</span>' : label;
     }
     function stop() {
