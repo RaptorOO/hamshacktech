@@ -2302,7 +2302,7 @@
       els.drillList.innerHTML = worst.map(function (e) {
         var ch = e[0], s = e[1];
         var acc = Math.round((s.correct / s.played) * 100);
-        return '<li class="cl-m" title="' + s.correct + ' of ' + s.played + ' right"><b>' + HST.charLabel(ch) + "</b><span>" + acc + "%</span></li>";
+        return '<li class="cl-m ' + HST.missLevel(acc) + '" style="--p:' + acc + '" title="' + s.correct + ' of ' + s.played + ' right"><b>' + HST.charLabel(ch) + "</b><i></i><span>" + acc + "%</span></li>";
       }).join("");
     }
 
