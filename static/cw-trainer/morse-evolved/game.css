@@ -1,0 +1,213 @@
+/* Morse Evolved -- gritty cockpit look: dark distressed metal, neon green
+   and cyan accents (see the game spec, section 5). */
+:root {
+  --bg: #07090a;
+  --panel: rgba(10, 14, 13, 0.82);
+  --edge: rgba(120, 255, 170, 0.18);
+  --green: #6dff9c;
+  --green-dim: #2f8f57;
+  --cyan: #52e8ff;
+  --amber: #ffb547;
+  --red: #ff5a5a;
+  --text: #d6e6dc;
+  --muted: #8aa496;
+  --paper-ink: #2b2a26;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg) url(art/cockpit-bg.webp) center / cover no-repeat fixed;
+  color: var(--text);
+  font: 15px/1.45 'IBM Plex Sans', system-ui, sans-serif;
+}
+body::before {               /* darken the cockpit so panels read clearly */
+  content: ''; position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.35), rgba(0,0,0,0.78));
+}
+#app { position: relative; min-height: 100vh; display: flex; flex-direction: column; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* ---------- top bar ---------- */
+.topbar {
+  display: flex; align-items: center; gap: 24px; padding: 10px 20px;
+  background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.55));
+  border-bottom: 1px solid var(--edge);
+}
+.brand { font-family: 'Russo One', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--text); }
+.brand span, h1 span { color: var(--green); text-shadow: 0 0 12px rgba(109,255,156,0.55); }
+.mode { font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 1.5px; color: var(--cyan); }
+.topbar-right { margin-left: auto; display: flex; gap: 18px; }
+.vol { font-family: 'Oswald', sans-serif; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.vol input { accent-color: var(--green); width: 110px; }
+
+/* ---------- three-column deck ---------- */
+.deck {
+  flex: 1; display: grid; gap: 18px; padding: 18px 20px 24px;
+  grid-template-columns: minmax(220px, 260px) minmax(520px, 1fr) minmax(260px, 320px);
+  align-items: start;
+}
+.panel {
+  background: var(--panel); border: 1px solid var(--edge); border-radius: 6px;
+  padding: 14px; box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 12px 40px rgba(0,0,0,0.5);
+  backdrop-filter: blur(3px);
+}
+.panel-title {
+  font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 2.5px;
+  color: var(--green); margin-bottom: 10px;
+}
+
+/* translator */
+.roger {
+  width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; display: block;
+  border: 1px solid rgba(109,255,156,0.25); filter: contrast(1.05);
+}
+.speech {
+  margin-top: 12px; min-height: 120px; font-family: 'JetBrains Mono', monospace; font-size: 14px;
+  color: var(--cyan); text-shadow: 0 0 8px rgba(82,232,255,0.35);
+}
+.speech .who { color: var(--muted); font-size: 11px; letter-spacing: 1.5px; display: block; margin-bottom: 4px; }
+
+/* ---------- radio ---------- */
+.radio-wrap { display: flex; flex-direction: column; gap: 14px; }
+.radio { position: relative; width: 100%; aspect-ratio: 16 / 9; }
+.radio-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.screen { position: absolute; overflow: hidden; border-radius: 3px; }
+/* The screens sit over the blank windows painted on the radio art.
+   Positions are percentages of the art, so they scale with it. */
+.freq {
+  left: 32.5%; top: 31.5%; width: 48.8%; height: 15.5%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace; color: var(--green);
+  text-shadow: 0 0 10px rgba(109,255,156,0.7);
+  background: linear-gradient(rgba(6,30,16,0.55), rgba(2,14,8,0.75));
+}
+.freq .band, .freq .status { position: absolute; top: 6%; font-size: clamp(8px, 0.75vw, 12px); line-height: 1; }
+.freq .band { left: 3%; color: var(--green-dim); }
+.freq .status { right: 3%; color: var(--amber); text-shadow: 0 0 8px rgba(255,181,71,0.6); }
+.freq-num { font-size: clamp(16px, 2.3vw, 36px); font-weight: 700; letter-spacing: 2px; margin-top: 4%; }
+.portrait {
+  left: 16.6%; top: 32%; width: 12.4%; height: 19%;
+  background: #031008; display: flex; align-items: center; justify-content: center;
+}
+.portrait img { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.85) contrast(1.1); }
+.portrait img.flicker { animation: flicker 0.6s steps(6) 1; }
+@keyframes flicker { 0%,40%,80% { opacity: 0.15; } 20%,60%,100% { opacity: 1; } }
+.portrait::after {           /* scan lines */
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(rgba(0,0,0,0.25) 0 1px, transparent 1px 3px);
+}
+.no-signal { font: 600 clamp(8px, 0.8vw, 11px) 'JetBrains Mono', monospace; color: var(--green-dim); letter-spacing: 1px; }
+.contact-name {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 0; text-align: center;
+  font: 600 clamp(8px, 0.8vw, 11px) 'JetBrains Mono', monospace; color: var(--green);
+  background: rgba(0,0,0,0.6);
+}
+.contact-name:empty { display: none; }
+.wave { left: 31.5%; top: 53.3%; width: 26.6%; height: 10.4%; background: #020c06; }
+.wave canvas { width: 100%; height: 100%; display: block; }
+
+/* ---------- buttons ---------- */
+.btn {
+  font: 500 14px 'Oswald', sans-serif; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--green); background: rgba(8, 24, 14, 0.9);
+  border: 1px solid rgba(109,255,156,0.45); border-radius: 4px; padding: 8px 16px; cursor: pointer;
+}
+.btn:hover:not(:disabled) { background: rgba(20, 60, 34, 0.95); box-shadow: 0 0 12px rgba(109,255,156,0.25); }
+.btn:disabled { opacity: 0.35; cursor: default; }
+.btn.big { font-size: 17px; padding: 10px 26px; }
+.btn.ghost { color: var(--muted); border-color: rgba(138,164,150,0.4); background: rgba(0,0,0,0.5); }
+.btn:focus-visible, .mode-btn:focus-visible, .band-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.controls {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;
+  background: var(--panel); border: 1px solid var(--edge); border-radius: 6px; padding: 10px;
+}
+.band-pick { display: flex; border: 1px solid rgba(109,255,156,0.3); border-radius: 4px; overflow: hidden; margin-right: 8px; }
+.band-btn {
+  font: 500 13px 'JetBrains Mono', monospace; padding: 8px 12px; cursor: pointer;
+  background: rgba(0,0,0,0.5); color: var(--muted); border: 0; border-right: 1px solid rgba(109,255,156,0.2);
+}
+.band-btn:last-child { border-right: 0; }
+.band-btn[aria-checked="true"] { background: rgba(20,70,40,0.9); color: var(--green); }
+
+/* ---------- sending ---------- */
+.tx { background: var(--panel); border: 1px solid rgba(82,232,255,0.35); border-radius: 6px; padding: 14px; }
+.tx-goal { font-family: 'Oswald', sans-serif; letter-spacing: 1.5px; color: var(--muted); }
+.tx-goal b { font-family: 'JetBrains Mono', monospace; color: var(--cyan); font-size: 20px; letter-spacing: 3px; margin-left: 6px; }
+.tx-live {
+  margin: 10px 0; min-height: 40px; padding: 8px 12px; border-radius: 4px; background: #020c06;
+  font: 600 22px 'JetBrains Mono', monospace; letter-spacing: 3px; color: var(--green);
+}
+.tx-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.keys { display: flex; gap: 10px; margin-right: auto; }
+.key {
+  user-select: none; touch-action: none; cursor: pointer;
+  font: 600 15px 'Oswald', sans-serif; letter-spacing: 2px; color: #111;
+  background: linear-gradient(#d8b46a, #9c7a35); border: 1px solid #5a4318; border-radius: 6px;
+  padding: 14px 28px; box-shadow: 0 4px 0 #4a3510;
+}
+.key.down { transform: translateY(3px); box-shadow: 0 1px 0 #4a3510; background: linear-gradient(#f0cc80, #b48f45); }
+.tx-help { margin-top: 8px; color: var(--muted); font-size: 13px; }
+.tx-result { margin-top: 8px; font-size: 14px; }
+
+/* ---------- notebook ---------- */
+/* One notebook page; the text rides on the page's printed lines
+   (about 3.95% of the page height apart), so sizes use container units. */
+.paper {
+  background: url(art/notebook-page.webp) center / 100% 100% no-repeat; border-radius: 4px;
+  aspect-ratio: 500 / 640; container-type: size; position: relative;
+}
+.paper textarea {
+  position: absolute; left: 8%; right: 12%; top: 5.2%; bottom: 7%;
+  resize: none; border: 0; outline: 0; background: transparent;
+  font-family: 'JetBrains Mono', monospace; font-weight: 700;
+  font-size: 3.1cqh; line-height: 3.95cqh; letter-spacing: 0.15em; color: var(--paper-ink);
+  text-transform: uppercase;
+}
+.paper textarea:disabled { opacity: 0.6; }
+.paper textarea:focus { box-shadow: 0 0 0 2px rgba(82,232,255,0.4); border-radius: 2px; }
+.note-actions { display: flex; gap: 10px; margin-top: 12px; }
+.copy-result { margin-top: 12px; font-size: 14px; }
+.diff { font: 600 18px 'JetBrains Mono', monospace; letter-spacing: 2px; word-break: break-all; margin: 6px 0; }
+.diff .ok { color: var(--green); }
+.diff .bad { color: var(--red); text-decoration: underline; }
+.diff .miss { color: var(--amber); opacity: 0.9; }
+.score { font-family: 'Oswald', sans-serif; letter-spacing: 1px; }
+.score b { font-size: 22px; color: var(--green); }
+.warn { color: var(--amber); }
+
+/* ---------- start / end cards ---------- */
+.overlay {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.72); backdrop-filter: blur(4px); z-index: 10; padding: 16px;
+}
+.overlay[hidden] { display: none; }
+.card {
+  width: min(560px, 100%); text-align: center; background: rgba(8,12,11,0.95);
+  border: 1px solid var(--edge); border-radius: 8px; padding: 28px 28px 22px;
+  box-shadow: 0 20px 80px rgba(0,0,0,0.7);
+}
+.card h1 { font-family: 'Russo One', sans-serif; letter-spacing: 3px; margin: 0 0 6px; font-size: 34px; }
+.lede { color: var(--muted); margin: 0 0 18px; }
+.modes { display: grid; gap: 10px; margin-bottom: 20px; }
+.mode-btn {
+  text-align: left; cursor: pointer; padding: 12px 16px; border-radius: 6px;
+  background: rgba(0,0,0,0.55); border: 1px solid rgba(138,164,150,0.35); color: var(--text);
+}
+.mode-btn b { display: block; font: 500 17px 'Oswald', sans-serif; letter-spacing: 1px; }
+.mode-btn small { color: var(--muted); }
+.mode-btn[aria-checked="true"] { border-color: var(--green); background: rgba(14,48,28,0.85); box-shadow: 0 0 14px rgba(109,255,156,0.2); }
+.fine { color: var(--muted); font-size: 12px; margin: 16px 0 0; }
+#endStats { margin: 10px 0 16px; font-family: 'JetBrains Mono', monospace; color: var(--cyan); line-height: 1.8; }
+
+/* ---------- narrower screens: stack the panels ---------- */
+@media (max-width: 1100px) {
+  .deck { grid-template-columns: 1fr; }
+  .translator { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: start; }
+  .translator .panel-title { grid-column: 1 / -1; margin: 0; }
+  .speech { margin-top: 0; min-height: 0; }
+  .topbar { flex-wrap: wrap; gap: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .portrait img.flicker { animation: none; }
+}
+.muted { color: var(--muted); font-size: 13px; }

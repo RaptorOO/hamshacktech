@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Not released yet (Tim, 2026-11-06): keep it out of search engines and
+     out of the app's tabs until Tim says it's ready. -->
+<meta name="robots" content="noindex, nofollow">
+<title>Morse Evolved</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="game.css">
+</head>
+<body>
+<!--
+  MORSE EVOLVED -- vertical slice (one contact)
+  ==============================================
+  A story-driven Morse game: Roger, a green alien stranded in New Mexico
+  with injured fingers, needs the player to work his ship's radio and
+  reach his home planet, Tellura. This first slice has one contact
+  (Xander) with a full receive -> copy -> send exchange.
+
+  It reuses the CW Trainer's shared engine: hst-engine.js for the Morse
+  table, timing and audio, hst-keyer.js for keys, paddles, USB adapters
+  and decoding what the player sends. Keyer type, speed, tone and volume
+  come from the trainer's own Keyer Setup and Settings.
+-->
+<div id="app">
+  <header class="topbar">
+    <div class="brand">MORSE <span>EVOLVED</span></div>
+    <div class="mode" id="modeLabel"></div>
+    <div class="topbar-right">
+      <label class="vol">Tone <input type="range" id="toneIn" min="400" max="900" step="10"></label>
+      <label class="vol">Volume <input type="range" id="volIn" min="0" max="100" step="1"></label>
+    </div>
+  </header>
+
+  <main class="deck">
+    <!-- Left: Roger and the AI voice decoder (his translated speech) -->
+    <section class="panel translator" aria-label="AI voice decoder">
+      <div class="panel-title">AI VOICE DECODER</div>
+      <img id="rogerImg" class="roger" src="art/roger-neutral.webp" alt="Roger">
+      <div class="speech" id="speech" aria-live="polite"></div>
+    </section>
+
+    <!-- Centre: the alien radio -->
+    <section class="radio-wrap" aria-label="Radio">
+      <div class="radio">
+        <img class="radio-art" src="art/radio.webp" alt="">
+        <div class="screen freq" id="freqScreen">
+          <div class="band" id="bandLabel">--</div>
+          <div class="freq-num" id="freqNum">--.----</div>
+          <div class="status" id="radioStatus">STANDBY</div>
+        </div>
+        <div class="screen portrait" id="portraitScreen">
+          <img id="contactImg" alt="" hidden>
+          <div class="no-signal" id="noSignal">NO SIGNAL</div>
+          <div class="contact-name" id="contactName"></div>
+        </div>
+        <div class="screen wave"><canvas id="wave" width="600" height="120" aria-hidden="true"></canvas></div>
+      </div>
+
+      <div class="controls" id="controls">
+        <div class="band-pick" role="radiogroup" aria-label="Band">
+          <button class="band-btn" data-band="40m">40m</button>
+          <button class="band-btn" data-band="20m">20m</button>
+          <button class="band-btn" data-band="15m">15m</button>
+        </div>
+        <button id="scanBtn" class="btn big">SCAN</button>
+        <button id="replayBtn" class="btn">REPLAY</button>
+        <button id="slowBtn" class="btn">SLOWER</button>
+        <button id="decodeBtn" class="btn ghost">DECODE</button>
+      </div>
+
+      <!-- Sending: shown when it's the player's turn to transmit -->
+      <div class="tx" id="txPanel" hidden>
+        <div class="tx-goal">SEND: <b id="txTarget"></b></div>
+        <div class="tx-live" id="txLive" aria-live="polite"></div>
+        <div class="tx-row">
+          <div class="keys" id="keys"></div>
+          <button id="txDone" class="btn">DONE</button>
+          <button id="txClear" class="btn ghost">CLEAR</button>
+        </div>
+        <div class="tx-help" id="txHelp"></div>
+        <div class="tx-result" id="txResult"></div>
+      </div>
+    </section>
+
+    <!-- Right: the paper notebook for copying -->
+    <section class="panel notebook" aria-label="Notebook">
+      <div class="panel-title">NOTEBOOK</div>
+      <div class="paper">
+        <label for="copyIn" class="sr">What you copied</label>
+        <textarea id="copyIn" spellcheck="false" autocomplete="off" autocapitalize="characters"
+                  placeholder="Copy what you hear here..." disabled></textarea>
+      </div>
+      <div class="note-actions">
+        <button id="submitBtn" class="btn" disabled>CHECK COPY</button>
+        <button id="nextBtn" class="btn big" hidden>CONTINUE</button>
+      </div>
+      <div class="copy-result" id="copyResult"></div>
+    </section>
+  </main>
+</div>
+
+<!-- Start card: difficulty and Start Mission (browsers only allow sound after a click) -->
+<div class="overlay" id="startCard">
+  <div class="card">
+    <h1>MORSE <span>EVOLVED</span></h1>
+    <p class="lede">A crashed alien, a busted hand, and a Morse radio. Help Roger get home.</p>
+    <div class="modes" role="radiogroup" aria-label="Difficulty">
+      <button class="mode-btn" data-mode="hiker"><b>Hiker</b><small>Beginner &middot; 15 wpm letters, 5 wpm overall</small></button>
+      <button class="mode-btn" data-mode="ranger"><b>Park Ranger</b><small>Intermediate &middot; 20 / 12 wpm, light noise</small></button>
+      <button class="mode-btn" data-mode="scientist"><b>SpaceY Scientist</b><small>Advanced &middot; 25 / 20 wpm, fading and noise</small></button>
+    </div>
+    <button id="startBtn" class="btn big">START MISSION</button>
+    <p class="fine">Key with Left&nbsp;Ctrl or [ ( ] for dah on paddles ), a Vail/VBand adapter, or the on-screen key. Keyer type and speed come from the CW Trainer's Keyer Setup.</p>
+  </div>
+</div>
+
+<!-- End of the slice -->
+<div class="overlay" id="endCard" hidden>
+  <div class="card">
+    <h1>CONTACT <span>LOGGED</span></h1>
+    <div id="endStats"></div>
+    <p class="lede">That's the first contact. More stations and the Tellura rescue come next.</p>
+    <button id="againBtn" class="btn big">PLAY AGAIN</button>
+  </div>
+</div>
+
+<script src="../shared/hst-engine.js"></script>
+<script src="../shared/hst-keyer.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
