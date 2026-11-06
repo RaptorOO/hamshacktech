@@ -854,7 +854,8 @@
       clickIfVisible('walkStopBtn');     // Walk Mode, if it's playing
       clickIfVisible('spStopBtn');       // a Speed Practice run
     } else if (slug === 'keyer') {
-      clickIfVisible('endBtn');          // Keyer Practice: save the session to Progress
+      // Keyer Practice: save the session to Progress.
+      try { frame.contentWindow.HSTKeyerPractice.end(); } catch (e) {}
     } else if (slug === 'qso') {
       clickIfVisible('endQsoBtn');       // QSO: stop the contact (it goes to the copy check)
     } else if (slug === 'test-prep') {
@@ -1744,11 +1745,11 @@
   // ------------------------------------------------------------------
   // Only this release's notes (Tim, 2026-11-04: the list had grown far too
   // long). Earlier notes are in the git history of this file.
-  var RELEASE = '2026-11-05-onair';
+  var RELEASE = '2026-11-05-send';
   var RELEASE_LABEL = 'November 5, 2026';
   var RELEASE_NOTES = [
-    '<strong>On Air Practice on Home.</strong> A new panel shows today&rsquo;s on-air practice events, like the K1USN <strong>Slow Speed Test</strong> (SST), the <strong>Medium Speed Test</strong> (MST) and the CWops <strong>CWT</strong>, with what&rsquo;s on now, what&rsquo;s next, and a <strong>More Info</strong> link for each. Pick <strong>Display Times</strong> to see them in UTC or your local time.',
-    '<strong>Fixes.</strong> ICR shows the letter you type big again. Call signs in Jeopardy, Code Groups and Call Signs no longer start with a number. In Jeopardy, an answer you key shows letter gaps only where you left them too long.'
+    '<strong>The Send tools have the Copy tools&rsquo; layout.</strong> In Keyer Practice and QSO Practice the modes are at the top left; <strong>Elapsed</strong>, a practice <strong>Timer</strong>, <strong>Record</strong> and &#9432; (how it works) are at the top right; and the main button is in the middle, with your settings under it as chips. Everything else is under <strong>Settings</strong>, including your key and, for QSO Practice, your call sign, name and QTH.',
+    '<strong>This Session</strong> now shows four numbers in both tools, including <strong>Your WPM</strong>. Keyer Practice shows your last try and what to work on side by side; QSO Practice shows your last contact and your sending.'
   ];
 
   // The installed app keeps its own "seen" record (Tim, 2026-10-28). The

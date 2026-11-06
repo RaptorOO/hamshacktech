@@ -37,50 +37,17 @@
   button { font-family: inherit; }
   :focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 
-  /* ---------- header ---------- */
-  .head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 16px; }
-  h1 { margin: 0; font: 600 1.9rem/1.1 'Oswald', sans-serif; letter-spacing: 0.02em; }
-  .head .spacer { flex: 1; }
-  .chip {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 6px 12px; border: 1px solid var(--border); border-radius: 99px;
-    background: var(--well); color: var(--muted); font-size: 0.88rem; cursor: pointer;
-  }
-  .chip strong { color: var(--text); font-weight: 500; }
-  .chip .chg { color: var(--lime); }
-  .chip:hover { border-color: var(--lime); }
-
-  /* ---------- Tool Settings ---------- */
-  .card.console h2 { margin: 0 0 12px; font: 700 1.05rem/1.2 'Oswald', sans-serif; letter-spacing: 0.02em; text-transform: uppercase; color: var(--text); }   /* same as Code Groups */
-  .cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; }
-  .cgroup + .cgroup { margin-top: 16px; }
-  .ghead { margin: 0 0 8px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); }
-  .ghead span { font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--muted); margin-left: 6px; }
-  @media (max-width: 520px) { .cgrid { grid-template-columns: 1fr; } }
-  .cset label { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.88rem; margin-bottom: 6px; }
-  .cset output { color: var(--lime); font-family: 'JetBrains Mono', ui-monospace, monospace; }
-  .cset input[type="range"] { width: 100%; accent-color: var(--lime); }
-  .cset select { width: 100%; padding: 6px 8px; background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 7px; font: 0.9rem 'Inter', sans-serif; }
-  .ckey { margin: 12px 0 0; color: var(--muted); font-size: 0.9rem; }
-  .ckey strong { color: var(--text); font-weight: 500; }
-  .linkish { background: none; border: 0; padding: 0; color: var(--lime); cursor: pointer; font: inherit; }
-
-  /* ---------- controls row ---------- */
-  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 14px; }
-  .seg { display: flex; padding: 3px; gap: 3px; background: var(--well); border: 1px solid var(--border); border-radius: 9px; }
-  .seg button {
-    border: 0; border-radius: 6px; padding: 7px 14px; background: transparent; color: var(--muted);
-    font: 500 0.88rem/1 'Inter', sans-serif; cursor: pointer;
-  }
-  .seg button[aria-pressed="true"] { background: var(--lime); color: var(--lime-ink); }
-  label.inline { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.88rem; }
-  select {
-    padding: 7px 8px; background: var(--well); color: var(--text);
-    border: 1px solid var(--border); border-radius: 7px; font: 0.88rem 'Inter', sans-serif;
-  }
-  .check { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 0.88rem; cursor: pointer; }
-  .check input { width: 16px; height: 16px; margin: 0; accent-color: var(--lime); }
   [hidden] { display: none !important; }
+
+  /* ---------- the stage (shared/hst-copy.css does the rest) ---------- */
+  .k-stage { gap: 8px; }
+  .k-box, .k-warmbox { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .k-stage .sent { width: min(620px, 100%); }
+  .k-stage .transcript { width: 100%; }
+  .k-stage .warm { width: 100%; text-align: left; background: var(--bg); }
+  .k-stage .warm-credit { margin: 0; color: var(--dim); font-size: 0.85rem; }
+  .k-key strong { color: var(--text); font-weight: 600; }
+  #result:not([hidden]) + .cl-empty, #tips:not([hidden]) + .cl-empty { display: none; }
 
   /* ---------- cards ---------- */
   .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
@@ -178,22 +145,23 @@
   .btn.primary kbd { color: var(--lime-ink); opacity: 0.7; }
 
   /* ---------- result ---------- */
-  .compare { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 4px 0 14px; }
+  .compare { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px; margin: 14px 0 12px; }
   .cmp { display: flex; flex-direction: column; align-items: center; min-width: 2.2em; padding: 6px 6px 4px;
          border: 1px solid var(--border); border-radius: 8px; background: var(--well); }
   .cmp .w { font: 600 1.5rem/1.1 'JetBrains Mono', monospace; }
   .cmp .g { font: 500 0.95rem/1.2 'JetBrains Mono', monospace; color: var(--good); min-height: 1.2em; }
   .cmp.bad { border-color: var(--bad); }
   .cmp.bad .g { color: var(--bad); }
-  .score { text-align: center; font: 600 1.1rem 'Oswald', sans-serif; letter-spacing: 0.04em; margin-bottom: 12px; }
+  .score { font: 600 1.05rem 'Oswald', sans-serif; letter-spacing: 0.04em; margin-bottom: 12px; }
+  .score:empty { display: none; }
   .score.good { color: var(--good); } .score.bad { color: var(--bad); }
 
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
-  .tile { background: var(--well); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
-  .tile .val { font: 600 1.45rem/1.1 'Oswald', sans-serif; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; margin: 0 0 14px; }
+  .tile { background: #140f0d; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .tile .val { font: 600 1.3rem/1.1 'JetBrains Mono', monospace; }
   .tile .val small { font: 500 0.88rem 'Inter', sans-serif; color: var(--muted); margin-left: 3px; }
-  .tile .lbl { color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; }
-  .tile .sub { color: var(--dim); font-size: 0.85rem; margin-top: 2px; }
+  .tile .lbl { color: var(--dim); font-size: 0.7rem; line-height: 1.3; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 5px; }
+  .tile .sub { color: var(--muted); font-size: 0.78rem; line-height: 1.35; margin-top: 2px; }
   .tile.good { border-color: #166534; } .tile.good .val { color: var(--good); }
   .tile.off  { border-color: #92400e; } .tile.off .val  { color: var(--off); }
 
@@ -205,7 +173,8 @@
   svg.timeline { display: block; }
   svg.timeline text { font: 12.5px 'Inter', sans-serif; fill: var(--dim); }
   svg.timeline text.ch { font: 600 13px 'JetBrains Mono', monospace; fill: var(--muted); }
-  .legend { display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: 0.85rem; margin: 6px 0 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font-size: 0.85rem; margin: 6px 0 0; }
+  .timeline-wrap { margin-top: 6px; }
   .legend span::before { content: ""; display: inline-block; width: 12px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
   .legend .you::before { background: var(--lime); }
   .legend .ideal::before { border: 1.5px solid var(--dim-line); }
@@ -230,170 +199,261 @@
   .audio-hint { color: var(--off); }
 
   @media (max-width: 560px) {
-    h1 { font-size: 1.55rem; }
     .tch b { font-size: 2.3rem; }
-    .wrap { padding: 16px 12px 40px; }
   }
 </style>
+<link rel="stylesheet" href="../shared/hst-copy.css">
 </head>
-<body>
+<body class="cl">
 <div class="wrap">
 
-  <div class="controls">
-    <div class="seg" role="group" aria-label="Practice mode">
-      <button type="button" data-mode="warmup" aria-pressed="false">Daily Scales</button>
-      <button type="button" data-mode="copy" aria-pressed="true">Send This</button>
-      <button type="button" data-mode="free" aria-pressed="false">Free Sending</button>
-      <button type="button" data-mode="echo" aria-pressed="false">Echo</button>
+  <!-- ===================================================================
+       PRACTICE CARD: the standard layout of the Copy tools (shared/
+       hst-copy.css; Tim, 2026-11-05). Modes top left, the strip top right
+       (Elapsed, Timer, Record, i), one line about the mode, the stage,
+       the action row, the paddles, the settings as chips.
+       =================================================================== -->
+  <section class="cl-card" aria-label="Practice">
+    <div class="cl-top">
+      <div class="cl-modes" role="group" aria-label="Practice mode">
+        <button type="button" class="cl-mode" data-mode="warmup" aria-pressed="false">Daily Scales</button>
+        <button type="button" class="cl-mode" data-mode="copy" aria-pressed="true">Send This</button>
+        <button type="button" class="cl-mode" data-mode="free" aria-pressed="false">Free Sending</button>
+        <button type="button" class="cl-mode" data-mode="echo" aria-pressed="false">Echo</button>
+      </div>
+      <div class="cl-strip">
+        <div class="clock-chip" id="elapsedChip" title="Time since you started sending">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>
+          <span>Elapsed</span>
+          <span class="clock-val" id="elapsedVal" role="timer" aria-live="off">0:00</span>
+        </div>
+        <button type="button" class="clock-chip" id="timerBtn" data-cl-dialog="timerDialog" aria-haspopup="dialog" aria-controls="timerDialog"
+                title="Set a practice timer: a bell rings and the session ends when it runs out">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span>Timer</span>
+          <span class="clock-val" id="timerVal" role="timer" aria-live="off">Off</span>
+        </button>
+        <!-- Record (Tim, 2026-11-02): your sending, saved as a WAV file when you stop. -->
+        <button type="button" class="clock-chip cl-rec" id="recBtn" data-show="copy free echo" aria-pressed="false"
+                title="Record your sending and save it as a sound file">
+          <span class="rec-dot" aria-hidden="true"></span>
+          <span>Record</span>
+          <span class="clock-val" id="recVal">Off</span>
+        </button>
+        <button type="button" class="info-btn" id="infoBtn" data-cl-dialog="infoDialog" aria-haspopup="dialog" aria-controls="infoDialog" aria-label="How Keyer Practice works" title="How this works">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
+        </button>
+      </div>
     </div>
-    <label class="inline" data-show="copy echo">Send
-      <select id="source"></select>
-    </label>
-    <button class="btn" data-show="copy echo" id="ownBtn" type="button" title="Type, paste or load your own text to send">Your own text&hellip;</button>
-    <label class="check" data-show="copy"><input type="checkbox" id="showCode"> Show Morse patterns</label>
-    <!-- Daily Scales: which of Bob Carter's (WR7Q) three to send (Tim, 2026-10-23). -->
-    <label class="inline" data-show="warmup">Scale
-      <select id="scale">
-        <option value="warmup">Warm Up</option>
-        <option value="exercise">Exercise</option>
-        <option value="drill">Drill</option>
-      </select>
-    </label>
-  </div>
+    <p class="cl-desc">
+      <span data-show="warmup"><b id="scaleWhen">Do the Warm Up every day, before you send anything else.</b> Send it top to bottom. A mistake turns its group red: pause, then send that group again.</span>
+      <span data-show="copy">Send what&rsquo;s shown with your key, then pause. Each letter turns green when you send it right.</span>
+      <span data-show="free">Send anything you like. Pause for a few seconds to start a new line.</span>
+      <span data-show="echo">A word plays without being shown. Send it back on your key, then pause.</span>
+    </p>
 
-  <!-- ===== What to send, and what was heard ===== -->
-  <section class="card" aria-labelledby="stageTitle">
-    <h2 id="stageTitle" class="sr" hidden>Practice</h2>
-    <!-- Daily Scales: Bob Carter's (WR7Q) Warm Up, Exercise and Drill. Each
-         character turns green or red as you send it. -->
-    <div data-show="warmup">
-      <p class="warm-intro"><strong id="scaleWhen">Do the Warm Up every day, before you send anything else.</strong>
-        Send the whole list below at your keyer speed, top to bottom; each character turns green when you send it right.
-        A mistake turns its group red: pause, then send that group again from its first character. After 5 tries it moves on to the next group. Take as long as you like.
-        Pause when you&rsquo;re done, or press <kbd>Enter</kbd>.</p>
-      <p class="warm-credit">Daily Morse Code &ldquo;Scales&rdquo; by Bob Carter, WR7Q.</p>
-      <div class="label" id="scaleLabel">Warm Up</div>
-      <div class="warm" id="warm" aria-label="Warm-up text"></div>
-      <div class="warm-progress" id="warmProgress" aria-live="polite"></div>
+    <div class="cl-stage k-stage">
+      <!-- Daily Scales: Bob Carter's (WR7Q) Warm Up, Exercise and Drill. Each
+           character turns green or red as you send it. -->
+      <div class="k-warmbox" data-show="warmup">
+        <span class="cl-lbl" id="scaleLabel">Warm Up</span>
+        <div class="warm" id="warm" aria-label="Warm-up text"></div>
+        <div class="warm-progress" id="warmProgress" aria-live="polite"></div>
+        <p class="warm-credit">Daily Morse Code &ldquo;Scales&rdquo; by Bob Carter, WR7Q.</p>
+      </div>
+      <div class="k-box" data-show="copy echo">
+        <span class="cl-lbl next-label" id="targetLabel">Send this</span>
+        <div class="list-info" id="listInfo"></div>
+        <div class="target" id="target" aria-live="polite"></div>
+        <span class="cl-lbl">You sent</span>
+        <div class="sent" id="sent" data-empty="Waiting for your key…" aria-live="polite"></div>
+      </div>
+      <div class="k-box" data-show="free">
+        <span class="cl-lbl">You sent</span>
+        <div class="sent transcript" id="transcript" data-empty="Send anything. Pause for a few seconds to start a new line."></div>
+      </div>
+      <p class="status" id="status"></p>
     </div>
-    <div data-show="copy echo">
-      <div class="label next-label" id="targetLabel">Send this</div>
-      <div class="list-info" id="listInfo"></div>
-      <div class="target" id="target" aria-live="polite"></div>
-      <div class="label">You sent</div>
-      <div class="sent" id="sent" data-empty="Waiting for your key…" aria-live="polite"></div>
-    </div>
-    <div data-show="free">
-      <div class="label">You sent</div>
-      <div class="sent transcript" id="transcript" data-empty="Send anything. Pause for a few seconds to start a new line."></div>
-    </div>
-    <p class="status" id="status"></p>
-    <div class="actions">
-      <button class="btn primary" data-show="echo" id="echoStartBtn" type="button" title="Count down 3 seconds, then play the first word">Start</button>
-      <button class="btn" data-show="echo" id="replayBtn" type="button" title="Hear the word again">Replay</button>
-      <button class="btn" data-show="copy warmup echo" id="againBtn" type="button" title="Send the same thing again">Again <kbd>Esc</kbd></button>
-      <button class="btn" data-show="copy echo" id="skipBtn" type="button" title="Something new to send">Skip</button>
-      <button class="btn primary" data-show="copy warmup echo" id="doneBtn" type="button" title="Grade what I've sent now">Done <kbd>Enter</kbd></button>
-      <button class="btn" data-show="free" id="clearBtn" type="button">Clear</button>
-      <button class="btn" data-show="copy free echo" id="recBtn" type="button" title="Record your sending and save it as a sound file"><span class="rec-dot" aria-hidden="true"></span>Record</button>
+
+    <div class="cl-actions">
+      <button class="cl-act" data-show="copy warmup echo" id="againBtn" type="button" title="Send the same thing again">Again <kbd>Esc</kbd></button>
+      <button class="cl-act" data-show="echo" id="replayBtn" type="button" title="Hear the word again">Replay</button>
+      <span class="start-row" data-show="copy warmup echo">
+        <button class="cl-start" data-show="echo" id="echoStartBtn" type="button" title="Count down 3 seconds, then play the first word">Start</button>
+        <button class="cl-start" data-show="copy warmup echo" id="doneBtn" type="button" title="Grade what I've sent now">Done <kbd>Enter</kbd></button>
+      </span>
+      <button class="cl-act" data-show="copy echo" id="skipBtn" type="button" title="Something new to send">Skip</button>
+      <button class="cl-act" data-show="free" id="clearBtn" type="button">Clear</button>
     </div>
     <!-- On-screen paddles: always on touch screens, and when no adapter is set. -->
-    <div class="pads" id="pads" hidden>
+    <div class="cl-pads" id="pads" hidden>
       <button class="pad" id="padDit" type="button">DIT</button>
       <button class="pad" id="padDah" type="button">DAH</button>
     </div>
+    <div class="cl-quick">
+      <span class="cl-quick-items" id="clQuickItems"></span>
+      <button type="button" class="cl-settings-btn" data-cl-open aria-controls="clDrawer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+        Settings
+      </button>
+    </div>
+    <p class="cl-hint audio-hint" id="audioHint" hidden>Click anywhere in Keyer Practice to turn on sidetone &mdash; browsers only allow sound after a click.</p>
   </section>
 
-  <!-- ===== How it went ===== -->
-  <section class="card" id="result" hidden aria-labelledby="resultTitle">
-    <h2 id="resultTitle">How you sent it</h2>
-    <div id="compare" class="compare"></div>
-    <div id="score" class="score"></div>
-    <div class="tiles" id="tiles"></div>
-    <ul class="tips" id="tips"></ul>
-    <div class="label">Timing</div>
-    <div class="timeline-wrap" id="timeline"></div>
-    <div class="legend"><span class="you">You</span><span class="ideal">Perfect timing</span><span class="gapok">Gap on target</span><span class="gapoff">Gap off target (dits shown)</span></div>
+  <!-- THIS SESSION: four tiles, as in every tool. -->
+  <section class="cl-card" aria-label="This session">
+    <div class="cl-head">
+      <div><h2 class="cl-h2">This Session</h2><p class="cl-sub">Since you started or last reset.</p></div>
+      <button class="cl-reset" id="resetBtn" type="button" title="Save this session to Progress and start the numbers over">Reset</button>
+    </div>
+    <div class="cl-tiles">
+      <div class="cl-tile"><span class="v" id="tAcc">&mdash;</span><span class="l">Accuracy</span><span class="s" id="tAccSub">letters right</span></div>
+      <div class="cl-tile"><span class="v" id="tTries">0</span><span class="l">Tries</span><span class="s" id="tTriesSub">&nbsp;</span></div>
+      <div class="cl-tile"><span class="v" id="tSent">0</span><span class="l">Letters Sent</span></div>
+      <div class="cl-tile"><span class="v" id="tWpm">&mdash;</span><span class="l">Your WPM</span><span class="s" id="tWpmSub">&nbsp;</span></div>
+    </div>
   </section>
 
-  <!-- ===== Tool Settings: Keyer Practice's own speed, tone and volume.
-       Saved for this tab only; nothing here changes the other tools. ===== -->
-  <section class="card console" aria-labelledby="consoleTitle">
-    <h2 id="consoleTitle">Tool Settings</h2>
-    <!-- Grouped (Tim, 2026-11-03): in Echo, the copy settings (the word
-         you hear) first, then the send settings (your keying); the
-         sidetone always last. Each group is one row of two. -->
-    <div class="cgroup" data-show="echo">
-      <h3 class="ghead">Copy <span>the word you hear</span></h3>
-      <div class="cgrid">
-        <div class="cset">
-          <label for="cEchoWpm">Copy speed <output id="cEchoWpmVal"></output></label>
-          <input type="range" id="cEchoWpm" min="5" max="40" step="1">
-        </div>
-        <div class="cset">
-          <label for="cEchoFw">Copy Farnsworth <output id="cEchoFwVal"></output></label>
-          <select id="cEchoFw"></select>
-        </div>
+  <div class="cl-two">
+    <!-- How it went: the last try, letter by letter, and its timing. -->
+    <section class="cl-card" aria-labelledby="resultTitle">
+      <h2 class="cl-h2" id="resultTitle">How You Sent It</h2>
+      <p class="cl-sub">Your last try, letter by letter, with its timing.</p>
+      <div id="result" hidden>
+        <div id="compare" class="compare"></div>
+        <div id="score" class="score"></div>
+        <div class="tiles" id="tiles"></div>
+        <span class="cl-lbl">Timing</span>
+        <div class="timeline-wrap" id="timeline"></div>
+        <div class="legend"><span class="you">You</span><span class="ideal">Perfect timing</span><span class="gapok">Gap on target</span><span class="gapoff">Gap off target (dits shown)</span></div>
       </div>
-    </div>
-    <div class="cgroup">
-      <h3 class="ghead" data-show="echo">Send <span>your keying</span></h3>
-      <div class="cgrid">
-        <div class="cset">
-          <label for="cWpm"><span id="cWpmLabel">Keyer speed</span> <output id="cWpmVal"></output></label>
-          <input type="range" id="cWpm" min="5" max="40" step="1">
-        </div>
-        <!-- Farnsworth: practice SENDING with extra space between letters and
-             words, e.g. 25/10 (characters at 25 WPM, overall 10 WPM). -->
-        <div class="cset">
-          <label for="cFw">Farnsworth sending <output id="cFwVal"></output></label>
-          <select id="cFw"></select>
-        </div>
-      </div>
-    </div>
-    <div class="cgroup">
-      <h3 class="ghead" data-show="echo">Sidetone</h3>
-      <div class="cgrid">
-        <div class="cset">
-          <label for="cTone">Sidetone pitch <output id="cToneVal"></output></label>
-          <input type="range" id="cTone" min="300" max="1000" step="10">
-        </div>
-        <div class="cset">
-          <label for="cVol">Sidetone volume <output id="cVolVal"></output></label>
-          <input type="range" id="cVol" min="0" max="100" step="5">
-        </div>
-      </div>
-    </div>
-    <p class="help ckey" id="fwNote" hidden></p>
-    <p class="help ckey" id="followNote" hidden></p>
-    <p class="help ckey">Your key: <span id="setupText"></span> &middot; <button class="linkish" id="setupLink" type="button">Keyer Setup&hellip;</button></p>
-  </section>
+      <p class="cl-empty" id="resultEmpty">Send something, then pause. Your try shows up here.</p>
+    </section>
+    <section class="cl-card" aria-labelledby="tipsTitle">
+      <h2 class="cl-h2" id="tipsTitle">What to Work On</h2>
+      <p class="cl-sub">From your last try.</p>
+      <ul class="cl-tips" id="tips" hidden></ul>
+      <p class="cl-empty" id="tipsEmpty">Tips on your spacing, your dahs and any letters that came out wrong show up here.</p>
+    </section>
+  </div>
 
-  <section class="card">
-    <div class="session">
-      <span>This session: <b id="sTries">0</b> <span id="sTriesLbl">tries</span></span>
-      <span data-show="copy warmup echo">Accuracy <b id="sAcc">—</b></span>
-      <span>Letters sent <b id="sSent">0</b></span>
-      <span>Time <b id="sTime">0:00</b></span>
-      <span class="spacer"></span>
-      <button class="btn" id="endBtn" type="button" hidden title="Save this session to Progress">End session</button>
-    </div>
-    <p class="help audio-hint" id="audioHint" hidden>Click anywhere in Keyer Practice to turn on sidetone &mdash; browsers only allow sound after a click.</p>
-    <details class="help">
-      <summary>How this works</summary>
-      <p><strong>Daily Scales:</strong> Bob Carter&rsquo;s (WR7Q) sending scales. <strong>Warm Up</strong>, every day before you send anything else, works every letter, number and prosign; <strong>Exercise</strong> sends every letter and number five times; <strong>Drill</strong> builds sending skill with sentences, words and punctuation. Send it top to bottom; each character turns green as you send it right. A mistake turns its group (BBBBB, or a word) red: pause, then send the whole group again, so a finished scale is all green; mistakes still count in your accuracy. There&rsquo;s no time limit.When you&rsquo;ve sent the last character and pause (or press <kbd>Enter</kbd>), you get the full timing report for your keyer speed. <kbd>Esc</kbd> starts over.</p>
-      <p><strong>Send This:</strong> send what&rsquo;s shown, then pause. As you send, each character turns green when you send it right and red when you don&rsquo;t, like Daily Scales. Under <strong>Send</strong>, the lists (the pyramid, QSO exchanges, the dits exercise, pangrams) go one line at a time, in order, and pick up where you left off. <strong>Your own text&hellip;</strong> lets you type, paste or load a text file; a Morserino-style file with <code>&lt;c&gt;$</code> chapters gives one choice per chapter. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
-      <p><strong>Echo:</strong> press <strong>Start</strong>, and after a 3-second countdown the app plays a word from the same lists as Send This, without showing it. It plays at the <strong>Copy speed</strong> and <strong>Copy Farnsworth</strong> in Tool Settings, which can differ from your keyer speed. Send it back on your key, then pause. It&rsquo;s graded the same way as Send This, and then the word is shown: green if you got it right. The next word plays a moment later. <strong>Replay</strong> plays the word again; <strong>Again</strong> (<kbd>Esc</kbd>) plays the last word again so you can have another go. <strong>Done</strong> (<kbd>Enter</kbd>) ends the session. It&rsquo;s a favorite drill on the Morserino and in LICW classes, joining copying and sending.</p>
-      <p><strong>The timing rules:</strong> a dah is 3 dits long; the gap inside a letter is 1 dit; between letters 3 dits; between words 7 dits. &ldquo;Character speed&rdquo; is how fast your dits and dahs go. &ldquo;Overall speed&rdquo; includes your spacing &mdash; what someone copying you actually hears. Extra space between letters (Farnsworth spacing) is fine while learning, but the closer you get to 3 and 7, the easier you are to copy.</p>
-      <p><strong>With paddles</strong> the keyer makes perfect dits and dahs, so the useful feedback is spacing and which letters came out wrong. <strong>With a straight key or bug</strong> you form the elements yourself, so you&rsquo;ll also see your dah-to-dit ratio (ideally 3:1).</p>
-      <p>Sessions are saved to Progress when you click End session or switch to another tool.</p>
-    </details>
-  </section>
   <footer class="hst-foot">
     <div class="hst-73"><b>73</b> Practice often, don&rsquo;t quit and have fun</div>
     <div class="hst-copy">&copy; HamShackTech LLC 2026</div>
   </footer>
 </div>
+
+<!-- SETTINGS DRAWER (a sheet from the bottom on phones; shared/hst-copy.js).
+     Keyer Practice's own choices: saved for this tab only. -->
+<div class="cl-scrim" id="clScrim" hidden></div>
+<aside class="cl-drawer" id="clDrawer" role="dialog" aria-modal="true" aria-labelledby="clDrawerTitle">
+  <div class="cl-dh">
+    <div><h2 class="cl-h2" id="clDrawerTitle">Settings</h2><p class="cl-sub">Keyer Practice &middot; saved for next time</p></div>
+    <button type="button" class="cl-x" data-cl-close aria-label="Close settings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="cl-dbody">
+    <details class="cl-sec" open>
+      <summary>What to send</summary>
+      <div data-show="copy echo">
+        <div class="field"><label for="source">Send</label><select id="source"></select></div>
+        <button class="cl-btn" id="ownBtn" type="button" title="Type, paste or load your own text to send">Your own text&hellip;</button>
+        <div class="check-row" data-show="copy"><input type="checkbox" id="showCode"><label for="showCode">Show Morse patterns</label></div>
+      </div>
+      <!-- Daily Scales: which of Bob Carter's (WR7Q) three to send (Tim, 2026-10-23). -->
+      <div class="field" data-show="warmup">
+        <label for="scale">Scale</label>
+        <select id="scale">
+          <option value="warmup">Warm Up</option>
+          <option value="exercise">Exercise</option>
+          <option value="drill">Drill</option>
+        </select>
+      </div>
+      <p class="cl-note" data-show="free">Free Sending has nothing to pick: send anything you like.</p>
+    </details>
+    <details class="cl-sec" open>
+      <summary>Speed</summary>
+      <div class="field">
+        <label for="cWpm"><span id="cWpmLabel">Keyer speed</span> <span class="val" id="cWpmVal"></span></label>
+        <input type="range" id="cWpm" min="5" max="40" step="1">
+      </div>
+      <!-- Farnsworth: practice SENDING with extra space between letters and
+           words, e.g. 25/10 (characters at 25 WPM, overall 10 WPM). -->
+      <div class="field">
+        <label for="cFw">Farnsworth sending <span class="val" id="cFwVal"></span></label>
+        <select id="cFw"></select>
+      </div>
+      <p class="cl-note" id="fwNote" hidden></p>
+      <p class="cl-note" id="followNote" hidden></p>
+    </details>
+    <!-- Echo: the word you hear can go at its own speed (Tim, 2026-11-03). -->
+    <details class="cl-sec" open data-show="echo">
+      <summary>Echo: what you hear</summary>
+      <div class="field">
+        <label for="cEchoWpm">Copy speed <span class="val" id="cEchoWpmVal"></span></label>
+        <input type="range" id="cEchoWpm" min="5" max="40" step="1">
+      </div>
+      <div class="field">
+        <label for="cEchoFw">Copy Farnsworth <span class="val" id="cEchoFwVal"></span></label>
+        <select id="cEchoFw"></select>
+      </div>
+    </details>
+    <details class="cl-sec" open>
+      <summary>Sound</summary>
+      <div class="cl-pair">
+        <div class="field">
+          <label for="cTone">Sidetone <span class="val" id="cToneVal"></span></label>
+          <input type="range" id="cTone" min="300" max="1000" step="10">
+        </div>
+        <div class="field">
+          <label for="cVol">Volume <span class="val" id="cVolVal"></span></label>
+          <input type="range" id="cVol" min="0" max="100" step="5">
+        </div>
+      </div>
+    </details>
+    <details class="cl-sec" open>
+      <summary>Your key</summary>
+      <p class="cl-note k-key" id="setupText"></p>
+      <button class="cl-btn" id="setupLink" type="button">Open Keyer Setup</button>
+    </details>
+  </div>
+  <div class="cl-df"><button type="button" class="cl-start" data-cl-close>Done</button></div>
+</aside>
+
+<!-- How this works (the i in the strip). -->
+<dialog class="cl-dlg" id="infoDialog" aria-labelledby="infoDialogTitle">
+  <h2 id="infoDialogTitle">How Keyer Practice Works</h2>
+  <p><strong>Daily Scales:</strong> Bob Carter&rsquo;s (WR7Q) sending scales. <strong>Warm Up</strong>, every day before you send anything else, works every letter, number and prosign; <strong>Exercise</strong> sends every letter and number five times; <strong>Drill</strong> builds sending skill with sentences, words and punctuation. Pick one under Settings. Send it top to bottom; each character turns green as you send it right. A mistake turns its group (BBBBB, or a word) red: pause, then send the whole group again, so a finished scale is all green; mistakes still count in your accuracy. After 5 tries at one group it moves on. There&rsquo;s no time limit. When you&rsquo;ve sent the last character and pause (or press <kbd>Enter</kbd>), you get the full timing report for your keyer speed. <kbd>Esc</kbd> starts over.</p>
+  <p><strong>Send This:</strong> send what&rsquo;s shown, then pause. As you send, each character turns green when you send it right and red when you don&rsquo;t. Under Settings, <strong>Send</strong> picks what to send: the lists (the pyramid, QSO exchanges, the dits exercise, pangrams) go one line at a time, in order, and pick up where you left off. <strong>Your own text&hellip;</strong> lets you type, paste or load a text file; a Morserino-style file with <code>&lt;c&gt;$</code> chapters gives one choice per chapter. When you stop for a word space (7 dits) after the last word, it&rsquo;s graded. <kbd>Enter</kbd> grades it now; <kbd>Esc</kbd> starts it over.</p>
+  <p><strong>Free Sending:</strong> send anything; a pause of a few seconds starts a new line, and How You Sent It shows the timing of the line you&rsquo;re on.</p>
+  <p><strong>Echo:</strong> press <strong>Start</strong>, and after a 3-second countdown the app plays a word from the same lists as Send This, without showing it. It plays at the copy speed under <strong>Echo: what you hear</strong> in Settings, which can differ from your keyer speed. Send it back on your key, then pause. It&rsquo;s graded the same way as Send This, and then the word is shown: green if you got it right. The next word plays a moment later. <strong>Replay</strong> plays the word again; <strong>Again</strong> (<kbd>Esc</kbd>) plays the last word again so you can have another go. <strong>Done</strong> (<kbd>Enter</kbd>) ends the session. It&rsquo;s a favorite drill on the Morserino and in LICW classes, joining copying and sending.</p>
+  <p><strong>The timing rules:</strong> a dah is 3 dits long; the gap inside a letter is 1 dit; between letters 3 dits; between words 7 dits. &ldquo;Character speed&rdquo; is how fast your dits and dahs go. &ldquo;Overall speed&rdquo; includes your spacing &mdash; what someone copying you actually hears. Extra space between letters (Farnsworth spacing) is fine while learning, but the closer you get to 3 and 7, the easier you are to copy.</p>
+  <p><strong>With paddles</strong> the keyer makes perfect dits and dahs, so the useful feedback is spacing and which letters came out wrong. <strong>With a straight key or bug</strong> you form the elements yourself, so you&rsquo;ll also see your dah-to-dit ratio (ideally 3:1).</p>
+  <p><strong>Elapsed</strong> counts up from your first dit. Tap <strong>Timer</strong> to choose how long to practice; the countdown starts when you start sending, and when it runs out a bell rings and the session ends. <strong>Record</strong> saves your sending as a sound file when you tap it again.</p>
+  <p>Sessions are saved to Progress when you press Reset, switch modes or switch to another tool.</p>
+  <div class="cl-dlg-btns"><button type="button" class="cl-dlg-main" data-cl-dialog-close>Close</button></div>
+</dialog>
+
+<!-- Practice Timer: the countdown starts with your first dit. -->
+<dialog class="cl-dlg" id="timerDialog" aria-labelledby="timerDialogTitle">
+  <h2 id="timerDialogTitle">Practice Timer</h2>
+  <p>Pick how long to practice. The countdown starts when you start sending; when it reaches zero a bell rings and the session ends.</p>
+  <div class="cl-presets">
+    <button type="button" data-min="1">1 min</button>
+    <button type="button" data-min="2">2 min</button>
+    <button type="button" data-min="3">3 min</button>
+    <button type="button" data-min="5">5 min</button>
+    <button type="button" data-min="10">10 min</button>
+    <button type="button" data-min="15">15 min</button>
+  </div>
+  <label class="cl-timer-entry">Or enter <input type="number" data-timer-input min="1" max="180" step="1" inputmode="numeric"> minutes</label>
+  <div class="cl-dlg-btns">
+    <button type="button" class="cl-dlg-main" data-timer-set>Set Timer</button>
+    <button type="button" data-timer-off>Timer Off</button>
+    <button type="button" data-cl-dialog-close>Cancel</button>
+  </div>
+</dialog>
 
 <!-- Your own text for Copy this: typed, pasted or loaded from a file (Tim, 2026-10-21). -->
 <dialog class="own-dlg" id="ownDlg" aria-labelledby="ownTitle">
@@ -420,6 +480,7 @@
 <script src="../shared/hst-engine.js"></script>
 <script src="../shared/hst-keyer.js"></script>
 <script src="../shared/hst-content.js"></script>
+<script src="../shared/hst-copy.js"></script>
 <script>
 (function () {
   'use strict';
@@ -433,7 +494,7 @@
   /* ---------------- this tab's own saved choices ---------------- */
   var PREFS_KEY = 'hct-cw-keyer-practice-v1';
   var prefs = { mode: 'copy', source: 'word', echoSource: 'word', showCode: false, wpm: 0, fw: 0, listPos: {}, scale: 'warmup',
-                echoWpm: 0, echoFw: 0 };   // wpm 0 = not set yet; fw 0 = Farnsworth off;
+                echoWpm: 0, echoFw: 0, timerMin: 0 };   // timerMin: the Practice Timer, 0 = off   // wpm 0 = not set yet; fw 0 = Farnsworth off;
                                            // echoWpm/echoFw: Echo's copy speed (0 = the keyer speed) and its Farnsworth
   try { var saved = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (saved) Object.keys(prefs).forEach(function (k) { if (k in saved) prefs[k] = saved[k]; }); } catch (e) {}
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
@@ -449,6 +510,8 @@
   function posKey(l) { return (prefs.mode === 'echo' ? 'echo:' : '') + l.key; }
 
   var KEY_NAMES = { iambicB: 'Paddles (iambic B)', iambicA: 'Paddles (iambic A)', straight: 'Straight key', bug: 'Bug' };
+  var KEY_SHORT = { iambicB: 'Paddles B', iambicA: 'Paddles A', straight: 'Straight key', bug: 'Bug' };
+  var ADAPTER_SHORT = { vail: 'Vail', vband: 'VBand', keyboard: 'Keyboard' };
   var ADAPTER_NAMES = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter' };
   function cfg() { return HST.keyerSettings.get(); }
   // The app's keyer makes the elements (paddles, unless the adapter is keying itself).
@@ -477,7 +540,8 @@
      arrive; the grading uses the full analysis afterwards. */
   var keyer = HST.createKeyer({ key: onKey, wpm: keyWpm });   // paddles key at this tab's own speed
   // Record (Tim, 2026-11-02): your sending, saved as a WAV file when you stop.
-  HST.recordButton($('recBtn'), { name: function () { return 'cw-sending'; } });
+  // It's the Record cell in the strip (Tim, 2026-11-05).
+  HST.recordButton($('recBtn'), { name: function () { return 'cw-sending'; }, valueEl: $('recVal') });
   keyer.attachKeyboard(window);
   var decoder = HST.createDecoder({
     unitMs: unitMs,
@@ -778,6 +842,7 @@
       if (--left > 0) return show();
       echoCountStop();
       echoOn = true; echoButtons();
+      touchSession();
       echoPlay(target);
     }, 1000);
     echoButtons();
@@ -1014,7 +1079,7 @@
     target = analyzedTarget = WARMUP_TARGET;
     warmRunReset();
     paintWarm([], 0);
-    $('warmProgress').innerHTML = 'Your keyer speed is <b>' + speedText() + '</b>' + (fwpm() ? ' (Farnsworth)' : '') + ' (Tool Settings, below). Start sending when you’re ready.';
+    $('warmProgress').innerHTML = 'Your keyer speed is <b>' + speedText() + '</b>' + (fwpm() ? ' (Farnsworth)' : '') + ' (in Settings). Start sending when you’re ready.';
     setStatus(msg || 'Start with the first ' + WARM_T[0] + '.');
   }
 
@@ -1132,6 +1197,9 @@
 
     drawTimeline(a);
   }
+
+  // Back to the empty How You Sent It and What to Work On cards.
+  function hideResult() { $('result').hidden = true; $('tips').hidden = true; $('tips').innerHTML = ''; }
 
   // A character's or prosign's pattern (prosigns aren't in HST.MORSE).
   function morseOf(t) { return HST.MORSE[t] || HST.PROSIGN_CODE[t] || ''; }
@@ -1285,7 +1353,32 @@
      switch (the app clicks End session), a mode or content change, or
      10 minutes without keying. It's saved like the other trainers'. */
   var rec = HST.history.recorder('keyer');
-  var sess = null, idleTimer = null, clockTimer = null;
+  var sess = null, idleTimer = null;
+  // This Session's four tiles count from the first try until Reset,
+  // across modes; sess is the Progress record, which a mode change ends.
+  var tally;
+  function tallyReset() { tally = { tries: 0, perfect: 0, right: 0, total: 0, sent: 0, ow: 0 }; }
+  tallyReset();
+  /* Elapsed and Timer, in the strip (shared HST.createClocks): they run
+     with the session, from your first dit (in Echo, from Start). When the
+     timer runs out a bell rings and the session ends, as in the Copy
+     tools; your next dit starts a new one. */
+  var clocks = HST.createClocks({
+    elapsedVal: $('elapsedVal'), elapsedChip: $('elapsedChip'), timerBtn: $('timerBtn'), timerVal: $('timerVal'),
+    getTimerMin: function () { return Number(prefs.timerMin) || 0; },
+    onExpire: function () {
+      var min = prefs.timerMin;
+      endSession();
+      HST.audio.bell(HST.shared.get().volume);
+      setStatus('\u23f0 ' + min + ' min done. Send again to start a new session.');
+    }
+  });
+  HSTCopy.timer({
+    dialog: $('timerDialog'),
+    getMin: function () { return Number(prefs.timerMin) || 0; },
+    setMin: function (m) { prefs.timerMin = m; savePrefs(); $('timerBtn').classList.remove('expired'); clocks.renderIdle(); }
+  });
+  clocks.renderIdle();
 
   function touchSession() {
     if (!sess) {
@@ -1294,8 +1387,7 @@
       rec.start({ mode: prefs.mode, source: copyLike() ? curSource() : prefs.mode, keyType: cfg().keyType, wpm: keyWpm(), fwpm: fwpm(),
                   sourceName: copyLike() ? sourceName() : undefined,
                   scale: prefs.mode === 'warmup' ? scale().name : undefined });
-      $('endBtn').hidden = false;
-      clockTimer = setInterval(renderSession, 1000);
+      clocks.start();
     }
     clearTimeout(idleTimer);
     idleTimer = setTimeout(endSession, 10 * 60000);
@@ -1305,6 +1397,11 @@
   function recordAttempt(a, g) {
     if (!sess) touchSession();
     sess.tries++;
+    tally.tries++; tally.sent += a.chars.length; tally.ow += a.overallWpm * a.chars.length;
+    if (g) {
+      tally.right += g.correct; tally.total += g.total;
+      if (g.correct === g.total && !g.extra && (g.all == null || g.done === g.all)) tally.perfect++;
+    }
     sess.sent += a.chars.length;
     sess.cgSum += a.charGap.mean * a.charGap.n; sess.cgN += a.charGap.n;
     sess.wgSum += a.wordGap.mean * a.wordGap.n; sess.wgN += a.wordGap.n;
@@ -1327,14 +1424,14 @@
   }
 
   function renderSession() {
-    var s = sess || { tries: 0, right: 0, total: 0, sent: 0, start: Date.now() };
-    $('sTries').textContent = s.tries;
-    $('sTriesLbl').textContent = prefs.mode === 'copy' ? (s.tries === 1 ? 'try' : 'tries')
-      : prefs.mode === 'echo' ? (s.tries === 1 ? 'word' : 'words')
-      : prefs.mode === 'warmup' ? (s.tries === 1 ? 'warm-up' : 'warm-ups') : (s.tries === 1 ? 'line' : 'lines');
-    $('sAcc').textContent = s.total ? Math.round(100 * s.right / s.total) + '%' : '—';
-    $('sSent').textContent = s.sent;
-    $('sTime').textContent = HST.fmtClock(Date.now() - s.start);
+    var t = tally;
+    $('tAcc').textContent = t.total ? Math.round(100 * t.right / t.total) + '%' : '\u2014';
+    $('tAccSub').textContent = t.total ? t.right + ' of ' + t.total + ' letters' : 'letters right';
+    $('tTries').textContent = t.tries;
+    $('tTriesSub').textContent = t.total ? t.perfect + ' all right' : '\u00a0';
+    $('tSent').textContent = t.sent;
+    $('tWpm').textContent = t.sent ? Math.round(t.ow / t.sent) : '\u2014';
+    $('tWpmSub').textContent = 'keyer at ' + speedText();
   }
 
   function endSession() {
@@ -1348,22 +1445,25 @@
       clearTimeout(holdTimer); holdTimer = null;
       echoReady();
     }
-    clearTimeout(idleTimer); clearInterval(clockTimer);
+    clearTimeout(idleTimer); clocks.stop();
     keyer.reset();
     if (sess) rec.finish();
     sess = null;
-    $('endBtn').hidden = true;
     renderSession();
   }
-  $('endBtn').addEventListener('click', endSession);
+  // Reset: save the session to Progress and start This Session over.
+  $('resetBtn').addEventListener('click', function () {
+    endSession();
+    tallyReset(); renderSession(); hideResult();
+  });
   window.addEventListener('pagehide', function () { if (sess) rec.finish(); });
 
   /* ---------------- controls ---------------- */
   function applyMode() {
-    document.querySelectorAll('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === prefs.mode)); });
+    document.querySelectorAll('.cl-mode').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === prefs.mode)); });
     // data-show lists the modes an element belongs to ("copy warmup").
     document.querySelectorAll('[data-show]').forEach(function (el) { el.hidden = el.dataset.show.split(' ').indexOf(prefs.mode) < 0; });
-    $('result').hidden = true;
+    hideResult();
     marks = []; live = ''; state = 'ready'; decoder.reset();
     showLive();
     if (copyLike()) renderSourcePicker();
@@ -1376,7 +1476,7 @@
     else setStatus('Send anything you like.');
     renderSession();
   }
-  document.querySelectorAll('.seg button').forEach(function (b) {
+  document.querySelectorAll('.cl-mode').forEach(function (b) {
     b.addEventListener('click', function () {
       if (prefs.mode === b.dataset.mode) return;
       endSession();
@@ -1387,7 +1487,7 @@
   $('source').addEventListener('change', function (e) {
     endSession();
     setSource(e.target.value); savePrefs();
-    state = 'ready'; marks = []; live = ''; showLive(); $('result').hidden = true;
+    state = 'ready'; marks = []; live = ''; showLive(); hideResult();
     newTarget(false);
     if (prefs.mode === 'echo') echoPlay(target);
   });
@@ -1396,7 +1496,7 @@
   $('scale').addEventListener('change', function (e) {
     endSession();
     prefs.scale = e.target.value; savePrefs();
-    clearTimeout(waitTimer); keyer.reset(); $('result').hidden = true;
+    clearTimeout(waitTimer); keyer.reset(); hideResult();
     loadScale();
     warmReady();
   });
@@ -1418,7 +1518,7 @@
     setSource(src); savePrefs();
     list = null;
     renderSourcePicker();
-    state = 'ready'; marks = []; live = ''; decoder.reset(); keyer.reset(); showLive(); $('result').hidden = true;
+    state = 'ready'; marks = []; live = ''; decoder.reset(); keyer.reset(); showLive(); hideResult();
     newTarget(false);
     if (prefs.mode === 'echo') return echoPlay(target);
     $('targetLabel').textContent = 'Send this';
@@ -1502,11 +1602,12 @@
   $('clearBtn').addEventListener('click', function () {
     clearTimeout(waitTimer);
     if (marks.length) endLine();
-    transcript = []; marks = []; live = ''; decoder.reset(); showLive(); $('result').hidden = true;
+    transcript = []; marks = []; live = ''; decoder.reset(); showLive(); hideResult();
   });
   // Enter = grade now, Esc = start over (Copy this).
   window.addEventListener('keydown', function (e) {
-    if ((!copyLike() && prefs.mode !== 'warmup') || e.target.tagName === 'SELECT' || $('ownDlg').open) return;
+    if ((!copyLike() && prefs.mode !== 'warmup') || e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT' ||
+        document.querySelector('dialog[open]') || HSTCopy.isOpen()) return;
     if (e.key === 'Enter') { e.preventDefault(); if (prefs.mode !== 'echo' || echoOn) done(); }
     if (e.key === 'Escape') { e.preventDefault(); again(); }
   });
@@ -1573,6 +1674,7 @@
   HST.vailSpeedPrefs.onChange(renderConsole);
 
   $('setupLink').addEventListener('click', function () {
+    HSTCopy.close();
     try { window.parent.HCT.openKeyerSetup(); } catch (e) { setStatus('Open Settings (the gear icon) → Keyer Setup.', true); }
   });
 
@@ -1618,11 +1720,26 @@
     applyMode();
   }
 
+  // The settings chips under the action row (shared/hst-copy.js).
+  HSTCopy.summary = function () {
+    var k = cfg(), sh = HST.shared.get();
+    var what = prefs.mode === 'warmup' ? scale().name : prefs.mode === 'free' ? 'Free sending' : sourceName();
+    return [
+      what,
+      (prefs.mode === 'echo' ? 'Send ' : '') + speedText() + (fwpm() ? ' Farnsworth' : ''),
+      prefs.mode === 'echo' ? 'Hear ' + echoWpm() + (echoFwpm() ? '/' + echoFwpm() : '') + ' WPM' : '',
+      prefs.mode === 'copy' && prefs.showCode ? 'Morse patterns' : '',
+      sh.toneHz + ' Hz \u00b7 ' + sh.volume + '%',
+      { t: ADAPTER_SHORT[k.adapter] + ' \u00b7 ' + KEY_SHORT[k.keyType], key: true }
+    ];
+  };
+
   $('source').value = prefs.source;
   $('showCode').checked = prefs.showCode;
   renderSetup();
   renderSourcePicker();
   applyMode();
+  HSTCopy.refresh();
 
   // The app shell clicks End session when you leave this tab; tests and the
   // QSO tab can reach the pieces here.

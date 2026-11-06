@@ -1,7 +1,8 @@
 /* HamShackTech CW Trainer -- the standard Copy tool layout
    =========================================================
    One layout for ICR, Code Groups and Call Signs (Tim, 2026-11-04,
-   mockup "Option C"):
+   mockup "Option C"), and for the Send tools, Keyer Practice and QSO
+   Practice (2026-11-05; Record takes Buzzer's place in the strip):
 
      practice card   [mode chips]            [Elapsed | Timer | Buzzer | (extras) | i]
                      one line about the mode
@@ -288,8 +289,74 @@ body.cl .cl-drawer .sub { margin: 0 0 12px; font-size: 12.5px; color: var(--cl-d
 /* a note under a switch lines up with the switch's label */
 body.cl .cl-drawer .check-note, body.cl .cl-drawer .adapt-note { margin: 3px 0 0 50px; font-size: 12.5px; line-height: 1.4; color: var(--cl-dim); }
 
+/* ---------- the Send tools' extras (Keyer and QSO Practice) ---------- */
+/* Record, in the strip where the Copy tools have Buzzer. */
+body.cl .cl-strip .cl-rec .rec-dot { width: 7px; height: 7px; margin: 0; vertical-align: 0; }
+body.cl .cl-strip .cl-rec.rec-on { border-color: var(--cl-border) !important; background: rgba(239, 68, 68, 0.10); }
+body.cl .cl-strip .cl-rec.rec-on .clock-val { color: var(--cl-bad-text); }
+body.cl .cl-q-key { border-color: var(--cl-border2); color: var(--cl-text); }
+/* On-screen paddles, under the action row. */
+body.cl .cl-pads { display: flex; gap: 10px; margin-top: 12px; }
+body.cl .cl-pads[hidden] { display: none; }
+body.cl .cl-pads .pad {
+  flex: 1; height: 72px; margin: 0; background: var(--cl-recess); color: var(--cl-text);
+  border: 1px solid var(--cl-border2); border-radius: 12px;
+  font: 600 18px/1 'Oswald', sans-serif; letter-spacing: 0.1em;
+  touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer;
+}
+body.cl .cl-pads .pad[hidden] { display: none; }
+body.cl .cl-pads .pad.down { background: var(--cl-lime); color: var(--cl-ink); border-color: var(--cl-lime); }
+body.cl .cl-start kbd, body.cl .cl-act kbd { font: 500 12px/1 'JetBrains Mono', monospace; opacity: 0.65; margin-left: 4px; letter-spacing: 0; }
+body.cl .cl-start:disabled { opacity: 0.45; cursor: default; filter: none; }
+body.cl .cl-start[hidden], body.cl .cl-act[hidden] { display: none; }
+/* A small label in the stage ("Send this", "You sent"). */
+body.cl .cl-lbl { font: 500 11.5px/1.2 'JetBrains Mono', monospace; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cl-dim); }
+/* The stage's status pill (QSO: Ready, On the air). */
+body.cl .cl-pill {
+  display: inline-block; padding: 4px 12px; border: 1px solid var(--cl-border2); border-radius: 999px;
+  font: 500 11.5px/1.2 'JetBrains Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cl-muted);
+}
+body.cl .cl-pill.live { border-color: var(--cl-lime); color: var(--cl-lime); }
+body.cl .cl-pill.them { border-color: #93c5fd; color: #93c5fd; }
+body.cl .cl-empty { margin: 14px 0 0; color: var(--cl-dim); font-size: 14px; }
+body.cl .cl-tips { margin: 12px 0 0; padding-left: 18px; color: var(--cl-muted); font-size: 14.5px; line-height: 1.55; }
+body.cl .cl-tips li { margin-bottom: 6px; }
+body.cl .cl-tips b { color: var(--cl-text); font-weight: 600; }
+body.cl .cl-tips code { font: 0.95em 'JetBrains Mono', monospace; background: var(--cl-raised); padding: 1px 6px; border-radius: 4px; color: var(--cl-text); }
+
+/* ---------- popups: How this works (i) and the Practice Timer ---------- */
+body.cl dialog.cl-dlg {
+  width: calc(100vw - 32px); max-width: 560px; max-height: calc(100vh - 48px); margin: auto; padding: 22px 24px 20px;
+  background: var(--cl-panel); color: var(--cl-text); border: 1px solid var(--cl-border2); border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55); text-align: left;
+}
+body.cl dialog.cl-dlg::backdrop { background: rgba(10, 8, 6, 0.62); }
+body.cl dialog.cl-dlg h2 { margin: 0 0 12px; font: 600 17px/1.3 'Oswald', sans-serif; letter-spacing: 0.05em; text-transform: uppercase; }
+body.cl dialog.cl-dlg p { margin: 0 0 12px; color: var(--cl-muted); font-size: 14.5px; line-height: 1.55; }
+body.cl dialog.cl-dlg p b, body.cl dialog.cl-dlg p strong { color: var(--cl-text); }
+body.cl dialog.cl-dlg kbd, body.cl dialog.cl-dlg code { font: 0.92em 'JetBrains Mono', monospace; color: var(--cl-text); }
+body.cl .cl-dlg-btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+body.cl .cl-dlg-btns button, body.cl .cl-presets button {
+  height: 42px; padding: 0 18px; margin: 0; background: var(--cl-raised); border: 1px solid var(--cl-border); border-radius: 10px;
+  color: var(--cl-text); font: 500 14.5px/1 'Inter', sans-serif; cursor: pointer;
+}
+body.cl .cl-dlg-btns button:hover, body.cl .cl-presets button:hover { border-color: var(--cl-lime); color: var(--cl-lime); }
+body.cl .cl-dlg-btns .cl-dlg-main { background: var(--cl-lime); border-color: var(--cl-lime); color: var(--cl-ink); font-weight: 600; }
+body.cl .cl-dlg-btns .cl-dlg-main:hover { color: var(--cl-ink); filter: brightness(1.06); }
+body.cl .cl-presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+body.cl .cl-presets button { height: 38px; padding: 0 14px; border-radius: 999px; font-family: 'JetBrains Mono', monospace; }
+body.cl .cl-presets button[aria-pressed="true"] { border-color: var(--cl-lime); color: var(--cl-lime); }
+body.cl .cl-timer-entry { display: flex; align-items: center; gap: 10px; margin: 0 0 18px; color: var(--cl-muted); font-size: 14.5px; }
+body.cl .cl-timer-entry input {
+  width: 90px; height: 40px; padding: 0 10px; background: var(--cl-recess); color: var(--cl-text);
+  border: 1px solid var(--cl-border); border-radius: 8px; font: 500 15px 'JetBrains Mono', monospace;
+}
+body.cl .cl-strip .clock-chip.expired { animation: cl-flash 0.5s ease-in-out 6; }
+@keyframes cl-flash { 50% { background: rgba(246, 106, 125, 0.18); } }
+
 @media (prefers-reduced-motion: reduce) {
   body.cl .cl-drawer, body.cl .cl-drawer.open { transition: none; }
+  body.cl .cl-strip .clock-chip.expired { animation: none; }
 }
 
 /* ---------- phones ---------- */
@@ -300,7 +367,11 @@ body.cl .cl-drawer .check-note, body.cl .cl-drawer .adapt-note { margin: 3px 0 0
   /* the modes share the width equally; a long name wraps to two lines */
   body.cl .cl-modes { align-self: stretch; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border-radius: 14px; }
   body.cl .cl-mode { white-space: normal; line-height: 1.15; padding: 8px 4px; border-radius: 10px; font-size: 13.5px; }
-  body.cl .cl-strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+  body.cl .cl-strip { display: flex; }
+  body.cl .cl-strip > * { flex: 1 1 0; min-width: 0; }
+  body.cl .cl-strip > .info-btn { flex: 0 0 44px; }
+  body.cl .cl-top > .cl-strip { margin-left: 0; }   /* the full width, like the modes above it */
+  body.cl .cl-strip .cl-rec .rec-dot { display: none; }
   body.cl .cl-strip .clock-chip { flex-direction: column; justify-content: center; gap: 3px; padding: 7px 2px; font-size: 10px; letter-spacing: 0.06em; }
   body.cl .cl-strip .clock-chip svg { display: none; }
   body.cl .cl-strip .info-btn { min-width: 40px; padding: 0; }
@@ -313,6 +384,9 @@ body.cl .cl-drawer .check-note, body.cl .cl-drawer .adapt-note { margin: 3px 0 0
   body.cl .cl-act, body.cl .cl-actions .next-btn { flex: 1 1 0; padding: 0 12px; font-size: 14px; }
   body.cl .cl-act.invisible { display: none; }
   body.cl .cl-quick { justify-content: flex-start; }
+  body.cl .cl-pads { gap: 8px; margin-top: 10px; }
+  body.cl .cl-pads .pad { height: 68px; }
+  body.cl dialog.cl-dlg { padding: 18px 18px 16px; }
   body.cl .cl-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   body.cl .cl-tile { padding: 12px 14px; }
   body.cl .cl-tile .v { font-size: 22px; }

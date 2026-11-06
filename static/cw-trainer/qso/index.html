@@ -7,15 +7,16 @@
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="../shared/hst-chrome.css">
 <style>
-  /* Same avocado palette as the app shell and the other tabs. */
+  /* Same avocado palette as the app shell and the other tabs. The layout
+     is the standard one in shared/hst-copy.css (linked after this). */
   :root {
     --bg: #100e0c;
     --panel: #1c1917;      /* stone-900 */
     --well: #292524;       /* stone-800 */
     --border: #44403c;     /* stone-700 */
     --text: #fafaf9;       /* stone-50 */
-    --muted: #c7c2be;      /* lighter than stone-400, easier to read (2026-10-29) */
-    --dim: #a8a29e;        /* stone-400 (was stone-500), easier to read (2026-10-29) */
+    --muted: #c7c2be;
+    --dim: #a8a29e;
     --lime: #a3e635;       /* lime-400: you */
     --lime-ink: #1a2e05;
     --them: #93c5fd;       /* blue-300: the other station */
@@ -26,73 +27,23 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
-  body { background: var(--bg); color: var(--text); font: 15px/1.5 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-  .wrap { max-width: 900px; margin: 0 auto; padding: 22px 18px 56px; }
+  body { -webkit-font-smoothing: antialiased; }
   button, input, select { font-family: inherit; }
   :focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
   [hidden] { display: none !important; }
 
-  .head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 16px; }
-  h1 { margin: 0; font: 600 1.9rem/1.1 'Oswald', sans-serif; letter-spacing: 0.02em; }
-  .head .spacer { flex: 1; }
-  .chip {
-    display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px;
-    border: 1px solid var(--border); border-radius: 99px; background: var(--well);
-    color: var(--muted); font-size: 0.88rem; cursor: pointer;
-  }
-  .chip strong { color: var(--text); font-weight: 500; }
-  .chip .chg { color: var(--lime); }
-  .chip:hover { border-color: var(--lime); }
+  /* ---------- the stage: ready, on the air, the copy check ---------- */
+  .q-box { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .q-station { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .q-st { min-width: 120px; padding: 12px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); text-align: center; }
+  .q-st b { display: block; font: 600 26px/1.15 'JetBrains Mono', monospace; letter-spacing: 0.04em; color: var(--text); }
+  .q-st span { display: block; margin-top: 4px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+  .q-prompt { margin: 0; color: var(--muted); font-size: 14.5px; }
+  .q-prompt b { color: var(--text); font-weight: 600; }
+  .q-setbtn { background: none; border: 0; padding: 0; color: var(--lime); font: 600 14.5px 'Inter', sans-serif; cursor: pointer; }
+  .q-setbtn:hover { text-decoration: underline; }
 
-  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
-  .card h2 { margin: 0 0 12px; font: 600 1.05rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
-  .label { color: var(--dim); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; }
-  .hint { color: var(--dim); font-size: 0.88rem; line-height: 1.5; margin: 6px 0 0; }
-
-  /* ---------- setup ---------- */
-  .cwops { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -4px 0 14px; }
-  .cwops[hidden] { display: none; }
-  #cwopsRow label { display: inline; margin: 0; }
-  #cwopsRow input { width: 8em; }
-  .cwops .hint { margin: 0; }
-  .station { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-  .field label { display: block; color: var(--muted); font-size: 0.88rem; margin-bottom: 4px; }
-  input[type="text"], select {
-    width: 100%; padding: 8px 10px; background: var(--well); color: var(--text);
-    border: 1px solid var(--border); border-radius: 7px; font-size: 0.95rem;
-  }
-  input[type="text"] { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.04em; }
-  input[type="text"].bad { border-color: var(--bad); }
-  .choices { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: flex-end; margin-bottom: 14px; }
-  .seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--well); border: 1px solid var(--border); border-radius: 9px; }
-  .seg button { border: 0; border-radius: 6px; padding: 7px 14px; background: transparent; color: var(--muted); font: 500 0.88rem/1 'Inter', sans-serif; cursor: pointer; }
-  .seg button[aria-pressed="true"] { background: var(--lime); color: var(--lime-ink); }
-  .group .label { display: block; margin-bottom: 5px; }
-  .check { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 0.88rem; cursor: pointer; }
-  .check input { width: 16px; height: 16px; margin: 0; accent-color: var(--lime); }
-  .checks { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-bottom: 14px; }
-  /* Speeds panel: label | slider (or dropdown) | value, one row each. */
-  .speeds { border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px 12px; margin: 0 0 14px; }
-  .speeds legend { padding: 0 6px; }
-  .speed-row { display: grid; grid-template-columns: 210px 1fr 70px; gap: 12px; align-items: center; padding: 5px 0; }
-  .speed-row label { color: var(--text); font-size: 0.9rem; }
-  .speed-row label span { color: var(--dim); font-size: 0.88rem; }
-  .speed-row input[type="range"] { width: 100%; accent-color: var(--lime); }
-  .speed-row output { font: 500 0.92rem 'JetBrains Mono', monospace; color: var(--lime); text-align: right; }
-  .speeds .hint { margin-top: 4px; }
-  .band-checks { margin: 6px 0 0; }
-  .desc { color: var(--muted); font-size: 0.88rem; margin: 0 0 14px; }
-
-  .btn { border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; background: var(--well); color: var(--text); font: 500 0.9rem/1 'Inter', sans-serif; cursor: pointer; }
-  .btn:hover { border-color: var(--lime); }
-  .btn.primary { background: var(--lime); border-color: var(--lime); color: var(--lime-ink); }
-  .btn.big { padding: 11px 22px; font-size: 1rem; }
-  .btn kbd { font: 0.82rem 'JetBrains Mono', monospace; color: var(--dim); margin-left: 6px; }
-  .btn.primary kbd { color: var(--lime-ink); opacity: 0.7; }
-  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-
-  /* ---------- the contact ---------- */
-  .log { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; max-height: 46vh; overflow-y: auto; padding-right: 4px; }
+  .log { width: 100%; display: flex; flex-direction: column; gap: 8px; max-height: 46vh; overflow-y: auto; padding-right: 4px; text-align: left; }
   .over { display: grid; grid-template-columns: 54px 1fr; gap: 10px; align-items: baseline; }
   .who { font: 600 0.85rem 'Oswald', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
   .over.dx .who { color: var(--them); } .over.me .who { color: var(--lime); }
@@ -103,210 +54,322 @@
   .msg.sending { border-color: var(--lime); }
   .msg .marks { display: block; margin-top: 4px; font: 0.88rem 'Inter', sans-serif; letter-spacing: 0; }
   .ok { color: var(--good); } .miss { color: var(--off); }
-  .status { font-size: 0.95rem; margin: 0 0 6px; }
+  .status { margin: 0; font-size: 0.95rem; }
   .status.turn { color: var(--lime); }
   .status.them { color: var(--them); }
   .status.warn { color: var(--off); }
-  .suggest { font: 500 0.92rem/1.5 'JetBrains Mono', monospace; color: var(--muted); background: var(--bg);
-             border: 1px dashed var(--border); border-radius: 8px; padding: 6px 10px; margin: 0 0 12px; word-break: break-word; }
+  .suggest { width: 100%; font: 500 0.92rem/1.5 'JetBrains Mono', monospace; color: var(--muted); background: var(--bg); text-align: left;
+             border: 1px dashed var(--border); border-radius: 8px; padding: 6px 10px; margin: 0; word-break: break-word; }
   .suggest b { color: var(--dim); font-weight: 500; }
 
-  /* ---------- after ---------- */
-  .copygrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 14px; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin-bottom: 14px; }
-  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid #2f2a27; }
-  th { color: var(--dim); font-weight: 500; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; }
-  td.mono { font-family: 'JetBrains Mono', monospace; }
-  .logline { font: 500 0.95rem 'JetBrains Mono', monospace; background: var(--well); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; word-break: break-word; }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
-  .tile { background: var(--well); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
-  .tile .val { font: 600 1.45rem/1.1 'Oswald', sans-serif; }
+  /* the copy check */
+  .q-copy-desc { margin: 0; color: var(--muted); font-size: 14.5px; }
+  #copyForm { width: 100%; }
+  .copygrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; text-align: left; }
+  .copygrid label { display: block; margin-bottom: 4px; color: var(--muted); font-size: 0.88rem; }
+  .copygrid input {
+    width: 100%; height: 44px; padding: 0 12px; background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 10px;
+    font: 500 15px 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .copygrid input:focus { border-color: var(--lime); outline: none; }
+
+  /* ---------- the cards under This Session ---------- */
+  .logline { margin: 12px 0 0; font: 500 0.92rem 'JetBrains Mono', monospace; color: var(--text); background: #140f0d;
+             border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; word-break: break-word; }
+  .q-whole { margin-top: 14px; }
+  .q-whole > summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+  .q-whole .log { max-height: none; margin-top: 10px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; margin: 14px 0 0; }
+  .tile { background: #140f0d; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .tile .val { font: 600 1.3rem/1.1 'JetBrains Mono', monospace; }
   .tile .val small { font: 500 0.88rem 'Inter', sans-serif; color: var(--muted); margin-left: 3px; }
-  .tile .lbl { color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; }
-  .tile .sub { color: var(--dim); font-size: 0.85rem; margin-top: 2px; }
+  .tile .lbl { color: var(--dim); font-size: 0.7rem; line-height: 1.3; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 5px; }
+  .tile .sub { color: var(--muted); font-size: 0.78rem; line-height: 1.35; margin-top: 2px; }
   .tile.good { border-color: #166534; } .tile.good .val { color: var(--good); }
   .tile.off { border-color: #92400e; } .tile.off .val { color: var(--off); }
-  .h3 { margin: 4px 0 8px; font: 600 0.95rem 'Oswald', sans-serif; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+  #lastBody:not([hidden]) + .cl-empty, #sendBody:not([hidden]) + .cl-empty { display: none; }
 
-  .pads { display: flex; gap: 10px; margin-top: 12px; }
-  .pad { flex: 1; height: 72px; background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 12px;
-         font: 600 1rem/1 'Oswald', sans-serif; letter-spacing: 0.06em; touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer; }
-  .pad.down { background: var(--lime); color: var(--lime-ink); border-color: var(--lime); }
-  details.help { color: var(--dim); font-size: 0.88rem; line-height: 1.5; }
-  details.help summary { cursor: pointer; color: var(--muted); }
-  details.help p { margin: 8px 0; }
-  .audio-hint { color: var(--off); }
+  /* ---------- Settings: the station fields ---------- */
+  body.cl .cl-drawer input.q-up { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.04em; }
+  body.cl .cl-drawer input.bad { border-color: var(--bad); }
+  .q-hint .err { color: var(--bad); }
+  .k-key strong { color: var(--text); font-weight: 600; }
 
-  @media (max-width: 600px) {
-    .station { grid-template-columns: 1fr 1fr; }
-    .station .field:first-child { grid-column: 1 / -1; }
-    h1 { font-size: 1.55rem; }
-    .wrap { padding: 16px 12px 40px; }
+  @media (max-width: 640px) {
     .over { grid-template-columns: 1fr; gap: 2px; }
-    .speed-row { grid-template-columns: 1fr 64px; gap: 4px 10px; }
-    .speed-row label { grid-column: 1 / -1; }
+    .q-station { width: 100%; flex-wrap: nowrap; gap: 8px; }
+    .q-st { min-width: 0; flex: 1 1 0; padding: 10px 4px; }
+    .q-st b { font-size: 18px; overflow-wrap: anywhere; }
+    /* the two toggles: the state under the label */
+    body.cl #whoBtn, body.cl #hintsBtn { flex-direction: column; gap: 4px; line-height: 1.15; }
   }
 </style>
+<link rel="stylesheet" href="../shared/hst-copy.css">
 </head>
-<body>
+<body class="cl">
 <div class="wrap">
-  <div class="head">
-    <div class="spacer"></div>
-    <button class="chip" id="setupChip" type="button" title="Open Keyer Setup"><span id="setupText"></span><span class="chg">Change</span></button>
-  </div>
 
-  <!-- ================= Before the contact ================= -->
-  <section class="card" id="setupCard" aria-labelledby="setupTitle">
-    <h2 id="setupTitle">Set up a contact</h2>
-    <div class="station">
-      <div class="field"><label for="myCall">Your call sign</label><input type="text" id="myCall" autocomplete="off" spellcheck="false" placeholder="e.g. N6WAX"></div>
-      <div class="field"><label for="myName">Your name</label><input type="text" id="myName" autocomplete="off" spellcheck="false" placeholder="e.g. TIM"></div>
-      <div class="field"><label for="myQth">Your QTH / state</label><input type="text" id="myQth" autocomplete="off" spellcheck="false" placeholder="e.g. CA"></div>
-    </div>
-    <p class="hint" id="stationHint" style="margin:-6px 0 14px">Not licensed yet? Use a practice call like <b>N0CALL</b>. Keep your name short &mdash; on the air it&rsquo;s usually one word.</p>
-
-    <div class="choices">
-      <div class="group">
-        <span class="label">Type of contact</span>
-        <div class="seg" role="group" aria-label="Type of contact">
-          <button type="button" data-style="std" aria-pressed="true">Standard QSO</button>
-          <button type="button" data-style="pota" aria-pressed="false">POTA</button>
-          <button type="button" data-style="sota" aria-pressed="false">SOTA</button>
-          <button type="button" data-style="cwt" aria-pressed="false">CWT</button>
+  <!-- ===================================================================
+       PRACTICE CARD: the standard layout of the Copy tools (shared/
+       hst-copy.css; Tim, 2026-11-05). The type of contact is the mode;
+       the strip has Elapsed, Timer, Record and i; the stage shows your
+       station, then the contact, then the copy check.
+       =================================================================== -->
+  <section class="cl-card" aria-label="Practice">
+    <div class="cl-top">
+      <div class="cl-modes" role="group" aria-label="Type of contact">
+        <button type="button" class="cl-mode" data-style="std" aria-pressed="true">Standard QSO</button>
+        <button type="button" class="cl-mode" data-style="pota" aria-pressed="false">POTA</button>
+        <button type="button" class="cl-mode" data-style="sota" aria-pressed="false">SOTA</button>
+        <button type="button" class="cl-mode" data-style="cwt" aria-pressed="false">CWT</button>
+      </div>
+      <div class="cl-strip">
+        <div class="clock-chip" id="elapsedChip" title="Time since Start QSO">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/><path d="M12 2v3"/></svg>
+          <span>Elapsed</span>
+          <span class="clock-val" id="elapsedVal" role="timer" aria-live="off">0:00</span>
         </div>
-      </div>
-      <div class="group">
-        <span class="label">Who calls CQ</span>
-        <div class="seg" role="group" aria-label="Who calls CQ">
-          <button type="button" data-who="they" aria-pressed="true">They do</button>
-          <button type="button" data-who="you" aria-pressed="false">You do</button>
-        </div>
+        <button type="button" class="clock-chip" id="timerBtn" data-cl-dialog="timerDialog" aria-haspopup="dialog" aria-controls="timerDialog"
+                title="Set a practice timer: a bell rings and the contact ends when it runs out">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span>Timer</span>
+          <span class="clock-val" id="timerVal" role="timer" aria-live="off">Off</span>
+        </button>
+        <!-- Record (Tim, 2026-11-02): the whole contact, both stations, saved
+             as a WAV file when you stop it or the contact ends. -->
+        <button type="button" class="clock-chip cl-rec" id="recBtn" aria-pressed="false"
+                title="Record the contact (both stations) and save it as a sound file">
+          <span class="rec-dot" aria-hidden="true"></span>
+          <span>Record</span>
+          <span class="clock-val" id="recVal">Off</span>
+        </button>
+        <button type="button" class="info-btn" id="infoBtn" data-cl-dialog="infoDialog" aria-haspopup="dialog" aria-controls="infoDialog" aria-label="How QSO Practice works" title="How this works">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
+        </button>
       </div>
     </div>
-    <p class="desc" id="desc"></p>
-    <!-- CWT only: your CWops member number. Blank = you send CWA. -->
-    <div class="field cwops" id="cwopsRow" hidden>
-      <label for="myCwops">Your CWops number</label>
-      <input type="text" id="myCwops" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="e.g. 1234">
-      <span class="hint">No number? Leave it blank and you’ll send <b>CWA</b> after your name.</span>
+    <p class="cl-desc" id="desc"></p>
+
+    <div class="cl-stage">
+      <!-- Before the contact: your station, as they'll hear it. -->
+      <div class="q-box" data-phase="setup">
+        <span class="cl-pill">Ready</span>
+        <div class="q-station" id="station"></div>
+        <p class="q-prompt" id="speedNote"></p>
+      </div>
+      <!-- The contact. -->
+      <div class="q-box" data-phase="live">
+        <span class="cl-pill" id="airPill">On the air</span>
+        <div class="log" id="log" aria-live="polite"></div>
+        <p class="status" id="status"></p>
+        <div class="suggest" id="suggest" hidden></div>
+      </div>
+      <!-- After: what did you copy? -->
+      <div class="q-box" data-phase="copy">
+        <span class="cl-pill">What did you copy?</span>
+        <p class="q-copy-desc">Fill in what you copied from them, then check it. Leave a box empty if you didn&rsquo;t get it.</p>
+        <form id="copyForm" autocomplete="off"><div class="copygrid" id="copyFields"></div></form>
+      </div>
     </div>
 
-    <!-- Speeds for this tab only: how fast they send (what you copy) and
-         how fast your keyer sends can differ, e.g. copy 25 WPM with
-         Farnsworth 12, send 15 WPM. -->
-    <fieldset class="speeds">
-      <legend class="label">Speed, tone and volume</legend>
-      <div class="speed-row">
-        <label for="copyWpm">Copy speed <span>(they send)</span></label>
-        <input type="range" id="copyWpm" min="5" max="40" step="1">
-        <output id="copyWpmVal" for="copyWpm"></output>
-      </div>
-      <div class="speed-row">
-        <label for="fw">Farnsworth <span>(their spacing)</span></label>
-        <select id="fw"></select>
-        <output></output>
-      </div>
-      <div class="speed-row">
-        <label for="sendWpm">Sending speed <span>(your keyer)</span></label>
-        <input type="range" id="sendWpm" min="5" max="40" step="1">
-        <output id="sendWpmVal" for="sendWpm"></output>
-      </div>
-      <!-- Tone and volume for this tab only (their signal and your sidetone). -->
-      <div class="speed-row">
-        <label for="qTone">Tone</label>
-        <input type="range" id="qTone" min="300" max="1000" step="10">
-        <output id="qToneVal" for="qTone"></output>
-      </div>
-      <div class="speed-row">
-        <label for="qVol">Volume</label>
-        <input type="range" id="qVol" min="0" max="100" step="5">
-        <output id="qVolVal" for="qVol"></output>
-      </div>
-      <p class="hint" id="speedHint"></p>
-    </fieldset>
-    <!-- Band conditions (Tim, 2026-11-02): make it sound like a real band. -->
-    <fieldset class="speeds">
-      <legend class="label">Band conditions</legend>
-      <div class="speed-row">
-        <label for="bNoise">Noise <span>(receiver hiss)</span></label>
-        <input type="range" id="bNoise" min="0" max="100" step="10">
-        <output id="bNoiseVal" for="bNoise"></output>
-      </div>
-      <div class="checks band-checks">
-        <label class="check"><input type="checkbox" id="bQsb"> Fading (QSB)</label>
-        <label class="check"><input type="checkbox" id="bQrn"> Static crashes (QRN)</label>
-        <label class="check"><input type="checkbox" id="bQrm"> Another station nearby (QRM)</label>
-      </div>
-    </fieldset>
-    <div class="checks">
-      <label class="check"><input type="checkbox" id="hints"> Show what to send</label>
-      <label class="check"><input type="checkbox" id="showText"> Show their text after each over</label>
-      <label class="check"><input type="checkbox" id="recordQso"> Record the contact <span class="hint" style="display:inline;margin:0">(saved as a sound file when it ends)</span></label>
+    <div class="cl-actions">
+      <button type="button" class="cl-act" data-phase="setup" id="whoBtn" title="Who calls CQ: they do (you answer) or you do">
+        <span>Who calls CQ</span> <span class="toggle-state" id="whoState">They do</span>
+      </button>
+      <button type="button" class="cl-act" data-phase="live" id="repeatBtn" title="Ask them to send their last over again (like sending AGN)">Repeat theirs</button>
+      <span class="start-row">
+        <button type="button" class="cl-start" data-phase="setup" id="startBtn">Start QSO</button>
+        <button type="button" class="cl-start" data-phase="live" id="overBtn" title="Finish your over now">Done <kbd>Enter</kbd></button>
+        <button type="submit" class="cl-start" data-phase="copy" id="checkBtn" form="copyForm">Check My Copy</button>
+      </span>
+      <button type="button" class="cl-act" data-phase="setup" id="hintsBtn" aria-pressed="true" title="Show a suggestion of what to send on your turn">
+        <span>Show what to send</span> <span class="toggle-state" id="hintsState">On</span>
+      </button>
+      <button type="button" class="cl-act" data-phase="live" id="endQsoBtn" title="Stop this contact">End QSO</button>
     </div>
-    <div class="actions">
-      <button class="btn primary big" id="startBtn" type="button">Start QSO</button>
-      <span class="hint" id="speedNote" style="margin:0"></span>
-    </div>
-  </section>
-
-  <!-- ================= The contact ================= -->
-  <section class="card" id="liveCard" hidden aria-labelledby="liveTitle">
-    <h2 id="liveTitle">On the air</h2>
-    <div class="log" id="log" aria-live="polite"></div>
-    <p class="status" id="status"></p>
-    <div class="suggest" id="suggest" hidden></div>
-    <div class="actions">
-      <button class="btn" id="repeatBtn" type="button" title="Ask them to send their last over again (like sending AGN)">Repeat theirs</button>
-      <button class="btn primary" id="overBtn" type="button" title="Finish your over now">Done <kbd>Enter</kbd></button>
-      <span style="flex:1"></span>
-      <button class="btn" id="endQsoBtn" type="button" title="Stop this contact">End QSO</button>
-      <button class="btn" id="recBtn" type="button" title="Record the contact (both stations) and save it as a sound file"><span class="rec-dot" aria-hidden="true"></span>Record</button>
-    </div>
-    <div class="pads" id="pads" hidden>
+    <!-- On-screen paddles: always on touch screens, and when no adapter is set. -->
+    <div class="cl-pads" id="pads" hidden>
       <button class="pad" id="padDit" type="button">DIT</button>
       <button class="pad" id="padDah" type="button">DAH</button>
     </div>
-    <p class="hint audio-hint" id="audioHint" hidden>Click anywhere in QSO Practice to turn on your sidetone &mdash; browsers only allow sound after a click.</p>
+    <div class="cl-quick">
+      <span class="cl-quick-items" id="clQuickItems"></span>
+      <button type="button" class="cl-settings-btn" data-cl-open aria-controls="clDrawer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+        Settings
+      </button>
+    </div>
+    <p class="cl-hint audio-hint" id="audioHint" hidden>Click anywhere in QSO Practice to turn on your sidetone &mdash; browsers only allow sound after a click.</p>
   </section>
 
-  <!-- ================= After: copy check, then review ================= -->
-  <section class="card" id="copyCard" hidden aria-labelledby="copyTitle">
-    <h2 id="copyTitle">What did you copy?</h2>
-    <p class="desc">Fill in what you copied from them, then check it. (Leave a box empty if you didn&rsquo;t get it.)</p>
-    <form id="copyForm" autocomplete="off">
-      <div class="copygrid" id="copyFields"></div>
-      <div class="actions"><button class="btn primary" type="submit">Check my copy</button></div>
-    </form>
+  <!-- THIS SESSION: four tiles, as in every tool. -->
+  <section class="cl-card" aria-label="This session">
+    <div class="cl-head">
+      <div><h2 class="cl-h2">This Session</h2><p class="cl-sub">Since you started or last reset.</p></div>
+      <button class="cl-reset" id="resetBtn" type="button">Reset</button>
+    </div>
+    <div class="cl-tiles">
+      <div class="cl-tile"><span class="v" id="tContacts">0</span><span class="l">Contacts</span><span class="s" id="tContactsSub">&nbsp;</span></div>
+      <div class="cl-tile"><span class="v" id="tCopy">&mdash;</span><span class="l">Copied Right</span><span class="s" id="tCopySub">&nbsp;</span></div>
+      <div class="cl-tile"><span class="v" id="tSend">&mdash;</span><span class="l">Sending Accuracy</span><span class="s" id="tSendSub">items they copied</span></div>
+      <div class="cl-tile"><span class="v" id="tWpm">&mdash;</span><span class="l">Your WPM</span><span class="s" id="tWpmSub">&nbsp;</span></div>
+    </div>
   </section>
 
-  <section class="card" id="reviewCard" hidden aria-labelledby="reviewTitle">
-    <h2 id="reviewTitle">How the QSO went</h2>
-    <div class="logline" id="logline"></div>
-    <div class="h3">Your copy</div>
-    <table><thead><tr><th>Item</th><th>You copied</th><th>They sent</th><th></th></tr></thead><tbody id="copyResults"></tbody></table>
-    <div class="h3">Your sending</div>
-    <div class="tiles" id="tiles"></div>
-    <div class="h3">The whole contact</div>
-    <div class="log" id="reviewLog" style="max-height:none"></div>
-    <div class="actions"><button class="btn primary big" id="againBtn" type="button">New QSO</button></div>
-  </section>
+  <div class="cl-two">
+    <section class="cl-card" aria-labelledby="lastTitle">
+      <h2 class="cl-h2" id="lastTitle">Last Contact</h2>
+      <p class="cl-sub">What you copied, against what they sent.</p>
+      <div id="lastBody" hidden>
+        <div class="logline" id="logline"></div>
+        <table class="cl-table"><caption>Your copy</caption>
+          <thead><tr><th>Item</th><th>You copied</th><th>They sent</th><th></th></tr></thead>
+          <tbody id="copyResults"></tbody>
+        </table>
+        <details class="q-whole"><summary>The whole contact</summary><div class="log" id="reviewLog"></div></details>
+      </div>
+      <p class="cl-empty">Work a contact, then check your copy. It shows up here.</p>
+    </section>
+    <section class="cl-card" aria-labelledby="sendTitle">
+      <h2 class="cl-h2" id="sendTitle">Your Sending</h2>
+      <p class="cl-sub">From your overs in the last contact.</p>
+      <div id="sendBody" hidden>
+        <div class="tiles" id="tiles"></div>
+        <ul class="cl-tips" id="tips"></ul>
+      </div>
+      <p class="cl-empty">Your speed, your spacing and anything they had trouble copying show up here.</p>
+    </section>
+  </div>
 
-  <details class="help card">
-    <summary>How this works</summary>
-    <p>The other station sends at your <b>copy speed</b> and you answer with your key at your <b>sending speed</b> &mdash; set both under Speeds before you start. They can be different: copy 25 WPM with Farnsworth 12 and send at 15, for example. End each of your overs the usual way &mdash; <b>K</b>, <b>KN</b>, <b>BK</b> or <b>SK</b> &mdash; then pause, or press <kbd>Enter</kbd>. If you stop without one, a few seconds&rsquo; pause ends your over.</p>
-    <p>It&rsquo;s forgiving like a real operator: order doesn&rsquo;t matter, repeats are fine, and a call sign with one letter off still gets through. If something&rsquo;s missing they&rsquo;ll ask &mdash; <b>QRZ?</b> (who&rsquo;s calling?), <b>NAME?</b>, <b>RST?</b>, <b>PSE AGN</b> &mdash; or <b>QRS</b> if they can&rsquo;t read you. You can ask them too: send <b>AGN</b> or <b>?</b> to hear their last over again, or <b>QRS</b> to have them slow down.</p>
-    <p><b>Standard QSO:</b> call signs, signal report, name and QTH, then 73. <b>POTA:</b> the quick Parks on the Air exchange &mdash; the activator calls CQ POTA with the park number, hunters send just their call, each side sends 5NN (599) and state, then TU. <b>SOTA:</b> the same idea from a mountain top &mdash; the activator signs /P and gives the summit reference; real signal reports are traded. <b>CWT:</b> the CWops Test, a fast weekly mini-contest &mdash; the exchange is just name and CWops member number (CWA if you don&rsquo;t have one), with no signal report. Enter your number in the box that appears when you pick CWT.</p>
-  </details>
   <footer class="hst-foot">
     <div class="hst-73"><b>73</b> Practice often, don&rsquo;t quit and have fun</div>
     <div class="hst-copy">&copy; HamShackTech LLC 2026</div>
   </footer>
 </div>
 
+<!-- SETTINGS DRAWER (a sheet from the bottom on phones; shared/hst-copy.js).
+     QSO Practice's own choices: saved for this tab only. -->
+<div class="cl-scrim" id="clScrim" hidden></div>
+<aside class="cl-drawer" id="clDrawer" role="dialog" aria-modal="true" aria-labelledby="clDrawerTitle">
+  <div class="cl-dh">
+    <div><h2 class="cl-h2" id="clDrawerTitle">Settings</h2><p class="cl-sub">QSO Practice &middot; saved for next time</p></div>
+    <button type="button" class="cl-x" data-cl-close aria-label="Close settings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="cl-dbody">
+    <details class="cl-sec" open id="stationSec">
+      <summary>Your station</summary>
+      <div class="field"><label for="myCall">Your call sign</label><input type="text" class="q-up" id="myCall" autocomplete="off" spellcheck="false" placeholder="e.g. N6WAX"></div>
+      <div class="cl-pair">
+        <div class="field"><label for="myName">Your name</label><input type="text" class="q-up" id="myName" autocomplete="off" spellcheck="false" placeholder="e.g. TIM"></div>
+        <div class="field"><label for="myQth">QTH / state</label><input type="text" class="q-up" id="myQth" autocomplete="off" spellcheck="false" placeholder="e.g. CA"></div>
+      </div>
+      <!-- CWT only: your CWops member number. Blank = you send CWA. -->
+      <div class="field" id="cwopsRow" hidden>
+        <label for="myCwops">Your CWops number</label>
+        <input type="text" id="myCwops" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="e.g. 1234">
+        <p class="cl-note">No number? Leave it blank and you&rsquo;ll send <b>CWA</b> after your name.</p>
+      </div>
+      <p class="cl-note q-hint" id="stationHint">Not licensed yet? Use a practice call like <b>N0CALL</b>. Keep your name short &mdash; on the air it&rsquo;s usually one word.</p>
+    </details>
+    <!-- Speeds for this tab only: how fast they send (what you copy) and
+         how fast your keyer sends can differ, e.g. copy 25 WPM with
+         Farnsworth 12, send 15 WPM. -->
+    <details class="cl-sec" open>
+      <summary>Speed</summary>
+      <div class="field">
+        <label for="copyWpm">Copy speed (they send) <span class="val" id="copyWpmVal"></span></label>
+        <input type="range" id="copyWpm" min="5" max="40" step="1">
+      </div>
+      <div class="field">
+        <label for="fw">Farnsworth (their spacing)</label>
+        <select id="fw"></select>
+      </div>
+      <div class="field">
+        <label for="sendWpm">Sending speed (your keyer) <span class="val" id="sendWpmVal"></span></label>
+        <input type="range" id="sendWpm" min="5" max="40" step="1">
+      </div>
+      <p class="cl-note" id="speedHint"></p>
+    </details>
+    <!-- Tone and volume for this tab only (their signal and your sidetone). -->
+    <details class="cl-sec" open>
+      <summary>Sound</summary>
+      <div class="cl-pair">
+        <div class="field">
+          <label for="qTone">Tone <span class="val" id="qToneVal"></span></label>
+          <input type="range" id="qTone" min="300" max="1000" step="10">
+        </div>
+        <div class="field">
+          <label for="qVol">Volume <span class="val" id="qVolVal"></span></label>
+          <input type="range" id="qVol" min="0" max="100" step="5">
+        </div>
+      </div>
+    </details>
+    <!-- Band conditions (Tim, 2026-11-02): make it sound like a real band. -->
+    <details class="cl-sec" open>
+      <summary>Band conditions</summary>
+      <div class="field">
+        <label for="bNoise">Noise (receiver hiss) <span class="val" id="bNoiseVal"></span></label>
+        <input type="range" id="bNoise" min="0" max="100" step="10">
+      </div>
+      <div class="check-row"><input type="checkbox" id="bQsb"><label for="bQsb">Fading (QSB)</label></div>
+      <div class="check-row"><input type="checkbox" id="bQrn"><label for="bQrn">Static crashes (QRN)</label></div>
+      <div class="check-row"><input type="checkbox" id="bQrm"><label for="bQrm">Another station nearby (QRM)</label></div>
+    </details>
+    <details class="cl-sec" open>
+      <summary>Options</summary>
+      <div class="check-row"><input type="checkbox" id="showText"><label for="showText">Show their text after each over</label></div>
+      <div class="check-row"><input type="checkbox" id="recordQso"><label for="recordQso">Record every contact</label></div>
+      <p class="check-note">Saved as a sound file when the contact ends. Record in the strip does one contact.</p>
+    </details>
+    <details class="cl-sec" open>
+      <summary>Your key</summary>
+      <p class="cl-note k-key" id="setupText"></p>
+      <button class="cl-btn" id="setupLink" type="button">Open Keyer Setup</button>
+    </details>
+  </div>
+  <div class="cl-df"><button type="button" class="cl-start" data-cl-close>Done</button></div>
+</aside>
+
+<!-- How this works (the i in the strip). -->
+<dialog class="cl-dlg" id="infoDialog" aria-labelledby="infoDialogTitle">
+  <h2 id="infoDialogTitle">How QSO Practice Works</h2>
+  <p>Pick the type of contact at the top and who calls CQ, then press <b>Start QSO</b>. Your call sign, name and QTH, and both speeds, are in <b>Settings</b>.</p>
+  <p>The other station sends at your <b>copy speed</b> and you answer with your key at your <b>sending speed</b>. They can be different: copy 25 WPM with Farnsworth 12 and send at 15, for example. End each of your overs the usual way &mdash; <b>K</b>, <b>KN</b>, <b>BK</b> or <b>SK</b> &mdash; then pause, or press <kbd>Enter</kbd>. If you stop without one, a few seconds&rsquo; pause ends your over.</p>
+  <p>It&rsquo;s forgiving like a real operator: order doesn&rsquo;t matter, repeats are fine, and a call sign with one letter off still gets through. If something&rsquo;s missing they&rsquo;ll ask &mdash; <b>QRZ?</b> (who&rsquo;s calling?), <b>NAME?</b>, <b>RST?</b>, <b>PSE AGN</b> &mdash; or <b>QRS</b> if they can&rsquo;t read you. You can ask them too: send <b>AGN</b> or <b>?</b> to hear their last over again, or <b>QRS</b> to have them slow down.</p>
+  <p><b>Standard QSO:</b> call signs, signal report, name and QTH, then 73. <b>POTA:</b> the quick Parks on the Air exchange &mdash; the activator calls CQ POTA with the park number, hunters send just their call, each side sends 5NN (599) and state, then TU. <b>SOTA:</b> the same idea from a mountain top &mdash; the activator signs /P and gives the summit reference; real signal reports are traded. <b>CWT:</b> the CWops Test, a fast weekly mini-contest &mdash; the exchange is just name and CWops member number (CWA if you don&rsquo;t have one), with no signal report. Your number goes in Settings, under Your station.</p>
+  <p>When the contact ends, fill in what you copied from them and press <b>Check My Copy</b>. <b>Last Contact</b> shows what you got right, and <b>Your Sending</b> shows your speed and spacing.</p>
+  <p><b>Elapsed</b> counts up from Start QSO. Tap <b>Timer</b> to choose how long to practice; when it runs out a bell rings and the contact ends. <b>Record</b> saves the contact, both stations, as a sound file.</p>
+  <div class="cl-dlg-btns"><button type="button" class="cl-dlg-main" data-cl-dialog-close>Close</button></div>
+</dialog>
+
+<!-- Practice Timer: the countdown starts with Start QSO. -->
+<dialog class="cl-dlg" id="timerDialog" aria-labelledby="timerDialogTitle">
+  <h2 id="timerDialogTitle">Practice Timer</h2>
+  <p>Pick how long to practice. The countdown starts with <b>Start QSO</b>; when it reaches zero a bell rings and the contact ends.</p>
+  <div class="cl-presets">
+    <button type="button" data-min="1">1 min</button>
+    <button type="button" data-min="2">2 min</button>
+    <button type="button" data-min="3">3 min</button>
+    <button type="button" data-min="5">5 min</button>
+    <button type="button" data-min="10">10 min</button>
+    <button type="button" data-min="15">15 min</button>
+  </div>
+  <label class="cl-timer-entry">Or enter <input type="number" data-timer-input min="1" max="180" step="1" inputmode="numeric"> minutes</label>
+  <div class="cl-dlg-btns">
+    <button type="button" class="cl-dlg-main" data-timer-set>Set Timer</button>
+    <button type="button" data-timer-off>Timer Off</button>
+    <button type="button" data-cl-dialog-close>Cancel</button>
+  </div>
+</dialog>
+
 <script src="../shared/hst-engine.js"></script>
 <script src="../shared/hst-keyer.js"></script>
 <script src="../shared/hst-content.js"></script>
 <script src="../shared/hst-qso.js"></script>
+<script src="../shared/hst-copy.js"></script>
 <script>
 (function () {
   'use strict';
@@ -320,13 +383,15 @@
   // stationUpdated: when call/name/QTH last changed here, so account sync
   // (shared/hst-account.js) can tell which device has the newer details.
   // copyWpm / sendWpm: this tab's own speeds (0 = not chosen yet). fw: their
-  // Farnsworth (overall) speed, 0 = off.
-  var prefs = { call: '', name: '', qth: '', cwops: '', stationUpdated: 0, style: 'std', who: 'they', fw: 0, copyWpm: 0, sendWpm: 0, hints: true, showText: false, record: false, noise: 0, qsb: false, qrn: false, qrm: false };
+  // Farnsworth (overall) speed, 0 = off. timerMin: the Practice Timer, 0 = off.
+  var prefs = { call: '', name: '', qth: '', cwops: '', stationUpdated: 0, style: 'std', who: 'they', fw: 0, copyWpm: 0, sendWpm: 0, hints: true, showText: false, record: false, noise: 0, qsb: false, qrn: false, qrm: false, timerMin: 0 };
   try { var sv = JSON.parse(localStorage.getItem(PREFS_KEY) || 'null'); if (sv) Object.keys(prefs).forEach(function (k) { if (k in sv) prefs[k] = sv[k]; }); } catch (e) {}
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
 
   var KEY_NAMES = { iambicB: 'Paddles (iambic B)', iambicA: 'Paddles (iambic A)', straight: 'Straight key', bug: 'Bug' };
   var ADAPTER_NAMES = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter' };
+  var KEY_SHORT = { iambicB: 'Paddles B', iambicA: 'Paddles A', straight: 'Straight key', bug: 'Bug' };
+  var ADAPTER_SHORT = { vail: 'Vail', vband: 'VBand', keyboard: 'Keyboard' };
   function cfg() { return HST.keyerSettings.get(); }
   // The app's keyer makes the elements (paddles, unless the adapter is keying itself).
   function automatic() { return HST.keyerAutomatic(); }
@@ -362,46 +427,84 @@
     HST.audio.conditions({ noise: Number(prefs.noise) || 0, qsb: !!prefs.qsb, qrn: !!prefs.qrn, qrm: !!prefs.qrm, toneHz: sh.toneHz, volume: sh.volume });
   }
 
+  /* ---------------- your station ----------------
+     Call sign, name and QTH live in Settings (Your station) and are saved
+     as you type them; the stage shows them before each contact. */
+  function stationCheck() {
+    var call = $('myCall').value.trim().toUpperCase(), name = $('myName').value.trim().toUpperCase(), qth = $('myQth').value.trim().toUpperCase();
+    var cwops = $('myCwops').value.trim();
+    return {
+      call: call, name: name, qth: qth, cwops: cwops,
+      ok: { myCall: /^[A-Z0-9\/]{3,10}$/.test(call), myName: /^[A-Z]{1,10}$/.test(name), myQth: /^[A-Z0-9 ]{2,20}$/.test(qth),
+            myCwops: cwops === '' || /^\d{1,5}$/.test(cwops) }
+    };
+  }
+  function saveStation() {
+    var c = stationCheck();
+    if (c.call !== prefs.call || c.name !== prefs.name || c.qth !== prefs.qth) prefs.stationUpdated = Date.now();
+    prefs.call = c.call; prefs.name = c.name; prefs.qth = c.qth;
+    if (c.ok.myCwops) prefs.cwops = c.cwops;
+    savePrefs();
+    renderStation();
+  }
+  var STATION_HINT = $('stationHint').innerHTML;
+  function renderStation() {
+    var st = [['Your call', prefs.call], ['Name', prefs.name], ['QTH', prefs.qth]];
+    if (prefs.style === 'cwt') st.push(['CWops', prefs.cwops || 'CWA']);
+    $('station').innerHTML = prefs.call || prefs.name || prefs.qth
+      ? st.map(function (x) { return '<div class="q-st"><b>' + esc(x[1] || '—') + '</b><span>' + esc(x[0]) + '</span></div>'; }).join('')
+      : '<p class="q-prompt">Add your call sign, name and QTH in <button type="button" class="q-setbtn" data-cl-open>Settings</button> first.</p>';
+  }
+
   /* ================= the contact ================= */
   var q = null;              // the QSO in progress (HST.qso.create)
   var stepIdx = 0, tries = 0;
-  var phase = 'setup';       // 'setup' | 'dx' (they're sending) | 'me' (your turn) | 'copy' | 'review'
+  var phase = 'setup';       // 'setup' | 'dx' (they're sending) | 'me' (your turn) | 'copy'
   var overs = [];            // [{ by: 'dx'|'me', text, el, result }]
   var lastDx = '';           // their last transmission, for AGN / Repeat
   var gen = 0;               // bumps when a contact ends, so stray callbacks are ignored
-  var mine = [];             // analysis of each of your overs, for the sending tiles
+  var mine = [];             // analysis of each of your overs, for Your Sending
+  var asked = 0;             // how many times they asked you to send something again
+  var startedAt = 0;
   var rec = HST.history.recorder('qso');
 
   function startQso() {
-    var call = $('myCall').value.trim().toUpperCase(), name = $('myName').value.trim().toUpperCase(), qth = $('myQth').value.trim().toUpperCase();
-    var bad = false;
-    [['myCall', /^[A-Z0-9\/]{3,10}$/.test(call)], ['myName', /^[A-Z]{1,10}$/.test(name)], ['myQth', /^[A-Z0-9 ]{2,20}$/.test(qth)]].forEach(function (f) {
-      $(f[0]).classList.toggle('bad', !f[1]); if (!f[1]) bad = true;
+    var c = stationCheck(), bad = false;
+    ['myCall', 'myName', 'myQth', 'myCwops'].forEach(function (id) {
+      var ok = c.ok[id] || (id === 'myCwops' && prefs.style !== 'cwt');
+      $(id).classList.toggle('bad', !ok); if (!ok) bad = true;
     });
-    var cwops = $('myCwops').value.trim();
-    var cwOk = cwops === '' || /^\d{1,5}$/.test(cwops);
-    $('myCwops').classList.toggle('bad', !cwOk);
-    if (!cwOk && prefs.style === 'cwt') { $('stationHint').innerHTML = '<span style="color:var(--bad)">Your CWops number is just digits &mdash; or leave it blank to send CWA.</span>'; return; }
-    if (bad) { $('stationHint').innerHTML = '<span style="color:var(--bad)">Fill in your call sign (3–10 letters and digits), a one-word name and your QTH or state.</span>'; return; }
-    if (call !== prefs.call || name !== prefs.name || qth !== prefs.qth) prefs.stationUpdated = Date.now();
-    prefs.call = call; prefs.name = name; prefs.qth = qth; if (cwOk) prefs.cwops = cwops; savePrefs();
+    if (bad) {
+      // Settings opens on Your station, with what to fix.
+      $('stationHint').innerHTML = !c.ok.myCwops && prefs.style === 'cwt'
+        ? '<span class="err">Your CWops number is just digits &mdash; or leave it blank to send CWA.</span>'
+        : '<span class="err">Fill in your call sign (3–10 letters and digits), a one-word name and your QTH or state.</span>';
+      $('stationSec').open = true;
+      HSTCopy.open();
+      return;
+    }
+    $('stationHint').innerHTML = STATION_HINT;
+    saveStation();
     HST.audio.unlock();                                 // a click: sound is allowed now
 
-    q = HST.qso.create({ style: prefs.style, who: prefs.who, me: { call: call, name: name, qth: qth, cwops: prefs.cwops } });
-    stepIdx = 0; tries = 0; overs = []; mine = []; lastDx = ''; qrsDrop = 0; gen++;
+    q = HST.qso.create({ style: prefs.style, who: prefs.who, me: { call: c.call, name: c.name, qth: c.qth, cwops: prefs.cwops } });
+    stepIdx = 0; tries = 0; overs = []; mine = []; lastDx = ''; qrsDrop = 0; asked = 0; gen++;
+    startedAt = Date.now();
     $('log').innerHTML = '';
     show('live');
+    clocks.start();
     rec.start({ style: q.style, who: q.who, wpm: theirWpm(), dxCall: q.dx.call, keyType: cfg().keyType });
     if (prefs.record && !HST.audio.recording()) $('recBtn').click();   // from the first dit
     bandOn();
     runStep();
   }
 
+  // Which part of the practice card shows: 'setup' (ready), 'live' or 'copy'.
   function show(which) {
-    $('setupCard').hidden = which !== 'setup';
-    $('liveCard').hidden = which !== 'live';
-    $('copyCard').hidden = which !== 'copy';
-    $('reviewCard').hidden = which !== 'review';
+    document.querySelectorAll('[data-phase]').forEach(function (el) { el.hidden = el.dataset.phase !== which; });
+    // The type of contact can't change during one.
+    document.querySelectorAll('.cl-mode').forEach(function (b) { b.disabled = which !== 'setup'; });
+    HSTCopy.refresh();
   }
 
   function runStep() {
@@ -423,6 +526,7 @@
     phase = 'dx'; lastDx = text;
     var o = addOver('dx', text);
     setStatus('They’re sending… copy by ear.', 'them');
+    setPill('On the air · their turn', 'them');
     $('suggest').hidden = true;
     HST.audio.stop();
     var p = HST.audio.playMorse(HST.qso.tokenize(text), theirOpts());
@@ -441,16 +545,18 @@
     liveOver = null;
     var s = q.steps[stepIdx];
     setStatus('Your turn — send your over, then end it with K / KN / BK / SK (or press Enter).', 'turn');
+    setPill('On the air · your turn', 'live');
     if (prefs.hints && s.hint) {
       $('suggest').innerHTML = '<b>Send something like:</b> ' + esc(s.hint).replace(/\[([^\]]+)\]/g, '<b>[$1]</b>');
       $('suggest').hidden = false;
     } else $('suggest').hidden = true;
   }
+  function setPill(text, kind) { $('airPill').textContent = text; $('airPill').className = 'cl-pill ' + kind; }
 
   var keyer = HST.createKeyer({ key: onKey, wpm: sendWpm });
-  // Record (Tim, 2026-11-02): the whole contact, both stations, saved as a
-  // WAV file when you stop it or the contact ends.
-  HST.recordButton($('recBtn'), { name: function () { return 'cw-qso' + (q ? '-' + q.dx.call.replace(/\W/g, '') : ''); } });
+  // Record, the cell in the strip (Tim, 2026-11-05): the whole contact,
+  // both stations, saved as a WAV file when you stop it or the contact ends.
+  HST.recordButton($('recBtn'), { name: function () { return 'cw-qso' + (q ? '-' + q.dx.call.replace(/\W/g, '') : ''); }, valueEl: $('recVal') });
   keyer.attachKeyboard(window);
   var decoder = HST.createDecoder({
     unitMs: unitMs,
@@ -518,7 +624,7 @@
     }
     marks = []; live = '';
     if (act.action === 'advance') { stepIdx++; tries = 0; runStep(); }
-    else if (act.action === 'retry') { tries++; dxSay(act.text, myTurn); }
+    else if (act.action === 'retry') { tries++; asked++; dxSay(act.text, myTurn); }
     else if (act.action === 'repeat') { dxSay(lastDx, myTurn); }
     else if (act.action === 'qrs') { qrsDrop += 5; dxSay(lastDx, myTurn); }
     else if (act.action === 'silence') { tries++; myTurn(); setStatus(act.note, 'warn'); }
@@ -531,7 +637,7 @@
     r.missing.forEach(function (id) { bits.push('<span class="miss">✗ ' + esc(HST.qso.LABELS[id]) + '</span>'); });
     if (r.request === 'agn') bits.push('<span class="ok">asked them to repeat</span>');
     if (r.request === 'qrs') bits.push('<span class="ok">asked them to slow down</span>');
-    return bits.length ? '<span class="marks">' + bits.join('   ') + '</span>' : '';
+    return bits.length ? '<span class="marks">' + bits.join('   ') + '</span>' : '';
   }
 
   /* ---- the log of overs ---- */
@@ -555,6 +661,26 @@
     $('status').className = 'status' + (kind ? ' ' + kind : '');
   }
 
+  /* ================= This Session =================
+     Four tiles, counted from the first contact until Reset. */
+  var tally;
+  function tallyReset() { tally = { contacts: 0, completed: 0, copyRight: 0, copyTotal: 0, sendOk: 0, sendAll: 0, sent: 0, ow: 0 }; }
+  tallyReset();
+  function renderTally() {
+    var t = tally;
+    $('tContacts').textContent = t.contacts;
+    $('tContactsSub').textContent = t.contacts ? t.completed + ' finished' : ' ';
+    $('tCopy').textContent = t.copyTotal ? Math.round(100 * t.copyRight / t.copyTotal) + '%' : '—';
+    $('tCopySub').textContent = t.copyTotal ? t.copyRight + ' of ' + t.copyTotal + ' items' : ' ';
+    $('tSend').textContent = t.sendAll ? Math.round(100 * t.sendOk / t.sendAll) + '%' : '—';
+    $('tWpm').textContent = t.sent ? Math.round(t.ow / t.sent) : '—';
+    $('tWpmSub').textContent = 'keyer at ' + sendWpm();
+  }
+  $('resetBtn').addEventListener('click', function () {
+    tallyReset(); renderTally();
+    $('lastBody').hidden = true; $('sendBody').hidden = true;
+  });
+
   /* ================= after the contact ================= */
   function finish(completed) {
     gen++;
@@ -562,12 +688,18 @@
     HST.audio.conditions(null);
     clearTimeout(waitTimer);
     HST.audio.stop(); keyer.reset();
+    clocks.stop();
     q.completed = completed;
     phase = 'copy';
     saveProgress();
     if (!overs.some(function (o) { return o.by === 'me' && o.text; })) {   // nothing sent: nothing to review
       rec.finish(); phase = 'setup'; show('setup'); return;
     }
+    // This Session: the contact and your sending in it.
+    tally.contacts++; if (completed) tally.completed++;
+    mine.forEach(function (a) { tally.sent += a.chars.length; tally.ow += a.overallWpm * a.chars.length; });
+    overs.forEach(function (o) { if (o.by === 'me' && o.result) { tally.sendOk += o.result.passed.length; tally.sendAll += o.result.passed.length + o.result.missing.length; } });
+    renderTally();
     var fields = HST.qso.copyFields(q);
     $('copyFields').innerHTML = fields.map(function (f) {
       return '<div class="field"><label for="cp-' + f.id + '">' + esc(f.label) + '</label><input type="text" id="cp-' + f.id +
@@ -579,33 +711,36 @@
 
   $('copyForm').addEventListener('submit', function (e) {
     e.preventDefault();
+    if (phase !== 'copy') return;
     var answers = {};
     $('copyFields').querySelectorAll('input').forEach(function (i) { answers[i.dataset.id] = i.value; });
     review(HST.qso.scoreCopy(q, answers));
   });
 
+  // The copy check is in: Last Contact and Your Sending fill in, and the
+  // practice card is ready for the next contact.
   function review(copy) {
-    phase = 'review';
     var right = copy.filter(function (c) { return c.ok; }).length;
     rec.set({ copyRight: right, copyTotal: copy.length });
     rec.finish();
+    tally.copyRight += right; tally.copyTotal += copy.length;
+    renderTally();
 
     var D = q.dx;
     var sentRst = '';
     overs.forEach(function (o) { if (o.by === 'me' && o.text) { var m = o.text.match(/\b[1-5][1-9NT]{2}\b/); if (m && !sentRst) sentRst = m[0]; } });
+    var mins = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
     $('logline').textContent = new Date().toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) +
       '  ·  ' + D.call + (q.style === 'std' ? '  ·  ' + D.name + '  ·  ' + D.city + ' ' + D.state
                          : q.style === 'cwt' ? '  ·  ' + D.name + '  ·  ' + D.exch
                          : q.style === 'sota' ? (q.who === 'they' ? '  ·  ' + D.summit : '  ·  ' + D.state)
                          : '  ·  ' + D.state + (q.who === 'they' ? '  ·  ' + D.park : '')) +
-      '  ·  RST sent ' + (sentRst || '—') + ' / rcvd ' + D.rst + (q.completed ? '' : '  ·  (ended early)');
+      (q.style === 'cwt' ? '' : '  ·  RST sent ' + (sentRst || '—') + ' / rcvd ' + D.rst) + '  ·  ' + mins + ' min' + (q.completed ? '' : '  ·  (ended early)');
 
     $('copyResults').innerHTML = copy.map(function (c) {
-      return '<tr><td>' + esc(c.label) + '</td><td class="mono">' + esc(c.given || '—') + '</td><td class="mono">' + esc(c.truth) +
+      return '<tr><td>' + esc(c.label) + '</td><td>' + esc(c.given || '—') + '</td><td>' + esc(c.truth) +
              '</td><td class="' + (c.ok ? 'ok">✓' : 'miss">✗') + '</td></tr>';
     }).join('');
-
-    renderTiles();
 
     // The whole contact, with their text revealed.
     $('reviewLog').innerHTML = '';
@@ -614,26 +749,56 @@
       if (o.by === 'dx') el.querySelector('.msg').textContent = o.text;
       $('reviewLog').appendChild(el);
     });
-    show('review');
+    $('lastBody').hidden = false;
+
+    renderSending();
+    $('sendBody').hidden = false;
+
+    phase = 'setup';
+    renderSetup();
+    show('setup');
   }
 
-  // Your sending across all your overs, weighted by letters sent.
-  function renderTiles() {
+  // Your sending across all your overs, weighted by letters sent: the
+  // numbers, then what to work on, in plain words.
+  function renderSending() {
     var n = 0, cw = 0, ow = 0, cgS = 0, cgN = 0, wgS = 0, wgN = 0, rS = 0, rN = 0;
     mine.forEach(function (a) {
       var k = a.chars.length; n += k; cw += a.charWpm * k; ow += a.overallWpm * k;
       cgS += a.charGap.mean * a.charGap.n; cgN += a.charGap.n; wgS += a.wordGap.mean * a.wordGap.n; wgN += a.wordGap.n;
       if (a.ratio) { rS += a.ratio * k; rN += k; }
     });
-    if (!n) { $('tiles').innerHTML = '<p class="desc">No sending to measure.</p>'; return; }
+    var tips = [];
+    if (!n) { $('tiles').innerHTML = ''; $('tips').innerHTML = '<li>No sending to measure.</li>'; return; }
     var t = [];
     function tile(v, u, l, sub, cls) { return '<div class="tile ' + (cls || '') + '"><div class="val">' + v + '<small>' + u + '</small></div><div class="lbl">' + l + '</div><div class="sub">' + sub + '</div></div>'; }
     t.push(tile(Math.round(cw / n), 'WPM', 'Character speed', automatic() ? 'set by your keyer' : 'your dits and dahs'));
     t.push(tile(Math.round(ow / n), 'WPM', 'Overall speed', 'including your spacing'));
-    if (cgN) { var g = cgS / cgN; t.push(tile(r1(g), 'dits', 'Letter spacing', 'perfect is 3', g >= 2.4 && g <= 3.8 ? 'good' : 'off')); }
-    if (wgN) { var w = wgS / wgN; t.push(tile(r1(w), 'dits', 'Word spacing', 'perfect is 7', w >= 5.8 && w <= 9 ? 'good' : 'off')); }
-    if (rN) { var r = rS / rN; t.push(tile(r1(r), ': 1', 'Dah to dit', 'perfect is 3 : 1', r >= 2.6 && r <= 3.6 ? 'good' : 'off')); }
+    if (cgN) {
+      var g = cgS / cgN, gOk = g >= 2.4 && g <= 3.8;
+      t.push(tile(r1(g), 'dits', 'Letter spacing', 'perfect is 3', gOk ? 'good' : 'off'));
+      if (g < 2.4) tips.push('<b>Letters run close together</b> (' + r1(g) + ' dits; 3 is right). Leave a full gap so they don’t run into each other.');
+      if (g > 3.8) tips.push('<b>Extra space between letters</b> (' + r1(g) + ' dits; 3 is standard). Starting each letter a little sooner brings your overall speed up.');
+    }
+    if (wgN) {
+      var w = wgS / wgN, wOk = w >= 5.8 && w <= 9;
+      t.push(tile(r1(w), 'dits', 'Word spacing', 'perfect is 7', wOk ? 'good' : 'off'));
+      if (w < 5.8) tips.push('<b>Words run a little close</b> (' + r1(w) + ' dits; 7 is right). A clear word space keeps call signs and numbers apart.');
+      if (w > 9) tips.push('<b>Long pauses between words</b> (' + r1(w) + ' dits; 7 is standard). A pause of 3.5 seconds ends your over.');
+    }
+    if (rN) {
+      var r = rS / rN, rOk = r >= 2.6 && r <= 3.6;
+      t.push(tile(r1(r), ': 1', 'Dah to dit', 'perfect is 3 : 1', rOk ? 'good' : 'off'));
+      if (!rOk) tips.push('<b>Your dahs are ' + (r < 2.6 ? 'short' : 'long') + '</b> compared with your dits (' + r1(r) + ' : 1). Aim for three dits’ worth.');
+    }
     $('tiles').innerHTML = t.join('');
+    if (asked) tips.push('<b>They asked you to send something again ' + (asked === 1 ? 'once' : asked + ' times') + '.</b> The ✗ marks under your overs in the contact show what they missed.');
+    var mineOvers = overs.filter(function (o) { return o.by === 'me' && o.text; });
+    var ended = mineOvers.filter(function (o) { var ws = o.text.split(' ').filter(Boolean); return ENDERS.indexOf(ws[ws.length - 1]) >= 0; }).length;
+    if (mineOvers.length && ended === mineOvers.length) tips.push('You ended each over with <b>K</b>, <b>KN</b>, <b>BK</b> or <b>SK</b>, the way they expect.');
+    else if (mineOvers.length) tips.push('<b>End each over with K or KN</b> (BK or SK at the end) so they know it’s their turn: ' + ended + ' of ' + mineOvers.length + ' did.');
+    if (!asked && cgN && wgN && tips.length <= 1) tips.unshift('Clean sending: they copied you the first time.');
+    $('tips').innerHTML = tips.map(function (x) { return '<li>' + x + '</li>'; }).join('');
   }
 
   // Keep the session's numbers in the saved draft as the contact goes, so
@@ -652,39 +817,63 @@
     });
   }
 
+  /* ================= Elapsed, Timer ================= */
+  // They run with the contact, from Start QSO. When the timer runs out a
+  // bell rings and the contact ends (on to the copy check), as a Copy
+  // tool's session stops.
+  var clocks = HST.createClocks({
+    elapsedVal: $('elapsedVal'), elapsedChip: $('elapsedChip'), timerBtn: $('timerBtn'), timerVal: $('timerVal'),
+    getTimerMin: function () { return Number(prefs.timerMin) || 0; },
+    onExpire: function () {
+      if (q && (phase === 'me' || phase === 'dx')) finish(false);
+      HST.audio.bell(HST.shared.get().volume);
+    }
+  });
+  HSTCopy.timer({
+    dialog: $('timerDialog'),
+    getMin: function () { return Number(prefs.timerMin) || 0; },
+    setMin: function (m) { prefs.timerMin = m; savePrefs(); $('timerBtn').classList.remove('expired'); clocks.renderIdle(); }
+  });
+  clocks.renderIdle();
+
   /* ================= controls ================= */
+  var DESC = {
+    'std-they': 'They call CQ and you answer. You’ll exchange signal reports, names and QTHs, then 73.',
+    'std-you': 'You call CQ and they answer. Then the same exchange: signal reports, names and QTHs, then 73.',
+    'pota-they': 'They’re activating a park and calling CQ POTA. You’re the hunter: send your call, then trade 5NN and states.',
+    'pota-you': 'You’re the activator: call CQ POTA with your park reference (shown in the hints). A hunter answers with their call.',
+    'sota-they': 'They’re on a summit, signing /P and calling CQ SOTA with the summit reference. You’re the chaser: send your call, then trade signal reports.',
+    'sota-you': 'You’re the activator on a summit: call CQ SOTA as /P with your summit reference (shown in the hints). A chaser answers with their call.',
+    'cwt-they': 'The CWops Test: they’re running and calling CQ CWT. Send your call, copy their name and number, then send your name and CWops number (or CWA if you don’t have one). It’s fast; try a high copy speed.',
+    'cwt-you': 'The CWops Test: you call CQ CWT. Send their call with your name and number (or CWA), copy theirs, then TU and your call. It’s fast; try a high copy speed.'
+  };
   function renderSetup() {
     // Fill the station fields from saved prefs only on the first render;
     // later re-renders (e.g. picking a contact type) must not wipe what
-    // you've typed but not yet saved by starting a QSO.
+    // you're typing.
     if (!renderSetup.done) {
       $('myCall').value = prefs.call; $('myName').value = prefs.name; $('myQth').value = prefs.qth;
       $('myCwops').value = prefs.cwops || '';
       renderSetup.done = true;
     }
     document.querySelectorAll('[data-style]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.style === prefs.style)); });
-    document.querySelectorAll('[data-who]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.who === prefs.who)); });
+    $('whoState').textContent = prefs.who === 'you' ? 'You do' : 'They do';
+    $('hintsBtn').setAttribute('aria-pressed', String(!!prefs.hints));
+    $('hintsState').textContent = prefs.hints ? 'On' : 'Off';
     renderSpeeds();
-    $('hints').checked = prefs.hints; $('showText').checked = prefs.showText; $('recordQso').checked = !!prefs.record;
+    $('showText').checked = prefs.showText; $('recordQso').checked = !!prefs.record;
     $('bNoise').value = prefs.noise; $('bNoiseVal').textContent = prefs.noise ? prefs.noise + '%' : 'Off';
     $('bQsb').checked = !!prefs.qsb; $('bQrn').checked = !!prefs.qrn; $('bQrm').checked = !!prefs.qrm;
-    var D = {
-      'std-they': 'They call CQ and you answer. You’ll exchange signal reports, names and QTHs, then 73.',
-      'std-you': 'You call CQ and they answer. Then the same exchange: signal reports, names and QTHs, then 73.',
-      'pota-they': 'They’re activating a park and calling CQ POTA. You’re the hunter: send your call, then trade 5NN and states.',
-      'pota-you': 'You’re the activator: call CQ POTA with your park reference (shown in the hints). A hunter answers with their call.',
-      'sota-they': 'They’re on a summit, signing /P and calling CQ SOTA with the summit reference. You’re the chaser: send your call, then trade signal reports.',
-      'sota-you': 'You’re the activator on a summit: call CQ SOTA as /P with your summit reference (shown in the hints). A chaser answers with their call.',
-      'cwt-they': 'The CWops Test: they’re running and calling CQ CWT. Send your call, copy their name and number, then send your name and CWops number (or CWA if you don’t have one). It’s fast; try a high copy speed.',
-      'cwt-you': 'The CWops Test: you call CQ CWT. Send their call with your name and number (or CWA), copy theirs, then TU and your call. It’s fast; try a high copy speed.'
-    };
-    $('desc').textContent = D[prefs.style + '-' + prefs.who];
+    $('desc').textContent = DESC[prefs.style + '-' + prefs.who];
     $('cwopsRow').hidden = prefs.style !== 'cwt';
-    $('speedNote').textContent = 'They’ll send at ' + prefs.copyWpm + ' WPM' +
-      (fwOn() ? ' with Farnsworth spacing (' + prefs.fw + ' WPM overall)' : '') + '; you’ll send at ' + prefs.sendWpm + ' WPM.';
+    $('speedNote').innerHTML = 'They’ll send at <b>' + prefs.copyWpm + ' WPM</b>' +
+      (fwOn() ? ' with Farnsworth spacing (' + prefs.fw + ' WPM overall)' : '') + '; you’ll send at <b>' + prefs.sendWpm + ' WPM</b>.';
+    renderStation();
+    renderTally();
+    HSTCopy.refresh();
   }
 
-  /* ---- the Speeds panel ---- */
+  /* ---- Speed ---- */
   // Farnsworth only means something below the character speed.
   function fwOn() { return prefs.fw > 0 && prefs.fw < prefs.copyWpm; }
   function renderSpeeds() {
@@ -710,8 +899,11 @@
     prefs[key] = clampWpm(v, prefs[key]);
     savePrefs(); renderSetup(); renderKey();
   }
-  document.querySelectorAll('[data-style]').forEach(function (b) { b.addEventListener('click', function () { prefs.style = b.dataset.style; savePrefs(); renderSetup(); }); });
-  document.querySelectorAll('[data-who]').forEach(function (b) { b.addEventListener('click', function () { prefs.who = b.dataset.who; savePrefs(); renderSetup(); }); });
+  document.querySelectorAll('[data-style]').forEach(function (b) {
+    b.addEventListener('click', function () { if (phase !== 'setup') return; prefs.style = b.dataset.style; savePrefs(); renderSetup(); });
+  });
+  $('whoBtn').addEventListener('click', function () { prefs.who = prefs.who === 'you' ? 'they' : 'you'; savePrefs(); renderSetup(); });
+  $('hintsBtn').addEventListener('click', function () { prefs.hints = !prefs.hints; savePrefs(); renderSetup(); });
   $('qTone').addEventListener('input', function (e) { HST.shared.set({ toneHz: Number(e.target.value) }); });
   $('qVol').addEventListener('input', function (e) { HST.shared.set({ volume: Number(e.target.value) }); });
   $('fw').addEventListener('change', function (e) { prefs.fw = Number(e.target.value); savePrefs(); renderSetup(); });
@@ -720,15 +912,17 @@
     $(id).addEventListener('input', function (e) { $(id + 'Val').textContent = e.target.value + ' WPM'; });
     $(id).addEventListener('change', function (e) { setSpeed(id, e.target.value); });
   });
-  $('hints').addEventListener('change', function (e) { prefs.hints = e.target.checked; savePrefs(); });
   $('showText').addEventListener('change', function (e) { prefs.showText = e.target.checked; savePrefs(); });
   $('recordQso').addEventListener('change', function (e) { prefs.record = e.target.checked; savePrefs(); });
   $('bNoise').addEventListener('input', function (e) { prefs.noise = Number(e.target.value); $('bNoiseVal').textContent = prefs.noise ? prefs.noise + '%' : 'Off'; savePrefs(); });
   ['qsb', 'qrn', 'qrm'].forEach(function (k) {
     $('b' + k.charAt(0).toUpperCase() + k.slice(1)).addEventListener('change', function (e) { prefs[k] = e.target.checked; savePrefs(); });
   });
-  ['myCall', 'myName', 'myQth'].forEach(function (id) { $(id).addEventListener('input', function () { $(id).classList.remove('bad'); }); });
-  HST.shared.onChange(renderSetup);
+  // Your station: saved as you type.
+  ['myCall', 'myName', 'myQth', 'myCwops'].forEach(function (id) {
+    $(id).addEventListener('input', function () { $(id).classList.remove('bad'); saveStation(); });
+  });
+  HST.shared.onChange(function () { if (phase === 'setup') renderSetup(); else renderSpeeds(); });
   // Station details synced in from another device (by the app shell's
   // account sync): show them, unless a contact is in progress.
   window.addEventListener('storage', function (e) {
@@ -741,13 +935,12 @@
   $('overBtn').addEventListener('click', function () { if (phase === 'me') endOver(); });
   $('repeatBtn').addEventListener('click', function () { if (phase === 'me' && lastDx) { clearTimeout(waitTimer); marks = []; live = ''; if (liveOver && !liveOver.text) { liveOver.el.remove(); overs.pop(); } liveOver = null; dxSay(lastDx, myTurn); } });
   $('endQsoBtn').addEventListener('click', function () { if (q && (phase === 'me' || phase === 'dx')) finish(false); });
-  $('againBtn').addEventListener('click', function () { phase = 'setup'; renderSetup(); show('setup'); });
   window.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && phase === 'me' && e.target.tagName !== 'INPUT') { e.preventDefault(); endOver(); }
+    if (e.key === 'Enter' && phase === 'me' && e.target.tagName !== 'INPUT' && !HSTCopy.isOpen() && !document.querySelector('dialog[open]')) { e.preventDefault(); endOver(); }
   });
   window.addEventListener('pagehide', function () { if (q && phase !== 'setup') rec.finish(); });
 
-  // Key setup chip -> the app's Keyer Setup panel.
+  // Your key: in Settings, and as a chip; the button opens the app's Keyer Setup.
   function renderKey() {
     var s = cfg();
     $('setupText').innerHTML = '<strong>' + esc(ADAPTER_NAMES[s.adapter]) + '</strong> · ' + esc(KEY_NAMES[s.keyType]) + (s.keyType === 'straight' ? '' : ' · ' + sendWpm() + ' WPM');
@@ -756,9 +949,10 @@
     $('padDit').textContent = s.keyType === 'straight' ? 'KEY' : (s.reversed ? 'DAH' : 'DIT');
     $('padDah').textContent = s.reversed ? 'DIT' : 'DAH';
     $('padDah').hidden = s.keyType === 'straight';
+    HSTCopy.refresh();
   }
   HST.keyerSettings.onChange(function () { keyer.reset(); decoder.reset(); renderKey(); if (phase === 'setup') renderSpeeds(); });
-  $('setupChip').addEventListener('click', function () { try { window.parent.HCT.openKeyerSetup(); } catch (e) {} });
+  $('setupLink').addEventListener('click', function () { HSTCopy.close(); try { window.parent.HCT.openKeyerSetup(); } catch (e) {} });
   [['padDit', 'dit'], ['padDah', 'dah']].forEach(function (p) {
     var el = $(p[0]);
     function down(e) { e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('down'); keyer.touch(p[1], true); }
@@ -774,6 +968,20 @@
     var ctx = HST.audio.unlock();
     if (ctx.resume) ctx.resume().then(function () { $('audioHint').hidden = true; }).catch(function () {});
   });
+
+  // The settings chips under the action row (shared/hst-copy.js).
+  HSTCopy.summary = function () {
+    var k = cfg(), sh = HST.shared.get();
+    var band = [prefs.noise ? 'Noise ' + prefs.noise + '%' : '', prefs.qsb ? 'QSB' : '', prefs.qrn ? 'QRN' : '', prefs.qrm ? 'QRM' : ''].filter(Boolean);
+    return [
+      'Hear ' + prefs.copyWpm + (fwOn() ? '/' + prefs.fw : '') + ' · send ' + prefs.sendWpm + ' WPM',
+      sh.toneHz + ' Hz · ' + sh.volume + '%',
+      band.length ? band.join(' · ') : 'Band noise off',
+      prefs.showText ? 'Their text after each over' : '',
+      prefs.record ? 'Record every contact' : '',
+      { t: ADAPTER_SHORT[k.adapter] + ' · ' + KEY_SHORT[k.keyType], key: true }
+    ];
+  };
 
   renderSetup(); renderKey(); show('setup');
 
