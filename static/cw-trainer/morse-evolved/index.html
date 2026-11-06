@@ -7,7 +7,7 @@
      out of the app's tabs until Tim says it's ready. -->
 <meta name="robots" content="noindex, nofollow">
 <title>Morse Evolved</title>
-<link rel="preload" href="art/scene-neutral.webp" as="image">
+<link rel="preload" href="art/cockpit-neutral.webp" as="image">
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="game.css">
 </head>
@@ -34,10 +34,10 @@
 <div class="stage" id="stage">
   <!-- The cockpit, one picture per Roger pose; the current one fades in. -->
   <div class="scene" aria-hidden="true">
-    <img class="pose on" data-pose="neutral" src="art/scene-neutral.webp" alt="">
-    <img class="pose" data-pose="excited" src="art/scene-excited.webp" alt="">
-    <img class="pose" data-pose="frustrated" src="art/scene-frustrated.webp" alt="">
-    <img class="pose" data-pose="amused" src="art/scene-amused.webp" alt="">
+    <img class="pose on" data-pose="neutral" src="art/cockpit-neutral.webp" alt="">
+    <img class="pose" data-pose="excited" src="art/cockpit-excited.webp" alt="">
+    <img class="pose" data-pose="frustrated" src="art/cockpit-frustrated.webp" alt="">
+    <img class="pose" data-pose="amused" src="art/cockpit-amused.webp" alt="">
     <canvas id="sparks" width="1280" height="720"></canvas>
     <div class="flicker-light"></div>
   </div>
@@ -47,16 +47,19 @@
     <div class="mode" id="modeLabel"></div>
     <div class="topbar-right">
       <label class="vol">Tone <input type="range" id="toneIn" min="400" max="900" step="10"></label>
-      <label class="vol">Volume <input type="range" id="volIn" min="0" max="100" step="1"></label>
+      <label class="vol">CW <input type="range" id="volIn" min="0" max="100" step="1"></label>
+      <label class="vol">Voice <input type="range" id="voiceIn" min="0" max="100" step="1"></label>
+      <button class="btn ghost small" id="ccBtn" type="button" aria-pressed="false" title="Captions for Roger">CC</button>
       <button class="btn ghost small" id="quitBtn" type="button">QUIT</button>
     </div>
   </header>
 
-  <!-- Roger's translator: his words, translated, over the night sky -->
-  <section class="translator" aria-label="AI voice decoder">
-    <div class="hud-title"><span class="dot"></span>AI VOICE DECODER &middot; ROGER</div>
-    <div class="speech" id="speech" aria-live="polite"></div>
-  </section>
+  <!-- The AI voice decoder (Tim, 2026-11-06): Roger speaks alien, the
+       decoder speaks it in English. Only a small status light shows on
+       screen; captions are optional (CC button), off by default. -->
+  <div class="decoder" id="decoder" aria-hidden="true"><span class="dot"></span><span id="decoderState">AI VOICE DECODER</span></div>
+  <div class="caption" id="caption" aria-live="polite" hidden></div>
+  <div class="toast" id="toast" role="status" hidden></div>
 
   <!-- Sending: a HUD panel over the cockpit when it's your turn to transmit -->
   <section class="tx" id="txPanel" hidden aria-label="Transmit">
@@ -94,7 +97,7 @@
     <div class="band-pick" role="radiogroup" aria-label="Band">
       <button class="band-btn" data-band="40m">40m</button>
       <button class="band-btn" data-band="20m">20m</button>
-      <button class="band-btn" data-band="15m">15m</button>
+      <button class="band-btn" data-band="10m">10m</button>
     </div>
     <button id="scanBtn" class="btn big">SCAN</button>
     <div class="ctl-label">SIGNAL</div>
@@ -130,9 +133,9 @@
       <div class="col">
         <h2>1 &middot; Choose your player</h2>
         <div class="modes" role="radiogroup" aria-label="Difficulty">
-          <button class="mode-btn" data-mode="hiker"><b>Hiker</b><small>Beginner &middot; copy at 15 wpm letters, 5 wpm overall</small></button>
-          <button class="mode-btn" data-mode="ranger"><b>Park Ranger</b><small>Intermediate &middot; 20 / 12 wpm, light noise</small></button>
-          <button class="mode-btn" data-mode="scientist"><b>SpaceY Scientist</b><small>Advanced &middot; 25 / 20 wpm, fading and noise</small></button>
+          <button class="mode-btn" data-mode="hiker"><b>Hiker</b><small>Beginner &middot; copy at 20 wpm letters, 5 wpm overall</small></button>
+          <button class="mode-btn" data-mode="ranger"><b>Park Ranger</b><small>Intermediate &middot; 25 / 10 wpm, light noise</small></button>
+          <button class="mode-btn" data-mode="scientist"><b>SpaceY Scientist</b><small>Advanced &middot; 30 / 20 wpm, fading and noise</small></button>
         </div>
       </div>
       <div class="col">

@@ -14,28 +14,29 @@
   var $ = function (id) { return document.getElementById(id); };
 
   /* ---------------------------------------------------------------------
-     DIFFICULTY MODES (spec section 4; values are adjustable defaults)
+     DIFFICULTY MODES (spec section 4; copy speeds set by Tim 2026-11-06:
+     Hiker 20/5, Park Ranger 25/10, SpaceY Scientist 30/20)
      wpm = character speed, fwpm = effective (Farnsworth) copy speed,
      sendWpm = keyer speed for the player's sending.
      --------------------------------------------------------------------- */
   var MODES = {
     hiker: {
-      label: 'Hiker', wpm: 15, fwpm: 5, sendWpm: 8, noise: 0, qsb: false,
+      label: 'Hiker', wpm: 20, fwpm: 5, sendWpm: 8, noise: 0, qsb: false,
       rx: 'XANDER K', tx: 'R TU', signoff: 'TU 73'
     },
     ranger: {
-      label: 'Park Ranger', wpm: 20, fwpm: 12, sendWpm: 15, noise: 22, qsb: false,
+      label: 'Park Ranger', wpm: 25, fwpm: 10, sendWpm: 15, noise: 22, qsb: false,
       rx: 'CQ CQ DE XANDER K', tx: 'XANDER DE ROGER', signoff: 'TU ROGER 73 <SK>'
     },
     scientist: {
-      label: 'SpaceY Scientist', wpm: 25, fwpm: 20, sendWpm: 22, noise: 40, qsb: true,
+      label: 'SpaceY Scientist', wpm: 30, fwpm: 20, sendWpm: 22, noise: 40, qsb: true,
       rx: 'CQ CQ CQ DE XANDER XANDER QTH KORR MOON BASE K',
       tx: 'XANDER DE ROGER CRASHED NM PSE QSP TELLURA K',
       signoff: 'SRI ROGER NO TELLURA HR GL 73 <SK>'
     }
   };
   var KEY_FACT = 'XANDER';           // the copy must get the station's name right
-  var BANDS = { '40m': [7.000, 7.060], '20m': [14.000, 14.070], '15m': [21.000, 21.070] };
+  var BANDS = { '40m': [7.000, 7.060], '20m': [14.000, 14.070], '10m': [28.000, 28.070] };
 
   var mode = null, modeKey = 'hiker', band = '20m';
   var phase = 'start';               // start | intro | ready | scanning | rx | copy | tx | signoff | end
@@ -52,27 +53,92 @@
     document.querySelectorAll('.pose').forEach(function (im) { im.classList.toggle('on', im.dataset.pose === p); });
   }
 
-  var speechQ = [], speaking = false;
-  function say(text, face, then) {
-    speechQ.push({ text: text, face: face, then: then });
+  /* ---------------------------------------------------------------------
+     THE AI VOICE DECODER (Tim, 2026-11-06: "decode alien speech from Roger
+     and speak it in an English voice"). Each line: Roger's alien speech,
+     then the decoder's English voice (ElevenLabs, voice "Vector"). The
+     clips are in audio/; the text below is only for captions (CC).
+     --------------------------------------------------------------------- */
+  var LINES = {
+    online:  { file: 'line01', text: 'Translator… online.', device: true },
+    hello:   { file: 'line02', text: 'Human! Over here. My ship came down hard, and my fingers are wrecked. I can’t work the key.' },
+    scan:    { file: 'line03', text: 'This radio can reach my home world, Tellura. Pick a band, and hit SCAN.' },
+    signal:  { file: 'line04', text: 'Signal! Copy it into the notebook. Type what you hear.' },
+    noshame: { file: 'line05', text: 'Hey, no shame. That’s what the button’s for.' },
+    xander:  { file: 'line06', text: 'Xander. Not Tellura… but he sounds friendly.' },
+    quip:    { file: 'line07', text: 'You know, we do have the technology to perfectly decode CW. Just saying.' },
+    answer:  { file: 'line08', text: 'Answer him. Key the reply on the transmit panel.' },
+    close:   { file: 'line09', text: 'Close. Try that again.' },
+    clean:   { file: 'line10', text: 'Clean sending! Well… your sending. My hands are in bandages.' },
+    nicekid: { file: 'line11', text: 'Nice kid. Not Tellura, though. We’ll keep scanning.' }
+  };
+  var ALIEN = { excited: 'alien-excited', celebrating: 'alien-excited', frustrated: 'alien-frustrated' };
+  var clips = {};
+  function clip(name) {
+    if (!clips[name]) { clips[name] = new Audio('audio/' + name + '.mp3'); clips[name].preload = 'auto'; }
+    return clips[name];
+  }
+  function preloadVoice() {
+    Object.keys(LINES).forEach(function (k) { clip(LINES[k].file); });
+    ['alien-neutral', 'alien-excited', 'alien-frustrated'].forEach(clip);
+  }
+  var VOICE_KEY = 'morse-evolved-voice', CC_KEY = 'morse-evolved-cc';
+  var voiceVol = (function () { var v = null; try { v = localStorage.getItem(VOICE_KEY); } catch (e) {} v = v == null ? 85 : +v; return v >= 0 && v <= 100 ? v : 85; })();
+  var ccOn = (function () { try { return localStorage.getItem(CC_KEY) === '1'; } catch (e) { return false; } })();
+
+  var speechQ = [], speaking = false, current = null, speechToken = 0;
+  function say(id, face, then) {
+    speechQ.push({ line: LINES[id], face: face, then: then });
     if (!speaking) nextLine();
+  }
+  // Play one clip; resolves when it ends (or fails, so the game never stalls).
+  function playClip(name, token) {
+    return new Promise(function (resolve) {
+      if (token !== speechToken) return resolve();
+      var a = clip(name), done = false;
+      function fin() { if (done) return; done = true; a.onended = a.onerror = null; current = null; resolve(); }
+      current = a;
+      a.volume = voiceVol / 100;
+      try { a.currentTime = 0; } catch (e) {}
+      a.onended = fin; a.onerror = fin;
+      var p = a.play();
+      if (p && p.catch) p.catch(fin);
+      setTimeout(fin, 12000);              // safety net
+    });
+  }
+  function decoderState(cls, label) {
+    $('decoder').className = 'decoder' + (cls ? ' ' + cls : '');
+    $('decoderState').textContent = label;
   }
   function nextLine() {
     var item = speechQ.shift();
-    if (!item) { speaking = false; return; }
+    if (!item) { speaking = false; decoderState('', 'AI VOICE DECODER'); $('caption').textContent = ''; return; }
     speaking = true;
+    var token = speechToken;
     if (item.face) pose(item.face);
-    var el = $('speech');
-    el.innerHTML = '<span class="who">ROGER &gt; TRANSLATED</span><span class="txt"></span>';
-    var out = el.querySelector('.txt'), i = 0;
-    var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    (function type() {
-      if (reduced) i = item.text.length; else i += 2;
-      out.textContent = item.text.slice(0, i);
-      if (i < item.text.length) { setTimeout(type, 28); return; }
-      setTimeout(function () { if (item.then) item.then(); nextLine(); },
-                 speechQ.length ? Math.min(2600, 700 + item.text.length * 25) : 0);
-    })();
+    var first = item.line.device ? Promise.resolve()
+      : (decoderState('alien', 'ROGER · DECODING'), playClip(ALIEN[item.face] || 'alien-neutral', token));
+    first.then(function () {
+      if (token !== speechToken) return;
+      decoderState('english', 'ROGER · ENGLISH');
+      $('caption').textContent = item.line.text;
+      $('caption').hidden = !ccOn;
+      return playClip(item.line.file, token);
+    }).then(function () {
+      if (token !== speechToken) return;
+      setTimeout(function () {
+        if (token !== speechToken) return;
+        if (item.then) item.then();
+        nextLine();
+      }, 250);
+    });
+  }
+  // Stop Roger mid-line (replaying the signal, quitting). Queued lines
+  // are dropped; their follow-ups don't run.
+  function hush() {
+    speechToken++; speechQ = []; speaking = false;
+    if (current) { try { current.pause(); } catch (e) {} current = null; }
+    decoderState('', 'AI VOICE DECODER'); $('caption').textContent = '';
   }
 
   /* ---------------------------------------------------------------------
@@ -237,7 +303,7 @@
   });
   function onKey(down, t) {
     if (phase === 'start') { onTestKey(down, t); return; }
-    if (phase !== 'tx') return;
+    if (phase !== 'tx') { if (down) notYourTurn(); return; }
     if (down) {
       clearTimeout(autoTimer);
       downAt = t; decoder.down(t);
@@ -247,6 +313,17 @@
       decoder.up(t);
       for (var i = marks.length - 1; i >= 0; i--) if (marks[i].e == null) { marks[i].e = t; break; }
     }
+  }
+  // Keying when it isn't your turn: a gentle note after a few presses.
+  var offTurn = 0, toastTimer = null;
+  function notYourTurn() {
+    if (++offTurn < 3) return;
+    offTurn = 0;
+    var msg = phase === 'rx' ? 'Listen first — Xander is sending.'
+      : phase === 'copy' ? 'Copy what you heard into the notebook first. You’ll send after that.'
+      : 'Not your turn to transmit yet.';
+    $('toast').textContent = msg; $('toast').hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { $('toast').hidden = true; }, 3500);
   }
   function showLive() { $('txLive').textContent = live || ' '; }
   function scheduleAutoCheck() {
@@ -357,17 +434,17 @@
      --------------------------------------------------------------------- */
   function startMission() {
     HST.audio.unlock();
+    preloadVoice();
     mode = MODES[modeKey];
     $('modeLabel').textContent = mode.label + ' · ' + mode.wpm + '/' + mode.fwpm + ' wpm';
     $('startCard').hidden = true;
-    if (detachKeys) { detachKeys(); detachKeys = null; }   // the key test is over
     keyer.reset();
     stats.t0 = Date.now();
     phase = 'intro';
     lockRadio(true);
-    say('Translator… online.', 'neutral');
-    say('Human! Over here. My ship came down hard and my fingers are wrecked. I can’t work the key.', 'frustrated');
-    say('This radio can reach my home world, Tellura. Pick a band and hit SCAN.', 'neutral', function () {
+    say('online', 'neutral');
+    say('hello', 'frustrated');
+    say('scan', 'neutral', function () {
       phase = 'ready'; lockRadio(false);
       $('replayBtn').disabled = $('slowBtn').disabled = $('decodeBtn').disabled = true;
       $('scanBtn').focus();
@@ -406,13 +483,15 @@
     img.src = 'art/contact-xander.webp'; img.hidden = false;
     $('noSignal').hidden = true;
     img.classList.remove('flicker'); void img.offsetWidth; img.classList.add('flicker');
-    say('Signal! Copy it into the notebook. Type what you hear.', 'excited');
     phase = 'rx';
-    setTimeout(function () {
-      playCW(mode.rx, mode.fwpm).then(function () {
-        if (phase === 'rx') enterCopy();
-      });
-    }, 900);
+    // The CW starts once Roger has finished talking, so the two never overlap.
+    say('signal', 'excited', function () {
+      setTimeout(function () {
+        playCW(mode.rx, mode.fwpm).then(function () {
+          if (phase === 'rx') enterCopy();
+        });
+      }, 500);
+    });
   }
 
   function enterCopy() {
@@ -464,6 +543,7 @@
     if (phase !== 'copy' && phase !== 'rx') return;
     // Slower keeps each letter at full speed and adds space between them (Farnsworth).
     var f = slow ? Math.max(3, Math.round(mode.fwpm * 0.6)) : mode.fwpm;
+    hush();                              // the signal, not Roger, while you listen
     playCW(mode.rx, f);
     $('copyIn').focus();
   }
@@ -474,7 +554,7 @@
     $('grade').innerHTML = '<div class="printout">DECODER: ' + esc(plain(mode.rx)).replace(/ /g, '&nbsp;') + '</div>';
     $('copyMsg').textContent = 'The decoder is free — no penalty.';
     $('contactName').textContent = 'XANDER';
-    say('Hey, no shame. That’s what the button’s for.', 'amused');
+    say('noshame', 'amused');
     $('nextBtn').hidden = false;
   }
 
@@ -501,12 +581,12 @@
       $('contactName').textContent = 'XANDER';
       $('nextBtn').hidden = false;
       $('nextBtn').focus();
-      say('Xander. Not Tellura, but he sounds friendly.', 'amused');
+      say('xander', 'amused');
     } else {
       copyFails++;
       if (copyFails >= 2 && !quipped) {
         quipped = true;
-        say('You know, we do have the technology to perfectly decode CW. Just saying.', 'frustrated');
+        say('quip', 'frustrated');
       }
     }
   }
@@ -527,9 +607,8 @@
     buildKeys($('keys'));
     $('txHelp').textContent = keyHelp();
     clearSend();
-    detachKeys = keyer.attachKeyboard(window);   // only while sending, so [ ] stay typeable in the notebook
     setStatus('TRANSMIT');
-    say('Answer him. Send: ' + plain(mode.tx), 'neutral');
+    say('answer', 'neutral');
   }
 
   function clearSend() {
@@ -559,7 +638,7 @@
       html += '<div class="diff">' + diffHtml(align(want, sent).ops) + '</div>' +
         '<div class="warn">Not quite. CLEAR and send it again — he’s still listening.</div>';
       $('txResult').innerHTML = html;
-      say('Close. Try that again.', 'frustrated');
+      say('close', 'frustrated');
     }
   }
 
@@ -579,15 +658,15 @@
 
   function finishSend() {
     phase = 'signoff';
-    if (detachKeys) { detachKeys(); detachKeys = null; }
     keyer.reset();
-    say('Clean sending. Well, your sending. My hands are in bandages.', 'celebrating');
-    setTimeout(function () {
-      setStatus('RECEIVING');
-      playCW(mode.signoff, mode.fwpm).then(function () {
-        say('Nice kid. Not Tellura though. We’ll keep scanning.', 'neutral', showEnd);
-      });
-    }, 1600);
+    say('clean', 'celebrating', function () {
+      setTimeout(function () {
+        setStatus('RECEIVING');
+        playCW(mode.signoff, mode.fwpm).then(function () {
+          say('nicekid', 'neutral', showEnd);
+        });
+      }, 600);
+    });
   }
 
   function showEnd() {
@@ -638,6 +717,17 @@
   var sh = HST.shared.get();
   $('toneIn').value = sh.toneHz; $('volIn').value = sh.volume;
   $('toneIn').addEventListener('input', function () { HST.shared.set({ toneHz: +this.value }); if (noisy) bandNoise(mode.noise, mode.qsb); });
+  $('voiceIn').value = voiceVol;
+  $('voiceIn').addEventListener('input', function () {
+    voiceVol = +this.value; if (current) current.volume = voiceVol / 100;
+    try { localStorage.setItem(VOICE_KEY, String(voiceVol)); } catch (e) {}
+  });
+  function renderCC() { $('ccBtn').setAttribute('aria-pressed', ccOn ? 'true' : 'false'); $('caption').hidden = !ccOn; }
+  $('ccBtn').addEventListener('click', function () {
+    ccOn = !ccOn; renderCC();
+    try { localStorage.setItem(CC_KEY, ccOn ? '1' : '0'); } catch (e) {}
+  });
+  renderCC();
   $('volIn').addEventListener('input', function () { HST.shared.set({ volume: +this.value }); if (noisy) bandNoise(mode.noise, mode.qsb); });
 
   $('startBtn').addEventListener('click', startMission);
@@ -658,7 +748,7 @@
   });
   $('quitNo').addEventListener('click', function () { $('quitCard').hidden = true; });
   $('quitYes').addEventListener('click', function () {
-    keyer.reset(); HST.audio.stop(); HST.audio.conditions(null);
+    hush(); keyer.reset(); HST.audio.stop(); HST.audio.conditions(null);
     location.reload();
   });
   document.addEventListener('keydown', function (e) {
@@ -676,7 +766,18 @@
   $('startBtn').addEventListener('click', function () { $('quitBtn').disabled = false; });
   renderSetup();
   renderTest();
-  detachKeys = keyer.attachKeyboard(window);   // the start screen's key test
+  /* The key is live the whole time (Tim, 2026-11-06: touching a paddle
+     after the key test "glitched" and sending never worked again -- the
+     game had stopped listening to the key the moment the mission started,
+     until the transmit turn). Now your sidetone always answers the
+     paddles; only the transmit turn is graded. */
+  detachKeys = keyer.attachKeyboard(window);
+  // A button clicked with the mouse doesn't keep keyboard focus, so a key
+  // or adapter press can never "press" it again by accident.
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button');
+    if (b && e.detail > 0) b.blur();
+  });
 
   /* ---------------------------------------------------------------------
      SPARKS: a few embers dripping from the cut cables in the scene

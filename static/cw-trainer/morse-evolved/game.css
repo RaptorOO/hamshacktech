@@ -20,7 +20,7 @@
   --red: #ff5a5a;
   --text: #d6e6dc;
   --muted: #8aa496;
-  --graphite: #33343a;
+  --graphite: #141519;   /* dark pencil, for contrast (Tim, 2026-11-06) */
   --redpencil: #b3261e;
 }
 * { box-sizing: border-box; }
@@ -35,7 +35,7 @@ body {
 /* The same scene, blurred, fills any letterbox around the stage. */
 body::before {
   content: ''; position: fixed; inset: -40px; z-index: -1;
-  background: url(art/scene-neutral.webp) center / cover no-repeat;
+  background: url(art/cockpit-neutral.webp) center / cover no-repeat;
   filter: blur(28px) brightness(0.35);
 }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -87,7 +87,7 @@ body::before {
 .vol input { accent-color: var(--green); width: calc(var(--u) * 7); }
 
 /* ---------- HUD panels (translator, transmit) ---------- */
-.translator, .tx {
+.tx {
   position: absolute; z-index: 2;
   background: var(--hud); border: 1px solid var(--edge); border-radius: 6px;
   padding: calc(var(--u) * 0.8) calc(var(--u) * 1);
@@ -100,12 +100,34 @@ body::before {
 .dot { width: 0.6em; height: 0.6em; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); animation: blink 1.6s infinite; }
 .tx-dot { background: var(--red); box-shadow: 0 0 8px var(--red); }
 @keyframes blink { 50% { opacity: 0.25; } }
-.translator { left: 56.5%; top: 8.5%; width: 41%; }
-.speech {
-  min-height: calc(var(--u) * 4.8); font-family: 'JetBrains Mono', monospace; font-size: calc(var(--u) * 1.05);
-  color: var(--cyan); text-shadow: 0 0 8px rgba(82,232,255,0.35);
+/* The AI voice decoder's status light: a small chip, top right */
+.decoder {
+  position: absolute; right: 1.4%; top: 7.5%; z-index: 2;
+  display: flex; align-items: center; gap: 0.6em;
+  font: 500 calc(var(--u) * 0.72) 'Oswald', sans-serif; letter-spacing: 0.2em; color: var(--muted);
+  background: rgba(0,0,0,0.5); border: 1px solid rgba(82,232,255,0.2); border-radius: 20px;
+  padding: 0.35em 0.9em;
 }
-.speech .who { color: var(--muted); font-size: 0.72em; letter-spacing: 0.12em; display: block; margin-bottom: 0.3em; }
+.decoder .dot { animation: none; opacity: 0.35; }
+.decoder.alien { color: var(--amber); border-color: rgba(255,181,71,0.45); }
+.decoder.alien .dot { background: var(--amber); box-shadow: 0 0 8px var(--amber); opacity: 1; animation: blink 0.35s infinite; }
+.decoder.english { color: var(--cyan); border-color: rgba(82,232,255,0.5); }
+.decoder.english .dot { opacity: 1; animation: blink 1s infinite; }
+/* Optional captions (CC): one subtitle line just above the bench */
+.caption {
+  position: absolute; left: 50%; bottom: 52%; transform: translateX(-50%); z-index: 2;
+  max-width: 60%; text-align: center;
+  font: 500 calc(var(--u) * 1.05)/1.35 'IBM Plex Sans', sans-serif; color: #fff;
+  background: rgba(0,0,0,0.62); border-radius: 4px; padding: 0.25em 0.7em;
+}
+.caption:empty { display: none; }
+.toast {
+  position: absolute; left: 24.5%; bottom: 46%; transform: translateX(-50%); z-index: 3;
+  font: 500 calc(var(--u) * 0.9) 'IBM Plex Sans', sans-serif; color: var(--amber);
+  background: rgba(0,0,0,0.78); border: 1px solid rgba(255,181,71,0.45); border-radius: 4px;
+  padding: 0.4em 0.9em; white-space: nowrap;
+}
+#ccBtn[aria-pressed="true"] { color: var(--cyan); border-color: var(--cyan); }
 
 .tx { left: 1.5%; top: 8.5%; width: 28.5%; border-color: rgba(255,90,90,0.4); }
 .tx-goal { font-family: 'Oswald', sans-serif; font-size: calc(var(--u) * 0.95); letter-spacing: 0.1em; color: var(--muted); }
@@ -236,7 +258,7 @@ body::before {
 }
 .writing { color: var(--graphite); pointer-events: none; overflow: hidden; }
 .writing .w { white-space: nowrap; }
-.writing .c { display: inline-block; opacity: 0.88; }
+.writing .c { display: inline-block; text-shadow: 0 0 0.4px var(--graphite); }
 .writing .caret {
   display: inline-block; width: 0.08em; height: 0.95em; margin: 0 -0.04em; vertical-align: -0.1em;
   background: var(--graphite); animation: blink 1s steps(1) infinite;
@@ -359,7 +381,9 @@ body::before {
   .stage { width: 100%; aspect-ratio: auto; container-type: normal; --u: 12px; box-shadow: none; overflow: visible; padding-bottom: 20px; }
   .scene { position: relative; aspect-ratio: 16 / 9; }
   .topbar { flex-wrap: wrap; gap: 8px; }
-  .translator, .tx, .radio, .controls, .notebook, .note-actions {
+  .decoder { position: relative; right: auto; top: auto; margin: 12px 12px 0; display: inline-flex; }
+  .caption { position: relative; left: auto; bottom: auto; transform: none; max-width: none; margin: 8px 12px 0; }
+  .tx, .radio, .controls, .notebook, .note-actions {
     position: relative; left: auto; right: auto; top: auto; bottom: auto; width: auto;
     margin: 12px 12px 0;
   }
