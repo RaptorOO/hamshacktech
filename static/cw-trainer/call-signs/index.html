@@ -1548,7 +1548,7 @@
       worst.map(function (e) {
         var acc = Math.round(e[1].correct / e[1].played * 100);
         // The standard Most Missed chips (shared/hst-copy.css).
-        return '<li class="cl-m" title="' + e[1].correct + ' of ' + e[1].played + ' right"><b>' + esc(e[0]) + "</b><span>" + acc + "%</span></li>";
+        return '<li class="cl-m ' + HST.missLevel(acc) + '" style="--p:' + acc + '" title="' + e[1].correct + ' of ' + e[1].played + ' right"><b>' + esc(e[0]) + "</b><i></i><span>" + acc + "%</span></li>";
       }).join("");
     els.drillBtn.disabled = !anyMisses;
     els.drillBtn.textContent = state.drilling ? "Stop Drill" : "Drill These Characters";

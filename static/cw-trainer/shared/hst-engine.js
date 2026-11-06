@@ -74,6 +74,10 @@
   };
 
   // m:ss under an hour, h:mm:ss after that.
+  // Most Missed rows (shared/hst-copy.css): the bar is red under 60%
+  // right, amber under 85%, then lime.
+  HST.missLevel = function (pct) { return pct < 60 ? 'lo' : pct < 85 ? 'mid' : 'hi'; };
+
   HST.fmtClock = function (ms) {
     var total = Math.max(0, Math.floor(ms / 1000));
     var h = Math.floor(total / 3600), m = Math.floor(total / 60) % 60, s = total % 60;

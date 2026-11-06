@@ -1940,7 +1940,7 @@ function renderWeakList(){
   } else {
     els.weakList.innerHTML = weak.map(ch => {
       const right = Math.round((1 - ensureCharStat(ch).ewmaMiss) * 100);
-      return '<span class="cl-m"><b>' + HST.charLabel(ch) + '</b><span>' + right + '%</span></span>';
+      return '<span class="cl-m ' + HST.missLevel(right) + '" style="--p:' + right + '"><b>' + HST.charLabel(ch) + '</b><i></i><span>' + right + '%</span></span>';
     }).join('');
     els.drillBtn.disabled = drillActive;
   }

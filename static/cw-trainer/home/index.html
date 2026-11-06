@@ -44,10 +44,6 @@
   .head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-bottom: 6px; }
   .greet { margin: 0 0 16px; color: var(--muted); font: 500 1.1rem/1.4 'Oswald', sans-serif; letter-spacing: 0.02em; }
   .greet b { color: var(--icr); font-weight: 600; }
-  /* The same badge as My Course (Tim, 2026-11-04). */
-  .dev-badge { margin-left: auto; padding: 5px 12px; border-radius: 6px; background: var(--icr); color: var(--lime-ink);
-               font: 600 0.9rem/1.2 'Oswald', sans-serif; letter-spacing: 0.08em; white-space: nowrap; }
-  @media (max-width: 600px) { .dev-badge { font-size: 0.72rem; padding: 4px 9px; } }
 
   /* ---------- tiles ---------- */
   .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
@@ -144,9 +140,11 @@
   .col > .card { margin: 0; }
   .col > .card:last-child { flex: 1; }
   .air-dh { margin: 14px 0 2px; padding-top: 10px; border-top: 1px solid var(--border); font: 600 0.95rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; color: var(--text); }
-  .air-dh:first-of-type { margin-top: 4px; padding-top: 0; border-top: 0; }
+  .air-grp:first-of-type .air-dh { margin-top: 4px; padding-top: 0; border-top: 0; }
   .air-dh span { color: var(--dim); font: 500 0.82rem 'Inter', sans-serif; letter-spacing: 0; margin-left: 6px; }
   .air-none { margin: 2px 0 0; color: var(--dim); font-size: 0.9rem; }
+  .air-more { margin: 0; color: var(--dim); font-size: 0.88rem; }
+  .air-more:empty { display: none; }
   .air-list { list-style: none; margin: 0; padding: 0; }
   .air-list li { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 4px 16px; padding: 10px 0; border-top: 1px solid var(--grid); }
   .air-list li:first-child { border-top: 0; }
@@ -181,7 +179,6 @@
   <div class="head hst-masthead">
     <img class="hst-mascot" src="../icons/apple-touch-icon.png" alt="HamShackTech alien mascot" width="40" height="40">
     <h1 class="hst-title">Home</h1>
-    <span class="dev-badge">UNDER DEVELOPMENT</span>
   </div>
   <p class="greet" id="greet"></p>
 
@@ -507,7 +504,6 @@
       sum = 'Finish a <a href="../?tab=code-groups" data-tool="code-groups">Code Groups</a> or <a href="../?tab=call-signs" data-tool="call-signs">Call Signs</a> session of ' + MIN_CHARS +
         ' characters or more with ' + Math.round(GOOD * 100) + '% right, and your place on the road shows here.';
     }
-    if (last.cls) sum += ' Your class works at <b class="c">' + last.cls.wpm + ' WPM</b>.';
     $('jSum').innerHTML = sum;
   }
 
@@ -519,6 +515,7 @@
       range = Number(b.dataset.days);
       try { localStorage.setItem(RANGE_KEY, String(range)); } catch (e) {}
       renderPie(lastRows);
+      fitAir();
     });
   });
   // One wedge of the pie, clockwise from 12 o'clock.
@@ -673,7 +670,10 @@
     var p = key.split('-').map(Number);
     return new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'long', month: 'short', day: 'numeric' }).format(new Date(Date.UTC(p[0], p[1] - 1, p[2], 12)));
   }
-  var AIR_DAYS = 4;   // today and the next 3 days (Tim, 2026-11-05)
+  /* Up to a week of days, then fitAir() keeps only as many as fit beside
+     Where My Practice Time Goes (Tim, 2026-11-06: four days made the
+     page too long). On phones, where the pie is below, today and tomorrow. */
+  var AIR_DAYS = 7, AIR_DAYS_PHONE = 2;
 
   function renderAir() {
     var box = $('air'), now = Date.now();
@@ -692,13 +692,51 @@
         // today also keeps one that started yesterday and is still on
         return dayKey(s) === key || (i === 0 && s < now && Date.parse(e.end) > now);
       });
-      html += '<h3 class="air-dh">' + esc(i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : keyName(key).split(',')[0]) +
+      html += '<div class="air-grp"><h3 class="air-dh">' + esc(i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : keyName(key).split(',')[0]) +
         '<span>' + esc(keyName(key).replace(/^[A-Za-z]+, /, '')) + '</span></h3>';
       html += list.length ? '<ul class="air-list">' + list.map(function (e) { return airItem(e, now); }).join('') + '</ul>'
                           : '<p class="air-none">No on-air events.</p>';
+      html += '</div>';
     }
     if (air.failed) html += '<p class="note">Showing what was loaded earlier; couldn&rsquo;t check for changes just now.</p>';
     box.innerHTML = html;
+    fitAir();
+  }
+
+  // Hide days from the end until the left column (Next Class + On Air
+  // Practice) is no taller than the practice time panel; today always stays.
+  function fitAir() {
+    var groups = Array.prototype.slice.call(document.querySelectorAll('#air .air-grp'));
+    if (!groups.length) return;
+    groups.forEach(function (g) { g.style.display = ''; });
+    Array.prototype.forEach.call(document.querySelectorAll('#air .air-list li, #air .air-more'), function (el) {
+      if (el.classList.contains('air-more')) el.remove(); else el.style.display = '';
+    });
+    var grid = $('lowerGrid'), col = $('air').closest('.col'), pie = $('pTitle').closest('.card');
+    var beside = pie.getBoundingClientRect().left > col.getBoundingClientRect().right - 1;
+    if (!beside) { groups.slice(AIR_DAYS_PHONE).forEach(function (g) { g.style.display = 'none'; }); return; }
+    grid.style.alignItems = 'start';             // measure both at their own heights
+    function tall() { return col.offsetHeight > pie.offsetHeight + 8; }
+    for (var n = groups.length; n > 1 && tall(); n--) groups[n - 1].style.display = 'none';
+    // The next day, with as many of its events as still fit and a note
+    // for the rest, fills the space a whole day would overflow.
+    var next = n < groups.length ? groups[n] : null;
+    if (next) {
+      var items = Array.prototype.slice.call(next.querySelectorAll('.air-list li')), shown = items.length;
+      if (items.length) {
+        var more = document.createElement('p');
+        more.className = 'air-more';
+        next.appendChild(more);
+        next.style.display = '';
+        while (shown > 0) {
+          more.textContent = shown < items.length ? '+' + (items.length - shown) + ' more that day' : '';
+          if (!tall()) break;
+          items[--shown].style.display = 'none';
+        }
+        if (!shown) next.style.display = 'none';
+      }
+    }
+    grid.style.alignItems = '';
   }
   loadAir(true);
   setInterval(function () { if (document.hidden) return; loadAir(false); renderAir(); }, 60000);
@@ -714,6 +752,7 @@
       renderJourney(rows, st);
       renderCourse(st);
       renderPie(rows);
+      fitAir();
     }).catch(function (e) { console.error(e); });
   }
   refresh();
@@ -721,7 +760,7 @@
   HST.course.onChange(refresh);
   HST.course.progress.onChange(refresh);
   var rt = null;
-  window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(drawJourney, 150); });
+  window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { drawJourney(); fitAir(); }, 150); });
   // The day rolls over, or a class starts: redraw every few minutes while open.
   setInterval(function () { if (!document.hidden) refresh(); }, 5 * 60000);
   window.HSTHome = { refresh: refresh };

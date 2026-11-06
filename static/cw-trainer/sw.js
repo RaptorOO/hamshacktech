@@ -17,14 +17,14 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = 'e83f5e082d2e';
+const VERSION = '00563d6a08b6';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline, each with its fingerprint (see
 // fingerprint() in the build script).
 const PRECACHE = [
-  ['/cw-trainer/call-signs/', '42ec643c17d86ef4'],
-  ['/cw-trainer/code-groups/', 'b18d518b51e6ae29'],
+  ['/cw-trainer/call-signs/', 'c2b27ca2ee934c13'],
+  ['/cw-trainer/code-groups/', '83480eaa21baa1d4'],
   ['/cw-trainer/code-groups/speed-practice.js', 'e5b592ae9aa63fd0'],
   ['/cw-trainer/course/', 'bf744cc77c8129ff'],
   ['/cw-trainer/fonts/bebas-neue-latin-400-normal.woff2', 'a7c90c89240c134f'],
@@ -50,12 +50,12 @@ const PRECACHE = [
   ['/cw-trainer/fonts/source-sans-3-latin-400-normal.woff2', '0f73f35e08cde0a2'],
   ['/cw-trainer/fonts/source-sans-3-latin-600-normal.woff2', '14527d193b0e30bc'],
   ['/cw-trainer/fonts/source-sans-3-latin-700-normal.woff2', 'ae35266f2ab0d531'],
-  ['/cw-trainer/home/', '33e80341c160fc3f'],
+  ['/cw-trainer/home/', 'd91c12836a5e5050'],
   ['/cw-trainer/icons/android-chrome-192x192.png', '2876ba447f3fad3c'],
   ['/cw-trainer/icons/android-chrome-512x512.png', '0af384dbeded6f44'],
   ['/cw-trainer/icons/apple-touch-icon.png', '6877a92df205dbd5'],
   ['/cw-trainer/icons/favicon-32x32.png', '5cc015c2d45188f7'],
-  ['/cw-trainer/icr/', '1468a49054726eeb'],
+  ['/cw-trainer/icr/', 'b2491ea356957986'],
   ['/cw-trainer/', '45c5204a7633d3e3'],
   ['/cw-trainer/jeopardy/answers.js', 'cb648e2391934f83'],
   ['/cw-trainer/jeopardy/', '27a2dcd680b9a609'],
@@ -67,10 +67,10 @@ const PRECACHE = [
   ['/cw-trainer/shared/hst-account.js', '091baa09acb4ba06'],
   ['/cw-trainer/shared/hst-chrome.css', '68d59b0e50762a21'],
   ['/cw-trainer/shared/hst-content.js', '98f9e954ad3f2732'],
-  ['/cw-trainer/shared/hst-copy.css', 'ed14fd3cea0fd2a8'],
+  ['/cw-trainer/shared/hst-copy.css', '56288706e403ba62'],
   ['/cw-trainer/shared/hst-copy.js', '40defdf1bb974b0e'],
   ['/cw-trainer/shared/hst-course.js', '51c3d3fe0d6f9411'],
-  ['/cw-trainer/shared/hst-engine.js', '1b86db46011f05a5'],
+  ['/cw-trainer/shared/hst-engine.js', '5f990c4ce95011f0'],
   ['/cw-trainer/shared/hst-file-lengths.js', '571bfcfe489fd454'],
   ['/cw-trainer/shared/hst-keyer.js', 'd2ef1aeda8286a72'],
   ['/cw-trainer/shared/hst-listen.js', '098e02d85b32b8fa'],
