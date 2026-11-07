@@ -53,7 +53,7 @@
   var MYCALL = 'TL1R';
   var CONTACTS = [
     // Xander, KR3X: a three-year-old alien boy on Korr moon base
-    { name: 'XANDER', call: 'KR3X', portrait: 'contact-xander-kid', done: 'nicekid', steps: {
+    { name: 'XANDER', call: 'KR3X', portrait: 'contact-xander-kid', monitor: 'mon-xander', done: 'nicekid', steps: {
       hiker: [
         { rx: 'CQ CQ DE KR3X KR3X K', say: 'cq_answer', fact: 'KR3X' },
         { tx: 'KR3X DE TL1R K' },
@@ -86,7 +86,7 @@
         { rx: '<BK> GL ROGER HOPE U GET HOME 73 TL1R DE KR3X <SK>', signoff: 1 },
         { tx: '73 KR3X DE TL1R <SK>' } ] } },
     // Elena, SK5E: a sarcastic five-year-old alien girl explorer
-    { name: 'ELENA', call: 'SK5E', portrait: 'contact-elena-kid', done: 'keepscan', steps: {
+    { name: 'ELENA', call: 'SK5E', portrait: 'contact-elena-kid', monitor: 'mon-elena', done: 'keepscan', steps: {
       hiker: [
         { rx: 'CQ CQ DE SK5E SK5E K', say: 'cq_answer', fact: 'SK5E' },
         { tx: 'SK5E DE TL1R K' },
@@ -121,7 +121,7 @@
         { rx: '<BK> SURE ROGER NO TELLURA HR GL 73 TL1R DE SK5E <SK>', signoff: 1 },
         { tx: '73 SK5E DE TL1R <SK>' } ] } },
     // Grizz, RB9G: a grumpy salvage operator who uses heavy abbreviations
-    { name: 'GRIZZ', call: 'RB9G', portrait: 'contact-grizz', done: 'keepscan', steps: {
+    { name: 'GRIZZ', call: 'RB9G', portrait: 'contact-grizz', monitor: 'mon-grizz', done: 'keepscan', steps: {
       hiker: [
         { rx: 'CQ CQ DE RB9G RB9G K', say: 'cq_answer', fact: 'RB9G' },
         { tx: 'RB9G DE TL1R K' },
@@ -777,7 +777,7 @@
     bandNoise(mode.noise, mode.qsb);
     setStatus('SIGNAL');
     var mon = $('monImg');                                  // the big contact monitor
-    mon.style.backgroundImage = 'url(art/' + contact.portrait + '.webp)'; mon.hidden = false; $('monStatic').hidden = true;
+    mon.style.backgroundImage = 'url(art/' + contact.monitor + '.webp)'; mon.hidden = false; $('monStatic').hidden = true;
     $('monName').textContent = '';
     mon.classList.remove('flicker'); void mon.offsetWidth; mon.classList.add('flicker');
     $('copyIn').value = ''; $('copyMsg').innerHTML = '';     // a fresh page for a new station
@@ -891,32 +891,6 @@
   }
   window.addEventListener('resize', ruleLines);
 
-  /* THE CONTACT MONITOR sits in the cockpit's big tilted screen, top left of
-     the art (Tim, 2026-11-07). Corners measured on the 2400 x 1350 scene
-     (TL, TR, BR, BL); the stage is the same 16:9, so fractions of the art
-     are fractions of the stage. A projective warp maps the box onto them. */
-  var MON_QUAD = [[133, 369], [355, 408], [329, 620], [69, 591]];
-  function placeMonitor() {
-    var el = document.querySelector('.contact-mon'), stage = document.querySelector('.stage');
-    if (!el || !stage) return;
-    if (window.matchMedia('(max-width: 860px), (max-aspect-ratio: 1 / 1)').matches) { el.style.transform = ''; return; }
-    var W = stage.clientWidth, H = stage.clientHeight, w = el.offsetWidth, h = el.offsetHeight;
-    var p = MON_QUAD.map(function (q) { return [q[0] / 2400 * W, q[1] / 1350 * H]; });
-    // unit square -> quad (Heckbert)
-    var x0 = p[0][0], y0 = p[0][1], x1 = p[1][0], y1 = p[1][1], x2 = p[2][0], y2 = p[2][1], x3 = p[3][0], y3 = p[3][1];
-    var dx1 = x1 - x2, dx2 = x3 - x2, dy1 = y1 - y2, dy2 = y3 - y2;
-    var sx = x0 - x1 + x2 - x3, sy = y0 - y1 + y2 - y3;
-    var den = dx1 * dy2 - dx2 * dy1;
-    var g = (sx * dy2 - dx2 * sy) / den, hh = (dx1 * sy - sx * dy1) / den;
-    var a = x1 - x0 + g * x1, b = x3 - x0 + hh * x3, c = x0;
-    var d = y1 - y0 + g * y1, e = y3 - y0 + hh * y3, f = y0;
-    // fold in the box size: (u, v) = (x / w, y / h)
-    a /= w; d /= w; g /= w; b /= h; e /= h; hh /= h;
-    el.style.transform = 'matrix3d(' + [a, d, 0, g, b, e, 0, hh, 0, 0, 1, 0, c, f, 0, 1].join(',') + ')';
-    el.classList.add('placed');
-  }
-  window.addEventListener('resize', placeMonitor);
-  placeMonitor();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(ruleLines);
   ruleLines();
   ['input', 'keyup', 'click', 'select', 'focus', 'blur'].forEach(function (ev) { $('copyIn').addEventListener(ev, renderWriting); });
