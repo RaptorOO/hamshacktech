@@ -7,7 +7,7 @@
      out of the app's tabs until Tim says it's ready. -->
 <meta name="robots" content="noindex, nofollow">
 <title>Morse Evolved</title>
-<link rel="preload" href="art/ship-neutral.webp" as="image">
+<link rel="preload" href="art/bridge-neutral.webp" as="image">
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="game.css">
 </head>
@@ -37,10 +37,10 @@
     <!-- Backgrounds, not <img> (Tim, 2026-11-06): Edge's "Image Magnify"
          opens any picture under the mouse when Ctrl is tapped twice, and
          key adapters send Ctrl for every dit and dah. -->
-    <div class="pose on" data-pose="neutral" style="background-image:url(art/ship-neutral.webp)"></div>
-    <div class="pose" data-pose="excited" style="background-image:url(art/ship-excited.webp)"></div>
-    <div class="pose" data-pose="frustrated" style="background-image:url(art/ship-frustrated.webp)"></div>
-    <div class="pose" data-pose="amused" style="background-image:url(art/ship-amused.webp)"></div>
+    <div class="pose on" data-pose="neutral" style="background-image:url(art/bridge-neutral.webp)"></div>
+    <div class="pose" data-pose="excited" style="background-image:url(art/bridge-excited.webp)"></div>
+    <div class="pose" data-pose="frustrated" style="background-image:url(art/bridge-frustrated.webp)"></div>
+    <div class="pose" data-pose="amused" style="background-image:url(art/bridge-amused.webp)"></div>
     <canvas id="sparks" width="1280" height="720"></canvas>
     <div class="flicker-light"></div>
   </div>
@@ -49,10 +49,7 @@
     <div class="brand">MORSE <span>EVOLVED</span></div>
     <div class="mode" id="modeLabel"></div>
     <div class="topbar-right">
-      <label class="vol">Tone <input type="range" id="toneIn" min="400" max="900" step="10"></label>
-      <label class="vol">CW <input type="range" id="volIn" min="0" max="100" step="1"></label>
-      <label class="vol">Voice <input type="range" id="voiceIn" min="0" max="100" step="1"></label>
-      <button class="btn ghost small" id="ccBtn" type="button" aria-pressed="false" title="Captions for Roger">CC</button>
+      <button class="btn ghost small" id="settingsBtn" type="button">SETTINGS</button>
       <button class="btn ghost small" id="quitBtn" type="button">QUIT</button>
     </div>
   </header>
@@ -144,13 +141,13 @@
         <h2>2 &middot; Set up your key</h2>
         <div class="setup-row">
           <div class="setup-label">Key</div>
-          <div class="seg" id="keyTypeSeg" role="radiogroup" aria-label="Key type">
+          <div class="seg" id="keyTypeSeg" data-setting="keyType" role="radiogroup" aria-label="Key type">
             <button data-v="iambicB">Iambic B</button><button data-v="iambicA">Iambic A</button><button data-v="bug">Bug</button><button data-v="straight">Straight</button>
           </div>
         </div>
         <div class="setup-row">
           <div class="setup-label">Plugged in</div>
-          <div class="seg" id="adapterSeg" role="radiogroup" aria-label="Adapter">
+          <div class="seg" id="adapterSeg" data-setting="adapter" role="radiogroup" aria-label="Adapter">
             <button data-v="vail">Vail adapter</button><button data-v="vband">VBand</button><button data-v="keyboard">No adapter</button>
           </div>
         </div>
@@ -177,6 +174,51 @@
       <button id="startBtn" class="btn big">START MISSION</button>
     </div>
     <p class="fine">These key settings are shared with the CW Trainer's Keyer Setup.</p>
+  </div>
+</div>
+
+<!-- Settings (Tim, 2026-11-06): speeds, sound and the key, in one panel -->
+<div class="overlay" id="settingsCard" hidden>
+  <div class="card wide settings">
+    <h1>SET<span>TINGS</span></h1>
+    <div class="start-cols">
+      <div class="col">
+        <h2>Copying speed</h2>
+        <div class="setup-row"><div class="setup-label">Letters</div><input type="range" id="copyWpmIn" min="5" max="40" step="1"><span class="val" id="copyWpmVal"></span></div>
+        <div class="setup-row"><div class="setup-label">Overall</div><input type="range" id="copyFwpmIn" min="3" max="40" step="1"><span class="val" id="copyFwpmVal"></span></div>
+        <p class="hint">Letters play at the first speed; extra space between them brings the overall speed down (Farnsworth).</p>
+        <h2>Sending speed</h2>
+        <div class="setup-row"><div class="setup-label">Keyer</div><input type="range" id="sendWpm2In" min="5" max="35" step="1"><span class="val" id="sendWpm2Val"></span></div>
+        <h2>Sound</h2>
+        <div class="setup-row"><div class="setup-label">Tone</div><input type="range" id="toneIn" min="400" max="900" step="10"><span class="val" id="toneVal"></span></div>
+        <div class="setup-row"><div class="setup-label">CW volume</div><input type="range" id="volIn" min="0" max="100" step="1"><span class="val" id="volVal"></span></div>
+        <div class="setup-row"><div class="setup-label">Voice</div><input type="range" id="voiceIn" min="0" max="100" step="1"><span class="val" id="voiceVal"></span></div>
+        <div class="setup-row"><div class="setup-label">Captions</div><label class="check"><input type="checkbox" id="ccIn"> Show Roger's words on screen</label></div>
+      </div>
+      <div class="col">
+        <h2>Your key</h2>
+        <div class="setup-row">
+          <div class="setup-label">Key</div>
+          <div class="seg" data-setting="keyType" role="radiogroup" aria-label="Key type">
+            <button data-v="iambicB">Iambic B</button><button data-v="iambicA">Iambic A</button><button data-v="bug">Bug</button><button data-v="straight">Straight</button>
+          </div>
+        </div>
+        <div class="setup-row">
+          <div class="setup-label">Plugged in</div>
+          <div class="seg" data-setting="adapter" role="radiogroup" aria-label="Adapter">
+            <button data-v="vail">Vail adapter</button><button data-v="vband">VBand</button><button data-v="keyboard">No adapter</button>
+          </div>
+        </div>
+        <div class="setup-row">
+          <div class="setup-label">Paddles</div>
+          <label class="check"><input type="checkbox" id="swap2In"> Swap dit and dah</label>
+        </div>
+        <p class="hint" id="settingsKeyNote"></p>
+      </div>
+    </div>
+    <div class="start-actions">
+      <button id="settingsDone" class="btn big">DONE</button>
+    </div>
   </div>
 </div>
 

@@ -26,34 +26,72 @@
   };
   /* THE STATIONS, worked in order (Tim, 2026-11-06: after a contact,
      go back to the radio for the next one, not to the start screen).
-     Each has its exchange per difficulty: rx = their call (copy it),
-     tx = your reply (key it), signoff = their sign-off (copy it too).
-     found / done = Roger's lines when you copy them / when you're done. */
+     Each QSO is a little scene (spec section 9: every operator has a
+     personality -- Xander a curious kid, Elena a sarcastic explorer,
+     Grizz a grumpy salvager -- and Roger reacts with short, funny
+     comments). A QSO is a list of steps, per difficulty:
+       { rx: text, say: line }   they send; you copy it; Roger reacts
+       { tx: text }               you key your reply
+       { rx: text, signoff: 1 }  their sign-off; copy it too
+     The first copy has to get the station's name. Higher difficulties
+     have longer exchanges, as the spec asks. */
   var CONTACTS = [
-    { name: 'XANDER', portrait: 'contact-xander', found: 'xander', done: 'nicekid',
-      hiker:     { rx: 'XANDER K', tx: 'R TU', signoff: 'TU 73' },
-      ranger:    { rx: 'CQ CQ DE XANDER K', tx: 'XANDER DE ROGER', signoff: 'TU ROGER 73 <SK>' },
-      scientist: { rx: 'CQ CQ CQ DE XANDER XANDER QTH KORR MOON BASE K',
-                   tx: 'XANDER DE ROGER CRASHED NM PSE QSP TELLURA K', signoff: 'SRI ROGER NO TELLURA HR GL 73 <SK>' } },
-    { name: 'ELENA', portrait: 'contact-elena', found: 'friendly', done: 'keepscan',
-      hiker:     { rx: 'ELENA K', tx: 'R TU', signoff: 'GL 73' },
-      ranger:    { rx: 'CQ CQ DE ELENA K', tx: 'ELENA DE ROGER', signoff: 'TNX ROGER 73 <SK>' },
-      scientist: { rx: 'CQ CQ CQ DE ELENA ELENA QTH SKARR STATION K',
-                   tx: 'ELENA DE ROGER CRASHED NM PSE QSP TELLURA K', signoff: 'SRI NO TELLURA HR GL 73 <SK>' } },
-    { name: 'GRIZZ', portrait: 'contact-grizz', found: 'friendly', done: 'keepscan',
-      hiker:     { rx: 'GRIZZ K', tx: 'R TU', signoff: 'CUL 73' },
-      ranger:    { rx: 'CQ CQ DE GRIZZ K', tx: 'GRIZZ DE ROGER', signoff: 'FB ROGER 73 <SK>' },
-      scientist: { rx: 'CQ CQ CQ DE GRIZZ GRIZZ QTH RUST BELT MINE K',
-                   tx: 'GRIZZ DE ROGER CRASHED NM PSE QSP TELLURA K', signoff: 'NO TELLURA HR SRI GL 73 <SK>' } }
+    { name: 'XANDER', portrait: 'contact-xander', done: 'nicekid', steps: {
+      hiker: [
+        { rx: 'XANDER K', say: 'xander' }, { tx: 'R TU' },
+        { rx: 'UR NAME?', say: 'x_h2' }, { tx: 'ROGER' },
+        { rx: 'ROGER ROGER TU 73', signoff: 1, say: 'x_h3' } ],
+      ranger: [
+        { rx: 'CQ CQ DE XANDER K', say: 'xander' }, { tx: 'XANDER DE ROGER' },
+        { rx: 'HI ROGER UR MY 1ST QSO K', say: 'x_r2' }, { tx: 'FB XANDER QTH NM' },
+        { rx: 'NM? IS THAT A MOON? K', say: 'x_r3' }, { tx: 'NO A DESERT' },
+        { rx: 'OK TU ROGER 73 <SK>', signoff: 1 } ],
+      scientist: [
+        { rx: 'CQ CQ CQ DE XANDER XANDER QTH KORR MOON BASE K', say: 'xander' },
+        { tx: 'XANDER DE ROGER CRASHED NM PSE QSP TELLURA K' },
+        { rx: 'SRI ROGER NEVER HRD OF TELLURA MOM SEZ IM NOT ALLOWED TO WORK DX K', say: 'x_s2' },
+        { tx: 'FB TNX ANYWAY' },
+        { rx: 'GL ROGER HOPE U GET HOME 73 <SK>', signoff: 1 } ] } },
+    { name: 'ELENA', portrait: 'contact-elena', done: 'keepscan', steps: {
+      hiker: [
+        { rx: 'ELENA K', say: 'e_found' }, { tx: 'R TU' },
+        { rx: 'UR SLOW', say: 'e_h2' }, { tx: 'SRI' },
+        { rx: 'GL 73', signoff: 1 } ],
+      ranger: [
+        { rx: 'CQ CQ DE ELENA K', say: 'e_found' }, { tx: 'ELENA DE ROGER' },
+        { rx: 'ROGER? THATS A NAME? K', say: 'e_r2' }, { tx: 'YES IT IS' },
+        { rx: 'OK ROGER 73 <SK>', signoff: 1 } ],
+      scientist: [
+        { rx: 'CQ CQ CQ DE ELENA ELENA QTH SKARR STATION K', say: 'e_found' },
+        { tx: 'ELENA DE ROGER CRASHED NM PSE QSP TELLURA K' },
+        { rx: 'CRASHED AGN? THATS UR 3RD THIS YR ROGER K', say: 'e_s2' },
+        { tx: 'NOT MY FAULT' },
+        { rx: 'SURE ROGER NO TELLURA HR GL 73 <SK>', signoff: 1 } ] } },
+    { name: 'GRIZZ', portrait: 'contact-grizz', done: 'keepscan', steps: {
+      hiker: [
+        { rx: 'GRIZZ K', say: 'g_found' }, { tx: 'R TU' },
+        { rx: 'QRL', say: 'g_h2' }, { tx: 'SRI' },
+        { rx: 'CUL 73', signoff: 1 } ],
+      ranger: [
+        { rx: 'CQ CQ DE GRIZZ K', say: 'g_found' }, { tx: 'GRIZZ DE ROGER' },
+        { rx: 'WAT U WANT K', say: 'g_r2' }, { tx: 'SHIP CRASHED' },
+        { rx: 'SHIP? I BUY SCRAP K', say: 'g_r3' }, { tx: 'NO TNX' },
+        { rx: 'UR LOSS 73 <SK>', signoff: 1 } ],
+      scientist: [
+        { rx: 'CQ CQ CQ DE GRIZZ GRIZZ QTH RUST BELT MINE K', say: 'g_found' },
+        { tx: 'GRIZZ DE ROGER CRASHED NM PSE QSP TELLURA K' },
+        { rx: 'NO TELLURA HR WL BUY UR WRECK 5 CR K', say: 'g_s2' },
+        { tx: 'NO DEAL GRIZZ' },
+        { rx: 'UR LOSS 73 <SK>', signoff: 1 } ] } }
   ];
   var BANDS = { '40m': [7.000, 7.060], '20m': [14.000, 14.070], '10m': [28.000, 28.070] };
 
   var mode = null, modeKey = 'hiker', band = '20m';
   var phase = 'start';               // start | intro | ready | scanning | rx | copy | tx | signoff | logged
-  var ci = 0, contact = null, qso = null;   // the station being worked and its exchange
+  var ci = 0, contact = null, steps = null, si = 0, txText = '';   // the station, its QSO steps, the step now
   var copyStage = 'rx', copyText = '', copyStart = 0;   // what's being copied, and where it starts on the page
   var stats = null;
-  function newStats() { return { t0: Date.now(), firstAcc: null, bestAcc: 0, decoded: false, sends: 0, sendAcc: null, signoffAcc: null }; }
+  function newStats() { return { t0: Date.now(), firstAcc: null, bestAcc: 0, decoded: false, sends: 0, sendAcc: null, signoffAcc: null, copies: {} }; }
   var copyFails = 0, quipped = false;
 
   /* ---------------------------------------------------------------------
@@ -88,7 +126,22 @@
     friendly: { file: 'line13', text: 'Not Tellura… but they sound friendly.' },
     keepscan: { file: 'line14', text: 'Good contact. Still not home. Let’s keep scanning.' },
     rescan:   { file: 'line15', text: 'Back to the radio. Pick a band, and scan again.' },
-    allheard: { file: 'line16', text: 'That’s everyone on the bands tonight. Tellura is out there somewhere… we’ll find it.' }
+    allheard: { file: 'line16', text: 'That’s everyone on the bands tonight. Tellura is out there somewhere… we’ll find it.' },
+    // Roger's reactions inside the QSOs (one clip each, file = key)
+    x_h2:    { file: 'x_h2', text: 'He wants my name. Tell him it’s Roger. Obviously.' },
+    x_h3:    { file: 'x_h3', text: 'Every human thinks that’s hilarious. Apparently so does every alien kid.' },
+    x_r2:    { file: 'x_r2', text: 'His first contact? Great. We’re both new at this.' },
+    x_r3:    { file: 'x_r3', text: 'Is New Mexico a moon… Honestly, some days it feels like one.' },
+    x_s2:    { file: 'x_s2', text: 'His mom says he’s not allowed to work DX. …I respect that.' },
+    e_found: { file: 'e_found', text: 'Elena. Not Tellura… and she’s already judging us.' },
+    e_h2:    { file: 'e_h2', text: 'Ouch. She says we’re slow. In fairness… my fingers are in bandages.' },
+    e_r2:    { file: 'e_r2', text: 'She’s making fun of my name. Rude… but fair.' },
+    e_s2:    { file: 'e_s2', text: 'Third this year? That was ONE time! …Okay. Three times.' },
+    g_found: { file: 'g_found', text: 'Grizz. Salvage operator. Grumpiest signal on the bands.' },
+    g_h2:    { file: 'g_h2', text: 'QRL. He’s busy. Doing what? Counting rust?' },
+    g_r2:    { file: 'g_r2', text: 'Charming. Tell him we crashed. He’ll love that.' },
+    g_r3:    { file: 'g_r3', text: 'He wants to buy my ship for scrap. Absolutely not. …How much, though?' },
+    g_s2:    { file: 'g_s2', text: 'Five credits for my ship? FIVE?! The cup holder alone is worth ten.' }
   };
   var ALIEN = { excited: 'alien-excited', celebrating: 'alien-excited', frustrated: 'alien-frustrated' };
   var clips = {};
@@ -203,8 +256,8 @@
   function playCW(text, fwpm) {
     HST.audio.stop();
     var sh = HST.shared.get(), chars = tokens(text);
-    var p = HST.audio.playMorse(chars, { wpm: mode.wpm, fwpm: fwpm, toneHz: sh.toneHz, volume: sh.volume });
-    var t = HST.timing(mode.wpm, fwpm), cursor = 50, t0 = performance.now();
+    var p = HST.audio.playMorse(chars, { wpm: copyWpm, fwpm: fwpm, toneHz: sh.toneHz, volume: sh.volume });
+    var t = HST.timing(copyWpm, fwpm), cursor = 50, t0 = performance.now();
     chars.forEach(function (ch, idx) {
       var last = idx === chars.length - 1;
       if (ch === ' ') { if (!last) cursor += 7 * t.ts; return; }
@@ -301,6 +354,17 @@
     sendWpm = Math.max(5, Math.min(35, Math.round(v)));
     try { localStorage.setItem(SEND_KEY, String(sendWpm)); } catch (e) {}
   }
+  /* COPYING SPEED (Tim, 2026-11-06: changeable in Settings). Picking a
+     player sets it to that player's defaults; Settings can change it. */
+  var COPY_KEY = 'morse-evolved-copy';
+  var copyWpm = 20, copyFwpm = 5;
+  (function () { try { var c = JSON.parse(localStorage.getItem(COPY_KEY) || 'null'); if (c && c.wpm) { copyWpm = c.wpm; copyFwpm = c.fwpm; } } catch (e) {} })();
+  function setCopy(w, f) {
+    copyWpm = Math.max(5, Math.min(40, Math.round(w)));
+    copyFwpm = Math.max(3, Math.min(copyWpm, Math.round(f)));
+    try { localStorage.setItem(COPY_KEY, JSON.stringify({ wpm: copyWpm, fwpm: copyFwpm })); } catch (e) {}
+    if (mode) $('modeLabel').textContent = mode.label + ' · ' + copyWpm + '/' + copyFwpm + ' wpm';
+  }
   function unitMs() { return following() ? HST.adapterKeying.get().unitMs : 1200 / sendWpm; }
 
   var txFailed = false, live = '', txMarks = [], downAt = null, lastUp = 0, detachKeys = null, autoTimer = null;
@@ -350,7 +414,7 @@
   function showLive() { $('txLive').textContent = live || ' '; }
   function scheduleAutoCheck() {
     // Check by itself once they've sent as many characters as the target.
-    var want = plain(qso.tx).replace(/\s/g, '').length;
+    var want = plain(txText).replace(/\s/g, '').length;
     if (live.replace(/\s/g, '').length >= want) {
       clearTimeout(autoTimer);
       autoTimer = setTimeout(checkSend, unitMs() * 8);
@@ -373,21 +437,19 @@
      The choices write straight to HST.keyerSettings, so they're the same
      settings the CW Trainer's Keyer Setup uses.
      --------------------------------------------------------------------- */
-  function seg(id, value) {
-    document.querySelectorAll('#' + id + ' button').forEach(function (b) {
+  function seg(setting, value) {
+    document.querySelectorAll('.seg[data-setting="' + setting + '"] button').forEach(function (b) {
       b.setAttribute('role', 'radio');
       b.setAttribute('aria-checked', b.dataset.v === value ? 'true' : 'false');
     });
   }
   function renderSetup() {
     var s = HST.keyerSettings.get();
-    seg('keyTypeSeg', s.keyType);
-    seg('adapterSeg', s.adapter);
-    $('swapIn').checked = !!s.reversed;
-    $('swapIn').disabled = s.keyType === 'straight';
-    $('sendWpmIn').value = sendWpm;
-    $('sendWpmVal').textContent = sendWpm + ' wpm';
-    $('sendWpmIn').disabled = following();
+    seg('keyType', s.keyType);
+    seg('adapter', s.adapter);
+    ['swapIn', 'swap2In'].forEach(function (id) { $(id).checked = !!s.reversed; $(id).disabled = s.keyType === 'straight'; });
+    ['sendWpmIn', 'sendWpm2In'].forEach(function (id) { $(id).value = sendWpm; $(id).disabled = following(); });
+    $('sendWpmVal').textContent = $('sendWpm2Val').textContent = sendWpm + ' wpm';
     $('testHow').textContent = s.keyType === 'straight' ? 'Left Ctrl or [ is the key'
       : 'Left Ctrl or [ = ' + (s.reversed ? 'dah' : 'dit') + ', Right Ctrl or ] = ' + (s.reversed ? 'dit' : 'dah');
     renderTestNote();
@@ -399,6 +461,7 @@
     else if (s.keyType === 'straight') n = 'Straight key: send at your own pace; the game learns your speed. The slider is just its first guess.';
     else if (s.keyType === 'bug') n = 'Bug: the dit side makes dits at the slider’s speed; dahs are yours.';
     $('testNote').innerHTML = n;
+    $('settingsKeyNote').innerHTML = n;
   }
   function renderTest() {
     $('testLive').textContent = testLive.slice(-40);
@@ -421,14 +484,17 @@
     return dah ? '-' : '.';
   }
   function clearTest() { testLive = ''; testCode = ''; elDit = null; testDecoder.reset(); renderTest(); }
-  document.querySelectorAll('#keyTypeSeg button').forEach(function (b) {
-    b.addEventListener('click', function () { HST.keyerSettings.set({ keyType: b.dataset.v }); });
+  document.querySelectorAll('.seg[data-setting] button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var o = {}; o[b.parentNode.dataset.setting] = b.dataset.v; HST.keyerSettings.set(o);
+    });
   });
-  document.querySelectorAll('#adapterSeg button').forEach(function (b) {
-    b.addEventListener('click', function () { HST.keyerSettings.set({ adapter: b.dataset.v }); });
+  ['swapIn', 'swap2In'].forEach(function (id) {
+    $(id).addEventListener('change', function () { HST.keyerSettings.set({ reversed: this.checked }); });
   });
-  $('swapIn').addEventListener('change', function () { HST.keyerSettings.set({ reversed: this.checked }); });
-  $('sendWpmIn').addEventListener('input', function () { setSendWpm(+this.value); keyer.reset(); renderSetup(); });
+  ['sendWpmIn', 'sendWpm2In'].forEach(function (id) {
+    $(id).addEventListener('input', function () { setSendWpm(+this.value); keyer.reset(); renderSetup(); refreshTx(); });
+  });
   $('testClear').addEventListener('click', clearTest);
   function refreshTx() { if (phase === 'tx') $('txHelp').textContent = keyHelp(); }
   HST.keyerSettings.onChange(function () { keyer.reset(); decoder.reset(); clearTest(); renderSetup(); refreshTx(); });
@@ -441,7 +507,7 @@
     HST.audio.unlock();
     preloadVoice();
     mode = MODES[modeKey];
-    $('modeLabel').textContent = mode.label + ' · ' + mode.wpm + '/' + mode.fwpm + ' wpm';
+    $('modeLabel').textContent = mode.label + ' · ' + copyWpm + '/' + copyFwpm + ' wpm';
     $('startCard').hidden = true;
     keyer.reset();
     ci = 0;
@@ -483,8 +549,8 @@
   }
 
   function acquire() {
-    contact = CONTACTS[ci]; qso = contact[modeKey]; stats = newStats();
-    copyFails = 0; quipped = false;
+    contact = CONTACTS[ci]; steps = contact.steps[modeKey]; si = 0; stats = newStats();
+    copyFails = 0; quipped = false; reacted = -1;
     bandNoise(mode.noise, mode.qsb);
     setStatus('SIGNAL');
     var img = $('contactImg');
@@ -494,17 +560,30 @@
     $('copyIn').value = ''; $('copyMsg').innerHTML = '';     // a fresh page for a new station
     phase = 'rx';
     // The CW starts once Roger has finished talking, so the two never overlap.
-    say('signal', 'excited', function () { setTimeout(function () { startCopy('rx'); }, 500); });
+    say('signal', 'excited', function () { setTimeout(runStep, 500); });
   }
 
   // Copy a transmission: their call ('rx') or their sign-off ('signoff').
   // The notebook opens the moment the signal starts, so you can write the
   // letters down as you hear them (Tim, 2026-11-06). The sign-off goes on
   // the next line of the same page, and only that part is graded.
-  function startCopy(stage) {
-    copyStage = stage;
-    copyText = stage === 'rx' ? qso.rx : qso.signoff;
+  // Run the QSO step si: copy what they send, or key your reply.
+  function runStep() {
+    var st = steps[si];
+    if (!st) { contactDone(); return; }
+    if (st.tx) enterSend(st.tx);
+    else if (st.signoff) say('signoffcopy', 'neutral', function () { setTimeout(function () { startCopy(st); }, 300); });
+    else startCopy(st);
+  }
+  // Copy one of their transmissions. The notebook opens the moment the
+  // signal starts, so you can write as you hear (Tim, 2026-11-06). Each
+  // transmission goes on a new line; only that part is graded. A nearly
+  // full page is turned to a fresh one first.
+  function startCopy(st) {
+    copyStage = st.signoff ? 'signoff' : si === 0 ? 'rx' : 'mid';
+    copyText = st.rx;
     var ta = $('copyIn');
+    if (pageFull()) ta.value = '';
     if (ta.value && !/\n$/.test(ta.value)) ta.value += '\n';
     copyStart = ta.value.length;
     phase = 'rx';
@@ -512,7 +591,15 @@
     copyFails = 0;
     openNotebook();
     setStatus('RECEIVING');
-    playCW(copyText, mode.fwpm).then(function () { if (phase === 'rx') enterCopy(); });
+    playCW(copyText, copyFwpm).then(function () { if (phase === 'rx') enterCopy(); });
+  }
+  function pageFull() {          // the writing already reaches past ~60% of the page
+    var w = $('writing'), probe = document.createElement('span');
+    probe.style.cssText = 'display:inline-block;width:0;height:1em';
+    w.appendChild(probe);
+    var bottom = probe.offsetTop + probe.offsetHeight;
+    w.removeChild(probe);
+    return bottom > w.clientHeight * 0.6;
   }
   function openNotebook() {
     var ta = $('copyIn');
@@ -561,6 +648,27 @@
     $('hintLine').hidden = !!v || (phase !== 'copy' && phase !== 'rx');
     $('paper').classList.toggle('focus', caretAt >= 0);
   }
+  // Rule the page to match the writing: line spacing = the writing's line
+  // height, and a line under each baseline (Tim, 2026-11-06: the pencil
+  // has to sit on the lines). Measured with a probe at the first baseline.
+  function ruleLines() {
+    var w = $('writing'), paper = $('paper');
+    var probe = document.createElement('span');
+    probe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
+    var holder = document.createElement('div');
+    holder.style.cssText = 'position:absolute;left:0;right:0;top:0;visibility:hidden';
+    holder.appendChild(document.createTextNode('X')); holder.appendChild(probe);
+    w.appendChild(holder);
+    var baseline = w.offsetTop + probe.offsetTop + 1;          // first baseline, in the paper's own pixels
+    var lh = parseFloat(getComputedStyle(w).lineHeight);
+    w.removeChild(holder);
+    if (!lh || !isFinite(baseline)) return;
+    paper.style.setProperty('--lineH', lh + 'px');
+    paper.style.setProperty('--lineY', (baseline + 2) + 'px');   // the line just under the letters
+  }
+  window.addEventListener('resize', ruleLines);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(ruleLines);
+  ruleLines();
   ['input', 'keyup', 'click', 'select', 'focus', 'blur'].forEach(function (ev) { $('copyIn').addEventListener(ev, renderWriting); });
   document.addEventListener('selectionchange', function () { if (document.activeElement === $('copyIn')) renderWriting(); });
   $('paper').addEventListener('pointerdown', function (e) { if (e.target === $('paper') && !$('copyIn').disabled) { e.preventDefault(); $('copyIn').focus(); } });
@@ -568,7 +676,7 @@
   function replay(slow) {
     if (phase !== 'copy' && phase !== 'rx') return;
     // Slower keeps each letter at full speed and adds space between them (Farnsworth).
-    var f = slow ? Math.max(3, Math.round(mode.fwpm * 0.6)) : mode.fwpm;
+    var f = slow ? Math.max(3, Math.round(copyFwpm * 0.6)) : copyFwpm;
     hush();                              // the signal, not Roger, while you listen
     playCW(copyText, f);
     $('copyIn').focus();
@@ -581,38 +689,50 @@
       esc(plain(copyText)).replace(/ /g, '&nbsp;') + '</span></div><div class="r-note">Free to use — no penalty.</div>';
     $('contactName').textContent = contact.name;
     if (copyStage === 'rx') say('noshame', 'amused');
-    showNext();
+    afterCopy(true);
   }
   function showNext() {
-    $('nextBtn').textContent = copyStage === 'rx' ? 'CONTINUE' : 'LOG CONTACT';
+    $('nextBtn').textContent = steps[si + 1] ? 'CONTINUE' : 'LOG CONTACT';
     $('nextBtn').hidden = false;
+    $('nextBtn').focus();
   }
-
+  // Copied: Roger reacts (once per step), and CONTINUE appears when he's done.
+  var reacted = -1;
+  function afterCopy(viaDecoder) {
+    $('contactName').textContent = contact.name;
+    var line = steps[si].say;
+    if (line && reacted !== si && !viaDecoder) {
+      reacted = si;
+      $('nextBtn').hidden = true;
+      say(line, si === 0 ? 'amused' : 'amused', showNext);
+    } else showNext();
+  }
   function checkCopy() {
     if (phase !== 'copy') return;
     var exp = norm(plain(copyText)), got = norm($('copyIn').value.slice(copyStart));
     if (!got) { $('copyIn').focus(); return; }
     // Spaces don't count: TU73 is as good as TU 73 (Tim, 2026-11-06).
     var r = align(exp.replace(/ /g, ''), got.replace(/ /g, ''));
-    if (copyStage === 'rx') {
+    if (copyStage === 'signoff') stats.signoffAcc = Math.max(stats.signoffAcc || 0, r.acc);
+    else {
+      stats.copies[si] = stats.copies[si] == null ? r.acc : stats.copies[si];
       if (stats.firstAcc == null) stats.firstAcc = r.acc;
       stats.bestAcc = Math.max(stats.bestAcc, r.acc);
-    } else stats.signoffAcc = Math.max(stats.signoffAcc || 0, r.acc);
+    }
     var pct = Math.round(r.acc * 100);
     // Good enough: the station's name in their call, the 73 in a sign-off.
-    var fact = copyStage === 'rx' ? contact.name : '73';
-    var gotFact = got.indexOf(fact) >= 0;
-    var what = copyStage === 'rx' ? 'you have the station’s name' : 'you have the sign-off';
-    $('copyMsg').innerHTML = '<div class="r-head">' + (copyStage === 'rx' ? 'COPY' : 'SIGN-OFF') + ' ACCURACY <b class="' + (r.acc === 1 ? 'good' : gotFact ? 'ok' : 'low') + '">' + pct + '%</b></div>' +
+    // Good enough to go on: the station's name in their first call, the
+    // 73 in a sign-off, and most of it (70%) anywhere else.
+    var gotFact = copyStage === 'rx' ? got.indexOf(contact.name) >= 0
+      : copyStage === 'signoff' ? got.indexOf('73') >= 0 : r.acc >= 0.7;
+    var what = copyStage === 'rx' ? 'you have the station’s name' : copyStage === 'signoff' ? 'you have the sign-off' : 'you have the gist';
+    $('copyMsg').innerHTML = '<div class="r-head">' + (copyStage === 'signoff' ? 'SIGN-OFF' : 'COPY') + ' ACCURACY <b class="' + (r.acc === 1 ? 'good' : gotFact ? 'ok' : 'low') + '">' + pct + '%</b></div>' +
       '<div class="diff">' + diffHtml(r.ops) + '</div>' +
       '<div class="r-note">' + (r.acc === 1 ? 'Perfect copy.'
         : gotFact ? 'Good enough — ' + what + '. Fix it up or continue.'
         : '<span class="warn">Red is wrong, _ is missing. Try REPLAY or SLOWER.</span>') + '</div>';
     if (gotFact || r.acc === 1) {
-      $('contactName').textContent = contact.name;
-      showNext();
-      $('nextBtn').focus();
-      if (copyStage === 'rx') say(contact.found, 'amused');
+      afterCopy(false);
     } else {
       copyFails++;
       if (copyFails >= 2 && !quipped) {
@@ -623,10 +743,13 @@
   }
   function next() {
     if (phase !== 'copy') return;
-    if (copyStage === 'rx') enterSend(); else contactDone();
+    hush();
+    si++;
+    runStep();
   }
 
-  function enterSend() {
+  function enterSend(text) {
+    txText = text;
     phase = 'tx';
     HST.audio.stop();
     $('copyIn').disabled = true;
@@ -636,13 +759,13 @@
     $('copyMsg').textContent = '';
     lockRadio(true);
     $('txPanel').hidden = false;
-    $('txTarget').textContent = plain(qso.tx);
+    $('txTarget').textContent = plain(txText);
     $('txResult').innerHTML = '';
     $('txHelp').textContent = keyHelp();
     txFailed = false;
     clearSend();
     setStatus('TRANSMIT');
-    say('answer', 'neutral');        // cut short as soon as you start keying
+    if (si === 1) say('answer', 'neutral');   // first reply only; cut short as soon as you start keying
   }
 
   function clearSend() {
@@ -658,7 +781,7 @@
     var u = unitMs();
     var wait = Math.max(0, lastUp + 7 * u - performance.now());
     if (wait > 0 && txMarks.length) { setTimeout(checkSend, wait + 20); return; }
-    var want = norm(plain(qso.tx)), sent = norm(live);
+    var want = norm(plain(txText)), sent = norm(live);
     if (!sent) { $('txResult').innerHTML = '<span class="warn">Nothing heard yet — key the message.</span>'; return; }
     stats.sends++;
     // Content: compare without spaces (word spacing is reported, not failed).
@@ -692,13 +815,15 @@
     return '<div class="muted">' + parts.join(' · ') + '</div>';
   }
 
-  // Sent correctly: Roger cheers, then they sign off -- and you copy that too.
+  // Sent correctly: on to their answer. Roger cheers on your last reply.
   function finishSend() {
     phase = 'signoff';
     keyer.reset();
-    setTimeout(function () { $('txPanel').hidden = true; }, 2500);
-    say('clean', 'celebrating');
-    say('signoffcopy', 'neutral', function () { setTimeout(function () { startCopy('signoff'); }, 400); });
+    setTimeout(function () { $('txPanel').hidden = true; }, 1800);
+    var lastTx = !steps.slice(si + 1).some(function (x) { return x.tx; });
+    si++;
+    if (lastTx) say('clean', 'celebrating', function () { setTimeout(runStep, 300); });
+    else setTimeout(runStep, 1500);
   }
 
   // Contact finished: log it, then back to the radio for the next station.
@@ -757,7 +882,7 @@
   document.querySelectorAll('.mode-btn').forEach(function (b) {
     b.setAttribute('role', 'radio');
     // Picking a player also sets the suggested sending speed (the slider can change it).
-    b.addEventListener('click', function () { pickMode(b.dataset.mode); setSendWpm(MODES[b.dataset.mode].sendWpm); renderSetup(); });
+    b.addEventListener('click', function () { var m = MODES[b.dataset.mode]; pickMode(b.dataset.mode); setSendWpm(m.sendWpm); setCopy(m.wpm, m.fwpm); renderSetup(); });
   });
   document.querySelectorAll('.band-btn').forEach(function (b) {
     b.setAttribute('role', 'radio');
@@ -766,23 +891,38 @@
   var saved = null;
   try { saved = localStorage.getItem('morse-evolved-mode'); } catch (e) {}
   pickMode(MODES[saved] ? saved : 'hiker');
+  (function () { var has = null; try { has = localStorage.getItem(COPY_KEY); } catch (e) {} if (!has) setCopy(MODES[modeKey].wpm, MODES[modeKey].fwpm); })();
   pickBand('20m');
 
-  var sh = HST.shared.get();
-  $('toneIn').value = sh.toneHz; $('volIn').value = sh.volume;
-  $('toneIn').addEventListener('input', function () { HST.shared.set({ toneHz: +this.value }); if (noisy) bandNoise(mode.noise, mode.qsb); });
-  $('voiceIn').value = voiceVol;
+  /* SETTINGS PANEL (Tim, 2026-11-06): copying and sending speeds, tone,
+     CW and voice volume, captions, and the key -- in place of the sliders
+     that used to sit in the top bar. Changes apply straight away. */
+  function renderSettings() {
+    var sh = HST.shared.get();
+    $('copyWpmIn').value = copyWpm; $('copyWpmVal').textContent = copyWpm + ' wpm';
+    $('copyFwpmIn').max = copyWpm; $('copyFwpmIn').value = copyFwpm; $('copyFwpmVal').textContent = copyFwpm + ' wpm';
+    $('toneIn').value = sh.toneHz; $('toneVal').textContent = sh.toneHz + ' Hz';
+    $('volIn').value = sh.volume; $('volVal').textContent = sh.volume + '%';
+    $('voiceIn').value = voiceVol; $('voiceVal').textContent = voiceVol + '%';
+    $('ccIn').checked = ccOn;
+    renderSetup();
+  }
+  $('copyWpmIn').addEventListener('input', function () { setCopy(+this.value, Math.min(copyFwpm, +this.value)); renderSettings(); });
+  $('copyFwpmIn').addEventListener('input', function () { setCopy(copyWpm, +this.value); renderSettings(); });
+  $('toneIn').addEventListener('input', function () { HST.shared.set({ toneHz: +this.value }); if (noisy) bandNoise(mode.noise, mode.qsb); renderSettings(); });
+  $('volIn').addEventListener('input', function () { HST.shared.set({ volume: +this.value }); if (noisy) bandNoise(mode.noise, mode.qsb); renderSettings(); });
   $('voiceIn').addEventListener('input', function () {
     voiceVol = +this.value; if (current) current.volume = voiceVol / 100;
     try { localStorage.setItem(VOICE_KEY, String(voiceVol)); } catch (e) {}
+    renderSettings();
   });
-  function renderCC() { $('ccBtn').setAttribute('aria-pressed', ccOn ? 'true' : 'false'); $('caption').hidden = !ccOn; }
-  $('ccBtn').addEventListener('click', function () {
-    ccOn = !ccOn; renderCC();
+  $('ccIn').addEventListener('change', function () {
+    ccOn = this.checked; $('caption').hidden = !ccOn;
     try { localStorage.setItem(CC_KEY, ccOn ? '1' : '0'); } catch (e) {}
   });
-  renderCC();
-  $('volIn').addEventListener('input', function () { HST.shared.set({ volume: +this.value }); if (noisy) bandNoise(mode.noise, mode.qsb); });
+  $('caption').hidden = !ccOn;
+  $('settingsBtn').addEventListener('click', function () { renderSettings(); $('settingsCard').hidden = false; $('settingsDone').focus(); });
+  $('settingsDone').addEventListener('click', function () { $('settingsCard').hidden = true; });
 
   $('startBtn').addEventListener('click', startMission);
   $('scanBtn').addEventListener('click', scan);
@@ -806,7 +946,7 @@
     location.reload();
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !$('quitCard').hidden) $('quitCard').hidden = true;
+    if (e.key === 'Escape') { $('quitCard').hidden = true; $('settingsCard').hidden = true; }
   });
   $('copyIn').addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); checkCopy(); }
@@ -838,7 +978,7 @@
      (the emitters sit on the sparking cables painted in the art).
      --------------------------------------------------------------------- */
   var sc = $('sparks'), sg = sc.getContext('2d'), embers = [];
-  var EMITTERS = [[300, 20], [318, 10], [1075, 40], [1092, 28], [655, 60]];
+  var EMITTERS = [[478, 18], [505, 8], [540, 30], [575, 12], [612, 40]];   // the cut cables over Roger in bridge-*.webp
   var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   function sparkFrame() {
     sg.clearRect(0, 0, sc.width, sc.height);

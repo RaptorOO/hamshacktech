@@ -35,7 +35,7 @@ body {
 /* The same scene, blurred, fills any letterbox around the stage. */
 body::before {
   content: ''; position: fixed; inset: -40px; z-index: -1;
-  background: url(art/ship-neutral.webp) center / cover no-repeat;
+  background: url(art/bridge-neutral.webp) center / cover no-repeat;
   filter: blur(28px) brightness(0.35);
 }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -147,7 +147,7 @@ body::before {
    of the original 1280 x 720 art). The screens sit over its blank windows;
    positions are % of the cut-out, type is % of the radio's width (cqw). */
 .radio {
-  position: absolute; left: 27%; bottom: 0.5%; width: 46%; aspect-ratio: 1260 / 676;   /* centred on the screen (Tim, 2026-11-06) */
+  position: absolute; left: 30%; bottom: 1%; width: 40%; aspect-ratio: 1260 / 676;   /* centred on the screen, low enough to keep Roger in view */
   container-type: inline-size; z-index: 1;
   filter: drop-shadow(0 calc(var(--u) * 0.6) calc(var(--u) * 0.9) rgba(0,0,0,0.85));
 }
@@ -186,7 +186,7 @@ body::before {
 
 /* ---------- the radio's control module ---------- */
 .controls {
-  position: absolute; left: 1.2%; bottom: 2%; width: 11.8%; z-index: 1;   /* left of the radio (Tim, 2026-11-06) */
+  position: absolute; left: 16.8%; bottom: 2%; width: 11.8%; z-index: 1;   /* just left of the radio (Tim, 2026-11-06) */
   display: flex; flex-direction: column; gap: calc(var(--u) * 0.38);
   padding: calc(var(--u) * 0.75) calc(var(--u) * 0.7);
   border-radius: 6px;
@@ -230,23 +230,31 @@ body::before {
 /* One page of the notebook art, tipped back to lie on the bench. You type
    into a hidden text box; the page shows it hand-written in pencil, on the
    printed lines (3.95% of the page height apart, so sizes use cqh). */
+/* A loose notebook sheet floating to the right of the radio (no bench
+   any more, Tim 2026-11-06). The ruled lines are drawn by the page, not
+   printed in the picture: game.js measures the writing's line height and
+   baseline and sets --lineH / --lineY, so every line of pencil sits
+   exactly on a ruled line at any screen size. */
 .notebook {
-  position: absolute; right: 2.5%; bottom: 2%; height: 47%; aspect-ratio: 500 / 640; z-index: 1;   /* in the open space on the right */
-  transform: perspective(calc(var(--u) * 90)) rotateX(12deg) rotate(-2.5deg);
-  transform-origin: 50% 100%;
+  position: absolute; right: 3.6%; bottom: 2.5%; height: 54%; aspect-ratio: 412 / 588; z-index: 1;
+  transform: rotate(-1.5deg);
 }
 .paper {
   position: relative; width: 100%; height: 100%; container-type: size;
-  background: url(art/notebook-page.webp) center / 100% 100% no-repeat;
-  box-shadow: 0 calc(var(--u) * 0.5) calc(var(--u) * 1.6) rgba(0,0,0,0.85);
+  --lineH: 24px; --lineY: 40px;
+  background:
+    linear-gradient(to right, transparent 7.4%, rgba(190, 60, 60, 0.45) 7.4%, rgba(190, 60, 60, 0.45) calc(7.4% + 1.5px), transparent calc(7.4% + 1.5px)),
+    linear-gradient(to bottom, transparent calc(100% - 1.5px), rgba(60, 85, 140, 0.42) calc(100% - 1.5px)) 0 calc(var(--lineY) - var(--lineH)) / 100% var(--lineH) repeat-y,
+    url(art/paper.webp) center / 100% 100% no-repeat;
+  border-radius: 2px;
+  box-shadow: 0 calc(var(--u) * 0.8) calc(var(--u) * 2.4) rgba(0,0,0,0.85), 0 0 0 1px rgba(0,0,0,0.3);
   cursor: text;
 }
 .writing, .paper textarea {
-  /* written on every other ruled line, so the pencil can be big enough to read */
-  position: absolute; left: 9%; right: 9%; top: 3.3%; height: 87%;
+  position: absolute; left: 10%; right: 6%; top: 6%; height: 88%;
   margin: 0; padding: 0; border: 0;
   font-family: 'Patrick Hand', 'Segoe Print', 'Comic Sans MS', cursive;
-  font-size: 5.9cqh; line-height: 7.9cqh; letter-spacing: 0.08em;
+  font-size: 4.6cqh; line-height: 6.2cqh; letter-spacing: 0.08em;
   text-transform: uppercase; white-space: pre-wrap; overflow-wrap: anywhere;
 }
 .writing { color: var(--graphite); pointer-events: none; overflow: hidden; }
@@ -263,14 +271,14 @@ body::before {
 .paper textarea::selection { background: rgba(80, 120, 200, 0.25); color: transparent; }
 .paper textarea:disabled { cursor: default; }
 .hint-line {
-  position: absolute; left: 9%; top: 3.3%; font: 4.6cqh/7.9cqh 'Patrick Hand', cursive;
+  position: absolute; left: 10%; top: 6%; font: 3.8cqh/6.2cqh 'Patrick Hand', cursive;
   color: rgba(60, 60, 70, 0.4); pointer-events: none;
 }
 .paper.focus { box-shadow: 0 0 0 2px rgba(82,232,255,0.45), 0 calc(var(--u) * 0.5) calc(var(--u) * 1.6) rgba(0,0,0,0.85); }
 /* Copy results: a small HUD panel just above the notebook, styled like
    the transmit results (no red-pencil score on the page any more). */
 .copy-msg {
-  position: absolute; right: 2.5%; bottom: 50.5%; width: 21%; z-index: 2;
+  position: absolute; right: 3.6%; bottom: 58%; width: 21%; z-index: 2;
   font-size: calc(var(--u) * 0.82); color: var(--text);
   background: var(--hud); border-radius: 6px; padding: 0.6em 0.8em; border: 1px solid var(--edge);
   box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(3px);
@@ -345,6 +353,10 @@ body::before {
 .test-note:empty { display: none; }
 .test-note b { color: var(--amber); font-weight: 600; }
 .start-actions { display: flex; gap: 12px; justify-content: center; align-items: center; margin-top: 20px; flex-wrap: wrap; }
+.settings .setup-row input[type=range] { accent-color: var(--green); flex: 1; min-width: 120px; }
+.settings h2 { margin-top: 14px; }
+.settings .col > h2:first-child { margin-top: 0; }
+.hint { color: var(--muted); font-size: 12.5px; margin: 0 0 6px; text-align: left; }
 .fine { color: var(--muted); font-size: 12px; margin: 12px 0 0; }
 #endStats { margin: 10px 0 16px; font-family: 'JetBrains Mono', monospace; color: var(--cyan); line-height: 1.8; }
 
