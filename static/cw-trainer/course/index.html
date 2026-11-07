@@ -89,12 +89,11 @@
   .pre-ask .small { color: var(--muted); font-size: 0.85rem; margin: 10px 0 0; }
   .days button { min-width: 40px; padding: 5px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--well); color: var(--muted); font-size: 0.88rem; cursor: pointer; }
   .days button[aria-pressed="true"] { background: var(--mc); border-color: var(--mc); color: var(--mc-ink); font-weight: 600; }
-  .times { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: -4px 0 12px; }
+  /* The start times sit on the same line as the day buttons (Tim, 2026-11-07). */
+  .times { display: inline-flex; flex-wrap: wrap; gap: 8px 16px; }
+  .times:empty { display: none; }
   .times label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 0.88rem; }
   .times input[type="time"] { padding: 5px 6px; background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 7px; font-size: 0.88rem; }
-  .next .reg { display: block; margin-top: 6px; font-size: 0.88rem; }
-  .next { padding: 10px 14px; border-radius: 10px; background: var(--mc-soft); border: 1px solid var(--mc); margin-bottom: 12px; font-size: 0.95rem; }
-  .next b { color: var(--mc); font-weight: 600; }
 
   .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -138,8 +137,10 @@
      left and its Done / Redo on the right. */
   .day { padding: 4px 0 6px; }
   .day + .day { border-top: 1px dashed var(--grid); }
-  .day .dl { margin: 0 0 2px; color: var(--dim); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-  .day .dl .dd { margin-left: 8px; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 500; }
+  /* The day label is underlined in the accent colour, so each homework day
+     stands out (Tim, 2026-11-07). */
+  .day .dl { display: inline-block; margin: 2px 0 4px; padding-bottom: 2px; border-bottom: 2px solid var(--mc); color: var(--mc); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .day .dl .dd { margin-left: 8px; color: var(--text); text-transform: none; letter-spacing: 0; font-weight: 600; }
   .day .dl .day-done { margin-left: 6px; color: var(--mc); text-transform: none; letter-spacing: 0; font-weight: 500; }
   .task { display: grid; grid-template-columns: 1fr 400px; gap: 2px 16px; align-items: center; padding: 2px 0; line-height: 1.6; color: var(--text); }
   .ses-bar.past .task { color: var(--muted); }
@@ -268,9 +269,8 @@
         <label for="preFirst" id="preFirstRow" hidden>Pre-Class starts <input type="date" id="preFirst"></label>
         <label for="firstClass"><span id="firstLbl">My first class</span> <input type="date" id="firstClass"></label>
         <span class="when-days"><span style="color:var(--muted);font-size:0.9rem;margin-right:8px">Meets on</span><span class="days" id="days" role="group" aria-label="Class days"></span></span>
+        <span class="times" id="times" aria-label="Class start times"></span>
       </div>
-      <div class="times" id="times" aria-label="Class start times"></div>
-      <div class="next" id="nextClass" hidden></div>
       <div class="pre-ask" id="preAsk" hidden role="region" aria-label="Your Pre-Class is over">
         <p id="preAskText"></p>
         <div class="row">
@@ -397,7 +397,8 @@
   // Redo. Then a link to that session in the online curriculum.
   var SCALE_NAMES = { warmup: 'Warm Up', drill: 'Drill', exercise: 'Exercise' };
   var TIMES = { '1': 'once', '1-2': 'once or twice', '2': '2 times', '3': '3 times', n: 'several times' };
-  var MORSE_RUNNER = 'https://github.com/w7sst/MorseRunner/releases', CWT = 'https://cwops.org/cwops-tests/';
+  // Morse Runner is plain text, no link, until it's in the app's own suite (Tim, 2026-11-07).
+  var CWT = 'https://cwops.org/cwops-tests/';
   function ext(href, text) { return '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(text) + '</a>'; }
   // One task token ('warmup', 'WD101-10*2', 'icr:10'; see hst-course.js)
   // -> { id, html, what } (what names it for screen readers). e is its
@@ -433,9 +434,9 @@
         return '<a href="../?tab=code-groups&amp;' + q.replace('&', '&amp;') + '" target="_top" data-tool="code-groups" data-q="' + q.replace('&', '&amp;') + '">' + x[1] + '</a>';
       }).join(' \u00b7 ') + ' <span class="also">Code Groups</span>' };
     if (a[0] === 'mr') return { what: 'Morse Runner',
-      html: ext(MORSE_RUNNER, 'Morse Runner') + ': single calls, ' + a[1] + ' WPM, 15 minutes' };
+      html: 'Morse Runner: single calls, ' + a[1] + ' WPM, 15 minutes' };
     if (a[0] === 'wpx') return { what: 'Morse Runner WPX contest',
-      html: ext(MORSE_RUNNER, 'Morse Runner') + ': WPX contest, ' + a[1] + ' WPM, activity ' + a[2] + ', 15 minutes <span class="also">(be sure to send CQ)</span>' };
+      html: 'Morse Runner: WPX contest, ' + a[1] + ' WPM, activity ' + a[2] + ', 15 minutes <span class="also">(be sure to send CQ)</span>' };
     if (a[0] === 'cwt') return { what: 'live CWT',
       html: ext(CWT, 'Live CWT') + ': ' + (a[1] === 'work5' ? 'work 5 stations, or at least copy their info' : 'copy the call, name and number of 5 running stations') +
         ' <span class="also">(Wednesday 1300 or 1900 UTC, Thursday 0300 or 0700 UTC)</span>' };
@@ -701,34 +702,6 @@
               : '<td class="focus">' + focusHtml(s[1]) + '</td><td class="prog">' + progControls(String(i + 1), prog[i + 1] || {}, 'session ' + (i + 1)) + '</td>') + '</tr>';
     }).join('');
 
-    var nx = $('nextClass');
-    if (!first) nx.hidden = true;
-    else if (preNext >= 0) {
-      nx.hidden = false;
-      var pd = preDates[preNext], pToday = pd.getTime() === t.getTime(), ptime = c.times[pd.getDay()];
-      var pStarted = pToday && ptime && startOf(pd, c.times) <= now;
-      nx.innerHTML = (pStarted ? 'Pre-Class now: ' : (pToday ? 'Pre-Class today' + (ptime ? ' at ' + fmtTime(ptime) : '') : 'Next Pre-Class') + ': ') +
-        '<b>Session ' + (preNext + 1) + '</b>' + (pToday ? '' : ', <b>' + esc(fmt(pd)) + (ptime ? ' at ' + esc(fmtTime(ptime)) : '') + '</b>') +
-        ' \u2014 ' + focusHtml(info.sessions[preNext][1]) +
-        '<span class="reg">The full class starts <b>' + esc(fmt(first)) + '</b>.</span>';
-    }
-    else {
-      nx.hidden = false;
-      var lastIdx = dates.length - 1;
-      if (nextIdx < 0) {
-        // The course is over: well done, and when the next one runs.
-        nx.innerHTML = 'Your course finished on <b>' + esc(fmt(dates[lastIdx])) + '</b>. Well done! Keep practicing every day.' +
-          '<span class="reg">CW Academy runs ' + esc(info.semesters) + '. Ready for the next level? ' +
-          '<a href="' + esc(info.register) + '" target="_blank" rel="noopener">Sign up for a class</a>, then choose your new level in Settings.</span>';
-      } else {
-        var d = dates[nextIdx], isToday = d.getTime() === t.getTime(), time = c.times[d.getDay()];
-        var started = isToday && time && startOf(d, c.times) <= now;
-        var label = started ? (nextIdx === lastIdx ? 'Last class now: ' : 'Class now: ') : nextIdx === lastIdx ? (isToday ? 'Last class today' : 'Last class') : (isToday ? 'Class today' : 'Next class');
-        if (!started) label += time ? (isToday ? ' at ' + fmtTime(time) + ': ' : ': ') : ': ';
-        nx.innerHTML = label + '<b>Session ' + (nextIdx + 1) + '</b>' +
-          (isToday ? '' : ', <b>' + esc(fmt(d)) + (time ? ' at ' + esc(fmtTime(time)) : '') + '</b>') + ' \u2014 ' + focusHtml(info.sessions[nextIdx][1]);
-      }
-    }
     $('speedNote').textContent = info.speedNote;
 
     // Curriculum links
