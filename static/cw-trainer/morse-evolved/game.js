@@ -36,52 +36,68 @@
      The first copy has to get the station's name. Higher difficulties
      have longer exchanges, as the spec asks. */
   var CONTACTS = [
-    { name: 'XANDER', portrait: 'contact-xander', done: 'nicekid', steps: {
+    // Xander: a three-year-old alien boy on a moon base (Tim, 2026-11-06)
+    { name: 'XANDER', portrait: 'contact-xander-kid', done: 'nicekid', steps: {
       hiker: [
         { rx: 'XANDER K', say: 'xander' }, { tx: 'R TU' },
         { rx: 'UR NAME?', say: 'x_h2' }, { tx: 'ROGER' },
-        { rx: 'ROGER ROGER TU 73', signoff: 1, say: 'x_h3' } ],
+        { rx: 'ROGER ROGER', say: 'x_h3', face: 'laugh' }, { tx: 'HI' },
+        { rx: 'I AM 3', say: 'x_age', face: 'amused' }, { tx: 'FB' },
+        { rx: 'NAP TIME 73', signoff: 1, say: 'x_nap', face: 'laugh' } ],
       ranger: [
         { rx: 'CQ CQ DE XANDER K', say: 'xander' }, { tx: 'XANDER DE ROGER' },
         { rx: 'HI ROGER UR MY 1ST QSO K', say: 'x_r2' }, { tx: 'FB XANDER QTH NM' },
-        { rx: 'NM? IS THAT A MOON? K', say: 'x_r3' }, { tx: 'NO A DESERT' },
-        { rx: 'OK TU ROGER 73 <SK>', signoff: 1 } ],
+        { rx: 'NM? IS THAT A MOON? K', say: 'x_r3', face: 'laugh' }, { tx: 'NO A DESERT' },
+        { rx: 'I AM 3 AND A HALF K', say: 'x_age2', face: 'amused' }, { tx: 'FB UR CW IS GUD' },
+        { rx: 'MOM SEZ BED TU ROGER 73 <SK>', signoff: 1, say: 'x_bed', face: 'laugh' } ],
       scientist: [
         { rx: 'CQ CQ CQ DE XANDER XANDER QTH KORR MOON BASE K', say: 'xander' },
         { tx: 'XANDER DE ROGER CRASHED NM PSE QSP TELLURA K' },
-        { rx: 'SRI ROGER NEVER HRD OF TELLURA MOM SEZ IM NOT ALLOWED TO WORK DX K', say: 'x_s2' },
+        { rx: 'SRI ROGER NEVER HRD OF TELLURA MOM SEZ IM NOT ALLOWED TO WORK DX K', say: 'x_s2', face: 'laugh' },
+        { tx: 'HW OLD R U?' },
+        { rx: 'I AM 3 BUT I CAN COPY 40 WPM K', say: 'x_s3', face: 'frustrated' },
         { tx: 'FB TNX ANYWAY' },
         { rx: 'GL ROGER HOPE U GET HOME 73 <SK>', signoff: 1 } ] } },
-    { name: 'ELENA', portrait: 'contact-elena', done: 'keepscan', steps: {
+    // Elena: a sarcastic five-year-old alien girl explorer (Tim, 2026-11-06)
+    { name: 'ELENA', portrait: 'contact-elena-kid', done: 'keepscan', steps: {
       hiker: [
         { rx: 'ELENA K', say: 'e_found' }, { tx: 'R TU' },
-        { rx: 'UR SLOW', say: 'e_h2' }, { tx: 'SRI' },
-        { rx: 'GL 73', signoff: 1 } ],
+        { rx: 'UR SLOW', say: 'e_h2', face: 'frustrated' }, { tx: 'SRI' },
+        { rx: 'I AM 5', say: 'e_age', face: 'amused' }, { tx: 'FB' },
+        { rx: 'BYE 73', signoff: 1, say: 'e_bye', face: 'laugh' } ],
       ranger: [
         { rx: 'CQ CQ DE ELENA K', say: 'e_found' }, { tx: 'ELENA DE ROGER' },
-        { rx: 'ROGER? THATS A NAME? K', say: 'e_r2' }, { tx: 'YES IT IS' },
+        { rx: 'ROGER? THATS A NAME? K', say: 'e_r2', face: 'amused' }, { tx: 'YES IT IS' },
+        { rx: 'I AM 5 AND I EXPLORE CAVES K', say: 'e_r3', face: 'laugh' }, { tx: 'FB ELENA' },
         { rx: 'OK ROGER 73 <SK>', signoff: 1 } ],
       scientist: [
         { rx: 'CQ CQ CQ DE ELENA ELENA QTH SKARR STATION K', say: 'e_found' },
         { tx: 'ELENA DE ROGER CRASHED NM PSE QSP TELLURA K' },
-        { rx: 'CRASHED AGN? THATS UR 3RD THIS YR ROGER K', say: 'e_s2' },
+        { rx: 'CRASHED AGN? THATS UR 3RD THIS YR ROGER K', say: 'e_s2', face: 'laugh' },
         { tx: 'NOT MY FAULT' },
+        { rx: 'MY DAD SEZ ONLY BAD PILOTS CRASH K', say: 'e_s3', face: 'frustrated' },
+        { tx: 'SRI ELENA' },
         { rx: 'SURE ROGER NO TELLURA HR GL 73 <SK>', signoff: 1 } ] } },
+    // Grizz: a grumpy salvage operator who uses heavy abbreviations
     { name: 'GRIZZ', portrait: 'contact-grizz', done: 'keepscan', steps: {
       hiker: [
         { rx: 'GRIZZ K', say: 'g_found' }, { tx: 'R TU' },
-        { rx: 'QRL', say: 'g_h2' }, { tx: 'SRI' },
+        { rx: 'QRL', say: 'g_h2', face: 'amused' }, { tx: 'SRI' },
+        { rx: 'U HV SCRAP?', say: 'g_h3', face: 'laugh' }, { tx: 'NO' },
         { rx: 'CUL 73', signoff: 1 } ],
       ranger: [
         { rx: 'CQ CQ DE GRIZZ K', say: 'g_found' }, { tx: 'GRIZZ DE ROGER' },
-        { rx: 'WAT U WANT K', say: 'g_r2' }, { tx: 'SHIP CRASHED' },
-        { rx: 'SHIP? I BUY SCRAP K', say: 'g_r3' }, { tx: 'NO TNX' },
+        { rx: 'WAT U WANT K', say: 'g_r2', face: 'amused' }, { tx: 'SHIP CRASHED' },
+        { rx: 'SHIP? I BUY SCRAP K', say: 'g_r3', face: 'laugh' }, { tx: 'NO TNX' },
+        { rx: 'LAST OFFER 10 CR K', say: 'g_r4', face: 'frustrated' }, { tx: 'NO' },
         { rx: 'UR LOSS 73 <SK>', signoff: 1 } ],
       scientist: [
         { rx: 'CQ CQ CQ DE GRIZZ GRIZZ QTH RUST BELT MINE K', say: 'g_found' },
         { tx: 'GRIZZ DE ROGER CRASHED NM PSE QSP TELLURA K' },
-        { rx: 'NO TELLURA HR WL BUY UR WRECK 5 CR K', say: 'g_s2' },
+        { rx: 'NO TELLURA HR WL BUY UR WRECK 5 CR K', say: 'g_s2', face: 'laugh' },
         { tx: 'NO DEAL GRIZZ' },
+        { rx: 'OK 10 CR AND A SANDWICH K', say: 'g_s3', face: 'amused' },
+        { tx: 'STILL NO' },
         { rx: 'UR LOSS 73 <SK>', signoff: 1 } ] } }
   ];
   var BANDS = { '40m': [7.000, 7.060], '20m': [14.000, 14.070], '10m': [28.000, 28.070] };
@@ -98,11 +114,38 @@
      ROGER'S TRANSLATOR (scripted lines, typed out; spec section 11)
      --------------------------------------------------------------------- */
   // Roger in the background: one scene picture per pose, faded in.
-  var POSES = { neutral: 'neutral', excited: 'excited', celebrating: 'excited', frustrated: 'frustrated', amused: 'amused' };
-  function pose(face) {
-    var p = POSES[face] || 'neutral';
+  /* ROGER'S REACTIONS (Tim, 2026-11-06: not arms-in-the-air every time;
+     small nods and gestures for everyday moments, a laugh at punchlines,
+     the big cheer saved for truly dramatic moments). Each "face" is a
+     pose picture or a short sequence of them; 'react' picks one at random
+     from the everyday set. After he finishes talking he settles back. */
+  var SEQ = {
+    nod:   [['nod', 320], ['neutral', 220], ['nod', 420], ['neutral', 0]],
+    laugh: [['laugh', 520], ['amused', 160], ['laugh', 0]],
+    talk:  [['talk', 0]], amused: [['amused', 0]], frustrated: [['frustrated', 0]],
+    excited: [['excited', 0]], neutral: [['neutral', 0]]
+  };
+  var REACT = ['nod', 'talk', 'amused', 'nod', 'talk'];
+  var poseTimer = null, lastReact = '';
+  function pick(list) {
+    var c = list.filter(function (x) { return x !== lastReact; });
+    lastReact = c[Math.floor(Math.random() * c.length)];
+    return lastReact;
+  }
+  function showPose(p) {
     document.querySelectorAll('.pose').forEach(function (im) { im.classList.toggle('on', im.dataset.pose === p); });
   }
+  function pose(face) {
+    if (face === 'react') face = pick(REACT);
+    if (face === 'celebrating') face = 'excited';
+    var seq = SEQ[face] || SEQ.neutral, i = 0;
+    clearTimeout(poseTimer);
+    (function step() {
+      showPose(seq[i][0]);
+      if (seq[i][1] && i < seq.length - 1) { poseTimer = setTimeout(function () { i++; step(); }, seq[i][1]); }
+    })();
+  }
+  function settle(ms) { clearTimeout(poseTimer); poseTimer = setTimeout(function () { showPose('neutral'); }, ms || 1200); }
 
   /* ---------------------------------------------------------------------
      THE AI VOICE DECODER (Tim, 2026-11-06: "decode alien speech from Roger
@@ -141,9 +184,21 @@
     g_h2:    { file: 'g_h2', text: 'QRL. He’s busy. Doing what? Counting rust?' },
     g_r2:    { file: 'g_r2', text: 'Charming. Tell him we crashed. He’ll love that.' },
     g_r3:    { file: 'g_r3', text: 'He wants to buy my ship for scrap. Absolutely not. …How much, though?' },
-    g_s2:    { file: 'g_s2', text: 'Five credits for my ship? FIVE?! The cup holder alone is worth ten.' }
+    g_s2:    { file: 'g_s2', text: 'Five credits for my ship? FIVE?! The cup holder alone is worth ten.' },
+    x_age:   { file: 'x_age', text: 'He’s three. THREE! And his fist is better than mine.' },
+    x_nap:   { file: 'x_nap', text: 'Nap time. Honestly… same.' },
+    x_age2:  { file: 'x_age2', text: 'Three and a half. The half is very important at that age.' },
+    x_bed:   { file: 'x_bed', text: 'His mom says it’s bedtime. Mine would too, if she saw what I did to the ship.' },
+    x_s3:    { file: 'x_s3', text: 'Three years old, and he copies forty words a minute. I need to lie down.' },
+    e_age:   { file: 'e_age', text: 'She’s five. Five years old… and still faster than us.' },
+    e_bye:   { file: 'e_bye', text: 'Bye? That’s it? …Kids.' },
+    e_r3:    { file: 'e_r3', text: 'She’s five, and she explores caves. At five, I was scared of my own antennae.' },
+    e_s3:    { file: 'e_s3', text: 'Her dad says only bad pilots crash. Tell her dad… actually, don’t tell her dad anything.' },
+    g_h3:    { file: 'g_h3', text: 'He wants to know if we have scrap. Look around, Grizz. We ARE scrap.' },
+    g_r4:    { file: 'g_r4', text: 'Ten credits. He doubled it. …No. Stay strong, Roger.' },
+    g_s3:    { file: 'g_s3', text: 'Ten credits AND a sandwich. …What kind of sandwich?' }
   };
-  var ALIEN = { excited: 'alien-excited', celebrating: 'alien-excited', frustrated: 'alien-frustrated' };
+  var ALIEN = { excited: 'alien-excited', celebrating: 'alien-excited', laugh: 'alien-excited', frustrated: 'alien-frustrated' };
   var clips = {};
   function clip(name) {
     if (!clips[name]) { clips[name] = new Audio('audio/' + name + '.mp3'); clips[name].preload = 'auto'; }
@@ -183,7 +238,7 @@
   }
   function nextLine() {
     var item = speechQ.shift();
-    if (!item) { speaking = false; decoderState('', 'AI VOICE DECODER'); $('caption').textContent = ''; return; }
+    if (!item) { speaking = false; decoderState('', 'AI VOICE DECODER'); $('caption').textContent = ''; settle(1400); return; }
     speaking = true;
     var token = speechToken;
     if (item.face) pose(item.face);
@@ -372,6 +427,7 @@
   var decoder = HST.createDecoder({
     unitMs: unitMs,
     adaptive: adaptive,
+    spaceRatio: function () { return 0.85; },   // a pause of ~4.25 dits starts a new word in the live readout
     onChar: function (ch) { live += ch; showLive(); scheduleAutoCheck(); },
     onWord: function () { if (live && live.slice(-1) !== ' ') { live += ' '; showLive(); } }
   });
@@ -410,6 +466,29 @@
       : 'Not your turn to transmit yet.';
     $('toast').textContent = msg; $('toast').hidden = false;
     clearTimeout(toastTimer); toastTimer = setTimeout(function () { $('toast').hidden = true; }, 3500);
+  }
+  /* WHAT YOU SENT, WITH YOUR SPACING (Tim, 2026-11-06: careful word
+     spacing still came out run together). Re-read the attempt's marks:
+     the analyzer gives every gap between letters in dit lengths; a word
+     break is a pause clearly longer than this sender's own letter gaps
+     (at least 3.6 dits and 1.35 x their typical letter gap), and the
+     biggest of those, as many as the message has word breaks, win. */
+  function spacedText(target) {
+    if (txMarks.length < 1) return live;
+    var a = HST.analyzeSending(txMarks, { unitMs: unitMs(), automatic: HST.keyerAutomatic(), expectWords: 1 });
+    if (!a || !a.chars || !a.chars.length) return live;
+    var gaps = (a.gaps || []).map(function (g) { return { after: g.after, units: g.units }; });
+    var sorted = gaps.map(function (g) { return g.units; }).sort(function (x, y) { return x - y; });
+    var want = Math.max(0, plain(target).trim().split(/\s+/).length - 1);
+    // This sender's typical letter gap: the middle of the gaps that aren't
+    // the (want) biggest ones -- those are probably the word breaks.
+    var letters = sorted.slice(0, Math.max(1, sorted.length - want));
+    var median = letters.length ? letters[Math.floor((letters.length - 1) / 2)] : 3;
+    var cand = gaps.filter(function (g) { return g.units >= 3.6 && g.units >= 1.35 * median; })
+      .sort(function (x, y) { return y.units - x.units; });
+    var breaks = {};
+    cand.forEach(function (g, i) { if (i < want || g.units >= 6.5) breaks[g.after] = true; });
+    return a.chars.map(function (c, i) { return c.text + (breaks[i] ? ' ' : ''); }).join('');
   }
   function showLive() { $('txLive').textContent = live || ' '; }
   function scheduleAutoCheck() {
@@ -515,7 +594,7 @@
     lockRadio(true);
     say('online', 'neutral');
     say('hello', 'frustrated');
-    say('scan', 'neutral', readyToScan);
+    say('scan', 'talk', readyToScan);
   }
   function readyToScan() {
     phase = 'ready'; lockRadio(false);
@@ -564,7 +643,7 @@
     $('copyIn').value = ''; $('copyMsg').innerHTML = '';     // a fresh page for a new station
     phase = 'rx';
     // The CW starts once Roger has finished talking, so the two never overlap.
-    say('signal', 'excited', function () { setTimeout(runStep, 500); });
+    say('signal', 'talk', function () { setTimeout(runStep, 500); });
   }
 
   // Copy a transmission: their call ('rx') or their sign-off ('signoff').
@@ -576,7 +655,7 @@
     var st = steps[si];
     if (!st) { contactDone(); return; }
     if (st.tx) enterSend(st.tx);
-    else if (st.signoff) say('signoffcopy', 'neutral', function () { setTimeout(function () { startCopy(st); }, 300); });
+    else if (st.signoff) say('signoffcopy', 'talk', function () { setTimeout(function () { startCopy(st); }, 300); });
     else startCopy(st);
   }
   // Copy one of their transmissions. The notebook opens the moment the
@@ -721,7 +800,7 @@
     if (line && reacted !== si && !viaDecoder) {
       reacted = si;
       $('nextBtn').hidden = true;
-      say(line, 'amused', proceed);
+      say(line, steps[si].face || 'react', proceed);
       setTimeout(proceed, 15000);          // never stall, whatever happens to Roger's line
     } else proceed();
   }
@@ -783,7 +862,7 @@
     txFailed = false;
     clearSend();
     setStatus('TRANSMIT');
-    if (si === 1) say('answer', 'neutral');   // first reply only; cut short as soon as you start keying
+    if (si === 1) say('answer', 'talk');   // first reply only; cut short as soon as you start keying
   }
 
   function clearSend() {
@@ -799,7 +878,9 @@
     var u = unitMs();
     var wait = Math.max(0, lastUp + 7 * u - performance.now());
     if (wait > 0 && txMarks.length) { setTimeout(checkSend, wait + 20); return; }
-    var want = norm(plain(txText)), sent = norm(live);
+    var want = norm(plain(txText));
+    live = spacedText(txText); showLive();         // your own spacing, read back accurately
+    var sent = norm(live);
     if (!sent) { $('txResult').innerHTML = '<span class="warn">Nothing heard yet — key the message.</span>'; return; }
     stats.sends++;
     // Content: compare without spaces (word spacing is reported, not failed).
@@ -840,7 +921,7 @@
     setTimeout(function () { $('txPanel').hidden = true; }, 1800);
     var lastTx = !steps.slice(si + 1).some(function (x) { return x.tx; });
     si++;
-    if (lastTx) say('clean', 'celebrating', function () { setTimeout(runStep, 300); });
+    if (lastTx) say('clean', 'react', function () { setTimeout(runStep, 300); });
     else setTimeout(runStep, 1500);
   }
 
@@ -866,7 +947,7 @@
       ? 'That’s every station on the bands for now. The Tellura rescue comes next.'
       : 'Contact ' + (ci + 1) + ' of ' + CONTACTS.length + '. Tellura is still out there.';
     $('againBtn').textContent = last ? 'PLAY AGAIN' : 'BACK TO THE RADIO';
-    say(last ? 'allheard' : contact.done, 'neutral');
+    say(last ? 'allheard' : contact.done, last ? 'talk' : 'react');
     setTimeout(function () { $('endCard').hidden = false; $('againBtn').focus(); }, 600);
   }
   function backToRadio() {
@@ -878,7 +959,7 @@
     $('monImg').hidden = true; $('monStatic').hidden = false; $('monName').textContent = '';
     $('copyMsg').innerHTML = ''; $('freqNum').textContent = '--.----';
     phase = 'intro';
-    say('rescan', 'neutral', readyToScan);
+    say('rescan', 'talk', readyToScan);
   }
 
   /* ---------------------------------------------------------------------
@@ -1014,7 +1095,42 @@
       return true;
     });
     sg.globalCompositeOperation = 'source-over';
+    drawArcs(performance.now());
     requestAnimationFrame(sparkFrame);
+  }
+  /* ELECTRICAL ARCS (Tim, 2026-11-06): random crackling sparks up in the
+     hanging wiring -- a jagged blue-white arc, a flash, a spray of hot
+     sparks -- every second or few, somewhere across the top of the ship. */
+  var arcs = [], nextArc = performance.now() + 1500;
+  function arcPath(x, y, len) {
+    var pts = [[x, y]], n = 6 + Math.floor(Math.random() * 5), dx = (Math.random() - 0.5) * len, dy = len * (0.5 + Math.random() * 0.5);
+    for (var i = 1; i <= n; i++) pts.push([x + dx * i / n + (Math.random() - 0.5) * 14, y + dy * i / n + (Math.random() - 0.5) * 10]);
+    return pts;
+  }
+  function drawArcs(now) {
+    if (now > nextArc) {
+      nextArc = now + 700 + Math.random() * 3200;
+      var x = 120 + Math.random() * 1000, y = 10 + Math.random() * 150;
+      arcs.push({ pts: arcPath(x, y, 30 + Math.random() * 50), t0: now, x: x, y: y });
+      for (var k = 0; k < 14; k++) embers.push({ x: x, y: y + 10, vx: (Math.random() - 0.5) * 4, vy: -Math.random() * 2.5, life: 0.8 + Math.random() * 0.3 });
+    }
+    arcs = arcs.filter(function (a) {
+      var age = now - a.t0;
+      if (age > 260) return false;
+      var flick = age < 60 || (age > 110 && age < 170) ? 1 : 0.35;
+      sg.globalCompositeOperation = 'lighter';
+      var glow = sg.createRadialGradient(a.x, a.y, 0, a.x, a.y, 70);
+      glow.addColorStop(0, 'rgba(170,220,255,' + (0.35 * flick) + ')'); glow.addColorStop(1, 'rgba(120,180,255,0)');
+      sg.fillStyle = glow; sg.fillRect(a.x - 70, a.y - 70, 140, 140);
+      [[5, 'rgba(120,190,255,' + (0.35 * flick) + ')'], [1.6, 'rgba(235,245,255,' + flick + ')']].forEach(function (w) {
+        sg.lineWidth = w[0]; sg.strokeStyle = w[1]; sg.beginPath();
+        a.pts.forEach(function (p, i) { if (i) sg.lineTo(p[0], p[1]); else sg.moveTo(p[0], p[1]); });
+        sg.stroke();
+      });
+      if (Math.random() < 0.5) a.pts = arcPath(a.x, a.y, 30 + Math.random() * 50);   // it crackles
+      sg.globalCompositeOperation = 'source-over';
+      return true;
+    });
   }
   if (!calm) requestAnimationFrame(sparkFrame);
 })();

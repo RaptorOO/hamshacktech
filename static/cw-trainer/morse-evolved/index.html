@@ -7,7 +7,7 @@
      out of the app's tabs until Tim says it's ready. -->
 <meta name="robots" content="noindex, nofollow">
 <title>Morse Evolved</title>
-<link rel="preload" href="art/bridge2-neutral.webp" as="image">
+<link rel="preload" href="art/bridge3-neutral.webp" as="image">
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="game.css">
 </head>
@@ -37,10 +37,13 @@
     <!-- Backgrounds, not <img> (Tim, 2026-11-06): Edge's "Image Magnify"
          opens any picture under the mouse when Ctrl is tapped twice, and
          key adapters send Ctrl for every dit and dah. -->
-    <div class="pose on" data-pose="neutral" style="background-image:url(art/bridge2-neutral.webp)"></div>
-    <div class="pose" data-pose="excited" style="background-image:url(art/bridge2-excited.webp)"></div>
-    <div class="pose" data-pose="frustrated" style="background-image:url(art/bridge2-frustrated.webp)"></div>
-    <div class="pose" data-pose="amused" style="background-image:url(art/bridge2-amused.webp)"></div>
+    <div class="pose on" data-pose="neutral" style="background-image:url(art/bridge3-neutral.webp)"></div>
+    <div class="pose" data-pose="nod" style="background-image:url(art/bridge3-nod.webp)"></div>
+    <div class="pose" data-pose="talk" style="background-image:url(art/bridge3-talk.webp)"></div>
+    <div class="pose" data-pose="amused" style="background-image:url(art/bridge3-amused.webp)"></div>
+    <div class="pose" data-pose="laugh" style="background-image:url(art/bridge3-laugh.webp)"></div>
+    <div class="pose" data-pose="frustrated" style="background-image:url(art/bridge3-frustrated.webp)"></div>
+    <div class="pose" data-pose="excited" style="background-image:url(art/bridge3-excited.webp)"></div>
     <canvas id="sparks" width="1280" height="720"></canvas>
     <div class="flicker-light"></div>
   </div>
@@ -201,7 +204,7 @@
         <div class="setup-row"><div class="setup-label">Keyer</div><input type="range" id="sendWpm2In" min="5" max="35" step="1"><span class="val" id="sendWpm2Val"></span></div>
         <h2>Sound</h2>
         <div class="setup-row"><div class="setup-label">Tone</div><input type="range" id="toneIn" min="400" max="900" step="10"><span class="val" id="toneVal"></span></div>
-        <div class="setup-row"><div class="setup-label">CW volume</div><input type="range" id="volIn" min="0" max="100" step="1"><span class="val" id="volVal"></span></div>
+        <div class="setup-row"><div class="setup-label">Sidetone</div><input type="range" id="volIn" min="0" max="100" step="1"><span class="val" id="volVal"></span></div>
         <div class="setup-row"><div class="setup-label">Voice</div><input type="range" id="voiceIn" min="0" max="100" step="1"><span class="val" id="voiceVal"></span></div>
         <div class="setup-row"><div class="setup-label">Captions</div><label class="check"><input type="checkbox" id="ccIn"> Show Roger's words on screen</label></div>
       </div>

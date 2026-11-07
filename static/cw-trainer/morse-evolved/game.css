@@ -35,7 +35,7 @@ body {
 /* The same scene, blurred, fills any letterbox around the stage. */
 body::before {
   content: ''; position: fixed; inset: -40px; z-index: -1;
-  background: url(art/bridge2-neutral.webp) center / cover no-repeat;
+  background: url(art/bridge3-neutral.webp) center / cover no-repeat;
   filter: blur(28px) brightness(0.35);
 }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
