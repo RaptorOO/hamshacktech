@@ -292,6 +292,45 @@
       setTimeout(fin, 12000);              // safety net
     });
   }
+  /* Roger's alien speech runs about as long as what it translates to
+     (Tim, 2026-11-07: a one-second babble for "Hey human..." felt wrong).
+     Each alien-*.mp3 is a bank of several phrases; we play a slice that
+     starts at a phrase and lasts ~60% of the English clip, then fade. */
+  var ALIEN_BANK = {
+    'alien-neutral':    { len: 13.18, starts: [0, 2.08, 4.04, 11.23] },
+    'alien-excited':    { len: 7.46,  starts: [0, 0.87, 3.8, 5.9] },
+    'alien-frustrated': { len: 5.17,  starts: [0, 1.18, 2.52, 3.14] }
+  };
+  function playAlien(name, englishFile, token) {
+    return new Promise(function (resolve) {
+      if (token !== speechToken) return resolve();
+      var bank = ALIEN_BANK[name], a = clip(name), done = false, eng = clip(englishFile).duration;
+      if (!(eng > 0)) eng = 3;
+      var want = Math.max(1.4, Math.min(5, eng * 0.6));
+      var fits = bank.starts.filter(function (t) { return t + want <= bank.len; });
+      var from = fits.length ? fits[Math.floor(Math.random() * fits.length)] : 0;
+      var vol = voiceVol / 100, fadeT = null, stopT = null;
+      function fin() {
+        if (done) return; done = true; clearInterval(fadeT); clearTimeout(stopT);
+        a.onended = a.onerror = null; try { a.pause(); } catch (e) {} a.volume = vol;
+        current = null; resolve();
+      }
+      current = a; a.volume = vol;
+      try { a.currentTime = from; } catch (e) {}
+      a.onended = fin; a.onerror = fin;
+      var p = a.play();
+      if (p && p.catch) p.catch(fin);
+      stopT = setTimeout(function () {            // fade out over 250 ms
+        var v = vol;
+        fadeT = setInterval(function () {
+          if (token !== speechToken) return fin();
+          v -= vol / 10; if (v <= 0) return fin();
+          a.volume = Math.max(0, v);
+        }, 25);
+      }, want * 1000 - 250);
+      setTimeout(fin, want * 1000 + 1500);        // safety net
+    });
+  }
   function decoderState(cls, label) {
     $('decoder').className = 'decoder' + (cls ? ' ' + cls : '');
     $('decoderState').textContent = label;
@@ -303,7 +342,7 @@
     var token = speechToken;
     if (item.face) pose(item.face);
     var first = item.line.device ? Promise.resolve()
-      : (decoderState('alien', 'ROGER · DECODING'), playClip(ALIEN[item.face] || 'alien-neutral', token));
+      : (decoderState('alien', 'ROGER · DECODING'), playAlien(ALIEN[item.face] || 'alien-neutral', item.line.file, token));
     first.then(function () {
       if (token !== speechToken) return;
       decoderState('english', 'ROGER · ENGLISH');
@@ -851,6 +890,33 @@
     paper.style.setProperty('--lineY', (baseline + 2) + 'px');   // the line just under the letters
   }
   window.addEventListener('resize', ruleLines);
+
+  /* THE CONTACT MONITOR sits in the cockpit's big tilted screen, top left of
+     the art (Tim, 2026-11-07). Corners measured on the 2400 x 1350 scene
+     (TL, TR, BR, BL); the stage is the same 16:9, so fractions of the art
+     are fractions of the stage. A projective warp maps the box onto them. */
+  var MON_QUAD = [[133, 369], [355, 408], [329, 620], [69, 591]];
+  function placeMonitor() {
+    var el = document.querySelector('.contact-mon'), stage = document.querySelector('.stage');
+    if (!el || !stage) return;
+    if (window.matchMedia('(max-width: 860px), (max-aspect-ratio: 1 / 1)').matches) { el.style.transform = ''; return; }
+    var W = stage.clientWidth, H = stage.clientHeight, w = el.offsetWidth, h = el.offsetHeight;
+    var p = MON_QUAD.map(function (q) { return [q[0] / 2400 * W, q[1] / 1350 * H]; });
+    // unit square -> quad (Heckbert)
+    var x0 = p[0][0], y0 = p[0][1], x1 = p[1][0], y1 = p[1][1], x2 = p[2][0], y2 = p[2][1], x3 = p[3][0], y3 = p[3][1];
+    var dx1 = x1 - x2, dx2 = x3 - x2, dy1 = y1 - y2, dy2 = y3 - y2;
+    var sx = x0 - x1 + x2 - x3, sy = y0 - y1 + y2 - y3;
+    var den = dx1 * dy2 - dx2 * dy1;
+    var g = (sx * dy2 - dx2 * sy) / den, hh = (dx1 * sy - sx * dy1) / den;
+    var a = x1 - x0 + g * x1, b = x3 - x0 + hh * x3, c = x0;
+    var d = y1 - y0 + g * y1, e = y3 - y0 + hh * y3, f = y0;
+    // fold in the box size: (u, v) = (x / w, y / h)
+    a /= w; d /= w; g /= w; b /= h; e /= h; hh /= h;
+    el.style.transform = 'matrix3d(' + [a, d, 0, g, b, e, 0, hh, 0, 0, 1, 0, c, f, 0, 1].join(',') + ')';
+    el.classList.add('placed');
+  }
+  window.addEventListener('resize', placeMonitor);
+  placeMonitor();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(ruleLines);
   ruleLines();
   ['input', 'keyup', 'click', 'select', 'focus', 'blur'].forEach(function (ev) { $('copyIn').addEventListener(ev, renderWriting); });
