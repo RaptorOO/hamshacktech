@@ -86,9 +86,8 @@
       <div class="status" id="radioStatus">STANDBY</div>
     </div>
     <div class="screen portrait" id="portraitScreen">
-      <div id="contactImg" class="contact-img" hidden></div>
-      <div class="no-signal" id="noSignal">NO SIGNAL</div>
-      <div class="contact-name" id="contactName"></div>
+      <!-- a live spectrum waterfall (the contact's face is on the big monitor) -->
+      <canvas id="fall" width="96" height="110" aria-hidden="true"></canvas>
     </div>
     <div class="screen wave"><canvas id="wave" width="600" height="120" aria-hidden="true"></canvas></div>
   </section>

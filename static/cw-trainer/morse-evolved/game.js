@@ -35,70 +35,128 @@
        { rx: text, signoff: 1 }  their sign-off; copy it too
      The first copy has to get the station's name. Higher difficulties
      have longer exchanges, as the spec asks. */
+  /* QSO FORMAT (Tim, 2026-11-06: "find a good QSO pattern and revise all
+     the scripts"). The standard CW contact, as published for new
+     operators (morsecode.world/qso-formats.html; LICW CW QSO Protocol):
+       1. CQ CQ CQ DE <call> <call> K           they call
+       2. <call> DE <us> <us> K                   you answer
+       3. <us> DE <call> ... UR RST ... NAME ... QTH ... HW? ... KN
+       4. <call> DE <us> R TNX ... UR RST ... NAME ... QTH ... KN
+       5. rag chew, turns handed over with <BK>   (the jokes live here)
+       6. TNX FER QSO ... 73 <us> DE <call> <SK>  they sign off
+       7. 73 <call> DE <us> <SK>                  you sign off
+     K = over, KN = over to you only, BK = back to you (quick turn),
+     SK = end of contact. Hiker keeps each turn short; Ranger adds the
+     labels and repeats; Scientist sends everything twice like a real
+     DX exchange. Roger's call sign is TL1R. Each copy step needs its
+     'fact' (the call sign, then the name) or 70% to go on. */
+  var MYCALL = 'TL1R';
   var CONTACTS = [
-    // Xander: a three-year-old alien boy on a moon base (Tim, 2026-11-06)
-    { name: 'XANDER', portrait: 'contact-xander-kid', done: 'nicekid', steps: {
+    // Xander, KR3X: a three-year-old alien boy on Korr moon base
+    { name: 'XANDER', call: 'KR3X', portrait: 'contact-xander-kid', done: 'nicekid', steps: {
       hiker: [
-        { rx: 'XANDER K', say: 'xander' }, { tx: 'R TU' },
-        { rx: 'UR NAME?', say: 'x_h2' }, { tx: 'ROGER' },
-        { rx: 'ROGER ROGER', say: 'x_h3', face: 'laugh' }, { tx: 'HI' },
-        { rx: 'I AM 3', say: 'x_age', face: 'amused' }, { tx: 'FB' },
-        { rx: 'NAP TIME 73', signoff: 1, say: 'x_nap', face: 'laugh' } ],
+        { rx: 'CQ CQ DE KR3X KR3X K', say: 'cq_answer', fact: 'KR3X' },
+        { tx: 'KR3X DE TL1R K' },
+        { rx: 'TL1R DE KR3X R UR 579 NAME XANDER QTH KORR <BK>', say: 'xander', fact: 'XANDER' },
+        { tx: '<BK> R UR 599 NAME ROGER QTH NM <BK>' },
+        { rx: '<BK> ROGER ROGER HI HI I AM 3 <BK>', say: 'x_age', face: 'laugh' },
+        { tx: '<BK> FB UR CW IS GUD <BK>' },
+        { rx: '<BK> TNX NAP TIME 73 TL1R DE KR3X <SK>', signoff: 1, say: 'x_nap', face: 'laugh' },
+        { tx: '73 KR3X DE TL1R <SK>' } ],
       ranger: [
-        { rx: 'CQ CQ DE XANDER K', say: 'xander' }, { tx: 'XANDER DE ROGER' },
-        { rx: 'HI ROGER UR MY 1ST QSO K', say: 'x_r2' }, { tx: 'FB XANDER QTH NM' },
-        { rx: 'NM? IS THAT A MOON? K', say: 'x_r3', face: 'laugh' }, { tx: 'NO A DESERT' },
-        { rx: 'I AM 3 AND A HALF K', say: 'x_age2', face: 'amused' }, { tx: 'FB UR CW IS GUD' },
-        { rx: 'MOM SEZ BED TU ROGER 73 <SK>', signoff: 1, say: 'x_bed', face: 'laugh' } ],
+        { rx: 'CQ CQ CQ DE KR3X KR3X K', say: 'cq_answer', fact: 'KR3X' },
+        { tx: 'KR3X DE TL1R TL1R K' },
+        { rx: 'TL1R DE KR3X GE TNX FER CALL UR RST 579 579 NAME XANDER XANDER QTH KORR MOON BASE HW? TL1R DE KR3X KN', say: 'xander', fact: 'XANDER' },
+        { tx: 'KR3X DE TL1R R TNX UR RST 599 NAME ROGER QTH NM HW? KR3X DE TL1R KN' },
+        { rx: 'TL1R DE KR3X R FB ROGER NM? IS THAT A MOON? <BK>', say: 'x_r3', face: 'laugh' },
+        { tx: '<BK> NO A DESERT <BK>' },
+        { rx: '<BK> HI HI I AM 3 AND A HALF <BK>', say: 'x_age2', face: 'amused' },
+        { tx: '<BK> FB UR CW IS GUD <BK>' },
+        { rx: '<BK> TNX MOM SEZ BED 73 TL1R DE KR3X <SK>', signoff: 1, say: 'x_bed', face: 'laugh' },
+        { tx: '73 KR3X DE TL1R <SK>' } ],
       scientist: [
-        { rx: 'CQ CQ CQ DE XANDER XANDER QTH KORR MOON BASE K', say: 'xander' },
-        { tx: 'XANDER DE ROGER CRASHED NM PSE QSP TELLURA K' },
-        { rx: 'SRI ROGER NEVER HRD OF TELLURA MOM SEZ IM NOT ALLOWED TO WORK DX K', say: 'x_s2', face: 'laugh' },
-        { tx: 'HW OLD R U?' },
-        { rx: 'I AM 3 BUT I CAN COPY 40 WPM K', say: 'x_s3', face: 'frustrated' },
-        { tx: 'FB TNX ANYWAY' },
-        { rx: 'GL ROGER HOPE U GET HOME 73 <SK>', signoff: 1 } ] } },
-    // Elena: a sarcastic five-year-old alien girl explorer (Tim, 2026-11-06)
-    { name: 'ELENA', portrait: 'contact-elena-kid', done: 'keepscan', steps: {
+        { rx: 'CQ CQ CQ DE KR3X KR3X KR3X K', say: 'cq_answer', fact: 'KR3X' },
+        { tx: 'KR3X DE TL1R TL1R K' },
+        { rx: 'TL1R DE KR3X GE OM TNX FER CALL UR RST 569 569 QSB NAME XANDER XANDER QTH KORR MOON BASE KORR MOON BASE HW CPY? TL1R DE KR3X KN', say: 'xander', fact: 'XANDER' },
+        { tx: 'KR3X DE TL1R R R TNX XANDER UR RST 599 599 NAME ROGER ROGER QTH CRASHED NM CRASHED NM PSE QSP TELLURA HW? KR3X DE TL1R KN' },
+        { rx: 'TL1R DE KR3X R SRI ROGER NEVER HRD OF TELLURA MOM SEZ IM NOT ALLOWED TO WORK DX <BK>', say: 'x_s2', face: 'laugh' },
+        { tx: '<BK> HW OLD R U? <BK>' },
+        { rx: '<BK> I AM 3 BUT I CAN COPY 40 WPM <BK>', say: 'x_s3', face: 'frustrated' },
+        { tx: '<BK> FB TNX FER QSO GL <BK>' },
+        { rx: '<BK> GL ROGER HOPE U GET HOME 73 TL1R DE KR3X <SK>', signoff: 1 },
+        { tx: '73 KR3X DE TL1R <SK>' } ] } },
+    // Elena, SK5E: a sarcastic five-year-old alien girl explorer
+    { name: 'ELENA', call: 'SK5E', portrait: 'contact-elena-kid', done: 'keepscan', steps: {
       hiker: [
-        { rx: 'ELENA K', say: 'e_found' }, { tx: 'R TU' },
-        { rx: 'UR SLOW', say: 'e_h2', face: 'frustrated' }, { tx: 'SRI' },
-        { rx: 'I AM 5', say: 'e_age', face: 'amused' }, { tx: 'FB' },
-        { rx: 'BYE 73', signoff: 1, say: 'e_bye', face: 'laugh' } ],
+        { rx: 'CQ CQ DE SK5E SK5E K', say: 'cq_answer', fact: 'SK5E' },
+        { tx: 'SK5E DE TL1R K' },
+        { rx: 'TL1R DE SK5E R UR 449 NAME ELENA QTH SKARR <BK>', say: 'e_found', fact: 'ELENA' },
+        { tx: '<BK> R UR 599 NAME ROGER QTH NM <BK>' },
+        { rx: '<BK> 599? UR SLOW <BK>', say: 'e_h2', face: 'frustrated' },
+        { tx: '<BK> SRI <BK>' },
+        { rx: '<BK> I AM 5 <BK>', say: 'e_age', face: 'amused' },
+        { tx: '<BK> WOW FB <BK>' },
+        { rx: '<BK> BYE 73 TL1R DE SK5E <SK>', signoff: 1, say: 'e_bye', face: 'laugh' },
+        { tx: '73 SK5E DE TL1R <SK>' } ],
       ranger: [
-        { rx: 'CQ CQ DE ELENA K', say: 'e_found' }, { tx: 'ELENA DE ROGER' },
-        { rx: 'ROGER? THATS A NAME? K', say: 'e_r2', face: 'amused' }, { tx: 'YES IT IS' },
-        { rx: 'I AM 5 AND I EXPLORE CAVES K', say: 'e_r3', face: 'laugh' }, { tx: 'FB ELENA' },
-        { rx: 'OK ROGER 73 <SK>', signoff: 1 } ],
+        { rx: 'CQ CQ CQ DE SK5E SK5E K', say: 'cq_answer', fact: 'SK5E' },
+        { tx: 'SK5E DE TL1R TL1R K' },
+        { rx: 'TL1R DE SK5E GE UR RST 459 459 NAME ELENA ELENA QTH SKARR CAVES HW? TL1R DE SK5E KN', say: 'e_found', fact: 'ELENA' },
+        { tx: 'SK5E DE TL1R R TNX UR RST 579 NAME ROGER QTH NM HW? SK5E DE TL1R KN' },
+        { rx: 'TL1R DE SK5E R ROGER? THATS A NAME? <BK>', say: 'e_r2', face: 'amused' },
+        { tx: '<BK> YES IT IS <BK>' },
+        { rx: '<BK> OK I AM 5 AND I EXPLORE CAVES <BK>', say: 'e_r3', face: 'laugh' },
+        { tx: '<BK> FB ELENA TNX FER QSO <BK>' },
+        { rx: '<BK> OK ROGER 73 TL1R DE SK5E <SK>', signoff: 1 },
+        { tx: '73 SK5E DE TL1R <SK>' } ],
       scientist: [
-        { rx: 'CQ CQ CQ DE ELENA ELENA QTH SKARR STATION K', say: 'e_found' },
-        { tx: 'ELENA DE ROGER CRASHED NM PSE QSP TELLURA K' },
-        { rx: 'CRASHED AGN? THATS UR 3RD THIS YR ROGER K', say: 'e_s2', face: 'laugh' },
-        { tx: 'NOT MY FAULT' },
-        { rx: 'MY DAD SEZ ONLY BAD PILOTS CRASH K', say: 'e_s3', face: 'frustrated' },
-        { tx: 'SRI ELENA' },
-        { rx: 'SURE ROGER NO TELLURA HR GL 73 <SK>', signoff: 1 } ] } },
-    // Grizz: a grumpy salvage operator who uses heavy abbreviations
-    { name: 'GRIZZ', portrait: 'contact-grizz', done: 'keepscan', steps: {
+        { rx: 'CQ CQ CQ DE SK5E SK5E SK5E K', say: 'cq_answer', fact: 'SK5E' },
+        { tx: 'SK5E DE TL1R TL1R K' },
+        { rx: 'TL1R DE SK5E GE UR RST 459 459 NAME ELENA ELENA QTH SKARR STATION SKARR STATION HW? TL1R DE SK5E KN', say: 'e_found', fact: 'ELENA' },
+        { tx: 'SK5E DE TL1R R TNX ELENA UR RST 579 579 NAME ROGER ROGER QTH CRASHED NM PSE QSP TELLURA HW? SK5E DE TL1R KN' },
+        { rx: 'TL1R DE SK5E CRASHED AGN? THATS UR 3RD THIS YR ROGER <BK>', say: 'e_s2', face: 'laugh' },
+        { tx: '<BK> NOT MY FAULT <BK>' },
+        { rx: '<BK> MY DAD SEZ ONLY BAD PILOTS CRASH <BK>', say: 'e_s3', face: 'frustrated' },
+        { tx: '<BK> TNX FER QSO ELENA <BK>' },
+        { rx: '<BK> SURE ROGER NO TELLURA HR GL 73 TL1R DE SK5E <SK>', signoff: 1 },
+        { tx: '73 SK5E DE TL1R <SK>' } ] } },
+    // Grizz, RB9G: a grumpy salvage operator who uses heavy abbreviations
+    { name: 'GRIZZ', call: 'RB9G', portrait: 'contact-grizz', done: 'keepscan', steps: {
       hiker: [
-        { rx: 'GRIZZ K', say: 'g_found' }, { tx: 'R TU' },
-        { rx: 'QRL', say: 'g_h2', face: 'amused' }, { tx: 'SRI' },
-        { rx: 'U HV SCRAP?', say: 'g_h3', face: 'laugh' }, { tx: 'NO' },
-        { rx: 'CUL 73', signoff: 1 } ],
+        { rx: 'CQ CQ DE RB9G RB9G K', say: 'cq_answer', fact: 'RB9G' },
+        { tx: 'RB9G DE TL1R K' },
+        { rx: 'TL1R DE RB9G UR 339 NAME GRIZZ QTH RUST BELT <BK>', say: 'g_found', fact: 'GRIZZ' },
+        { tx: '<BK> R UR 599 NAME ROGER QTH NM <BK>' },
+        { rx: '<BK> QRL <BK>', say: 'g_h2', face: 'amused' },
+        { tx: '<BK> SRI <BK>' },
+        { rx: '<BK> U HV SCRAP? <BK>', say: 'g_h3', face: 'laugh' },
+        { tx: '<BK> NO <BK>' },
+        { rx: '<BK> CUL 73 TL1R DE RB9G <SK>', signoff: 1 },
+        { tx: '73 RB9G DE TL1R <SK>' } ],
       ranger: [
-        { rx: 'CQ CQ DE GRIZZ K', say: 'g_found' }, { tx: 'GRIZZ DE ROGER' },
-        { rx: 'WAT U WANT K', say: 'g_r2', face: 'amused' }, { tx: 'SHIP CRASHED' },
-        { rx: 'SHIP? I BUY SCRAP K', say: 'g_r3', face: 'laugh' }, { tx: 'NO TNX' },
-        { rx: 'LAST OFFER 10 CR K', say: 'g_r4', face: 'frustrated' }, { tx: 'NO' },
-        { rx: 'UR LOSS 73 <SK>', signoff: 1 } ],
+        { rx: 'CQ CQ CQ DE RB9G RB9G K', say: 'cq_answer', fact: 'RB9G' },
+        { tx: 'RB9G DE TL1R TL1R K' },
+        { rx: 'TL1R DE RB9G UR RST 339 339 NAME GRIZZ GRIZZ QTH RUST BELT MINE HW? TL1R DE RB9G KN', say: 'g_found', fact: 'GRIZZ' },
+        { tx: 'RB9G DE TL1R R TNX UR RST 579 NAME ROGER QTH NM HW? RB9G DE TL1R KN' },
+        { rx: 'TL1R DE RB9G R WAT U WANT <BK>', say: 'g_r2', face: 'amused' },
+        { tx: '<BK> SHIP CRASHED <BK>' },
+        { rx: '<BK> SHIP? I BUY SCRAP <BK>', say: 'g_r3', face: 'laugh' },
+        { tx: '<BK> NO TNX <BK>' },
+        { rx: '<BK> LAST OFFER 10 CR <BK>', say: 'g_r4', face: 'frustrated' },
+        { tx: '<BK> NO <BK>' },
+        { rx: '<BK> UR LOSS 73 TL1R DE RB9G <SK>', signoff: 1 },
+        { tx: '73 RB9G DE TL1R <SK>' } ],
       scientist: [
-        { rx: 'CQ CQ CQ DE GRIZZ GRIZZ QTH RUST BELT MINE K', say: 'g_found' },
-        { tx: 'GRIZZ DE ROGER CRASHED NM PSE QSP TELLURA K' },
-        { rx: 'NO TELLURA HR WL BUY UR WRECK 5 CR K', say: 'g_s2', face: 'laugh' },
-        { tx: 'NO DEAL GRIZZ' },
-        { rx: 'OK 10 CR AND A SANDWICH K', say: 'g_s3', face: 'amused' },
-        { tx: 'STILL NO' },
-        { rx: 'UR LOSS 73 <SK>', signoff: 1 } ] } }
+        { rx: 'CQ CQ CQ DE RB9G RB9G RB9G K', say: 'cq_answer', fact: 'RB9G' },
+        { tx: 'RB9G DE TL1R TL1R K' },
+        { rx: 'TL1R DE RB9G UR RST 339 339 NAME GRIZZ GRIZZ QTH RUST BELT MINE RUST BELT MINE HW? TL1R DE RB9G KN', say: 'g_found', fact: 'GRIZZ' },
+        { tx: 'RB9G DE TL1R R TNX GRIZZ UR RST 579 579 NAME ROGER ROGER QTH CRASHED NM PSE QSP TELLURA HW? RB9G DE TL1R KN' },
+        { rx: 'TL1R DE RB9G NO TELLURA HR WL BUY UR WRECK 5 CR <BK>', say: 'g_s2', face: 'laugh' },
+        { tx: '<BK> NO DEAL <BK>' },
+        { rx: '<BK> OK 10 CR AND A SANDWICH <BK>', say: 'g_s3', face: 'amused' },
+        { tx: '<BK> STILL NO <BK>' },
+        { rx: '<BK> UR LOSS 73 TL1R DE RB9G <SK>', signoff: 1 },
+        { tx: '73 RB9G DE TL1R <SK>' } ] } }
   ];
   var BANDS = { '40m': [7.000, 7.060], '20m': [14.000, 14.070], '10m': [28.000, 28.070] };
 
@@ -185,6 +243,8 @@
     g_r2:    { file: 'g_r2', text: 'Charming. Tell him we crashed. He’ll love that.' },
     g_r3:    { file: 'g_r3', text: 'He wants to buy my ship for scrap. Absolutely not. …How much, though?' },
     g_s2:    { file: 'g_s2', text: 'Five credits for my ship? FIVE?! The cup holder alone is worth ten.' },
+    cq_answer: { file: 'cq_answer', text: 'A CQ! Someone’s calling. Answer them: their call sign, then DE, then ours.' },
+    callsign: { file: 'callsign', text: 'Oh, and on the air, my call sign is TL1R. Tango Lima One Romeo.' },
     x_age:   { file: 'x_age', text: 'He’s three. THREE! And his fist is better than mine.' },
     x_nap:   { file: 'x_nap', text: 'Nap time. Honestly… same.' },
     x_age2:  { file: 'x_age2', text: 'Three and a half. The half is very important at that age.' },
@@ -275,6 +335,27 @@
   var noisy = false;
   var canvas = $('wave'), g2 = canvas.getContext('2d');
   var WINDOW_MS = 4000;
+  /* THE RADIO'S SMALL SCREEN: a spectrum waterfall (Tim, 2026-11-06: the
+     contact's face moved to the big monitor). Each frame scrolls the
+     picture down a line and paints the band across the top: noise, more
+     of it on a noisy band, and a bright trace at the centre while a
+     signal is keyed. */
+  var fall = $('fall'), fg = fall.getContext('2d');
+  function drawFall(on, now) {
+    var W = fall.width, H = fall.height;
+    fg.drawImage(fall, 0, 0, W, H - 1, 0, 1, W, H - 1);
+    var row = fg.createImageData(W, 1), d = row.data, lvl = noisy ? 0.55 : 0.25;
+    for (var x = 0; x < W; x++) {
+      var v = Math.random() * lvl;
+      var dist = Math.abs(x - W / 2);
+      if (on && dist < 4) v = 0.9 + Math.random() * 0.1;
+      else if (on && dist < 9) v = Math.max(v, 0.45);
+      if (phase === 'scanning' && Math.random() < 0.03) v = 0.7;        // stations flashing past while scanning
+      var i = x * 4;
+      d[i] = 30 * v; d[i + 1] = 60 + 195 * v; d[i + 2] = 80 + 100 * v; d[i + 3] = 255;
+    }
+    fg.putImageData(row, 0, 0);
+  }
   function draw() {
     var W = canvas.width, H = canvas.height, now = performance.now(), from = now - WINDOW_MS;
     g2.clearRect(0, 0, W, H);
@@ -295,6 +376,9 @@
       if (px === 0) g2.moveTo(px, y); else g2.lineTo(px, y);
     }
     g2.stroke(); g2.shadowBlur = 0;
+    var onNow = false;
+    for (var q = marks.length - 1; q >= 0; q--) { var mk = marks[q]; if (mk.s <= now && (mk.e == null || now < mk.e)) { onNow = true; break; } }
+    drawFall(onNow, now);
     // forget old marks
     while (marks.length && marks[0].e != null && marks[0].e < from - 1000) marks.shift();
     requestAnimationFrame(draw);
@@ -374,6 +458,26 @@
   function esc(c) { return c === ' ' ? '&nbsp;' : c.replace(/[&<>]/g, function (x) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[x]; }); }
   // Shows the player's own copy: right characters green, wrong ones red,
   // gaps where something is missing as an amber "_" (doesn't give the answer away).
+  // Same marks, laid over your own text so your spaces stay where you put
+  // them (the grading itself ignores spaces).
+  function proHtml(text) {
+    return text.split(/(<[A-Z]+>)/).map(function (part) {
+      var m = /^<([A-Z]+)>$/.exec(part);
+      return m ? '<span class="pro" title="prosign: send as one character">' + m[1] + '</span>' : part.replace(/[&<>]/g, function (x) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[x]; });
+    }).join('');
+  }
+  function diffSpaced(ops, got) {
+    var out = '', k = 0;
+    function spaces() { while (k < got.length && got[k] === ' ') { out += '&nbsp;'; k++; } }
+    ops.forEach(function (o) {
+      if (o.op === 'del') { out += '<span class="miss">_</span>'; return; }
+      spaces();
+      out += '<span class="' + (o.op === 'ok' ? 'ok' : 'bad') + '">' + esc(got[k] || o.g) + '</span>';
+      k++;
+    });
+    spaces();
+    return out;
+  }
   function diffHtml(ops) {
     return ops.map(function (o) {
       if (o.op === 'ok') return '<span class="ok">' + esc(o.g) + '</span>';
@@ -594,7 +698,8 @@
     lockRadio(true);
     say('online', 'neutral');
     say('hello', 'frustrated');
-    say('scan', 'talk', readyToScan);
+    say('scan', 'talk');
+    say('callsign', 'talk', readyToScan);
   }
   function readyToScan() {
     phase = 'ready'; lockRadio(false);
@@ -632,12 +737,8 @@
     copyFails = 0; quipped = false; reacted = -1;
     bandNoise(mode.noise, mode.qsb);
     setStatus('SIGNAL');
-    var img = $('contactImg');
-    img.style.backgroundImage = 'url(art/' + contact.portrait + '.webp)'; img.hidden = false;
-    $('noSignal').hidden = true; $('contactName').textContent = '';
-    img.classList.remove('flicker'); void img.offsetWidth; img.classList.add('flicker');
     var mon = $('monImg');                                  // the big contact monitor
-    mon.style.backgroundImage = img.style.backgroundImage; mon.hidden = false; $('monStatic').hidden = true;
+    mon.style.backgroundImage = 'url(art/' + contact.portrait + '.webp)'; mon.hidden = false; $('monStatic').hidden = true;
     $('monName').textContent = '';
     mon.classList.remove('flicker'); void mon.offsetWidth; mon.classList.add('flicker');
     $('copyIn').value = ''; $('copyMsg').innerHTML = '';     // a fresh page for a new station
@@ -770,7 +871,7 @@
     stats.decoded = true;
     $('copyMsg').innerHTML = '<div class="r-head">DECODER</div><div class="diff"><span class="ok">' +
       esc(plain(copyText)).replace(/ /g, '&nbsp;') + '</span></div><div class="r-note">Free to use — no penalty.</div>';
-    $('contactName').textContent = contact.name;
+    $('monName').textContent = contact.name;
     if (copyStage === 'rx') say('noshame', 'amused');
     afterCopy(true);
   }
@@ -788,7 +889,7 @@
   // CONTACT appears instead.
   var reacted = -1;
   function afterCopy(viaDecoder) {
-    $('contactName').textContent = contact.name; $('monName').textContent = contact.name;
+    $('monName').textContent = contact.name;
     var line = steps[si].say, step = si, done = false;
     function proceed() {
       if (done || step !== si || phase !== 'copy') return;
@@ -806,7 +907,7 @@
   }
   function checkCopy() {
     if (phase !== 'copy') return;
-    var exp = norm(plain(copyText)), got = norm($('copyIn').value.slice(copyStart));
+    var exp = norm(plain(copyText)), got = norm(plain($('copyIn').value.slice(copyStart).replace(/[<>]/g, '')));
     if (!got) { $('copyIn').focus(); return; }
     // Spaces don't count: TU73 is as good as TU 73 (Tim, 2026-11-06).
     var r = align(exp.replace(/ /g, ''), got.replace(/ /g, ''));
@@ -820,11 +921,13 @@
     // Good enough: the station's name in their call, the 73 in a sign-off.
     // Good enough to go on: the station's name in their first call, the
     // 73 in a sign-off, and most of it (70%) anywhere else.
-    var gotFact = copyStage === 'rx' ? got.indexOf(contact.name) >= 0
-      : copyStage === 'signoff' ? got.indexOf('73') >= 0 : r.acc >= 0.7;
-    var what = copyStage === 'rx' ? 'you have the station’s name' : copyStage === 'signoff' ? 'you have the sign-off' : 'you have the gist';
+    var fact = steps[si].fact;
+    var gotFact = fact ? got.replace(/ /g, '').indexOf(fact) >= 0
+      : copyStage === 'signoff' ? (got.indexOf('73') >= 0 || r.acc >= 0.7) : r.acc >= 0.7;
+    var what = fact === contact.call ? 'you have the call sign' : fact ? 'you have the name'
+      : copyStage === 'signoff' ? 'you have the sign-off' : 'you have the gist';
     $('copyMsg').innerHTML = '<div class="r-head">' + (copyStage === 'signoff' ? 'SIGN-OFF' : 'COPY') + ' ACCURACY <b class="' + (r.acc === 1 ? 'good' : gotFact ? 'ok' : 'low') + '">' + pct + '%</b></div>' +
-      '<div class="diff">' + diffHtml(r.ops) + '</div>' +
+      '<div class="diff">' + diffSpaced(r.ops, got) + '</div>' +
       '<div class="r-note">' + (r.acc === 1 ? 'Perfect copy.'
         : gotFact ? 'Good enough — ' + what + '. Fix it up or continue.'
         : '<span class="warn">Red is wrong, _ is missing. Try REPLAY or SLOWER.</span>') + '</div>';
@@ -856,13 +959,12 @@
     $('copyMsg').textContent = '';
     lockRadio(true);
     $('txPanel').hidden = false;
-    $('txTarget').textContent = plain(txText);
+    $('txTarget').innerHTML = proHtml(txText);   // prosigns drawn with a bar over them: send them run together
     $('txResult').innerHTML = '';
     $('txHelp').textContent = keyHelp();
     txFailed = false;
     clearSend();
     setStatus('TRANSMIT');
-    if (si === 1) say('answer', 'talk');   // first reply only; cut short as soon as you start keying
   }
 
   function clearSend() {
@@ -880,14 +982,18 @@
     if (wait > 0 && txMarks.length) { setTimeout(checkSend, wait + 20); return; }
     var want = norm(plain(txText));
     live = spacedText(txText); showLive();         // your own spacing, read back accurately
-    var sent = norm(live);
+    var sent = norm(plain(live));
     if (!sent) { $('txResult').innerHTML = '<span class="warn">Nothing heard yet — key the message.</span>'; return; }
     stats.sends++;
     // Content: compare without spaces (word spacing is reported, not failed).
     var r = align(want.replace(/ /g, ''), sent.replace(/ /g, ''));
     stats.sendAcc = r.acc;
     var html = '<div class="score">SENDING ACCURACY <b>' + Math.round(r.acc * 100) + '%</b></div>' + timingReport();
-    if (r.acc === 1) {
+    // Short replies must be exact; a long exchange passes at 90% (a slip in
+    // a long over is fine on the air -- the other op asks if they need to).
+    var need = want.replace(/ /g, '').length > 20 ? 0.9 : 1;
+    if (r.acc >= need) {
+      if (r.acc < 1) html += '<div class="diff">' + diffHtml(align(want, sent).ops) + '</div><div class="muted">Close enough — they copied you.</div>';
       $('txResult').innerHTML = html;
       finishSend();
     } else {
@@ -955,7 +1061,6 @@
     if (ci >= CONTACTS.length - 1) { location.reload(); return; }
     ci++;
     hush();
-    $('contactImg').hidden = true; $('noSignal').hidden = false; $('contactName').textContent = '';
     $('monImg').hidden = true; $('monStatic').hidden = false; $('monName').textContent = '';
     $('copyMsg').innerHTML = ''; $('freqNum').textContent = '--.----';
     phase = 'intro';
