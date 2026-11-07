@@ -94,9 +94,6 @@
   .times:empty { display: none; }
   .times label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 0.88rem; }
   .times input[type="time"] { padding: 5px 6px; background: var(--well); color: var(--text); border: 1px solid var(--border); border-radius: 7px; font-size: 0.88rem; }
-  .next .reg { display: block; margin-top: 6px; font-size: 0.88rem; }
-  .next { padding: 10px 14px; border-radius: 10px; background: var(--mc-soft); border: 1px solid var(--mc); margin-bottom: 12px; font-size: 0.95rem; }
-  .next b { color: var(--mc); font-weight: 600; }
 
   .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -274,7 +271,6 @@
         <span class="when-days"><span style="color:var(--muted);font-size:0.9rem;margin-right:8px">Meets on</span><span class="days" id="days" role="group" aria-label="Class days"></span></span>
         <span class="times" id="times" aria-label="Class start times"></span>
       </div>
-      <div class="next" id="nextClass" hidden></div>
       <div class="pre-ask" id="preAsk" hidden role="region" aria-label="Your Pre-Class is over">
         <p id="preAskText"></p>
         <div class="row">
@@ -705,32 +701,6 @@
               : '<td class="focus">' + focusHtml(s[1]) + '</td><td class="prog">' + progControls(String(i + 1), prog[i + 1] || {}, 'session ' + (i + 1)) + '</td>') + '</tr>';
     }).join('');
 
-    var nx = $('nextClass');
-    if (!first) nx.hidden = true;
-    else if (preNext >= 0) {
-      nx.hidden = false;
-      var pd = preDates[preNext], pToday = pd.getTime() === t.getTime(), ptime = c.times[pd.getDay()];
-      var pStarted = pToday && ptime && startOf(pd, c.times) <= now;
-      nx.innerHTML = (pStarted ? 'Pre-Class now: ' : (pToday ? 'Pre-Class today' + (ptime ? ' at ' + fmtTime(ptime) : '') : 'Next Pre-Class') + ': ') +
-        '<b>Session ' + (preNext + 1) + '</b>' + (pToday ? '' : ', <b>' + esc(fmt(pd)) + (ptime ? ' at ' + esc(fmtTime(ptime)) : '') + '</b>');
-    }
-    else {
-      nx.hidden = false;
-      var lastIdx = dates.length - 1;
-      if (nextIdx < 0) {
-        // The course is over: well done, and when the next one runs.
-        nx.innerHTML = 'Your course finished on <b>' + esc(fmt(dates[lastIdx])) + '</b>. Well done! Keep practicing every day.' +
-          '<span class="reg">CW Academy runs ' + esc(info.semesters) + '. Ready for the next level? ' +
-          '<a href="' + esc(info.register) + '" target="_blank" rel="noopener">Sign up for a class</a>, then choose your new level in Settings.</span>';
-      } else {
-        var d = dates[nextIdx], isToday = d.getTime() === t.getTime(), time = c.times[d.getDay()];
-        var started = isToday && time && startOf(d, c.times) <= now;
-        var label = started ? (nextIdx === lastIdx ? 'Last class now: ' : 'Class now: ') : nextIdx === lastIdx ? (isToday ? 'Last class today' : 'Last class') : (isToday ? 'Class today' : 'Next class');
-        if (!started) label += time ? (isToday ? ' at ' + fmtTime(time) + ': ' : ': ') : ': ';
-        nx.innerHTML = label + '<b>Session ' + (nextIdx + 1) + '</b>' +
-          (isToday ? '' : ', <b>' + esc(fmt(d)) + (time ? ' at ' + esc(fmtTime(time)) : '') + '</b>');
-      }
-    }
     $('speedNote').textContent = info.speedNote;
 
     // Curriculum links
