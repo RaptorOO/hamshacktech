@@ -397,7 +397,8 @@
   // Redo. Then a link to that session in the online curriculum.
   var SCALE_NAMES = { warmup: 'Warm Up', drill: 'Drill', exercise: 'Exercise' };
   var TIMES = { '1': 'once', '1-2': 'once or twice', '2': '2 times', '3': '3 times', n: 'several times' };
-  var MORSE_RUNNER = 'https://github.com/w7sst/MorseRunner/releases', CWT = 'https://cwops.org/cwops-tests/';
+  // Morse Runner is plain text, no link, until it's in the app's own suite (Tim, 2026-11-07).
+  var CWT = 'https://cwops.org/cwops-tests/';
   function ext(href, text) { return '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(text) + '</a>'; }
   // One task token ('warmup', 'WD101-10*2', 'icr:10'; see hst-course.js)
   // -> { id, html, what } (what names it for screen readers). e is its
@@ -433,9 +434,9 @@
         return '<a href="../?tab=code-groups&amp;' + q.replace('&', '&amp;') + '" target="_top" data-tool="code-groups" data-q="' + q.replace('&', '&amp;') + '">' + x[1] + '</a>';
       }).join(' \u00b7 ') + ' <span class="also">Code Groups</span>' };
     if (a[0] === 'mr') return { what: 'Morse Runner',
-      html: ext(MORSE_RUNNER, 'Morse Runner') + ': single calls, ' + a[1] + ' WPM, 15 minutes' };
+      html: 'Morse Runner: single calls, ' + a[1] + ' WPM, 15 minutes' };
     if (a[0] === 'wpx') return { what: 'Morse Runner WPX contest',
-      html: ext(MORSE_RUNNER, 'Morse Runner') + ': WPX contest, ' + a[1] + ' WPM, activity ' + a[2] + ', 15 minutes <span class="also">(be sure to send CQ)</span>' };
+      html: 'Morse Runner: WPX contest, ' + a[1] + ' WPM, activity ' + a[2] + ', 15 minutes <span class="also">(be sure to send CQ)</span>' };
     if (a[0] === 'cwt') return { what: 'live CWT',
       html: ext(CWT, 'Live CWT') + ': ' + (a[1] === 'work5' ? 'work 5 stations, or at least copy their info' : 'copy the call, name and number of 5 running stations') +
         ' <span class="also">(Wednesday 1300 or 1900 UTC, Thursday 0300 or 0700 UTC)</span>' };
