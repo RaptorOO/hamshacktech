@@ -557,6 +557,10 @@
     img.style.backgroundImage = 'url(art/' + contact.portrait + '.webp)'; img.hidden = false;
     $('noSignal').hidden = true; $('contactName').textContent = '';
     img.classList.remove('flicker'); void img.offsetWidth; img.classList.add('flicker');
+    var mon = $('monImg');                                  // the big contact monitor
+    mon.style.backgroundImage = img.style.backgroundImage; mon.hidden = false; $('monStatic').hidden = true;
+    $('monName').textContent = '';
+    mon.classList.remove('flicker'); void mon.offsetWidth; mon.classList.add('flicker');
     $('copyIn').value = ''; $('copyMsg').innerHTML = '';     // a fresh page for a new station
     phase = 'rx';
     // The CW starts once Roger has finished talking, so the two never overlap.
@@ -697,15 +701,29 @@
     $('nextBtn').focus();
   }
   // Copied: Roger reacts (once per step), and CONTINUE appears when he's done.
+  // Copied well enough: Roger reacts, then the game moves on by itself
+  // when your reply is next (Tim, 2026-11-06: after "UR NAME?" the reply
+  // never came -- the CONTINUE button waited on Roger's line, and if his
+  // line was cut short it never appeared). A safety timer makes sure it
+  // always moves on; before a sign-off or the logbook, CONTINUE / LOG
+  // CONTACT appears instead.
   var reacted = -1;
   function afterCopy(viaDecoder) {
-    $('contactName').textContent = contact.name;
-    var line = steps[si].say;
+    $('contactName').textContent = contact.name; $('monName').textContent = contact.name;
+    var line = steps[si].say, step = si, done = false;
+    function proceed() {
+      if (done || step !== si || phase !== 'copy') return;
+      done = true;
+      var nxt = steps[si + 1];
+      if (nxt && nxt.tx) setTimeout(function () { if (step === si && phase === 'copy') next(); }, 500);
+      else showNext();
+    }
     if (line && reacted !== si && !viaDecoder) {
       reacted = si;
       $('nextBtn').hidden = true;
-      say(line, si === 0 ? 'amused' : 'amused', showNext);
-    } else showNext();
+      say(line, 'amused', proceed);
+      setTimeout(proceed, 15000);          // never stall, whatever happens to Roger's line
+    } else proceed();
   }
   function checkCopy() {
     if (phase !== 'copy') return;
@@ -857,6 +875,7 @@
     ci++;
     hush();
     $('contactImg').hidden = true; $('noSignal').hidden = false; $('contactName').textContent = '';
+    $('monImg').hidden = true; $('monStatic').hidden = false; $('monName').textContent = '';
     $('copyMsg').innerHTML = ''; $('freqNum').textContent = '--.----';
     phase = 'intro';
     say('rescan', 'neutral', readyToScan);

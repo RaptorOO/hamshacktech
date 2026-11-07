@@ -90,6 +90,16 @@
     <div class="screen wave"><canvas id="wave" width="600" height="120" aria-hidden="true"></canvas></div>
   </section>
 
+  <!-- The contact monitor (Tim, 2026-11-06): a big screen showing who's
+       on the other end, so the operator is part of the scene. -->
+  <section class="contact-mon" aria-label="Contact monitor">
+    <div class="cm-screen">
+      <div id="monImg" class="cm-img" hidden></div>
+      <div class="cm-static" id="monStatic"><span>NO SIGNAL</span></div>
+      <div class="cm-label"><span class="cm-dot"></span>CONTACT <b id="monName"></b></div>
+    </div>
+  </section>
+
   <!-- The radio's control module, beside it on the bench -->
   <section class="controls" id="controls" aria-label="Radio controls">
     <div class="ctl-label">BAND</div>
