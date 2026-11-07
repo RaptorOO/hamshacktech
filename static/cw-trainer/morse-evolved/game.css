@@ -35,7 +35,7 @@ body {
 /* The same scene, blurred, fills any letterbox around the stage. */
 body::before {
   content: ''; position: fixed; inset: -40px; z-index: -1;
-  background: url(art/cockpit-neutral.webp) center / cover no-repeat;
+  background: url(art/ship-neutral.webp) center / cover no-repeat;
   filter: blur(28px) brightness(0.35);
 }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -123,7 +123,7 @@ body::before {
 }
 .caption:empty { display: none; }
 .toast {
-  position: absolute; left: 44.9%; bottom: 46%; transform: translateX(-50%); z-index: 3;
+  position: absolute; left: 50%; bottom: 46%; transform: translateX(-50%); z-index: 3;
   font: 500 calc(var(--u) * 0.9) 'IBM Plex Sans', sans-serif; color: var(--amber);
   background: rgba(0,0,0,0.78); border: 1px solid rgba(255,181,71,0.45); border-radius: 4px;
   padding: 0.4em 0.9em; white-space: nowrap;
@@ -147,7 +147,7 @@ body::before {
    of the original 1280 x 720 art). The screens sit over its blank windows;
    positions are % of the cut-out, type is % of the radio's width (cqw). */
 .radio {
-  position: absolute; left: 21.9%; bottom: 0.5%; width: 46%; aspect-ratio: 1260 / 676;   /* centred between the controls and the notebook */
+  position: absolute; left: 27%; bottom: 0.5%; width: 46%; aspect-ratio: 1260 / 676;   /* centred on the screen (Tim, 2026-11-06) */
   container-type: inline-size; z-index: 1;
   filter: drop-shadow(0 calc(var(--u) * 0.6) calc(var(--u) * 0.9) rgba(0,0,0,0.85));
 }

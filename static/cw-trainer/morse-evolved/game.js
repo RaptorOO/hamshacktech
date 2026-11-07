@@ -20,27 +20,40 @@
      sendWpm = keyer speed for the player's sending.
      --------------------------------------------------------------------- */
   var MODES = {
-    hiker: {
-      label: 'Hiker', wpm: 20, fwpm: 5, sendWpm: 8, noise: 0, qsb: false,
-      rx: 'XANDER K', tx: 'R TU', signoff: 'TU 73'
-    },
-    ranger: {
-      label: 'Park Ranger', wpm: 25, fwpm: 10, sendWpm: 15, noise: 22, qsb: false,
-      rx: 'CQ CQ DE XANDER K', tx: 'XANDER DE ROGER', signoff: 'TU ROGER 73 <SK>'
-    },
-    scientist: {
-      label: 'SpaceY Scientist', wpm: 30, fwpm: 20, sendWpm: 22, noise: 40, qsb: true,
-      rx: 'CQ CQ CQ DE XANDER XANDER QTH KORR MOON BASE K',
-      tx: 'XANDER DE ROGER CRASHED NM PSE QSP TELLURA K',
-      signoff: 'SRI ROGER NO TELLURA HR GL 73 <SK>'
-    }
+    hiker:     { label: 'Hiker',            wpm: 20, fwpm: 5,  sendWpm: 8,  noise: 0,  qsb: false },
+    ranger:    { label: 'Park Ranger',      wpm: 25, fwpm: 10, sendWpm: 15, noise: 22, qsb: false },
+    scientist: { label: 'SpaceY Scientist', wpm: 30, fwpm: 20, sendWpm: 22, noise: 40, qsb: true }
   };
-  var KEY_FACT = 'XANDER';           // the copy must get the station's name right
+  /* THE STATIONS, worked in order (Tim, 2026-11-06: after a contact,
+     go back to the radio for the next one, not to the start screen).
+     Each has its exchange per difficulty: rx = their call (copy it),
+     tx = your reply (key it), signoff = their sign-off (copy it too).
+     found / done = Roger's lines when you copy them / when you're done. */
+  var CONTACTS = [
+    { name: 'XANDER', portrait: 'contact-xander', found: 'xander', done: 'nicekid',
+      hiker:     { rx: 'XANDER K', tx: 'R TU', signoff: 'TU 73' },
+      ranger:    { rx: 'CQ CQ DE XANDER K', tx: 'XANDER DE ROGER', signoff: 'TU ROGER 73 <SK>' },
+      scientist: { rx: 'CQ CQ CQ DE XANDER XANDER QTH KORR MOON BASE K',
+                   tx: 'XANDER DE ROGER CRASHED NM PSE QSP TELLURA K', signoff: 'SRI ROGER NO TELLURA HR GL 73 <SK>' } },
+    { name: 'ELENA', portrait: 'contact-elena', found: 'friendly', done: 'keepscan',
+      hiker:     { rx: 'ELENA K', tx: 'R TU', signoff: 'GL 73' },
+      ranger:    { rx: 'CQ CQ DE ELENA K', tx: 'ELENA DE ROGER', signoff: 'TNX ROGER 73 <SK>' },
+      scientist: { rx: 'CQ CQ CQ DE ELENA ELENA QTH SKARR STATION K',
+                   tx: 'ELENA DE ROGER CRASHED NM PSE QSP TELLURA K', signoff: 'SRI NO TELLURA HR GL 73 <SK>' } },
+    { name: 'GRIZZ', portrait: 'contact-grizz', found: 'friendly', done: 'keepscan',
+      hiker:     { rx: 'GRIZZ K', tx: 'R TU', signoff: 'CUL 73' },
+      ranger:    { rx: 'CQ CQ DE GRIZZ K', tx: 'GRIZZ DE ROGER', signoff: 'FB ROGER 73 <SK>' },
+      scientist: { rx: 'CQ CQ CQ DE GRIZZ GRIZZ QTH RUST BELT MINE K',
+                   tx: 'GRIZZ DE ROGER CRASHED NM PSE QSP TELLURA K', signoff: 'NO TELLURA HR SRI GL 73 <SK>' } }
+  ];
   var BANDS = { '40m': [7.000, 7.060], '20m': [14.000, 14.070], '10m': [28.000, 28.070] };
 
   var mode = null, modeKey = 'hiker', band = '20m';
-  var phase = 'start';               // start | intro | ready | scanning | rx | copy | tx | signoff | end
-  var stats = { t0: 0, checks: 0, firstAcc: null, bestAcc: 0, decoded: false, sends: 0, sendAcc: null };
+  var phase = 'start';               // start | intro | ready | scanning | rx | copy | tx | signoff | logged
+  var ci = 0, contact = null, qso = null;   // the station being worked and its exchange
+  var copyStage = 'rx', copyText = '', copyStart = 0;   // what's being copied, and where it starts on the page
+  var stats = null;
+  function newStats() { return { t0: Date.now(), firstAcc: null, bestAcc: 0, decoded: false, sends: 0, sendAcc: null, signoffAcc: null }; }
   var copyFails = 0, quipped = false;
 
   /* ---------------------------------------------------------------------
@@ -70,7 +83,12 @@
     answer:  { file: 'line08', text: 'Answer him. Key the reply on the transmit panel.' },
     close:   { file: 'line09', text: 'Close. Try that again.' },
     clean:   { file: 'line10', text: 'Clean sending! Well… your sending. My hands are in bandages.' },
-    nicekid: { file: 'line11', text: 'Nice kid. Not Tellura, though. We’ll keep scanning.' }
+    nicekid: { file: 'line11', text: 'Nice kid. Not Tellura, though. We’ll keep scanning.' },
+    signoffcopy: { file: 'line12', text: 'They’re signing off. Copy that too.' },
+    friendly: { file: 'line13', text: 'Not Tellura… but they sound friendly.' },
+    keepscan: { file: 'line14', text: 'Good contact. Still not home. Let’s keep scanning.' },
+    rescan:   { file: 'line15', text: 'Back to the radio. Pick a band, and scan again.' },
+    allheard: { file: 'line16', text: 'That’s everyone on the bands tonight. Tellura is out there somewhere… we’ll find it.' }
   };
   var ALIEN = { excited: 'alien-excited', celebrating: 'alien-excited', frustrated: 'alien-frustrated' };
   var clips = {};
@@ -285,7 +303,7 @@
   }
   function unitMs() { return following() ? HST.adapterKeying.get().unitMs : 1200 / sendWpm; }
 
-  var live = '', txMarks = [], downAt = null, lastUp = 0, detachKeys = null, autoTimer = null;
+  var txFailed = false, live = '', txMarks = [], downAt = null, lastUp = 0, detachKeys = null, autoTimer = null;
   var keyer = HST.createKeyer({ key: onKey, wpm: function () { return sendWpm; }, adapterKeying: function () { decoder.reset(); testDecoder.reset(); renderTestNote(); } });
   var decoder = HST.createDecoder({
     unitMs: unitMs,
@@ -305,6 +323,10 @@
     if (phase === 'start') { onTestKey(down, t); return; }
     if (phase !== 'tx') { if (down) notYourTurn(); return; }
     if (down) {
+      // Roger never talks over your keying (Tim, 2026-11-06), and keying
+      // again after a miss starts a fresh attempt.
+      if (speaking) hush();
+      if (txFailed) { txFailed = false; clearSend(); $('txResult').innerHTML = ''; }
       clearTimeout(autoTimer);
       downAt = t; decoder.down(t);
       marks.push({ s: t, e: null });
@@ -319,7 +341,7 @@
   function notYourTurn() {
     if (++offTurn < 3) return;
     offTurn = 0;
-    var msg = phase === 'rx' ? 'Listen first — Xander is sending.'
+    var msg = phase === 'rx' ? 'Listen first — ' + (contact ? contact.name.charAt(0) + contact.name.slice(1).toLowerCase() : 'they') + ' is sending.'
       : phase === 'copy' ? 'Copy what you heard into the notebook first. You’ll send after that.'
       : 'Not your turn to transmit yet.';
     $('toast').textContent = msg; $('toast').hidden = false;
@@ -328,7 +350,7 @@
   function showLive() { $('txLive').textContent = live || ' '; }
   function scheduleAutoCheck() {
     // Check by itself once they've sent as many characters as the target.
-    var want = plain(mode.tx).replace(/\s/g, '').length;
+    var want = plain(qso.tx).replace(/\s/g, '').length;
     if (live.replace(/\s/g, '').length >= want) {
       clearTimeout(autoTimer);
       autoTimer = setTimeout(checkSend, unitMs() * 8);
@@ -422,16 +444,17 @@
     $('modeLabel').textContent = mode.label + ' · ' + mode.wpm + '/' + mode.fwpm + ' wpm';
     $('startCard').hidden = true;
     keyer.reset();
-    stats.t0 = Date.now();
+    ci = 0;
     phase = 'intro';
     lockRadio(true);
     say('online', 'neutral');
     say('hello', 'frustrated');
-    say('scan', 'neutral', function () {
-      phase = 'ready'; lockRadio(false);
-      $('replayBtn').disabled = $('slowBtn').disabled = $('decodeBtn').disabled = true;
-      $('scanBtn').focus();
-    });
+    say('scan', 'neutral', readyToScan);
+  }
+  function readyToScan() {
+    phase = 'ready'; lockRadio(false);
+    $('replayBtn').disabled = $('slowBtn').disabled = $('decodeBtn').disabled = true;
+    $('scanBtn').focus();
   }
   function lockRadio(on) {
     ['scanBtn', 'replayBtn', 'slowBtn', 'decodeBtn'].forEach(function (id) { $(id).disabled = on; });
@@ -460,29 +483,41 @@
   }
 
   function acquire() {
+    contact = CONTACTS[ci]; qso = contact[modeKey]; stats = newStats();
+    copyFails = 0; quipped = false;
     bandNoise(mode.noise, mode.qsb);
     setStatus('SIGNAL');
     var img = $('contactImg');
-    img.style.backgroundImage = 'url(art/contact-xander.webp)'; img.hidden = false;
-    $('noSignal').hidden = true;
+    img.style.backgroundImage = 'url(art/' + contact.portrait + '.webp)'; img.hidden = false;
+    $('noSignal').hidden = true; $('contactName').textContent = '';
     img.classList.remove('flicker'); void img.offsetWidth; img.classList.add('flicker');
+    $('copyIn').value = ''; $('copyMsg').innerHTML = '';     // a fresh page for a new station
     phase = 'rx';
     // The CW starts once Roger has finished talking, so the two never overlap.
-    say('signal', 'excited', function () {
-      setTimeout(function () {
-        openNotebook();                  // copy as you hear it (Tim, 2026-11-06)
-        playCW(mode.rx, mode.fwpm).then(function () {
-          if (phase === 'rx') enterCopy();
-        });
-      }, 500);
-    });
+    say('signal', 'excited', function () { setTimeout(function () { startCopy('rx'); }, 500); });
   }
 
+  // Copy a transmission: their call ('rx') or their sign-off ('signoff').
   // The notebook opens the moment the signal starts, so you can write the
-  // letters down as you hear them instead of copying in your head.
+  // letters down as you hear them (Tim, 2026-11-06). The sign-off goes on
+  // the next line of the same page, and only that part is graded.
+  function startCopy(stage) {
+    copyStage = stage;
+    copyText = stage === 'rx' ? qso.rx : qso.signoff;
+    var ta = $('copyIn');
+    if (ta.value && !/\n$/.test(ta.value)) ta.value += '\n';
+    copyStart = ta.value.length;
+    phase = 'rx';
+    $('submitBtn').disabled = true; $('nextBtn').hidden = true; $('copyMsg').innerHTML = '';
+    copyFails = 0;
+    openNotebook();
+    setStatus('RECEIVING');
+    playCW(copyText, mode.fwpm).then(function () { if (phase === 'rx') enterCopy(); });
+  }
   function openNotebook() {
     var ta = $('copyIn');
     ta.disabled = false; ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
     renderWriting();
   }
   function enterCopy() {
@@ -535,7 +570,7 @@
     // Slower keeps each letter at full speed and adds space between them (Farnsworth).
     var f = slow ? Math.max(3, Math.round(mode.fwpm * 0.6)) : mode.fwpm;
     hush();                              // the signal, not Roger, while you listen
-    playCW(mode.rx, f);
+    playCW(copyText, f);
     $('copyIn').focus();
   }
 
@@ -543,36 +578,41 @@
     if (phase !== 'copy') return;
     stats.decoded = true;
     $('copyMsg').innerHTML = '<div class="r-head">DECODER</div><div class="diff"><span class="ok">' +
-      esc(plain(mode.rx)).replace(/ /g, '&nbsp;') + '</span></div><div class="r-note">Free to use — no penalty.</div>';
-    $('contactName').textContent = 'XANDER';
-    say('noshame', 'amused');
+      esc(plain(copyText)).replace(/ /g, '&nbsp;') + '</span></div><div class="r-note">Free to use — no penalty.</div>';
+    $('contactName').textContent = contact.name;
+    if (copyStage === 'rx') say('noshame', 'amused');
+    showNext();
+  }
+  function showNext() {
+    $('nextBtn').textContent = copyStage === 'rx' ? 'CONTINUE' : 'LOG CONTACT';
     $('nextBtn').hidden = false;
   }
 
   function checkCopy() {
     if (phase !== 'copy') return;
-    var exp = norm(plain(mode.rx)), got = norm($('copyIn').value);
+    var exp = norm(plain(copyText)), got = norm($('copyIn').value.slice(copyStart));
     if (!got) { $('copyIn').focus(); return; }
-    var r = align(exp, got);
-    stats.checks++;
-    if (stats.firstAcc == null) stats.firstAcc = r.acc;
-    stats.bestAcc = Math.max(stats.bestAcc, r.acc);
+    // Spaces don't count: TU73 is as good as TU 73 (Tim, 2026-11-06).
+    var r = align(exp.replace(/ /g, ''), got.replace(/ /g, ''));
+    if (copyStage === 'rx') {
+      if (stats.firstAcc == null) stats.firstAcc = r.acc;
+      stats.bestAcc = Math.max(stats.bestAcc, r.acc);
+    } else stats.signoffAcc = Math.max(stats.signoffAcc || 0, r.acc);
     var pct = Math.round(r.acc * 100);
-    var gotFact = got.indexOf(KEY_FACT) >= 0;
-    // The result shows on the radio-side HUD panel, in the same style as
-    // the transmit results (Tim, 2026-11-06: the red circled score looked
-    // like a supermarket sign): your copy with right letters green, wrong
-    // ones red and a _ where something is missing.
-    $('copyMsg').innerHTML = '<div class="r-head">COPY ACCURACY <b class="' + (r.acc === 1 ? 'good' : gotFact ? 'ok' : 'low') + '">' + pct + '%</b></div>' +
+    // Good enough: the station's name in their call, the 73 in a sign-off.
+    var fact = copyStage === 'rx' ? contact.name : '73';
+    var gotFact = got.indexOf(fact) >= 0;
+    var what = copyStage === 'rx' ? 'you have the station’s name' : 'you have the sign-off';
+    $('copyMsg').innerHTML = '<div class="r-head">' + (copyStage === 'rx' ? 'COPY' : 'SIGN-OFF') + ' ACCURACY <b class="' + (r.acc === 1 ? 'good' : gotFact ? 'ok' : 'low') + '">' + pct + '%</b></div>' +
       '<div class="diff">' + diffHtml(r.ops) + '</div>' +
       '<div class="r-note">' + (r.acc === 1 ? 'Perfect copy.'
-        : gotFact ? 'Good enough — you have the station’s name. Fix it up or continue.'
+        : gotFact ? 'Good enough — ' + what + '. Fix it up or continue.'
         : '<span class="warn">Red is wrong, _ is missing. Try REPLAY or SLOWER.</span>') + '</div>';
     if (gotFact || r.acc === 1) {
-      $('contactName').textContent = 'XANDER';
-      $('nextBtn').hidden = false;
+      $('contactName').textContent = contact.name;
+      showNext();
       $('nextBtn').focus();
-      say('xander', 'amused');
+      if (copyStage === 'rx') say(contact.found, 'amused');
     } else {
       copyFails++;
       if (copyFails >= 2 && !quipped) {
@@ -581,9 +621,12 @@
       }
     }
   }
+  function next() {
+    if (phase !== 'copy') return;
+    if (copyStage === 'rx') enterSend(); else contactDone();
+  }
 
   function enterSend() {
-    if (phase !== 'copy') return;
     phase = 'tx';
     HST.audio.stop();
     $('copyIn').disabled = true;
@@ -593,12 +636,13 @@
     $('copyMsg').textContent = '';
     lockRadio(true);
     $('txPanel').hidden = false;
-    $('txTarget').textContent = plain(mode.tx);
+    $('txTarget').textContent = plain(qso.tx);
     $('txResult').innerHTML = '';
     $('txHelp').textContent = keyHelp();
+    txFailed = false;
     clearSend();
     setStatus('TRANSMIT');
-    say('answer', 'neutral');
+    say('answer', 'neutral');        // cut short as soon as you start keying
   }
 
   function clearSend() {
@@ -614,7 +658,7 @@
     var u = unitMs();
     var wait = Math.max(0, lastUp + 7 * u - performance.now());
     if (wait > 0 && txMarks.length) { setTimeout(checkSend, wait + 20); return; }
-    var want = norm(plain(mode.tx)), sent = norm(live);
+    var want = norm(plain(qso.tx)), sent = norm(live);
     if (!sent) { $('txResult').innerHTML = '<span class="warn">Nothing heard yet — key the message.</span>'; return; }
     stats.sends++;
     // Content: compare without spaces (word spacing is reported, not failed).
@@ -625,10 +669,12 @@
       $('txResult').innerHTML = html;
       finishSend();
     } else {
+      // No voice here: Roger stays quiet while you're keying. Just key it
+      // again -- the next key-down starts a fresh attempt.
+      txFailed = true;
       html += '<div class="diff">' + diffHtml(align(want, sent).ops) + '</div>' +
-        '<div class="warn">Not quite. CLEAR and send it again — he’s still listening.</div>';
+        '<div class="warn">Not quite. Just key it again — they’re still listening.</div>';
       $('txResult').innerHTML = html;
-      say('close', 'frustrated');
     }
   }
 
@@ -646,31 +692,49 @@
     return '<div class="muted">' + parts.join(' · ') + '</div>';
   }
 
+  // Sent correctly: Roger cheers, then they sign off -- and you copy that too.
   function finishSend() {
     phase = 'signoff';
     keyer.reset();
-    say('clean', 'celebrating', function () {
-      setTimeout(function () {
-        setStatus('RECEIVING');
-        playCW(mode.signoff, mode.fwpm).then(function () {
-          say('nicekid', 'neutral', showEnd);
-        });
-      }, 600);
-    });
+    setTimeout(function () { $('txPanel').hidden = true; }, 2500);
+    say('clean', 'celebrating');
+    say('signoffcopy', 'neutral', function () { setTimeout(function () { startCopy('signoff'); }, 400); });
   }
 
-  function showEnd() {
-    phase = 'end';
-    bandNoise(0);
+  // Contact finished: log it, then back to the radio for the next station.
+  function contactDone() {
+    phase = 'logged';
+    HST.audio.stop(); bandNoise(0);
+    $('copyIn').disabled = true; renderWriting();
+    $('nextBtn').hidden = true; $('submitBtn').disabled = true; lockRadio(true);
+    setStatus('STANDBY');
+    var last = ci >= CONTACTS.length - 1;
     var mins = Math.max(1, Math.round((Date.now() - stats.t0) / 60000));
+    $('endTitle').innerHTML = 'CONTACT <span>LOGGED</span>';
     $('endStats').innerHTML =
-      'Mode: ' + mode.label + '<br>' +
-      'Copy accuracy: ' + Math.round((stats.firstAcc || 0) * 100) + '% first try, ' + Math.round(stats.bestAcc * 100) + '% best' +
+      'Station: ' + contact.name + ' &middot; ' + mode.label + '<br>' +
+      'Copy: ' + Math.round((stats.firstAcc || 0) * 100) + '% first try, ' + Math.round(stats.bestAcc * 100) + '% best' +
       (stats.decoded ? ' (decoder used)' : '') + '<br>' +
       'Sending: ' + (stats.sendAcc != null ? Math.round(stats.sendAcc * 100) + '%' : '–') +
       ' in ' + stats.sends + (stats.sends === 1 ? ' try' : ' tries') + '<br>' +
+      'Sign-off copy: ' + (stats.signoffAcc != null ? Math.round(stats.signoffAcc * 100) + '%' : '–') + '<br>' +
       'Time: about ' + mins + ' min';
-    setTimeout(function () { $('endCard').hidden = false; $('againBtn').focus(); }, 800);
+    $('endLede').textContent = last
+      ? 'That’s every station on the bands for now. The Tellura rescue comes next.'
+      : 'Contact ' + (ci + 1) + ' of ' + CONTACTS.length + '. Tellura is still out there.';
+    $('againBtn').textContent = last ? 'PLAY AGAIN' : 'BACK TO THE RADIO';
+    say(last ? 'allheard' : contact.done, 'neutral');
+    setTimeout(function () { $('endCard').hidden = false; $('againBtn').focus(); }, 600);
+  }
+  function backToRadio() {
+    $('endCard').hidden = true;
+    if (ci >= CONTACTS.length - 1) { location.reload(); return; }
+    ci++;
+    hush();
+    $('contactImg').hidden = true; $('noSignal').hidden = false; $('contactName').textContent = '';
+    $('copyMsg').innerHTML = ''; $('freqNum').textContent = '--.----';
+    phase = 'intro';
+    say('rescan', 'neutral', readyToScan);
   }
 
   /* ---------------------------------------------------------------------
@@ -726,14 +790,14 @@
   $('slowBtn').addEventListener('click', function () { replay(true); });
   $('decodeBtn').addEventListener('click', decodeReveal);
   $('submitBtn').addEventListener('click', checkCopy);
-  $('nextBtn').addEventListener('click', enterSend);
+  $('nextBtn').addEventListener('click', next);
   $('txDone').addEventListener('click', checkSend);
   $('txClear').addEventListener('click', function () { clearSend(); $('txResult').innerHTML = ''; });
-  $('againBtn').addEventListener('click', function () { location.reload(); });
+  $('againBtn').addEventListener('click', backToRadio);
   // Quit (Tim, 2026-11-06): confirm, then back to the start screen.
   $('quitBtn').addEventListener('click', function () {
     if (phase === 'start') return;
-    if (phase === 'end') { location.reload(); return; }
+    if (phase === 'logged') { location.reload(); return; }
     $('quitCard').hidden = false; $('quitNo').focus();
   });
   $('quitNo').addEventListener('click', function () { $('quitCard').hidden = true; });

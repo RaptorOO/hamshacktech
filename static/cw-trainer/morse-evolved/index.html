@@ -7,7 +7,7 @@
      out of the app's tabs until Tim says it's ready. -->
 <meta name="robots" content="noindex, nofollow">
 <title>Morse Evolved</title>
-<link rel="preload" href="art/cockpit-neutral.webp" as="image">
+<link rel="preload" href="art/ship-neutral.webp" as="image">
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="game.css">
 </head>
@@ -37,10 +37,10 @@
     <!-- Backgrounds, not <img> (Tim, 2026-11-06): Edge's "Image Magnify"
          opens any picture under the mouse when Ctrl is tapped twice, and
          key adapters send Ctrl for every dit and dah. -->
-    <div class="pose on" data-pose="neutral" style="background-image:url(art/cockpit-neutral.webp)"></div>
-    <div class="pose" data-pose="excited" style="background-image:url(art/cockpit-excited.webp)"></div>
-    <div class="pose" data-pose="frustrated" style="background-image:url(art/cockpit-frustrated.webp)"></div>
-    <div class="pose" data-pose="amused" style="background-image:url(art/cockpit-amused.webp)"></div>
+    <div class="pose on" data-pose="neutral" style="background-image:url(art/ship-neutral.webp)"></div>
+    <div class="pose" data-pose="excited" style="background-image:url(art/ship-excited.webp)"></div>
+    <div class="pose" data-pose="frustrated" style="background-image:url(art/ship-frustrated.webp)"></div>
+    <div class="pose" data-pose="amused" style="background-image:url(art/ship-amused.webp)"></div>
     <canvas id="sparks" width="1280" height="720"></canvas>
     <div class="flicker-light"></div>
   </div>
@@ -195,9 +195,9 @@
 <!-- End of the slice -->
 <div class="overlay" id="endCard" hidden>
   <div class="card">
-    <h1>CONTACT <span>LOGGED</span></h1>
+    <h1 id="endTitle">CONTACT <span>LOGGED</span></h1>
     <div id="endStats"></div>
-    <p class="lede">That's the first contact. More stations and the Tellura rescue come next.</p>
+    <p class="lede" id="endLede"></p>
     <div class="start-actions">
       <a class="btn ghost" href="../">EXIT</a>
       <button id="againBtn" class="btn big">PLAY AGAIN</button>
