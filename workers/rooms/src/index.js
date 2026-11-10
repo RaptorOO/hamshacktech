@@ -14,7 +14,7 @@
    (functions/rooms/[[path]].js) that holds a binding to this class.
 
    Messages are small JSON objects with a "t" (type) field:
-     app -> room   ping, start, pick, len, answer, clear, chat, skip, kick, end, pause, resume
+     app -> room   ping, start, pick, len, answer, clear, chat, skip, kick, end, close, pause, resume
      room -> app   pong, state, clue, deadline, reveal, chat, nudge, kicked, error
    ===================================================================== */
 
@@ -253,6 +253,7 @@ export class Room {
       case 'resume': if (isHost) this.resume(); return;
       case 'kick': if (isHost && m.pid !== pid) this.kick(m.pid); return;
       case 'end': if (isHost) this.gameOver(); return;
+      case 'close': if (isHost) this.closeRoom(); return;
     }
   }
 
@@ -553,6 +554,17 @@ export class Room {
     this.s.clue = null;
     this.save();
     this.broadcastState();
+  }
+
+  // The host closes the room (after Game Over, when the wrap-up chat is
+  // done): everyone's connection ends and the room, chat included, is gone.
+  async closeRoom() {
+    Object.keys(this.timers).forEach((n) => this.cancel(n));
+    this.s = null;
+    this.sockets.forEach((ws) => { try { ws.close(4004, 'Closed by host'); } catch (e) {} });
+    this.sockets.clear();
+    await this.ctx.storage.deleteAlarm();
+    await this.ctx.storage.deleteAll();
   }
 
   /* ---------------- sending ---------------- */

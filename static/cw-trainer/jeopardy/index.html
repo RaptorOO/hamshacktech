@@ -404,6 +404,12 @@
   .launch-card .steps li::marker { color: var(--gold); font-family: "Oswald", sans-serif; font-weight: 600; }
   .launch-card .steps b { color: var(--cream); }
   .modal.gameover .modal-actions { justify-content: center; }
+  /* Online, Game Over sits over the board only, so the players can keep
+     chatting beside it until the host closes the room (Tim, 2026-11-09). */
+  .modal-back.in-board { position: absolute; inset: 0; z-index: 9; border-radius: 16px; padding: 8px; }
+  .modal-back.in-board .modal.gameover { max-height: 100%; padding: 18px 20px; }
+  .modal-back.in-board .modal.gameover h2 { font-size: 40px; }
+  .modal.gameover p.go-chat-note { font-size: 14px; color: var(--muted); margin-top: 12px; }
 
   /* =================== Online rooms (online.js) =================== */
   [hidden] { display: none !important; }
@@ -836,7 +842,9 @@
     <div class="modal-actions">
       <button class="btn" id="playAgain">New Game</button>
       <button class="btn ghost on-only" id="goLeave">Leave room</button>
+      <button class="btn ghost on-only" id="goClose" hidden>Close room</button>
     </div>
+    <p class="small on-only-b go-chat-note">The chat stays open until the host closes the room.</p>
   </div>
 </div>
 

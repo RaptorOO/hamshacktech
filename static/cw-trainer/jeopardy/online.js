@@ -241,6 +241,7 @@
       O.ws = null;
       if (O.closedForGood) return;
       if (ev.code === 4003) { leave('The host removed you from the room.'); return; }
+      if (ev.code === 4004) { leave(isHost() ? '' : 'The host closed the room.'); return; }
       if (ev.code === 4001) { setConn('This room is open on another screen.'); return; }
       reconnectLater();
     };
@@ -303,6 +304,10 @@
     el('gameOverModal').classList.remove('show');
     hideClueNow();
     el('pauseBtn').hidden = true;    // online, only the host gets it (gotState)
+    // Game Over covers only the board, so the chat beside it stays usable.
+    const go = el('gameOverModal');
+    go.classList.add('in-board');
+    document.querySelector('.stage-frame').appendChild(go);
     el('roomCode').textContent = O.room.code;
     if (!O.keyerOn) startKeyer();
   }
@@ -323,7 +328,9 @@
     showPaused(false);
     el('pauseBtn').hidden = true;
     el('chatLog').innerHTML = ''; el('chatInput').value = '';
-    el('gameOverModal').classList.remove('show');
+    const go = el('gameOverModal');
+    go.classList.remove('show', 'in-board');
+    document.body.insertBefore(go, el('speedModal'));
     el('myScoreValue').textContent = money(0);
     loadPools();
     showIdleBoard();
@@ -355,6 +362,7 @@
     } else el('gameOverModal').classList.remove('show');
     el('hostSkip').hidden = !isHost() || m.phase !== 'pick' || !!m.paused;
     el('hostEnd').hidden = !isHost() || m.phase === 'over' || m.phase === 'lobby';
+    el('goClose').hidden = !isHost();
     // Pause: the host's button, everyone's "Paused" card.
     const canPause = isHost() && (m.phase === 'pick' || m.phase === 'clue' || m.phase === 'reveal');
     el('pauseBtn').hidden = !isHost() || (!canPause && !m.paused);
@@ -939,6 +947,14 @@
       if (isHost()) startGame(); else el('gameOverModal').classList.remove('show');
     }, true);
     el('goLeave').addEventListener('click', () => leave());
+    // The host closes the room for everyone (the chat goes with it).
+    el('goClose').addEventListener('click', (e) => {
+      const b = e.currentTarget;
+      if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Tap again to close'; setTimeout(() => { b.dataset.sure = ''; b.textContent = 'Close room'; }, 3000); return; }
+      send({ t: 'close' });
+      // The room answers by closing every connection (code 4004); if it doesn't, leave anyway.
+      setTimeout(() => { if (O.active) leave(); }, 3000);
+    });
   }
 
   /* ---------------- start-up ---------------- */
