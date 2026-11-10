@@ -126,6 +126,16 @@
   }
   .info-dialog .btn-secondary { width: auto; padding: 8px 22px; }
 
+  /* How-to video popup (Tim, 2026-11-09, same as ICR's). The video lives at
+     /videos/, outside /cw-trainer/, so the service worker doesn't put it in
+     everyone's offline copy; preload="none" means nothing downloads until Play. */
+  .info-dialog.video-dialog { max-width: 860px; padding: 18px 18px 14px; }
+  .video-dialog video {
+    display: block; width: 100%; aspect-ratio: 16 / 9; height: auto;
+    background: #000; border-radius: 8px; margin: 0 0 14px;
+  }
+  .video-dialog .timer-actions { justify-content: flex-end; }
+
   /* ---------------------------------------------------------------------
      Session clock row — [Elapsed stopwatch] [Practice Timer button]
      Sits at the very top of the practice panel. Both read like small
@@ -799,6 +809,18 @@
     <button type="button" class="btn-secondary" id="infoCloseBtn">Close</button>
   </dialog>
 
+  <dialog class="info-dialog video-dialog" id="videoDialog" aria-labelledby="videoTitle">
+    <h2 id="videoTitle">How to use Call Signs</h2>
+    <!-- No Download item in the player's menu, and no right-click "Save video
+         as" (as on ICR): stops casual saving, not a determined copier. -->
+    <video id="howToVideo" controls controlslist="nodownload" playsinline preload="none" poster="/videos/call-signs-how-to.jpg">
+      <source src="/videos/call-signs-how-to.mp4?v=1" type="video/mp4">
+    </video>
+    <div class="timer-actions">
+      <button type="button" class="btn-secondary" id="videoCloseBtn">Close</button>
+    </div>
+  </dialog>
+
   <dialog class="info-dialog" id="timerDialog" aria-labelledby="timerDialogTitle">
     <h2 id="timerDialogTitle">Practice Timer</h2>
     <p>Pick how long to practice. The countdown starts with <strong>Start Session</strong>;
@@ -863,6 +885,11 @@
           <span>Score</span>
           <span class="clock-val" id="scoreVal">0</span>
         </div>
+        <!-- The how-to video: a narrated walkthrough of this page. -->
+        <button type="button" class="info-btn" id="videoBtn" aria-haspopup="dialog" aria-controls="videoDialog"
+                aria-label="Watch the how-to video" title="Watch the how-to video">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+        </button>
         <button type="button" class="info-btn" id="infoBtn" aria-haspopup="dialog" aria-controls="infoDialog" aria-label="About this trainer" title="About this trainer">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
         </button>
@@ -1276,7 +1303,8 @@
    "headCopyBtn", "headCopyState", "replayBtn", "nextBtn", "elapsedChip", "elapsedVal", "timerBtn", "timerVal",
    "buzzBtn", "buzzVal", "speedChip", "speedVal", "scoreChip", "scoreVal",
    "timerDialog", "timerPresets", "timerInput", "timerSetBtn", "timerOffBtn", "timerCancelBtn",
-   "infoBtn", "infoDialog", "infoCloseBtn", "modeBar", "modeDesc",
+   "infoBtn", "infoDialog", "infoCloseBtn", "videoBtn", "videoDialog", "howToVideo", "videoCloseBtn",
+   "modeBar", "modeDesc",
    "callMixField", "callMixSelect", "runFields", "runCallsSelect", "runAdaptSelect",
    "wpmField", "wpmLabel", "wpmRange", "wpmVal", "fwpmField", "fwpmRange", "fwpmVal",
    "simFields", "simMinRange", "simMinVal", "simMaxRange", "simMaxVal", "fullSpeedNote",
@@ -2089,6 +2117,21 @@
   els.infoBtn.addEventListener("click", function () { els.infoDialog.showModal(); });
   els.infoCloseBtn.addEventListener("click", function () { els.infoDialog.close(); });
   els.infoDialog.addEventListener("click", function (e) { if (e.target === els.infoDialog) els.infoDialog.close(); });
+
+  // The clapboard beside it: the how-to video popup. A running session (or
+  // its countdown) stops first so its calls don't play over the narration;
+  // closing the popup (Close, Escape or the backdrop) pauses the video.
+  els.videoBtn.addEventListener("click", function () {
+    if (counting()) cancelCountdown();
+    else if (state.running) stopSession();
+    els.videoDialog.showModal();
+  });
+  els.videoCloseBtn.addEventListener("click", function () { els.videoDialog.close(); });
+  els.videoDialog.addEventListener("click", function (e) {
+    if (e.target === els.videoDialog) els.videoDialog.close();
+  });
+  els.videoDialog.addEventListener("close", function () { els.howToVideo.pause(); });
+  els.howToVideo.addEventListener("contextmenu", function (e) { e.preventDefault(); });
 
   els.sessionBtn.addEventListener("click", function () {
     if (counting()) cancelCountdown();

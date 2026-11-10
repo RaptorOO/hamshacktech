@@ -17,13 +17,13 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = 'a70eaf8b071a';
+const VERSION = 'c1535a4f646c';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline, each with its fingerprint (see
 // fingerprint() in the build script).
 const PRECACHE = [
-  ['/cw-trainer/call-signs/', 'c2b27ca2ee934c13'],
+  ['/cw-trainer/call-signs/', 'c88f81cbbfbe69c7'],
   ['/cw-trainer/code-groups/', '4d4c47863de799cf'],
   ['/cw-trainer/code-groups/speed-practice.js', 'e5b592ae9aa63fd0'],
   ['/cw-trainer/course/', '2ff69283007c8cee'],
