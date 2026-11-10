@@ -651,7 +651,11 @@
       else if (s > now) tag = '<span class="air-tag soon">in ' + esc(inWords(s - now)) + '</span>';
       else tag = '<span class="air-tag done">Ended</span>';
     }
+    // Just the first sentence of the calendar text (Tim, 2026-11-10): e.g. "CWops Test:
+    // one hour; everyone welcome, members or not." The rest is on the More Info page.
     var first = (e.details || '').split('\n')[0];
+    var m = first.match(/^.*?[.!?](?=\s|$)/);
+    if (m) first = m[0];
     return '<li class="' + (!e.allDay && en <= now ? 'past' : '') + '"><div class="air-time">' + time + '</div>' +
       '<div class="air-what"><b>' + esc(e.title) + '</b>' + tag +
       (e.location ? '<div class="where">' + esc(e.location) + '</div>' : '') +

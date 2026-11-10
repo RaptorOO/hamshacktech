@@ -978,7 +978,9 @@
   // Your key: in Settings, and as a chip; the button opens the app's Keyer Setup.
   function renderKey() {
     var s = cfg();
-    $('setupText').innerHTML = '<strong>' + esc(ADAPTER_NAMES[s.adapter]) + '</strong> · ' + esc(KEY_NAMES[s.keyType]) + (s.keyType === 'straight' ? '' : ' · ' + sendWpm() + ' WPM');
+    // The radio keys like a straight key, but saying so alarmed students (Tim, 2026-11-10).
+    $('setupText').innerHTML = s.adapter === 'radio' ? '<strong>Radio sidetone input</strong>'
+      : '<strong>' + esc(ADAPTER_NAMES[s.adapter]) + '</strong> · ' + esc(KEY_NAMES[s.keyType]) + (s.keyType === 'straight' ? '' : ' · ' + sendWpm() + ' WPM');
     var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     $('pads').hidden = !(touch || s.adapter === 'keyboard');
     $('padDit').textContent = s.keyType === 'straight' ? 'KEY' : (s.reversed ? 'DAH' : 'DIT');
@@ -1014,7 +1016,7 @@
       band.length ? band.join(' · ') : 'Band noise off',
       prefs.showText ? 'Their text after each over' : '',
       prefs.record ? 'Record every contact' : '',
-      { t: ADAPTER_SHORT[k.adapter] + ' · ' + KEY_SHORT[k.keyType], key: true }
+      { t: k.adapter === 'radio' ? 'Radio sidetone input' : ADAPTER_SHORT[k.adapter] + ' · ' + KEY_SHORT[k.keyType], key: true }
     ];
   };
 
