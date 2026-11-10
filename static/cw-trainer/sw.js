@@ -17,7 +17,7 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = '67a2830af933';
+const VERSION = '49dfdaa87cca';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline, each with its fingerprint (see
@@ -63,7 +63,7 @@ const PRECACHE = [
   ['/cw-trainer/keyer/', 'd3fbc37c8d7663b2'],
   ['/cw-trainer/manifest.webmanifest', '95ad85868753605c'],
   ['/cw-trainer/progress/', '7875202f78b9e4b7'],
-  ['/cw-trainer/qso/', '1aae5c19ed3b6ab8'],
+  ['/cw-trainer/qso/', 'b4342f0b30e2c95a'],
   ['/cw-trainer/shared/hst-account.js', '091baa09acb4ba06'],
   ['/cw-trainer/shared/hst-chrome.css', '68d59b0e50762a21'],
   ['/cw-trainer/shared/hst-content.js', '98f9e954ad3f2732'],
