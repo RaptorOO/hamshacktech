@@ -17,7 +17,7 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = '4bebc6984485';
+const VERSION = '9e20cbf69c27';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline, each with its fingerprint (see
@@ -56,14 +56,14 @@ const PRECACHE = [
   ['/cw-trainer/icons/apple-touch-icon.png', '6877a92df205dbd5'],
   ['/cw-trainer/icons/favicon-32x32.png', '5cc015c2d45188f7'],
   ['/cw-trainer/icr/', '5b6bf292fceadb70'],
-  ['/cw-trainer/', 'ec0cf76594232e9a'],
+  ['/cw-trainer/', 'c7af0e1886c9f159'],
   ['/cw-trainer/jeopardy/answers.js', 'cb648e2391934f83'],
-  ['/cw-trainer/jeopardy/', '29f360cb7ba63136'],
-  ['/cw-trainer/jeopardy/online.js', 'da639ac678f9f62d'],
-  ['/cw-trainer/keyer/', 'd3fbc37c8d7663b2'],
+  ['/cw-trainer/jeopardy/', 'bcdde0d5a78a0608'],
+  ['/cw-trainer/jeopardy/online.js', '6d3d9b56a10987cc'],
+  ['/cw-trainer/keyer/', '6055698589d548a0'],
   ['/cw-trainer/manifest.webmanifest', '95ad85868753605c'],
   ['/cw-trainer/progress/', '7875202f78b9e4b7'],
-  ['/cw-trainer/qso/', 'b4342f0b30e2c95a'],
+  ['/cw-trainer/qso/', '9e6d1375784e1de7'],
   ['/cw-trainer/shared/hst-account.js', '091baa09acb4ba06'],
   ['/cw-trainer/shared/hst-chrome.css', '68d59b0e50762a21'],
   ['/cw-trainer/shared/hst-content.js', '98f9e954ad3f2732'],
@@ -72,11 +72,11 @@ const PRECACHE = [
   ['/cw-trainer/shared/hst-course.js', '51c3d3fe0d6f9411'],
   ['/cw-trainer/shared/hst-engine.js', '5f990c4ce95011f0'],
   ['/cw-trainer/shared/hst-file-lengths.js', '571bfcfe489fd454'],
-  ['/cw-trainer/shared/hst-keyer.js', 'd2ef1aeda8286a72'],
+  ['/cw-trainer/shared/hst-keyer.js', 'd1b5e491956deab6'],
   ['/cw-trainer/shared/hst-listen.js', '098e02d85b32b8fa'],
   ['/cw-trainer/shared/hst-qso.js', '4e96bd2ce0383e93'],
   ['/cw-trainer/shared/hst-radio-worklet.js', '539ee206f41f6a39'],
-  ['/cw-trainer/shared/hst-radio.js', '5f6a9d9a128f8716'],
+  ['/cw-trainer/shared/hst-radio.js', '9d7bf551a2fee67b'],
   ['/cw-trainer/test-prep/', 'bcb9f032ed1f7fd7'],
   ['/cw-trainer/voice/0.mp3', 'ea20ba8761f91986'],
   ['/cw-trainer/voice/1.mp3', '39ea752ce884db07'],

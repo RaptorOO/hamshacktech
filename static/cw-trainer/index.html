@@ -586,7 +586,7 @@
     <div class="meter-scale" aria-hidden="true"><span>Input level</span><span>yellow line = key down</span></div>
     <p class="kstatus" id="kRadioPitch">Send a long dah or two: the app finds your sidetone&rsquo;s pitch by itself.</p>
     <p class="hint">Turn the radio&rsquo;s sidetone up until the meter passes the yellow line when you key, and set the interface&rsquo;s input gain so it stays out of the red. <button class="linkish" id="kRadioRepitch" type="button">Find the pitch again</button></p>
-    <p class="hint">For now the radio sidetone works here, in Test your key. The practice tools still use your adapter or keyboard.</p>
+    <p class="hint">Keyer Practice, QSO Practice and Jeopardy listen to your radio too, while they&rsquo;re on screen.</p>
   </div>
   <!-- Vail adapter, Chrome/Edge: let the app set the adapter's speed (HST.vailSpeed). -->
   <div id="kSpeedSync" hidden>
@@ -1151,10 +1151,14 @@
     renderFollow();
   });
 
-  // Radio sidetone: kept in HST.radioInput.prefs, not HST.keyerSettings, so
-  // the practice tools keep the adapter chosen before (they don't listen to
-  // the radio yet). The radio does the keying: its tone is a straight key.
-  function radioMode() { return HST.radioInput.supported() && HST.radioInput.prefs.get().on; }
+  // Radio sidetone: the adapter 'radio' in HST.keyerSettings (2026-11-10;
+  // the first version kept it apart, in HST.radioInput.prefs, while only
+  // this panel used it). The radio does the keying: its tone is a straight key.
+  function radioMode() { return HST.radioInput.supported() && HST.keyerSettings.get().adapter === 'radio'; }
+  if (HST.radioInput.prefs.get().on) {
+    HST.radioInput.prefs.set({ on: false });
+    if (HST.radioInput.supported()) HST.keyerSettings.set({ adapter: 'radio' });
+  }
 
   function renderKeyer(s) {
     var radio = radioMode();
@@ -1307,7 +1311,8 @@
   function openKeyer() {
     if (dlg.open) dlg.close();
     HST.audio.unlock();                     // allowed here: this runs from a click
-    keyer = HST.createKeyer({ key: onKey, raw: onRaw, midiLog: onMidiLog, keyLog: onKeyLog });
+    // noRadio: this panel listens to the radio itself (startRadio), with its meter.
+    keyer = HST.createKeyer({ key: onKey, raw: onRaw, midiLog: onMidiLog, keyLog: onKeyLog, noRadio: true });
     midiLog = [];
     decoder = HST.createDecoder({
       unitMs: function () { return 1200 / HST.keyerSettings.get().wpm; },
@@ -1508,17 +1513,14 @@
     var v = e.target.value;
     if (v === 'radio') {
       if (!HST.radioInput.supported()) { radioStatus('This browser can’t listen to an audio input. Use Chrome, Edge, Firefox or Safari.', true); e.target.value = HST.keyerSettings.get().adapter; return; }
-      if (keyer) keyer.reset();
-      if (decoder) decoder.reset();
-      HST.radioInput.prefs.set({ on: true });
-      renderKeyer(HST.keyerSettings.get());
+      setKeyer({ adapter: 'radio' }); syncMidi();
       startRadio();
       return;
     }
     var wasRadio = radioMode();
-    HST.radioInput.prefs.set({ on: false });
+    setKeyer({ adapter: v });
     if (wasRadio) stopRadio();
-    setKeyer({ adapter: v }); syncMidi();
+    syncMidi();
   });
   $('kInput').addEventListener('change', function (e) { setKeyer({ input: e.target.value }); syncMidi(); });
   $('kType').addEventListener('change', function (e) { setKeyer({ keyType: e.target.value }); });
