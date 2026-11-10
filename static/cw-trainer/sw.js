@@ -17,7 +17,7 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = 'a4c151b31845';
+const VERSION = '705aab6eda7e';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline, each with its fingerprint (see
@@ -50,7 +50,7 @@ const PRECACHE = [
   ['/cw-trainer/fonts/source-sans-3-latin-400-normal.woff2', '0f73f35e08cde0a2'],
   ['/cw-trainer/fonts/source-sans-3-latin-600-normal.woff2', '14527d193b0e30bc'],
   ['/cw-trainer/fonts/source-sans-3-latin-700-normal.woff2', 'ae35266f2ab0d531'],
-  ['/cw-trainer/home/', 'd91c12836a5e5050'],
+  ['/cw-trainer/home/', '579e5daf3676b52d'],
   ['/cw-trainer/icons/android-chrome-192x192.png', '2876ba447f3fad3c'],
   ['/cw-trainer/icons/android-chrome-512x512.png', '0af384dbeded6f44'],
   ['/cw-trainer/icons/apple-touch-icon.png', '6877a92df205dbd5'],
