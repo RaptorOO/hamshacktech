@@ -17,7 +17,7 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = '8c2dde4eb2b3';
+const VERSION = 'a4c151b31845';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline, each with its fingerprint (see
@@ -59,11 +59,11 @@ const PRECACHE = [
   ['/cw-trainer/', '7eb5d111fd40791c'],
   ['/cw-trainer/jeopardy/answers.js', 'cb648e2391934f83'],
   ['/cw-trainer/jeopardy/', 'bcdde0d5a78a0608'],
-  ['/cw-trainer/jeopardy/online.js', '6d3d9b56a10987cc'],
-  ['/cw-trainer/keyer/', '6055698589d548a0'],
+  ['/cw-trainer/jeopardy/online.js', '9849a535bd3188b9'],
+  ['/cw-trainer/keyer/', 'd30ead13badbb582'],
   ['/cw-trainer/manifest.webmanifest', '95ad85868753605c'],
   ['/cw-trainer/progress/', '7875202f78b9e4b7'],
-  ['/cw-trainer/qso/', '9e6d1375784e1de7'],
+  ['/cw-trainer/qso/', '291cc1bf915c3e0f'],
   ['/cw-trainer/shared/hst-account.js', 'c1a67c92f0d5748b'],
   ['/cw-trainer/shared/hst-chrome.css', '68d59b0e50762a21'],
   ['/cw-trainer/shared/hst-content.js', '98f9e954ad3f2732'],

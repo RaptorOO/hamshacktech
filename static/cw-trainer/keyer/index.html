@@ -1650,7 +1650,9 @@
   // Key setup chip; opens the app's Keyer Setup panel (in the app shell).
   function renderSetup() {
     var s = cfg();
-    $('setupText').innerHTML = '<strong>' + esc(ADAPTER_NAMES[s.adapter]) + '</strong> · ' + esc(KEY_NAMES[s.keyType]);
+    // The radio keys like a straight key, but saying so alarmed students (Tim, 2026-11-10).
+    $('setupText').innerHTML = s.adapter === 'radio' ? '<strong>Radio sidetone input</strong>'
+      : '<strong>' + esc(ADAPTER_NAMES[s.adapter]) + '</strong> · ' + esc(KEY_NAMES[s.keyType]);
     renderConsole();
     var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     $('pads').hidden = !(touch || s.adapter === 'keyboard');
@@ -1765,7 +1767,7 @@
       prefs.mode === 'echo' ? 'Hear ' + echoWpm() + (echoFwpm() ? '/' + echoFwpm() : '') + ' WPM' : '',
       prefs.mode === 'copy' && prefs.showCode ? 'Morse patterns' : '',
       sh.toneHz + ' Hz \u00b7 ' + sh.volume + '%',
-      { t: ADAPTER_SHORT[k.adapter] + ' \u00b7 ' + KEY_SHORT[k.keyType], key: true }
+      { t: k.adapter === 'radio' ? 'Radio sidetone input' : ADAPTER_SHORT[k.adapter] + ' \u00b7 ' + KEY_SHORT[k.keyType], key: true }
     ];
   };
 
