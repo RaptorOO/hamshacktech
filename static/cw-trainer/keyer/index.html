@@ -201,6 +201,17 @@
   @media (max-width: 560px) {
     .tch b { font-size: 2.3rem; }
   }
+
+  /* How-to video popup (Tim, 2026-11-09, as on ICR, Code Groups and Call Signs).
+     The video lives at /videos/, outside /cw-trainer/, so the service worker
+     doesn't put it in everyone's offline copy; preload="none" means nothing
+     downloads until Play. */
+  body.cl dialog.cl-dlg.video-dialog { max-width: 860px; padding: 18px 18px 14px; }
+  .video-dialog video {
+    display: block; width: 100%; aspect-ratio: 16 / 9; height: auto;
+    background: #000; border-radius: 8px; margin: 0 0 14px;
+  }
+  .video-dialog .cl-dlg-btns { justify-content: flex-end; }
 </style>
 <link rel="stylesheet" href="../shared/hst-copy.css">
 </head>
@@ -239,6 +250,11 @@
           <span class="rec-dot" aria-hidden="true"></span>
           <span>Record</span>
           <span class="clock-val" id="recVal">Off</span>
+        </button>
+        <!-- The how-to video: a narrated walkthrough of this page. -->
+        <button type="button" class="info-btn" id="videoBtn" data-cl-dialog="videoDialog" aria-haspopup="dialog" aria-controls="videoDialog"
+                aria-label="Watch the how-to video" title="Watch the how-to video">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
         </button>
         <button type="button" class="info-btn" id="infoBtn" data-cl-dialog="infoDialog" aria-haspopup="dialog" aria-controls="infoDialog" aria-label="How Keyer Practice works" title="How this works">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11.5"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
@@ -432,6 +448,17 @@
   <p><strong>With paddles</strong> the keyer makes perfect dits and dahs, so the useful feedback is spacing and which letters came out wrong. <strong>With a straight key or bug</strong> you form the elements yourself, so you&rsquo;ll also see your dah-to-dit ratio (ideally 3:1).</p>
   <p><strong>Elapsed</strong> counts up from your first dit. Tap <strong>Timer</strong> to choose how long to practice; the countdown starts when you start sending, and when it runs out a bell rings and the session ends. <strong>Record</strong> saves your sending as a sound file when you tap it again.</p>
   <p>Sessions are saved to Progress when you press Reset, switch modes or switch to another tool.</p>
+  <div class="cl-dlg-btns"><button type="button" class="cl-dlg-main" data-cl-dialog-close>Close</button></div>
+</dialog>
+
+<!-- How-to video (the clapboard in the strip). No Download item in the
+     player's menu, and no right-click "Save video as" (as on ICR): stops
+     casual saving, not a determined copier. -->
+<dialog class="cl-dlg video-dialog" id="videoDialog" aria-labelledby="videoTitle">
+  <h2 id="videoTitle">How to use Keyer Practice</h2>
+  <video id="howToVideo" controls controlslist="nodownload" playsinline preload="none" poster="/videos/keyer-practice-how-to.jpg">
+    <source src="/videos/keyer-practice-how-to.mp4?v=1" type="video/mp4">
+  </video>
   <div class="cl-dlg-btns"><button type="button" class="cl-dlg-main" data-cl-dialog-close>Close</button></div>
 </dialog>
 
@@ -1452,6 +1479,13 @@
     renderSession();
   }
   // Reset: save the session to Progress and start This Session over.
+  // The how-to video (the clapboard; hst-copy.js opens and closes the popup).
+  // Opening it ends the session, so an Echo word doesn't play over the
+  // narration; closing it (Close, Escape or the backdrop) pauses the video.
+  $('videoBtn').addEventListener('click', function () { endSession(); });
+  $('videoDialog').addEventListener('close', function () { $('howToVideo').pause(); });
+  $('howToVideo').addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
   $('resetBtn').addEventListener('click', function () {
     endSession();
     tallyReset(); renderSession(); hideResult();
