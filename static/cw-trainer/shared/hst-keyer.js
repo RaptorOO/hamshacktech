@@ -58,7 +58,9 @@
 
   /* =====================================================================
      KEYER SETTINGS
-       adapter   'vail' | 'vband' | 'keyboard' (no adapter)
+       adapter   'vail' | 'vband' | 'keyboard' (no adapter) |
+                 'radio' (the radio's sidetone through an audio input,
+                 see hst-radio.js; it keys like a straight key)
        input     'keyboard' | 'midi'   (MIDI is a Vail-adapter option)
        keyType   'iambicB' (default) | 'iambicA' | 'straight' | 'bug'
        reversed  swap dit and dah (e.g. left-handed operators)
@@ -66,6 +68,10 @@
        weight    dah length in dits: always the standard 3.0 (the
                  adjustable "Dah length" setting was removed 2026-10-10)
        sidetone  play a tone while the key is down
+       radioSidetone  with the radio sidetone input: play the app's tone
+                 as well as the radio's (off unless chosen; Tim, 2026-11-10)
+       keyTypeBefore  the key type chosen before switching to the radio,
+                 given back when switching away from it
      ===================================================================== */
   /* MIDI input is switched OFF for now (2026-10-09). In testing with a
      Vail adapter, the app's MIDI connection left the adapter unresponsive
@@ -80,14 +86,30 @@
 
   HST.keyerSettings = makeStore('hct-cw-keyer-v1', function (o) {
     var startWpm = (HST.shared && HST.shared.get().wpm) || 20;
+    var TYPES = ['iambicB', 'iambicA', 'straight', 'bug'];
+    var adapter = pick(o.adapter, ['vail', 'vband', 'keyboard', 'radio'], 'vail');
+    var keyType = pick(o.keyType, TYPES, 'iambicB');
+    var before = pick(o.keyTypeBefore, TYPES, '');
+    // The radio does the keying (the student's own key, through the radio's
+    // keyer or not): its tone starting and stopping is a straight key to
+    // every tool. The key type chosen before comes back when leaving it.
+    if (adapter === 'radio') { if (keyType !== 'straight') before = keyType; keyType = 'straight'; }
+    else if (before) {
+      // Leaving the radio: its "straight" goes back to what was chosen
+      // before, unless a different key type was just chosen with it.
+      if (keyType === 'straight') keyType = before;
+      before = '';
+    }
     return {
-      adapter: pick(o.adapter, ['vail', 'vband', 'keyboard'], 'vail'),
+      adapter: adapter,
       input: HST.MIDI_ENABLED ? pick(o.input, ['keyboard', 'midi'], 'keyboard') : 'keyboard',
-      keyType: pick(o.keyType, ['iambicB', 'iambicA', 'straight', 'bug'], 'iambicB'),
+      keyType: keyType,
+      keyTypeBefore: before,
       reversed: !!o.reversed,
       wpm: Math.round(num(o.wpm, 5, 40, startWpm)),
       weight: 3,   // standard dah = 3 dits; an older saved custom value is ignored
-      sidetone: o.sidetone !== false
+      sidetone: o.sidetone !== false,
+      radioSidetone: !!o.radioSidetone
     };
   });
 
@@ -251,13 +273,16 @@
       osc.start();
       side = { ctx: ctx, osc: osc, g: g, heard: heard, recOnly: recOnly };
     }
-    var on = !!HST.keyerSettings.get().sidetone;
+    var on = !!sidetoneOn(HST.keyerSettings.get());
     side.heard.gain.value = on ? 1 : 0;
     side.recOnly.gain.value = on ? 0 : 1;
     return side;
   }
-  // Make the sidetone: when it's on, or a recording is running.
-  function sounding() { return HST.keyerSettings.get().sidetone || HST.audio.recording(); }
+  // Make the sidetone: when it's on, or a recording is running. With the
+  // radio sidetone input the radio makes the beep, so the app's own tone
+  // plays only if chosen for the radio (radioSidetone).
+  function sidetoneOn(c) { return c.adapter === 'radio' ? c.radioSidetone : c.sidetone; }
+  function sounding() { return sidetoneOn(HST.keyerSettings.get()) || HST.audio.recording(); }
   function sidePeak() { return (HST.shared.get().volume / 100) * 0.35; }  // same loudness as the trainers
   var EDGE = 0.004;                   // 4 ms rise/fall
 
@@ -302,9 +327,13 @@
        var k = HST.createKeyer({
          key: function (down, t) {...},    // keyed signal: key down/up at time t (ms, performance.now clock)
          raw: function (info) {...},       // every physical input, for the test panel
-         wpm: function () {...}            // optional: keyer speed to use instead of Keyer Setup's
+         wpm: function () {...},           // optional: keyer speed to use instead of Keyer Setup's
+         radio: function (msg, warn) {...} // optional: the radio input's state, to show
+         noRadio: true,                    // optional: don't listen to the radio (Keyer Setup)
+         radioWanted: function () {...}    // optional: false while the tool has no use for it
        });
-       k.attachKeyboard(window)  -> detach function
+       k.attachKeyboard(window)  -> detach function (also listens to the
+                                    radio, when that's the adapter)
        k.attachMidi()            -> Promise of { ok, msg, names }
        k.touch('dit'|'dah', down)   on-screen paddles
        k.reset()                 stop everything (closing the panel, switching tabs)
@@ -324,6 +353,46 @@
 
      STRAIGHT KEY: the sound follows the key exactly.
      ===================================================================== */
+  /* Call fn every ms milliseconds, from a tiny worker. Not setInterval:
+     Chrome reuses a finished timer's number for the next new timer, so a
+     page that later clears a timer number it kept from before (common, and
+     harmless otherwise) can cancel an unrelated interval -- that silently
+     stopped the radio check in testing (2026-11-10). A worker's timer is
+     out of the page's reach. Falls back to setInterval if a worker can't
+     be made. Returns a function that stops it. */
+  function ticker(fn, ms) {
+    try {
+      var url = URL.createObjectURL(new Blob(['setInterval(function () { postMessage(0); }, ' + ms + ');'], { type: 'text/javascript' }));
+      var w = new Worker(url);   // (url not revoked: some browsers fetch the script later)
+      w.onmessage = function () { fn(); };
+      return function () { w.terminate(); };
+    } catch (e) {
+      var id = setInterval(fn, ms);
+      return function () { clearInterval(id); };
+    }
+  }
+
+  /* The radio input's state, shown in a small note at the bottom of a
+     tool (unless the tool shows it itself, h.radio). A problem stays
+     until it's sorted; "Listening" goes after a few seconds. */
+  var noteEl = null, noteTimer = null;
+  function radioNote(msg, warn) {
+    clearTimeout(noteTimer);
+    if (!msg) { if (noteEl) noteEl.hidden = true; return; }
+    if (!noteEl) {
+      noteEl = document.createElement('div');
+      noteEl.setAttribute('role', 'status');
+      noteEl.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1000;' +
+        'max-width:min(560px,calc(100vw - 32px));box-sizing:border-box;padding:10px 14px;border-radius:10px;' +
+        'background:#111827;color:#f9fafb;font:14px/1.4 system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.35);';
+      document.body.appendChild(noteEl);
+    }
+    noteEl.textContent = msg;
+    noteEl.style.border = '1px solid ' + (warn ? '#fbbf24' : '#374151');
+    noteEl.hidden = false;
+    if (!warn && !/…$/.test(msg)) noteTimer = setTimeout(function () { noteTimer = null; noteEl.hidden = true; }, 4000);
+  }
+
   HST.createKeyer = function (h) {
     h = h || {};
     var st = {
@@ -425,6 +494,8 @@
     function accepts(src) {
       var c = cfg();
       if (src === 'touch') return true;
+      if (src === 'radio') return c.adapter === 'radio';
+      if (c.adapter === 'radio') return false;   // (the on-screen KEY pad still works: 'touch' above)
       var useMidi = c.adapter === 'vail' && c.input === 'midi';
       return useMidi ? src === 'midi' : src === 'keyboard';
     }
@@ -607,7 +678,9 @@
       win.addEventListener('keyup', ku, true);
       win.addEventListener('blur', blur);
       HST.keyListening = (HST.keyListening || 0) + 1;   // see hst-engine.js: the adapters' Ctrl keys
+      var detachRadio = attachRadio();
       return function () {
+        detachRadio();
         win.removeEventListener('keydown', kd, true);
         win.removeEventListener('keyup', ku, true);
         win.removeEventListener('blur', blur);
@@ -761,6 +834,71 @@
       midiAccess = null;
     }
 
+    /* ---- input from the radio's sidetone (Tim, 2026-11-10) ----
+       When the adapter is "Radio sidetone", the tool listens to the audio
+       input (HST.radioInput, hst-radio.js) while it's the one on screen:
+       not while another tab is showing, the app is in the background, or
+       Keyer Setup is open (it listens for itself then). Checked a few
+       times a second, so every way of leaving a tool is covered. A
+       problem (microphone blocked, input unplugged) is shown once and
+       tried again after the tool was put away and opened again. */
+    function attachRadio() {
+      var R = HST.radioInput;
+      if (!R || h.noRadio) return function () {};   // (Keyer Setup listens by itself)
+      var on = false, failed = false, said = null, gone = false;
+      function tell(msg, warn) {
+        if (msg === said) return;
+        said = msg;
+        if (h.radio) h.radio(msg, !!warn); else radioNote(msg, warn);
+      }
+      function wanted() {
+        if (cfg().adapter !== 'radio' || document.hidden) return false;
+        if (h.radioWanted && !h.radioWanted()) return false;
+        try { if (window.frameElement && window.frameElement.hidden) return false; } catch (e) {}
+        try {
+          var p = window.parent;
+          if (p !== window && p.HCT && p.HCT.keyerSetupOpen && p.HCT.keyerSetupOpen()) return false;
+        } catch (e) {}
+        return true;
+      }
+      // (In a tool's frame nothing else uses HST.radioInput, so an input
+      // still open when it isn't wanted is closed whatever "on" says.)
+      function off() {
+        if (!on && !R.active()) return;
+        on = false;
+        R.stop();
+        manualInput('radio', false, performance.now());
+      }
+      function check() {
+        if (gone) return;
+        if (!wanted()) { off(); failed = false; tell(''); return; }
+        if (on || failed) return;
+        if (!R.supported()) { failed = true; tell('This browser can’t listen to an audio input. Use Chrome, Edge, Firefox or Safari.', true); return; }
+        on = true;
+        tell('Opening the audio input…');
+        R.start({
+          deviceId: R.prefs.get().deviceId,
+          key: function (down, t) { feed('radio', 'straight', down, t, 'sidetone'); },
+          ended: function () {
+            on = false; failed = true;
+            manualInput('radio', false, performance.now());
+            tell('The audio input stopped (unplugged?). Plug it back in, then open Keyer Setup to choose it.', true);
+          }
+        }).then(function (r) {
+          if (r.stale || !on) return;
+          if (!r.ok) { on = false; failed = true; tell(r.msg, true); return; }
+          var ok = 'Listening to your radio' + (r.label ? ' (' + r.label + ')' : '') + '.';
+          if (!r.suspended) { tell(ok); return; }
+          tell('Click or tap this page once to start listening to your radio.', true);
+          r.resumed.then(function () { if (on) tell(ok); });
+        });
+      }
+      var tick = ticker(check, 300);
+      HST.keyerSettings.onChange(function () { setTimeout(check, 0); });
+      check();
+      return function () { gone = true; tick(); off(); };
+    }
+
     function releaseAll() {
       var t = performance.now();
       st.dit = st.dah = st.ditMem = st.dahMem = false;
@@ -793,6 +931,7 @@
       detachMidi: detachMidi,
       midiPorts: midiPorts,
       touch: function (which, down) { feed('touch', which, down, performance.now(), 'on-screen pad'); },
+      radioKey: function (down, t) { feed('radio', 'straight', down, t, 'sidetone'); },   // Keyer Setup's own listening
       reset: reset
     };
   };

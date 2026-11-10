@@ -394,6 +394,7 @@
 
 <script src="../shared/hst-engine.js"></script>
 <script src="../shared/hst-keyer.js"></script>
+<script src="../shared/hst-radio.js"></script>
 <script src="../shared/hst-content.js"></script>
 <script src="../shared/hst-qso.js"></script>
 <script src="../shared/hst-copy.js"></script>
@@ -416,9 +417,9 @@
   function savePrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {} }
 
   var KEY_NAMES = { iambicB: 'Paddles (iambic B)', iambicA: 'Paddles (iambic A)', straight: 'Straight key', bug: 'Bug' };
-  var ADAPTER_NAMES = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter' };
+  var ADAPTER_NAMES = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter', radio: 'Radio sidetone' };
   var KEY_SHORT = { iambicB: 'Paddles B', iambicA: 'Paddles A', straight: 'Straight key', bug: 'Bug' };
-  var ADAPTER_SHORT = { vail: 'Vail', vband: 'VBand', keyboard: 'Keyboard' };
+  var ADAPTER_SHORT = { vail: 'Vail', vband: 'VBand', keyboard: 'Keyboard', radio: 'Radio' };
   function cfg() { return HST.keyerSettings.get(); }
   // The app's keyer makes the elements (paddles, unless the adapter is keying itself).
   function automatic() { return HST.keyerAutomatic(); }

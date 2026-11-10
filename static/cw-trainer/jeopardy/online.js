@@ -179,7 +179,7 @@
     try {
       const k = HST.keyerSettings.get();
       const names = { iambicB: 'Paddles (iambic B)', iambicA: 'Paddles (iambic A)', straight: 'Straight key', bug: 'Bug' };
-      const ad = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter: [ and ] keys or on-screen paddles' };
+      const ad = { vail: 'Vail adapter', vband: 'VBand adapter', keyboard: 'No adapter: [ and ] keys or on-screen paddles', radio: 'Radio sidetone (audio input)' };
       el('olKey').textContent = ad[k.adapter] + ' · ' + names[k.keyType];
     } catch (e) { el('olKey').textContent = ''; }
   }
@@ -710,7 +710,8 @@
   function unitMs() { const k = kcfg(); return 1200 / (k.keyType === 'straight' ? k.wpm : prefs().sendWpm); }
   function startKeyer() {
     O.keyerOn = true;
-    keyer = HST.createKeyer({ key: onKey, wpm: () => prefs().sendWpm });   // Jeopardy's own keying speed
+    keyer = HST.createKeyer({ key: onKey, wpm: () => prefs().sendWpm,   // Jeopardy's own keying speed
+      radioWanted: () => O.active });                                   // the radio: only while in a room
     keyer.attachKeyboard(window);
     decoder = HST.createDecoder({
       unitMs: unitMs,

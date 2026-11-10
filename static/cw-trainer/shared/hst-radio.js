@@ -9,21 +9,25 @@
  * audio thread, in hst-radio-worklet.js (how it finds the pitch and the
  * edges is explained there).
  *
- * For now only Keyer Setup's "Test your key" area uses it. The choice is
- * kept apart from HST.keyerSettings, so the practice tools carry on with
- * the adapter chosen before; connecting them is a later step.
+ * It's chosen as the adapter in Keyer Setup (HST.keyerSettings adapter
+ * 'radio', 2026-11-10). Keyer Setup's "Test your key" area listens while
+ * it's open, and the sending tools (Keyer Practice, QSO Practice,
+ * Jeopardy) listen through HST.createKeyer while they're on screen.
  *
  *   HST.radioInput.supported()          can this browser do it?
- *   HST.radioInput.prefs.get() / set()  { on, deviceId, pitch } on this device
+ *   HST.radioInput.prefs.get() / set()  { deviceId, pitch } on this device
+ *        (an older { on } is moved to HST.keyerSettings by Keyer Setup)
  *   HST.radioInput.start({ deviceId, key(down, t), level(info), pitch(hz), ended() })
- *        -> Promise of { ok, msg, deviceId }
+ *        -> Promise of { ok, msg, deviceId, label, suspended, resumed }
+ *        suspended: the browser wants a click or tap on the page before
+ *        it lets audio run; resumed is a Promise for when it does.
  *   HST.radioInput.devices()            -> Promise of [{ deviceId, label }]
  *   HST.radioInput.delay()              -> { inputMs, detectMs, n } or null
  *   HST.radioInput.stop()
  *
  * Key times are on the performance.now() clock, like the keyboard's.
  * Nothing is recorded or sent anywhere; the input is open only while
- * Keyer Setup is.
+ * Keyer Setup or a sending tool is.
  */
 (function () {
   'use strict';
@@ -57,9 +61,9 @@
   function why(err) {
     var n = err && err.name;
     if (n === 'NotAllowedError' || n === 'SecurityError' || n === 'PermissionDeniedError')
-      return 'Microphone access is blocked, so CW Trainer can’t hear your radio. To allow it, click the icon at the left of the address bar (Site settings), set Microphone to Allow, then choose “Radio sidetone” again. CW Trainer only listens while Keyer Setup is open, and nothing is recorded or sent anywhere.';
+      return 'Microphone access is blocked, so CW Trainer can’t hear your radio. To allow it, click the icon at the left of the address bar (Site settings), set Microphone to Allow, then choose “Radio sidetone” again in Keyer Setup. CW Trainer only listens while Keyer Setup or a sending tool is open, and nothing is recorded or sent anywhere.';
     if (n === 'NotFoundError' || n === 'DevicesNotFoundError')
-      return 'No audio input found. Plug in your audio interface (and switch it on), then choose “Radio sidetone” again.';
+      return 'No audio input found. Plug in your audio interface (and switch it on), then choose “Radio sidetone” again in Keyer Setup.';
     if (n === 'NotReadableError' || n === 'TrackStartError' || n === 'AbortError')
       return 'The audio input is busy or not working. Another program may be using it: close that program, or unplug the interface and plug it back in.';
     return 'The audio input couldn’t be opened' + (err && err.message ? ' (' + err.message + ')' : '') + '.';
@@ -113,7 +117,19 @@
       var p = prefs.get().pitch;
       if (p) node.port.postMessage({ t: 'pitch', hz: p });
       try { ctx.resume(); } catch (e) {}
-      return { ok: true, deviceId: me.deviceId, label: me.label };
+      var res = { ok: true, deviceId: me.deviceId, label: me.label, suspended: ctx.state === 'suspended' };
+      // Opened without a click on this page (a tool frame): the browser may
+      // hold the audio until the student clicks or taps somewhere here.
+      if (res.suspended) res.resumed = new Promise(function (resolve) {
+        function go() {
+          if (cur !== me) return done();
+          ctx.resume().then(function () { if (ctx.state === 'running') { done(); resolve(); } }, function () {});
+        }
+        function done() { ['pointerdown', 'keydown'].forEach(function (t) { window.removeEventListener(t, go, true); }); }
+        ['pointerdown', 'keydown'].forEach(function (t) { window.addEventListener(t, go, true); });
+        ctx.onstatechange = function () { if (ctx.state === 'running') { done(); resolve(); } };
+      });
+      return res;
     }).catch(function (err) {
       if (err && err.name === 'stale') return { ok: false, stale: true };
       if (cur === me) stop();
