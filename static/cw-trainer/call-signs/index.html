@@ -1061,6 +1061,14 @@
             <p class="check-note">Character Speed goes up 1 WPM for each call you get right and down 1 for each miss.</p>
           </div>
         </div>
+        <!-- Speed Run: Farnsworth is optional (off = full speed, as before). Tim, 2026-11-09. -->
+        <div id="runFarnsRow" style="margin:-4px 0 12px">
+          <div class="check-row">
+            <input type="checkbox" id="runFarnsCheck" />
+            <label for="runFarnsCheck">Farnsworth Spacing</label>
+          </div>
+          <p class="check-note">Characters at the run's speed, with extra space between them set by the Farnsworth Speed below. If the run's speed drops to the Farnsworth Speed or lower, calls are sent at full speed.</p>
+        </div>
         <div class="field" id="fwpmField">
           <label for="fwpmRange">Farnsworth Speed (WPM)<span class="val" id="fwpmVal">15</span></label>
           <input type="range" id="fwpmRange" min="5" max="40" step="1" value="15" />
@@ -1261,7 +1269,7 @@
       callMix: "mixed",
       wpm: 20, fwpm: 15, toneHz: 600, volume: 70,
       simMin: 15, simMax: 30,     // Simulator speed range
-      runCalls: 25, runAdapt: true,
+      runCalls: 25, runAdapt: true, runFarns: false,   // Speed Run: Farnsworth spacing on/off
       replaySec: 5, maxPlays: 10, // Find the Number
       maxTimeSec: 6, unlimited: false,
       adaptSpeed: false,          // Adaptive Speed: +1 WPM per right call, -1 per miss (Find, Builder)
@@ -1309,7 +1317,7 @@
    "wpmField", "wpmLabel", "wpmRange", "wpmVal", "fwpmField", "fwpmRange", "fwpmVal",
    "simFields", "simMinRange", "simMinVal", "simMaxRange", "simMaxVal", "fullSpeedNote",
    "toneRange", "toneVal", "volRange", "volVal", "findFields", "replaySecRange", "replaySecVal", "maxPlaysSelect",
-   "maxTimeField", "maxTimeRange", "maxTimeVal", "unlimitedCheck", "noiseRange", "noiseVal", "qsbCheck", "qrnCheck", "qrmCheck", "adaptSpeedRow", "adaptSpeedCheck", "settingsFieldset", "lockNote",
+   "maxTimeField", "maxTimeRange", "maxTimeVal", "unlimitedCheck", "noiseRange", "noiseVal", "qsbCheck", "qrnCheck", "qrmCheck", "adaptSpeedRow", "adaptSpeedCheck", "runFarnsRow", "runFarnsCheck", "settingsFieldset", "lockNote",
    "statsSub", "statTiles", "statTableCaption", "statTableHead", "statTableBody", "resetStatsBtn",
    "drillList", "drillBtn", "drillingBadge",
    "runCard", "runTitle", "runLast", "runScore", "runBest", "runWhy", "runTiles", "runMissed", "runRows",
@@ -1333,10 +1341,10 @@
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.settings)); } catch (e) {}
   }
 
-  // Which settings each mode uses. The Simulator and Speed Run send at
-  // full speed (their speed keeps changing, so a fixed Farnsworth speed
-  // would undo it); Find the Number replays on its own clock instead of
-  // a Max Time to Answer.
+  // Which settings each mode uses. The Simulator sends at full speed (its
+  // speed keeps changing, so a fixed Farnsworth speed would undo it); Speed
+  // Run does too unless Farnsworth Spacing is ticked; Find the Number
+  // replays on its own clock instead of a Max Time to Answer.
   function updateFieldsForMode() {
     var m = mode();
     els.callMixField.style.display = m === "builder" ? "none" : "";
@@ -1344,9 +1352,11 @@
     els.wpmField.style.display = m === "sim" ? "none" : "";
     els.adaptSpeedRow.style.display = m === "find" || m === "builder" ? "" : "none";
     els.wpmLabel.textContent = m === "run" && state.settings.runAdapt ? "Starting Speed (WPM)" : "Character Speed (WPM)";
-    els.fwpmField.style.display = m === "find" || m === "builder" ? "" : "none";
+    var runFarns = m === "run" && state.settings.runFarns;
+    els.runFarnsRow.style.display = m === "run" ? "" : "none";
+    els.fwpmField.style.display = m === "find" || m === "builder" || runFarns ? "" : "none";
     els.simFields.style.display = m === "sim" ? "" : "none";
-    els.fullSpeedNote.style.display = m === "sim" || m === "run" ? "" : "none";
+    els.fullSpeedNote.style.display = m === "sim" || (m === "run" && !runFarns) ? "" : "none";
     els.findFields.style.display = m === "find" ? "" : "none";
     els.maxTimeField.style.display = m === "find" ? "none" : "";
   }
@@ -1370,6 +1380,7 @@
     els.callMixSelect.value = s.callMix;
     els.runCallsSelect.value = String(s.runCalls);
     els.runAdaptSelect.value = s.runAdapt ? "1" : "0";
+    els.runFarnsCheck.checked = !!s.runFarns;
     els.wpmRange.value = s.wpm; els.wpmVal.textContent = s.wpm;
     els.fwpmRange.max = s.wpm;
     els.fwpmRange.value = Math.min(s.fwpm, s.wpm); els.fwpmVal.textContent = els.fwpmRange.value;
@@ -1454,7 +1465,9 @@
     if (m === "builder") { var b = builderCall(); return { sent: b, target: b.split(""), wpm: s.wpm, fwpm: fw, plays: 0 }; }
     var c = generateCallSign(false);
     if (m === "sim") return { sent: c, target: c.split(""), wpm: randInt(Math.min(s.simMin, s.simMax), Math.max(s.simMin, s.simMax)), fwpm: 0, plays: 0 };
-    return { sent: c, target: c.split(""), wpm: state.run.wpm, fwpm: 0, plays: 0 };
+    // Speed Run: the Farnsworth speed set at the start, while it's below the run's speed.
+    var rf = state.run.fwpm && state.run.fwpm < state.run.wpm ? state.run.fwpm : 0;
+    return { sent: c, target: c.split(""), wpm: state.run.wpm, fwpm: rf, plays: 0 };
   }
 
   /* =====================================================================
@@ -2017,8 +2030,10 @@
     if (m === "find" || m === "builder") { meta.wpm = s.wpm; meta.fwpm = s.fwpm < s.wpm ? s.fwpm : 0; }
     if (m === "sim") { meta.minWpm = Math.min(s.simMin, s.simMax); meta.maxWpm = Math.max(s.simMin, s.simMax); }
     if (m === "run") {
+      var runFw = s.runFarns && s.fwpm && s.fwpm < s.wpm ? s.fwpm : 0;
       meta.wpm = s.wpm; meta.runCalls = s.runCalls; meta.adapt = !!s.runAdapt; meta.completed = false;
-      state.run = { calls: s.runCalls, adapt: !!s.runAdapt, startWpm: s.wpm, wpm: s.wpm, items: [], score: 0, replays: 0, prevBest: -1, done: false };
+      if (runFw) meta.fwpm = runFw;
+      state.run = { calls: s.runCalls, adapt: !!s.runAdapt, startWpm: s.wpm, wpm: s.wpm, fwpm: runFw, items: [], score: 0, replays: 0, prevBest: -1, done: false };
       var run = state.run;
       // Best score so far at this run length (-1: no runs yet, so no "NEW BEST").
       HST.history.all().then(function (rows) {
@@ -2196,6 +2211,7 @@
   onSetting(els.callMixSelect, "change", function () { state.settings.callMix = els.callMixSelect.value; });
   onSetting(els.runCallsSelect, "change", function () { state.settings.runCalls = parseInt(els.runCallsSelect.value, 10); drawRunChart(); });
   onSetting(els.runAdaptSelect, "change", function () { state.settings.runAdapt = els.runAdaptSelect.value === "1"; updateFieldsForMode(); });
+  onSetting(els.runFarnsCheck, "change", function () { state.settings.runFarns = els.runFarnsCheck.checked; updateFieldsForMode(); });
   els.wpmRange.addEventListener("input", function () { HST.shared.set({ wpm: parseInt(els.wpmRange.value, 10) }); });
   onSetting(els.fwpmRange, "input", function () { state.settings.fwpm = parseInt(els.fwpmRange.value, 10); els.fwpmVal.textContent = state.settings.fwpm; });
   // Slowest can't pass Fastest (and the other way round): the other one moves along.
@@ -2261,7 +2277,7 @@
   window.HSTCopy.summary = function () {
     var s = state.settings, m = mode(), o = els.callMixSelect.selectedOptions[0];
     var speed = m === "sim" ? Math.min(s.simMin, s.simMax) + "–" + Math.max(s.simMin, s.simMax) + " WPM" :
-      m === "run" ? s.wpm + " WPM" + (s.runAdapt ? " start" : "") :
+      m === "run" ? (s.runFarns && s.fwpm && s.fwpm < s.wpm ? s.wpm + " / " + s.fwpm : s.wpm) + " WPM" + (s.runAdapt ? " start" : "") :
       (s.fwpm && s.fwpm < s.wpm ? s.wpm + " / " + s.fwpm + " WPM" : s.wpm + " WPM") + (s.adaptSpeed ? " · adaptive" : "");
     return [
       m === "builder" ? "" : (o ? o.textContent : ""),

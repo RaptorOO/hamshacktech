@@ -17,13 +17,13 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = 'b2ee8d8a884b';
+const VERSION = '4bebc6984485';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline, each with its fingerprint (see
 // fingerprint() in the build script).
 const PRECACHE = [
-  ['/cw-trainer/call-signs/', 'c88f81cbbfbe69c7'],
+  ['/cw-trainer/call-signs/', '835ac918a49f7d0f'],
   ['/cw-trainer/code-groups/', '4d4c47863de799cf'],
   ['/cw-trainer/code-groups/speed-practice.js', 'e5b592ae9aa63fd0'],
   ['/cw-trainer/course/', '99bd44eb0b257081'],
@@ -56,10 +56,10 @@ const PRECACHE = [
   ['/cw-trainer/icons/apple-touch-icon.png', '6877a92df205dbd5'],
   ['/cw-trainer/icons/favicon-32x32.png', '5cc015c2d45188f7'],
   ['/cw-trainer/icr/', '5b6bf292fceadb70'],
-  ['/cw-trainer/', '7112fbfe6d87c575'],
+  ['/cw-trainer/', 'ec0cf76594232e9a'],
   ['/cw-trainer/jeopardy/answers.js', 'cb648e2391934f83'],
-  ['/cw-trainer/jeopardy/', '27a2dcd680b9a609'],
-  ['/cw-trainer/jeopardy/online.js', 'b8a37a3663962d5e'],
+  ['/cw-trainer/jeopardy/', '29f360cb7ba63136'],
+  ['/cw-trainer/jeopardy/online.js', 'da639ac678f9f62d'],
   ['/cw-trainer/keyer/', 'd3fbc37c8d7663b2'],
   ['/cw-trainer/manifest.webmanifest', '95ad85868753605c'],
   ['/cw-trainer/progress/', '7875202f78b9e4b7'],
@@ -75,6 +75,8 @@ const PRECACHE = [
   ['/cw-trainer/shared/hst-keyer.js', 'd2ef1aeda8286a72'],
   ['/cw-trainer/shared/hst-listen.js', '098e02d85b32b8fa'],
   ['/cw-trainer/shared/hst-qso.js', '4e96bd2ce0383e93'],
+  ['/cw-trainer/shared/hst-radio-worklet.js', '539ee206f41f6a39'],
+  ['/cw-trainer/shared/hst-radio.js', '5f6a9d9a128f8716'],
   ['/cw-trainer/test-prep/', 'bcb9f032ed1f7fd7'],
   ['/cw-trainer/voice/0.mp3', 'ea20ba8761f91986'],
   ['/cw-trainer/voice/1.mp3', '39ea752ce884db07'],

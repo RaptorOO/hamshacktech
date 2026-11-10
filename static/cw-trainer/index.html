@@ -327,6 +327,15 @@
     margin: 0 0 4px; max-height: 12em; overflow-y: auto;
     white-space: pre-wrap; font: 0.82rem/1.45 'JetBrains Mono', monospace; color: var(--text);
   }
+  /* Radio sidetone (audio input): the input level meter. The line is where
+     the tone counts as "key down". */
+  .kradio { margin: 4px 0 0; }
+  .kradio .kfield { margin-bottom: 10px; }
+  .meter { position: relative; height: 14px; background: var(--well); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+  .meter-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--lime); transition: width 60ms linear; }
+  .meter-fill.hot { background: #f87171; }
+  .meter-mark { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #facc15; left: 0; display: none; }
+  .meter-scale { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
   @media (max-width: 480px) { .kgrid { grid-template-columns: 1fr; } }
 
   /* ---------- Account (Milestone 8) ---------- */
@@ -537,6 +546,7 @@
         <option value="vail">Vail adapter</option>
         <option value="vband">VBand adapter</option>
         <option value="keyboard">No adapter (keyboard / screen)</option>
+        <option value="radio">Radio sidetone (audio input)</option>
       </select>
     </div>
     <div class="kfield" id="kInputField">
@@ -546,7 +556,7 @@
         <option value="midi">MIDI (Chrome / Edge)</option>
       </select>
     </div>
-    <div class="kfield">
+    <div class="kfield" id="kTypeField">
       <label for="kType">Key type</label>
       <select id="kType">
         <option value="iambicB">Paddles &mdash; iambic B</option>
@@ -565,6 +575,19 @@
     <label class="check"><input type="checkbox" id="kSidetone"> Sidetone</label>
   </div>
   <p class="kstatus" id="kStatus"></p>
+  <!-- Radio sidetone (Tim, 2026-11-09): the radio is keyed and its beep comes
+       in through an audio interface. See shared/hst-radio.js. -->
+  <div class="kradio" id="kRadio" hidden>
+    <div class="kfield">
+      <label for="kRadioDev">Audio input</label>
+      <select id="kRadioDev"></select>
+    </div>
+    <div class="meter" aria-hidden="true"><div class="meter-fill" id="kMeterFill"></div><div class="meter-mark" id="kMeterMark"></div></div>
+    <div class="meter-scale" aria-hidden="true"><span>Input level</span><span>yellow line = key down</span></div>
+    <p class="kstatus" id="kRadioPitch">Send a long dah or two: the app finds your sidetone&rsquo;s pitch by itself.</p>
+    <p class="hint">Turn the radio&rsquo;s sidetone up until the meter passes the yellow line when you key, and set the interface&rsquo;s input gain so it stays out of the red. <button class="linkish" id="kRadioRepitch" type="button">Find the pitch again</button></p>
+    <p class="hint">For now the radio sidetone works here, in Test your key. The practice tools still use your adapter or keyboard.</p>
+  </div>
   <!-- Vail adapter, Chrome/Edge: let the app set the adapter's speed (HST.vailSpeed). -->
   <div id="kSpeedSync" hidden>
     <label class="check"><input type="checkbox" id="kSpeedSyncOn"> Set my Vail adapter&rsquo;s speed from the app</label>
@@ -602,6 +625,7 @@
       <dl>
         <dt>Last input</dt><dd id="dLast">&mdash;</dd>
         <dt>Audio delay</dt><dd id="dAudio">&mdash;</dd>
+        <dt class="radio-only" hidden>Radio input delay</dt><dd class="radio-only" id="dRadio" hidden>&mdash;</dd>
         <!-- Every key press/release the app receives (last 30), for
              troubleshooting an adapter on a new device. -->
         <dt>Key events</dt><dd><pre id="dKeyLog" class="midilog">Key presses and releases appear here as you send.</pre><button class="linkish" id="dCopyKeys" type="button">Copy key events</button></dd>
@@ -776,6 +800,7 @@
 </script>
 <script src="shared/hst-engine.js"></script>
 <script src="shared/hst-keyer.js"></script>
+<script src="shared/hst-radio.js"></script>
 <script src="shared/hst-course.js"></script>
 <script src="shared/hst-account.js"></script>   <!-- after hst-course.js: it syncs My Course too -->
 <script>
@@ -1099,9 +1124,9 @@
   // shared/hst-keyer.js), say so: its speed is set in Vail Zoomer, not here.
   function renderFollow() {
     var s = HST.keyerSettings.get(), ak = HST.adapterKeying.get(), vs = HST.vailSpeed.state();
-    var on = ak.on && s.adapter !== 'keyboard' && s.keyType !== 'straight';
+    var on = ak.on && s.adapter !== 'keyboard' && s.keyType !== 'straight' && !radioMode();
     // The speed switch: Vail adapter in Chrome or Edge.
-    $('kSpeedSync').hidden = !(s.adapter === 'vail' && vs.supported);
+    $('kSpeedSync').hidden = !(s.adapter === 'vail' && vs.supported) || radioMode();
     $('kSpeedSyncOn').checked = vs.on;
     $('kSpeedSyncStatus').textContent = vs.status ||
       (vs.on ? 'Each tool’s speed setting sets your adapter’s speed while you use it.'
@@ -1126,19 +1151,29 @@
     renderFollow();
   });
 
+  // Radio sidetone: kept in HST.radioInput.prefs, not HST.keyerSettings, so
+  // the practice tools keep the adapter chosen before (they don't listen to
+  // the radio yet). The radio does the keying: its tone is a straight key.
+  function radioMode() { return HST.radioInput.supported() && HST.radioInput.prefs.get().on; }
+
   function renderKeyer(s) {
-    $('kAdapter').value = s.adapter;
+    var radio = radioMode();
+    $('kAdapter').value = radio ? 'radio' : s.adapter;
+    $('kRadio').hidden = !radio;
+    $('kTypeField').hidden = radio;
+    $('kSidetone').parentNode.style.display = radio ? 'none' : '';
+    Array.prototype.forEach.call(document.querySelectorAll('.radio-only'), function (el) { el.hidden = !radio; });
     $('kInput').value = s.input;
     $('kType').value = s.keyType;
     $('kWpm').value = s.wpm;
     $('kReversed').checked = s.reversed;
     $('kSidetone').checked = s.sidetone;
-    var straight = s.keyType === 'straight';
+    var straight = s.keyType === 'straight' || radio;
     // MIDI is a Vail-adapter option, and switched off for now (HST.MIDI_ENABLED).
-    $('kInputField').hidden = !HST.MIDI_ENABLED || s.adapter !== 'vail';
-    $('kVailTip').hidden = s.adapter !== 'vail';
+    $('kInputField').hidden = !HST.MIDI_ENABLED || s.adapter !== 'vail' || radio;
+    $('kVailTip').hidden = s.adapter !== 'vail' || radio;
     var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-    $('kIosTip').hidden = !ios || s.adapter === 'keyboard';
+    $('kIosTip').hidden = !ios || s.adapter === 'keyboard' || radio;
     renderFollow();
     $('kReversed').parentNode.style.display = straight ? 'none' : '';
     // For a straight key the speed slider is only the decoder's first guess;
@@ -1149,8 +1184,10 @@
     $('padDit').textContent = straight ? 'KEY' : (s.reversed ? 'DAH' : 'DIT');
     $('padDah').textContent = s.reversed ? 'DIT' : 'DAH';
     $('padDah').style.display = straight ? 'none' : '';
+    $('padDit').parentNode.style.display = radio ? 'none' : '';
     if (!kDlg.open) return;
     var status = $('kStatus');
+    if (radio) return;                      // the radio's status is set by startRadio()
     status.classList.remove('warn');
     if (s.adapter === 'keyboard') {
       status.textContent = straight ? 'Hold [ or ] as the key, or use the KEY pad.'
@@ -1275,7 +1312,9 @@
     decoder = HST.createDecoder({
       unitMs: function () { return 1200 / HST.keyerSettings.get().wpm; },
       // Learn the sender's own speed when a person times the elements.
-      adaptive: function () { return !HST.keyerAutomatic(); },
+      // The radio's tone is timed by a person or by the radio's own keyer:
+      // either way, learn its speed.
+      adaptive: function () { return radioMode() || !HST.keyerAutomatic(); },
       onChar: function (ch) {
         decoded = (decoded + ch).slice(-160);
         renderDecoded();
@@ -1290,6 +1329,99 @@
     renderKeyer(HST.keyerSettings.get());
     syncMidi();
     showAudioDelay();
+    if (radioMode()) startRadio();
+  }
+
+  /* Radio sidetone: listen to the chosen audio input while this panel is
+     open. The tone starting and stopping is a straight key closing and
+     opening, so it goes to the same lights and decoder as the adapters. */
+  var radioUi = { pitch: 0 };
+  function radioStatus(text, warn) {
+    $('kStatus').textContent = text;
+    $('kStatus').classList.toggle('warn', !!warn);
+  }
+  function fillRadioDevices(selected) {
+    return HST.radioInput.devices().then(function (list) {
+      var sel = $('kRadioDev');
+      sel.innerHTML = '';
+      if (!list.length) { var o = document.createElement('option'); o.value = ''; o.textContent = 'Default audio input'; sel.appendChild(o); }
+      list.forEach(function (d) {
+        var o = document.createElement('option');
+        o.value = d.deviceId; o.textContent = d.label;
+        sel.appendChild(o);
+      });
+      sel.value = selected || '';
+      if (sel.selectedIndex < 0) sel.selectedIndex = 0;
+    });
+  }
+  function radioKey(down, t) {
+    if (!keyer) return;
+    onRaw({ src: 'radio', which: 'straight', detail: 'sidetone', down: down, accepted: true });
+    onKey(down, t);
+    showRadioDelay();
+  }
+  function dbfs(a) { return a > 0 ? 20 * Math.log10(a) : -120; }
+  function meterPct(a) { return Math.max(0, Math.min(100, (dbfs(a) + 60) / 60 * 100)); }
+  function radioLevel(m) {
+    var a = Math.max(m.rms * Math.SQRT2, m.tone);       // peak level of what came in
+    $('kMeterFill').style.width = meterPct(a) + '%';
+    $('kMeterFill').classList.toggle('hot', dbfs(a) > -3);
+    var mark = $('kMeterMark');
+    mark.style.display = m.pitch ? 'block' : 'none';
+    if (m.pitch) mark.style.left = meterPct(m.on) + '%';
+    if (m.pitch && m.pitch !== radioUi.pitch) radioPitch(m.pitch);
+  }
+  function radioPitch(hz) {
+    radioUi.pitch = hz;
+    $('kRadioPitch').textContent = 'Sidetone pitch: ' + hz + ' Hz. Send away: the KEY light follows the tone.';
+  }
+  function showRadioDelay() {
+    var d = HST.radioInput.delay();
+    if (!d) { $('dRadio').textContent = '—'; return; }
+    if (d.detectMs == null) { $('dRadio').textContent = 'Key the radio to measure it.'; return; }
+    var det = Math.round(d.detectMs);
+    $('dRadio').textContent = d.inputMs != null
+      ? 'about ' + Math.round(d.inputMs + d.detectMs) + ' ms: ' + Math.round(d.inputMs) + ' ms audio input (as reported by the browser) + ' + det + ' ms to recognise the tone'
+      : 'about ' + det + ' ms to recognise the tone, plus the audio input’s own delay (this browser doesn’t report it)';
+  }
+  function startRadio(deviceId) {
+    if (deviceId === undefined) deviceId = HST.radioInput.prefs.get().deviceId;
+    radioUi.pitch = 0;
+    $('kRadioPitch').textContent = 'Send a long dah or two: the app finds your sidetone’s pitch by itself.';
+    $('kMeterFill').style.width = '0';
+    $('kMeterMark').style.display = 'none';
+    radioStatus('Opening the audio input… If the browser asks to use your microphone, choose Allow.');
+    HST.radioInput.start({
+      deviceId: deviceId, key: radioKey, level: radioLevel, pitch: radioPitch,
+      ended: function () { radioStatus('The audio input stopped (unplugged?). Plug it back in and choose it below.', true); }
+    }).then(function (r) {
+      if (r.stale || !kDlg.open || !radioMode()) return;
+      if (!r.ok) { radioStatus(r.msg, true); fillRadioDevices(''); return; }
+      HST.radioInput.prefs.set({ deviceId: r.deviceId });
+      radioStatus('Listening to ' + (r.label || 'the audio input') + '. Key your radio and the tone works like a straight key.');
+      fillRadioDevices(r.deviceId);
+      showRadioDelay();
+    });
+  }
+  function stopRadio() {
+    HST.radioInput.stop();
+    rawDown = {};
+    ['lDit', 'lDah', 'lKey'].forEach(function (id) { $(id).classList.remove('on'); });
+  }
+  $('kRadioDev').addEventListener('change', function (e) {
+    if (decoder) decoder.reset();
+    HST.radioInput.prefs.set({ deviceId: e.target.value });
+    startRadio(e.target.value);
+  });
+  $('kRadioRepitch').addEventListener('click', function () {
+    HST.radioInput.resetPitch();
+    radioUi.pitch = 0;
+    $('kRadioPitch').textContent = 'Listening for a new pitch: send a long dah or two.';
+  });
+  if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+    navigator.mediaDevices.addEventListener('devicechange', function () {
+      if (kDlg.open && radioMode()) fillRadioDevices($('kRadioDev').value);
+    });
   }
 
   $('keyerSetupBtn').addEventListener('click', openKeyer);
@@ -1372,7 +1504,22 @@
     if (decoder) decoder.reset();
     HST.keyerSettings.set(patch);
   }
-  $('kAdapter').addEventListener('change', function (e) { setKeyer({ adapter: e.target.value }); syncMidi(); });
+  $('kAdapter').addEventListener('change', function (e) {
+    var v = e.target.value;
+    if (v === 'radio') {
+      if (!HST.radioInput.supported()) { radioStatus('This browser can’t listen to an audio input. Use Chrome, Edge, Firefox or Safari.', true); e.target.value = HST.keyerSettings.get().adapter; return; }
+      if (keyer) keyer.reset();
+      if (decoder) decoder.reset();
+      HST.radioInput.prefs.set({ on: true });
+      renderKeyer(HST.keyerSettings.get());
+      startRadio();
+      return;
+    }
+    var wasRadio = radioMode();
+    HST.radioInput.prefs.set({ on: false });
+    if (wasRadio) stopRadio();
+    setKeyer({ adapter: v }); syncMidi();
+  });
   $('kInput').addEventListener('change', function (e) { setKeyer({ input: e.target.value }); syncMidi(); });
   $('kType').addEventListener('change', function (e) { setKeyer({ keyType: e.target.value }); });
   $('kWpm').addEventListener('input', function (e) { setKeyer({ wpm: Number(e.target.value) }); });
@@ -1402,6 +1549,7 @@
   $('keyerDone').addEventListener('click', function () { kDlg.close(); });
   kDlg.addEventListener('click', function (e) { if (e.target === kDlg) kDlg.close(); });
   kDlg.addEventListener('close', function () {
+    HST.radioInput.stop();                  // the input is open only while this panel is
     if (keyer) { keyer.reset(); keyer.detachMidi(); }
     if (detachKeyboard) detachKeyboard();
     if (decoder) decoder.reset();
