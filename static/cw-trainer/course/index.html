@@ -35,10 +35,20 @@
 
   .head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-bottom: 16px; }
   .head .sub { color: var(--muted); font-size: 0.95rem; }
-  /* Tim, 2026-10-23: this tab is still being built. */
-  .dev-badge { margin-left: auto; padding: 5px 12px; border-radius: 6px; background: var(--lime); color: #1a2e05;
-               font: 600 0.9rem/1.2 'Oswald', sans-serif; letter-spacing: 0.08em; white-space: nowrap; }
-  @media (max-width: 600px) { .dev-badge { font-size: 0.72rem; padding: 4px 9px; } }
+  /* The how-to video's clapboard, where the UNDER DEVELOPMENT badge was
+     (Tim, 2026-11-09), and its popup. The video lives at /videos/, outside
+     /cw-trainer/, so the service worker doesn't put it in everyone's offline
+     copy; preload="none" means nothing downloads until Play. */
+  .video-btn { margin-left: auto; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;
+               background: transparent; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); padding: 0; cursor: pointer; }
+  .video-btn:hover, .video-btn:focus-visible { color: var(--mc); border-color: var(--mc); }
+  .video-btn svg { width: 16px; height: 16px; display: block; }
+  dialog.video-dialog { width: calc(100vw - 40px); max-width: 860px; margin: auto; padding: 18px 18px 14px; background: var(--panel); color: var(--text);
+                        border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55); }
+  dialog.video-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+  .video-dialog h2 { margin: 0 0 12px; font: 600 1.05rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+  .video-dialog video { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; background: #000; border-radius: 8px; margin: 0 0 14px; }
+  .video-dialog .vd-actions { display: flex; justify-content: flex-end; }
 
   .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
   .card h2 { margin: 0 0 10px; font: 600 1.05rem/1.3 'Oswald', sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
@@ -227,7 +237,11 @@
 <body>
 <div class="wrap">
   <div class="head">
-    <span class="dev-badge">UNDER DEVELOPMENT</span>
+    <!-- The how-to video: a narrated walkthrough of this page. -->
+    <button type="button" class="video-btn" id="videoBtn" aria-haspopup="dialog" aria-controls="videoDialog"
+            aria-label="Watch the how-to video" title="Watch the how-to video">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+    </button>
   </div>
 
   <!-- No course chosen yet -->
@@ -312,6 +326,16 @@
   </footer>
 </div>
 
+<!-- No Download item in the player's menu, and no right-click "Save video
+     as" (as on ICR): stops casual saving, not a determined copier. -->
+<dialog class="video-dialog" id="videoDialog" aria-labelledby="videoTitle">
+  <h2 id="videoTitle">How to use My Course</h2>
+  <video id="howToVideo" controls controlslist="nodownload" playsinline preload="none" poster="/videos/my-course-how-to.jpg">
+    <source src="/videos/my-course-how-to.mp4?v=1" type="video/mp4">
+  </video>
+  <div class="vd-actions"><button type="button" class="btn" id="videoCloseBtn">Close</button></div>
+</dialog>
+
 <div class="player" id="player" hidden aria-label="Audio player">
   <div class="pl-head">
     <span>Playing</span> <span class="pl-title" id="plTitle"></span>
@@ -337,6 +361,18 @@
       try { window.parent.document.getElementById('settingsBtn').click(); } catch (e) {}
     });
   });
+
+  // The clapboard: the how-to video popup. A practice file playing in the
+  // player bar stops first, so it doesn't play over the narration; closing
+  // the popup (Close, Escape or the backdrop) pauses the video.
+  $('videoBtn').addEventListener('click', function () {
+    if (!$('player').hidden) $('plClose').click();
+    $('videoDialog').showModal();
+  });
+  $('videoCloseBtn').addEventListener('click', function () { $('videoDialog').close(); });
+  $('videoDialog').addEventListener('click', function (e) { if (e.target === $('videoDialog')) $('videoDialog').close(); });
+  $('videoDialog').addEventListener('close', function () { $('howToVideo').pause(); });
+  $('howToVideo').addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
   // The two disclosure triangles (Tim, 2026-11-04). Both start closed each
   // time the page loads; nothing is saved.
