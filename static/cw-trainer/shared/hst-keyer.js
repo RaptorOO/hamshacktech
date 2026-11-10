@@ -68,6 +68,8 @@
        weight    dah length in dits: always the standard 3.0 (the
                  adjustable "Dah length" setting was removed 2026-10-10)
        sidetone  play a tone while the key is down
+       radioSidetone  with the radio sidetone input: play the app's tone
+                 as well as the radio's (off unless chosen; Tim, 2026-11-10)
        keyTypeBefore  the key type chosen before switching to the radio,
                  given back when switching away from it
      ===================================================================== */
@@ -106,7 +108,8 @@
       reversed: !!o.reversed,
       wpm: Math.round(num(o.wpm, 5, 40, startWpm)),
       weight: 3,   // standard dah = 3 dits; an older saved custom value is ignored
-      sidetone: o.sidetone !== false
+      sidetone: o.sidetone !== false,
+      radioSidetone: !!o.radioSidetone
     };
   });
 
@@ -270,17 +273,16 @@
       osc.start();
       side = { ctx: ctx, osc: osc, g: g, heard: heard, recOnly: recOnly };
     }
-    var on = !!HST.keyerSettings.get().sidetone;
+    var on = !!sidetoneOn(HST.keyerSettings.get());
     side.heard.gain.value = on ? 1 : 0;
     side.recOnly.gain.value = on ? 0 : 1;
     return side;
   }
   // Make the sidetone: when it's on, or a recording is running. With the
-  // radio sidetone input the radio makes the beep, so only a recording gets it.
-  function sounding() {
-    var c = HST.keyerSettings.get();
-    return (c.sidetone && c.adapter !== 'radio') || HST.audio.recording();
-  }
+  // radio sidetone input the radio makes the beep, so the app's own tone
+  // plays only if chosen for the radio (radioSidetone).
+  function sidetoneOn(c) { return c.adapter === 'radio' ? c.radioSidetone : c.sidetone; }
+  function sounding() { return sidetoneOn(HST.keyerSettings.get()) || HST.audio.recording(); }
   function sidePeak() { return (HST.shared.get().volume / 100) * 0.35; }  // same loudness as the trainers
   var EDGE = 0.004;                   // 4 ms rise/fall
 
@@ -929,6 +931,7 @@
       detachMidi: detachMidi,
       midiPorts: midiPorts,
       touch: function (which, down) { feed('touch', which, down, performance.now(), 'on-screen pad'); },
+      radioKey: function (down, t) { feed('radio', 'straight', down, t, 'sidetone'); },   // Keyer Setup's own listening
       reset: reset
     };
   };

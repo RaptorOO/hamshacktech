@@ -56,7 +56,7 @@
      open, My Course (synced on its own), your own text. */
   var SETTINGS = [
     { k: /^hct-cw-shared-v1(:[a-z-]{1,20})?$/ },   // each tool's speed, tone and volume
-    { k: 'hct-cw-keyer-v1', local: ['adapter', 'input'] },
+    { k: 'hct-cw-keyer-v1', local: ['adapter', 'input', 'radioSidetone'] },
     { k: 'hct-cw-experimental-v1' },
     { k: 'hct-cw-keyer-practice-v1' },
     { k: 'hct-cw-qso-v1' },

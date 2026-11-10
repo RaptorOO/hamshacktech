@@ -572,7 +572,7 @@
   </div>
   <div class="kchecks">
     <label class="check"><input type="checkbox" id="kReversed"> Swap paddles (dit on the right)</label>
-    <label class="check"><input type="checkbox" id="kSidetone"> Sidetone</label>
+    <label class="check"><input type="checkbox" id="kSidetone"> <span id="kSidetoneLabel">Sidetone</span></label>
   </div>
   <p class="kstatus" id="kStatus"></p>
   <!-- Radio sidetone (Tim, 2026-11-09): the radio is keyed and its beep comes
@@ -1165,13 +1165,14 @@
     $('kAdapter').value = radio ? 'radio' : s.adapter;
     $('kRadio').hidden = !radio;
     $('kTypeField').hidden = radio;
-    $('kSidetone').parentNode.style.display = radio ? 'none' : '';
+    // With the radio, the box is the app's tone on top of the radio's own (off to start).
+    $('kSidetoneLabel').textContent = radio ? 'App sidetone too (the radio beeps already)' : 'Sidetone';
     Array.prototype.forEach.call(document.querySelectorAll('.radio-only'), function (el) { el.hidden = !radio; });
     $('kInput').value = s.input;
     $('kType').value = s.keyType;
     $('kWpm').value = s.wpm;
     $('kReversed').checked = s.reversed;
-    $('kSidetone').checked = s.sidetone;
+    $('kSidetone').checked = radio ? s.radioSidetone : s.sidetone;
     var straight = s.keyType === 'straight' || radio;
     // MIDI is a Vail-adapter option, and switched off for now (HST.MIDI_ENABLED).
     $('kInputField').hidden = !HST.MIDI_ENABLED || s.adapter !== 'vail' || radio;
@@ -1361,8 +1362,7 @@
   }
   function radioKey(down, t) {
     if (!keyer) return;
-    onRaw({ src: 'radio', which: 'straight', detail: 'sidetone', down: down, accepted: true });
-    onKey(down, t);
+    keyer.radioKey(down, t);   // to the lights and decoder, and the app sidetone if chosen
     showRadioDelay();
   }
   function dbfs(a) { return a > 0 ? 20 * Math.log10(a) : -120; }
@@ -1526,7 +1526,9 @@
   $('kType').addEventListener('change', function (e) { setKeyer({ keyType: e.target.value }); });
   $('kWpm').addEventListener('input', function (e) { setKeyer({ wpm: Number(e.target.value) }); });
   $('kReversed').addEventListener('change', function (e) { setKeyer({ reversed: e.target.checked }); });
-  $('kSidetone').addEventListener('change', function (e) { setKeyer({ sidetone: e.target.checked }); });
+  $('kSidetone').addEventListener('change', function (e) {
+    setKeyer(radioMode() ? { radioSidetone: e.target.checked } : { sidetone: e.target.checked });
+  });
   HST.keyerSettings.onChange(renderKeyer);
   renderKeyer(HST.keyerSettings.get());
 
