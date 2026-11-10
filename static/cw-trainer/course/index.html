@@ -198,6 +198,12 @@
   .ses-bar.past > summary span { color: var(--dim); }
   .ses-bar.now { border-color: var(--mc); box-shadow: inset 3px 0 0 var(--mc); }
   .ses-bar.done .sb-n, .ses-bar.done .sb-prog { color: var(--mc); }
+  /* Started (Tim, 2026-11-10): a session with at least one homework tick
+     turns orange until it's all done, so students see where they're at. */
+  .ses-bar.started { border-color: #fb923c; background: rgba(251, 146, 60, 0.12); }
+  .ses-bar.started > summary:hover { background: rgba(251, 146, 60, 0.08); }
+  .ses-bar.started > summary::before, .ses-bar.started .sb-n, .ses-bar.started .sb-prog { color: #fb923c; }
+  .ses-bar.started.now { box-shadow: inset 3px 0 0 #fb923c; }
   .ses-body { padding: 2px 14px 10px; border-top: 1px solid var(--grid); }
 
   .links { list-style: none; margin: 0; padding: 0; }
@@ -687,6 +693,12 @@
       if (d && overAt(d, c.times) <= now) cls.push('past');
       if (isNext) cls.push('now');
       if (classDone(s, n)) cls.push('done');
+      else if (days.some(function (dd, j) {     // any homework ticked: started
+        return dayTasks(dd, n, j, prog).some(function (t) {
+          var e = prog[t.key];
+          return e && (e.done || (e.plays || []).some(Boolean));
+        });
+      })) cls.push('started');
       var time = d && c.times[d.getDay()];
       var daysDone = days.filter(function (dd, j) { return dayDone(dd, n, j, prog); }).length, unit = 'days';
       if (days.length === 1) {   // one list (Beginner; Fundamental 15 and 16): count its tasks
