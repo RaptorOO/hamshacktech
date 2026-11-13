@@ -1,5 +1,5 @@
 /* Move this browser's CW Trainer progress to Morse Code One.
-   Vendored read-and-pack half of morseevolved static/shared/hst-transfer.js.
+   Vendored read-and-pack half of Morse Code One static/shared/hst-transfer.js.
    Change MOVE_TO to a preview address when testing. Do not load a script
    from the other site. Nothing here is sent to a server. */
 (function () {
