@@ -17,7 +17,7 @@
  *     The app also shows an "Update ready" banner; its Restart button sends
  *     SKIP_WAITING (below) so the new version takes over right away.
  */
-const VERSION = '6fd1804f9f93';
+const VERSION = 'd2cebf11e3d6';
 const CACHE = 'cw-trainer-' + VERSION;
 
 // Every file the app needs to run offline, each with its fingerprint (see
@@ -56,7 +56,7 @@ const PRECACHE = [
   ['/cw-trainer/icons/apple-touch-icon.png', '6877a92df205dbd5'],
   ['/cw-trainer/icons/favicon-32x32.png', '5cc015c2d45188f7'],
   ['/cw-trainer/icr/', '5b6bf292fceadb70'],
-  ['/cw-trainer/', '8bcfc88fbad3d2f2'],
+  ['/cw-trainer/', '1eae560018c90fed'],
   ['/cw-trainer/jeopardy/answers.js', 'cb648e2391934f83'],
   ['/cw-trainer/jeopardy/', 'bcdde0d5a78a0608'],
   ['/cw-trainer/jeopardy/online.js', '9849a535bd3188b9'],
@@ -74,6 +74,7 @@ const PRECACHE = [
   ['/cw-trainer/shared/hst-file-lengths.js', '571bfcfe489fd454'],
   ['/cw-trainer/shared/hst-keyer.js', '70ecf0df92cdf211'],
   ['/cw-trainer/shared/hst-listen.js', '098e02d85b32b8fa'],
+  ['/cw-trainer/shared/hst-move.js', '91d246db879ad065'],
   ['/cw-trainer/shared/hst-qso.js', '4e96bd2ce0383e93'],
   ['/cw-trainer/shared/hst-radio-worklet.js', '539ee206f41f6a39'],
   ['/cw-trainer/shared/hst-radio.js', '9d7bf551a2fee67b'],
@@ -89,14 +90,10 @@ const PRECACHE = [
   ['/cw-trainer/voice/8.mp3', 'a4bf3cf57862410e'],
   ['/cw-trainer/voice/9.mp3', 'abfd6552b819177a'],
   ['/cw-trainer/voice/A.mp3', '0679bc55ad62d208'],
-  ['/cw-trainer/voice/apos.mp3', 'fc47915aa686b574'],
   ['/cw-trainer/voice/B.mp3', '015d79bd50de00ac'],
   ['/cw-trainer/voice/C.mp3', 'f760f6700acfe324'],
-  ['/cw-trainer/voice/comma.mp3', '0abe78aba67e4a51'],
   ['/cw-trainer/voice/D.mp3', '6f04863cbb327531'],
-  ['/cw-trainer/voice/dash.mp3', 'ec0af5ded513fde2'],
   ['/cw-trainer/voice/E.mp3', 'f9999805079d111f'],
-  ['/cw-trainer/voice/equals.mp3', '8068ef60185d8025'],
   ['/cw-trainer/voice/F.mp3', '45edfad071d66fe2'],
   ['/cw-trainer/voice/G.mp3', '88e8b2460ecd9da3'],
   ['/cw-trainer/voice/H.mp3', '4f49eec59bb2815b'],
@@ -104,25 +101,29 @@ const PRECACHE = [
   ['/cw-trainer/voice/J.mp3', '33a5ee43f4081db0'],
   ['/cw-trainer/voice/K.mp3', '72716436b62d5176'],
   ['/cw-trainer/voice/L.mp3', '88b57801876c0d98'],
-  ['/cw-trainer/voice/lparen.mp3', '2a3a46756e314811'],
   ['/cw-trainer/voice/M.mp3', '76459acd6a24216c'],
   ['/cw-trainer/voice/N.mp3', 'e187fd57e3b72f6c'],
   ['/cw-trainer/voice/O.mp3', '69b9f56731293347'],
   ['/cw-trainer/voice/P.mp3', '538e52ad549b7903'],
-  ['/cw-trainer/voice/period.mp3', 'e4b7283a60982f2b'],
   ['/cw-trainer/voice/Q.mp3', '656a2aed90d2e3d4'],
-  ['/cw-trainer/voice/qmark.mp3', '1e0bc0c372468b08'],
   ['/cw-trainer/voice/R.mp3', 'c81722262968385e'],
-  ['/cw-trainer/voice/rparen.mp3', '0685a69734e44961'],
   ['/cw-trainer/voice/S.mp3', 'eedb378b40b4f4cf'],
-  ['/cw-trainer/voice/slash.mp3', 'd4cc398c97ffbe00'],
   ['/cw-trainer/voice/T.mp3', '3b253d07f0d55a41'],
   ['/cw-trainer/voice/U.mp3', '86858663dbeb4c21'],
   ['/cw-trainer/voice/V.mp3', '41214b4fd18741f7'],
   ['/cw-trainer/voice/W.mp3', '0b85a189ac0b75b0'],
   ['/cw-trainer/voice/X.mp3', '87a1e6b0cabbc633'],
   ['/cw-trainer/voice/Y.mp3', 'faa8dd5c724ed58f'],
-  ['/cw-trainer/voice/Z.mp3', '2bb7b3abb3dee47b']
+  ['/cw-trainer/voice/Z.mp3', '2bb7b3abb3dee47b'],
+  ['/cw-trainer/voice/apos.mp3', 'fc47915aa686b574'],
+  ['/cw-trainer/voice/comma.mp3', '0abe78aba67e4a51'],
+  ['/cw-trainer/voice/dash.mp3', 'ec0af5ded513fde2'],
+  ['/cw-trainer/voice/equals.mp3', '8068ef60185d8025'],
+  ['/cw-trainer/voice/lparen.mp3', '2a3a46756e314811'],
+  ['/cw-trainer/voice/period.mp3', 'e4b7283a60982f2b'],
+  ['/cw-trainer/voice/qmark.mp3', '1e0bc0c372468b08'],
+  ['/cw-trainer/voice/rparen.mp3', '0685a69734e44961'],
+  ['/cw-trainer/voice/slash.mp3', 'd4cc398c97ffbe00']
 ];
 
 // The fingerprint of a downloaded file, worked out the way the build does:
