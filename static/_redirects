@@ -1,3 +1,7 @@
+# Kill switch: the browser still requests /cw-trainer/sw.js and gets this file
+# with status 200. It must stay above any /cw-trainer splat. People are not 301'd.
+/cw-trainer/sw.js  /cw-trainer-killswitch.js  200
+
 # Cloudflare Pages redirects (https://developers.cloudflare.com/pages/configuration/redirects/)
 # The ICR and Code Groups trainers and Morse Code Jeopardy now live in the CW
 # Trainer app. Old links, bookmarks and blog-post links land on the matching
