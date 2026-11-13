@@ -525,6 +525,10 @@
       <button class="btn" id="acctBtn" type="button"></button>
     </div>
   </div>
+  <div class="experimental">
+    <button class="btn" id="moveProgressBtn" type="button">Move my progress to Morse Code One</button>
+    <p class="hint">Step 1 of moving to Morse Code One. Nothing moves until you tap Bring it over on Morse Code One. If you're signed in, just sign in on Morse Code One with the same email instead.</p>
+  </div>
   <div class="actions">
     <button class="linkish" id="whatsNewLink" type="button" style="margin-right:auto">What's new</button>
     <button class="btn primary" id="settingsDone" type="button">Done</button>
@@ -803,6 +807,7 @@
 <script src="shared/hst-radio.js"></script>
 <script src="shared/hst-course.js"></script>
 <script src="shared/hst-account.js"></script>   <!-- after hst-course.js: it syncs My Course too -->
+<script src="shared/hst-move.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1094,6 +1099,14 @@
   HST.course.onChange(renderCourse);
   renderCourse();
 
+  document.getElementById('moveProgressBtn').addEventListener('click', function () {
+    var btn = this;
+    btn.disabled = true;
+    window.HSTMove.move().then(function () { btn.disabled = false; }, function () {
+      btn.disabled = false;
+      window.alert('We couldn\'t save your practice records. Please try again.');
+    });
+  });
   document.getElementById('settingsDone').addEventListener('click', function () { dlg.close(); });
   // Clicking the dimmed area outside the panel closes it too.
   dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
