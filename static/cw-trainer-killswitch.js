@@ -9,6 +9,9 @@ self.addEventListener('activate', function (event) {
   event.waitUntil((async function () {
     var windows = await self.clients.matchAll({ type: 'window' });
     await Promise.all(windows.map(function (client) {
+      var path = '';
+      try { path = new URL(client.url).pathname; } catch (e) {}
+      if (path === '/cw-trainer/move' || path === '/cw-trainer/move/') return;
       return client.navigate(client.url);
     }));
     await self.registration.unregister();

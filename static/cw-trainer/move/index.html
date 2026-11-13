@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Move my progress to Morse Code One</title>
+<style>
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#100e0c;color:#fafaf9;font:18px/1.45 Inter,system-ui,sans-serif;text-align:center;padding:24px}
+img{width:72px;height:72px}
+p{max-width:28rem}
+button{font:inherit;margin-top:12px}
+</style>
+</head>
+<body>
+<div>
+<img src="/cw-trainer-moved/alien.png" alt="Morse Code One" width="72" height="72">
+<p>Move the progress saved in this browser to Morse Code One.</p>
+<button type="button" id="moveProgressBtn">Move my progress to Morse Code One</button>
+<p role="status" id="status"></p>
+</div>
+<script src="/cw-trainer/shared/hst-move.js"></script>
+<script>
+document.getElementById('moveProgressBtn').addEventListener('click', function () {
+  var btn = this, status = document.getElementById('status');
+  btn.disabled = true;
+  status.textContent = 'Bringing your progress with you…';
+  window.HSTMove.move().then(function () {
+    btn.disabled = false;
+    status.textContent = 'You have a lot of practice records, so they were saved as a file. On Morse Code One, choose that file and tap Bring it over.';
+  }, function () {
+    btn.disabled = false;
+    status.textContent = 'We couldn\'t save your practice records. Please try again.';
+  });
+});
+</script>
+</body>
+</html>
