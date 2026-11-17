@@ -6,7 +6,8 @@ draft: false
 categories: ["CW & Operating Skills"]
 tags: ["CW", "Morse Code", "Morse Code One", "CW Trainer", "CW Academy"]
 featureimage: "img/blog/cw-trainer-moving-to-morse-code-one/hero.png"
-showHero: false
+showHero: true
+heroStyle: "big"
 ---
 
 CW Trainer has a new home. Starting now, it lives at [Morse Code One](https://morsecodeone.com), and everything you've been using comes along for the ride.
