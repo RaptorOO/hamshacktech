@@ -16,7 +16,7 @@ CW Trainer has a new home. Starting now, it lives at [Morse Code One](https://mo
 
 Go to [Morse Code One](https://morsecodeone.com) and sign in with the same email you used before. That's it. All your data comes over: your progress, your history, and the characters you've been working on.
 
-*Never signed in? Open [CW Trainer](https://hamshacktech.com/cw-trainer/), click the gear icon at the top right to open Settings, and tap "Move my progress to Morse Code One." Then, on Morse Code One, tap "Bring it over."*
+*Never signed in? Your practice history is saved in the browser you used. Open the old [CW Trainer](https://hamshacktech.com/cw-trainer/) in that same browser on the same device, and it'll carry your progress over to Morse Code One for you. Just tap "Bring it over" when Morse Code One asks. This only happens once, so do it from the browser where you practice. After that, the old links take you straight to Morse Code One, and your old data on HamShack Tech is never deleted. If you've built up a lot of history, the page offers a "Save my progress as a file" button instead, and you open that file on Morse Code One.*
 
 ## How we got here
 
