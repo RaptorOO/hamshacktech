@@ -1,6 +1,9 @@
 import { onRequest as handoff } from '../cw-trainer-handoff.js';
+import { crawlerRedirect } from '../_crawler.js';
 
 export async function onRequest(context) {
+  const redirect = crawlerRedirect(context.request);
+  if (redirect) return redirect;
   const url = new URL(context.request.url);
   if (url.pathname === '/cw-trainer/sw.js') {
     const asset = await context.env.ASSETS.fetch(new URL('/cw-trainer-killswitch.js', url));
