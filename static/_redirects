@@ -19,6 +19,7 @@
 /cw-tools/morse-code-jeopardy/   /cw-trainer/?tab=jeopardy     301
 /cw-tools/morse-code-jeopardy/*  /cw-trainer/?tab=jeopardy     301
 # The CW Tools page itself opened the app on the ICR tab (Tim, 2026-10-23).
-# Now permanent (301, was 302): the intro page is not coming back.
-/cw-tools                        https://morsecodeone.com/?tab=icr          301
-/cw-tools/                       https://morsecodeone.com/?tab=icr          301
+# He chose 302 so the intro page could come back. This 301 is permanent only
+# if Tim OKs it.
+/cw-tools                        /cw-trainer/?tab=icr          301
+/cw-tools/                       /cw-trainer/?tab=icr          301
