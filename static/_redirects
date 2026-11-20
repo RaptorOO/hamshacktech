@@ -4,20 +4,20 @@
 
 # Cloudflare Pages redirects (https://developers.cloudflare.com/pages/configuration/redirects/)
 # The ICR and Code Groups trainers and Morse Code Jeopardy moved to Morse
-# Code One with the CW Trainer (19 Nov 2026). Old links, bookmarks and
-# blog-post links go straight to the matching tab there in one permanent hop,
-# for people and crawlers alike: these addresses are older than the trainer
-# and never held practice data, so nobody needs the /cw-trainer/ hand-off
-# page for them. No Function handles /cw-tools, so these lines apply.
-/cw-tools/icr-trainer            https://morsecodeone.com/?tab=icr          301
-/cw-tools/icr-trainer/           https://morsecodeone.com/?tab=icr          301
-/cw-tools/icr-trainer/*          https://morsecodeone.com/?tab=icr          301
-/cw-tools/code-groups-trainer    https://morsecodeone.com/?tab=code-groups  301
-/cw-tools/code-groups-trainer/   https://morsecodeone.com/?tab=code-groups  301
-/cw-tools/code-groups-trainer/*  https://morsecodeone.com/?tab=code-groups  301
-/cw-tools/morse-code-jeopardy    https://morsecodeone.com/?tab=jeopardy     301
-/cw-tools/morse-code-jeopardy/   https://morsecodeone.com/?tab=jeopardy     301
-/cw-tools/morse-code-jeopardy/*  https://morsecodeone.com/?tab=jeopardy     301
+# Code One with the CW Trainer (19 Nov 2026). Old tool links get a 301 to the
+# CW Trainer hand-off page on this site, which moves people's saved progress
+# (browser-only, under hamshacktech.com). Crawlers then get the crawler 301
+# to Morse Code One, with the query kept. No Function handles /cw-tools, so
+# these lines apply.
+/cw-tools/icr-trainer            /cw-trainer/?tab=icr          301
+/cw-tools/icr-trainer/           /cw-trainer/?tab=icr          301
+/cw-tools/icr-trainer/*          /cw-trainer/?tab=icr          301
+/cw-tools/code-groups-trainer    /cw-trainer/?tab=code-groups  301
+/cw-tools/code-groups-trainer/   /cw-trainer/?tab=code-groups  301
+/cw-tools/code-groups-trainer/*  /cw-trainer/?tab=code-groups  301
+/cw-tools/morse-code-jeopardy    /cw-trainer/?tab=jeopardy     301
+/cw-tools/morse-code-jeopardy/   /cw-trainer/?tab=jeopardy     301
+/cw-tools/morse-code-jeopardy/*  /cw-trainer/?tab=jeopardy     301
 # The CW Tools page itself opened the app on the ICR tab (Tim, 2026-10-23).
 # Now permanent (301, was 302): the intro page is not coming back.
 /cw-tools                        https://morsecodeone.com/?tab=icr          301
