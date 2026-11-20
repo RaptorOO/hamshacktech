@@ -28,7 +28,12 @@ export function crawlerRedirect(request) {
   if (url.pathname === '/cw-trainer/sw.js') return null;
   if (url.pathname !== '/cw-trainer' && !url.pathname.startsWith('/cw-trainer/')) return null;
   if (!isSearchCrawler(request)) return null;
-  const rest = url.pathname.slice('/cw-trainer'.length);
+  // Same path without /cw-trainer, query string kept (?tab=icr opens ICR).
+  // Bare /cw-trainer maps to "/" so the Location is never "…com?tab=…".
+  // The move page has no twin on Morse Code One; its "bring your practice
+  // records" page is /import/ (one hop instead of /move/ -> /import/).
+  let rest = url.pathname.slice('/cw-trainer'.length) || '/';
+  if (rest === '/move' || rest === '/move/') rest = '/import/';
   return new Response(null, {
     status: 301,
     headers: {

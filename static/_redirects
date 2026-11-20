@@ -3,22 +3,22 @@
 /cw-trainer/sw.js  /cw-trainer-killswitch.js  200
 
 # Cloudflare Pages redirects (https://developers.cloudflare.com/pages/configuration/redirects/)
-# The ICR and Code Groups trainers and Morse Code Jeopardy now live in the CW
-# Trainer app. Old links, bookmarks and blog-post links land on the matching
-# tab of the app.
-/cw-tools/icr-trainer            /cw-trainer/?tab=icr          301
-/cw-tools/icr-trainer/           /cw-trainer/?tab=icr          301
-/cw-tools/icr-trainer/*          /cw-trainer/?tab=icr          301
-/cw-tools/code-groups-trainer    /cw-trainer/?tab=code-groups  301
-/cw-tools/code-groups-trainer/   /cw-trainer/?tab=code-groups  301
-/cw-tools/code-groups-trainer/*  /cw-trainer/?tab=code-groups  301
-/cw-tools/morse-code-jeopardy    /cw-trainer/?tab=jeopardy     301
-/cw-tools/morse-code-jeopardy/   /cw-trainer/?tab=jeopardy     301
-/cw-tools/morse-code-jeopardy/*  /cw-trainer/?tab=jeopardy     301
-# The CW Tools page itself opens the app (Tim, 2026-10-23), on the ICR tab
-# like the menu's CW Trainer link. The app stays at /cw-trainer/ (its offline
-# copy and installed-app scope live there). 302, not 301, so the intro page
-# (content/cw-tools.md, still built) can come back without browsers
-# remembering the old redirect.
-/cw-tools                        /cw-trainer/?tab=icr          302
-/cw-tools/                       /cw-trainer/?tab=icr          302
+# The ICR and Code Groups trainers and Morse Code Jeopardy moved to Morse
+# Code One with the CW Trainer (19 Nov 2026). Old links, bookmarks and
+# blog-post links go straight to the matching tab there in one permanent hop,
+# for people and crawlers alike: these addresses are older than the trainer
+# and never held practice data, so nobody needs the /cw-trainer/ hand-off
+# page for them. No Function handles /cw-tools, so these lines apply.
+/cw-tools/icr-trainer            https://morsecodeone.com/?tab=icr          301
+/cw-tools/icr-trainer/           https://morsecodeone.com/?tab=icr          301
+/cw-tools/icr-trainer/*          https://morsecodeone.com/?tab=icr          301
+/cw-tools/code-groups-trainer    https://morsecodeone.com/?tab=code-groups  301
+/cw-tools/code-groups-trainer/   https://morsecodeone.com/?tab=code-groups  301
+/cw-tools/code-groups-trainer/*  https://morsecodeone.com/?tab=code-groups  301
+/cw-tools/morse-code-jeopardy    https://morsecodeone.com/?tab=jeopardy     301
+/cw-tools/morse-code-jeopardy/   https://morsecodeone.com/?tab=jeopardy     301
+/cw-tools/morse-code-jeopardy/*  https://morsecodeone.com/?tab=jeopardy     301
+# The CW Tools page itself opened the app on the ICR tab (Tim, 2026-10-23).
+# Now permanent (301, was 302): the intro page is not coming back.
+/cw-tools                        https://morsecodeone.com/?tab=icr          301
+/cw-tools/                       https://morsecodeone.com/?tab=icr          301
