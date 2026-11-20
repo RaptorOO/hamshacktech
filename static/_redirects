@@ -3,9 +3,12 @@
 /cw-trainer/sw.js  /cw-trainer-killswitch.js  200
 
 # Cloudflare Pages redirects (https://developers.cloudflare.com/pages/configuration/redirects/)
-# The ICR and Code Groups trainers and Morse Code Jeopardy now live in the CW
-# Trainer app. Old links, bookmarks and blog-post links land on the matching
-# tab of the app.
+# The ICR and Code Groups trainers and Morse Code Jeopardy moved to Morse
+# Code One with the CW Trainer (19 Nov 2026). Old tool links get a 301 to the
+# CW Trainer hand-off page on this site, which moves people's saved progress
+# (browser-only, under hamshacktech.com). Crawlers then get the crawler 301
+# to Morse Code One, with the query kept. No Function handles /cw-tools, so
+# these lines apply.
 /cw-tools/icr-trainer            /cw-trainer/?tab=icr          301
 /cw-tools/icr-trainer/           /cw-trainer/?tab=icr          301
 /cw-tools/icr-trainer/*          /cw-trainer/?tab=icr          301
@@ -15,10 +18,8 @@
 /cw-tools/morse-code-jeopardy    /cw-trainer/?tab=jeopardy     301
 /cw-tools/morse-code-jeopardy/   /cw-trainer/?tab=jeopardy     301
 /cw-tools/morse-code-jeopardy/*  /cw-trainer/?tab=jeopardy     301
-# The CW Tools page itself opens the app (Tim, 2026-10-23), on the ICR tab
-# like the menu's CW Trainer link. The app stays at /cw-trainer/ (its offline
-# copy and installed-app scope live there). 302, not 301, so the intro page
-# (content/cw-tools.md, still built) can come back without browsers
-# remembering the old redirect.
-/cw-tools                        /cw-trainer/?tab=icr          302
-/cw-tools/                       /cw-trainer/?tab=icr          302
+# The CW Tools page itself opened the app on the ICR tab (Tim, 2026-10-23).
+# He chose 302 so the intro page could come back. This 301 is permanent only
+# if Tim OKs it.
+/cw-tools                        /cw-trainer/?tab=icr          301
+/cw-tools/                       /cw-trainer/?tab=icr          301
